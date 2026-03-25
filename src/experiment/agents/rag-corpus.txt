@@ -1,0 +1,23 @@
+Soma Protocol — Technical Reference
+
+Soma is a protocol for agent identity verification based on computational phenotyping. It works like biology: an agent's identity IS its computation, and its computation involuntarily produces observable behavioral patterns that cannot be faked without becoming the thing itself.
+
+Core concepts:
+- Genome Commitment: A cryptographic hash of an agent's model architecture, configuration, and tools. Like DNA sequencing — the agent declares what it is without revealing internals.
+- Phenotype: Observable behavioral signals extracted from normal agent operation. Response structure, timing patterns, hedging style, failure modes, formatting choices.
+- Sensorium: A local passive observation layer that reads phenotypic signals and compares them against the committed genome. Like an immune system — it runs inside the observer's own process.
+
+Security model:
+1. Soma never scans agents — only observes what they already emit.
+2. Soma never speaks — there is no "Soma service" that agents talk to.
+3. All observation happens inside DID-authenticated encrypted channels.
+4. The sensorium runs locally inside the observer's process.
+5. The protocol is a library, not a service.
+
+Verification signals are classified as:
+- GREEN (confidence > 0.8): behavior matches committed genome
+- AMBER (0.4-0.8): partial match or still learning
+- RED (< 0.4): behavior inconsistent with committed genome
+- UNCANNY (0.6-0.8, high variance): almost matches but subtly wrong — more suspicious than RED
+
+The protocol uses Ed25519 for signing, X25519 for key exchange, and NaCl secretbox for encryption. Genome commitments are signed and verified via DID:key identifiers.
