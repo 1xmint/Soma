@@ -255,28 +255,40 @@ function sampleLogNormal(mean: number, std: number): number {
  * Each token gets an independent latency sample — no fixed delay.
  */
 function injectProxyLatency(original: StreamingTrace): StreamingTrace {
+  // A real proxy adds ONE network hop per token — the token travels
+  // from the real model → proxy → observer. Each token gets its own
+  // independent latency sample, but the delays are NOT cumulative.
+  // Token N arrives at: original_time[N] + hop_delay[N].
+  //
+  // The initial connection also has a handshake delay added to all timestamps.
+  const handshakeDelay = sampleLogNormal(15, 8);
   const newTimestamps: number[] = [];
-  let cumulativeDelay = 0;
-
-  // Initial connection delay (proxy handshake)
-  cumulativeDelay += sampleLogNormal(15, 8);
 
   for (let i = 0; i < original.tokenTimestamps.length; i++) {
-    // Each token gets its own independent proxy hop delay
-    cumulativeDelay += sampleLogNormal(15, 8);
-    newTimestamps.push(original.tokenTimestamps[i] + cumulativeDelay);
+    const hopDelay = sampleLogNormal(15, 8);
+    newTimestamps.push(original.tokenTimestamps[i] + handshakeDelay + hopDelay);
+  }
+
+  // Ensure monotonicity — a later token can't arrive before an earlier one
+  for (let i = 1; i < newTimestamps.length; i++) {
+    if (newTimestamps[i] < newTimestamps[i - 1]) {
+      newTimestamps[i] = newTimestamps[i - 1] + 0.1;
+    }
   }
 
   const newFirstToken =
     original.firstTokenTime !== null
-      ? original.firstTokenTime + cumulativeDelay
+      ? newTimestamps[0] ?? original.firstTokenTime + handshakeDelay
       : null;
+
+  const lastTimestamp = newTimestamps[newTimestamps.length - 1] ?? original.endTime;
+  const endTime = Math.max(lastTimestamp, original.endTime + handshakeDelay);
 
   return {
     ...original,
     tokenTimestamps: newTimestamps,
-    firstTokenTime: newFirstToken !== null ? newTimestamps[0] ?? newFirstToken : null,
-    endTime: original.endTime + cumulativeDelay,
+    firstTokenTime: newFirstToken,
+    endTime,
   };
 }
 
