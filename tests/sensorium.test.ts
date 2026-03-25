@@ -20,6 +20,9 @@ function makeSignals(overrides: Partial<{
   meanInterval: number;
   burstiness: number;
   tokenCount: number;
+  vocabTypeTokenRatio: number;
+  vocabContractionRatio: number;
+  vocabModalVerbRatio: number;
 }> = {}): PhenotypicSignals {
   return {
     cognitive: {
@@ -63,6 +66,18 @@ function makeSignals(overrides: Partial<{
       attemptedImpossible: false,
       selfCorrections: 0,
       confidenceRatio: 0.5,
+    },
+    vocabulary: {
+      vocabTypeTokenRatio: overrides.vocabTypeTokenRatio ?? 0.65,
+      vocabHapaxRatio: 0.7,
+      vocabAvgWordFrequencyRank: 250,
+      vocabTopBigramsHash: 123456,
+      vocabSentenceStarterEntropy: 2.5,
+      vocabFillerPhraseCount: 2,
+      vocabContractionRatio: overrides.vocabContractionRatio ?? 0.03,
+      vocabPassiveVoiceRatio: 0.15,
+      vocabQuestionDensity: 0.5,
+      vocabModalVerbRatio: overrides.vocabModalVerbRatio ?? 0.04,
     },
   };
 }
@@ -142,6 +157,9 @@ describe("Sensorium Matcher", () => {
       burstiness: 500,
       avgWordLength: 15,
       tokenCount: 3000,
+      vocabTypeTokenRatio: 0.1,
+      vocabContractionRatio: 0.5,
+      vocabModalVerbRatio: 0.5,
     });
 
     const verdict = match(profile, divergent);

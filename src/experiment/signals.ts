@@ -6,6 +6,16 @@
  * computational substrate, like a gait analysis for language models.
  */
 
+import {
+  extractVocabularySignals,
+  vocabularyToFeatureVector,
+  VOCABULARY_FEATURE_NAMES,
+  type VocabularySignals,
+} from "../sensorium/senses/index.js";
+
+// Re-export for external consumers
+export type { VocabularySignals };
+
 // --- Types ---
 
 export interface CognitiveSignals {
@@ -59,6 +69,7 @@ export interface PhenotypicSignals {
   structural: StructuralSignals;
   temporal: TemporalSignals;
   error: ErrorSignals;
+  vocabulary?: VocabularySignals;
 }
 
 /** Raw streaming data captured during an API call. */
@@ -364,6 +375,7 @@ export function extractAllSignals(
     structural: extractStructuralSignals(responseText),
     temporal: extractTemporalSignals(trace),
     error: extractErrorSignals(responseText, probeCategory),
+    vocabulary: extractVocabularySignals(responseText),
   };
 }
 
@@ -372,7 +384,8 @@ export function extractAllSignals(
  * Categorical features (openingPattern, closingPattern) are one-hot encoded.
  */
 export function signalsToFeatureVector(signals: PhenotypicSignals): number[] {
-  const { cognitive, structural, temporal, error } = signals;
+  const { cognitive, structural, temporal, error, vocabulary } = signals;
+  const vocabVector = vocabulary ? vocabularyToFeatureVector(vocabulary) : new Array(VOCABULARY_FEATURE_NAMES.length).fill(0);
   return [
     // Cognitive (6)
     cognitive.hedgeCount,
@@ -412,6 +425,8 @@ export function signalsToFeatureVector(signals: PhenotypicSignals): number[] {
     error.attemptedImpossible ? 1 : 0,
     error.selfCorrections,
     error.confidenceRatio,
+    // Vocabulary (10) — Sense 1
+    ...vocabVector,
   ];
 }
 
@@ -427,4 +442,6 @@ export const FEATURE_NAMES: string[] = [
   "burstiness", "total_streaming_duration", "token_count",
   "contains_refusal", "uncertainty_admissions", "assertive_when_wrong",
   "attempted_impossible", "self_corrections", "confidence_ratio",
+  // Vocabulary — Sense 1 (10)
+  ...VOCABULARY_FEATURE_NAMES,
 ];

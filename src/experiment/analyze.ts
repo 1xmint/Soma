@@ -16,6 +16,7 @@
 import { readFile, writeFile, readdir, mkdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { signalsToFeatureVector, FEATURE_NAMES, type PhenotypicSignals } from "./signals.js";
+import { extractVocabularySignals } from "../sensorium/senses/index.js";
 import { AGENT_CONFIGS } from "./configs.js";
 import type { ExperimentRun, ExperimentResult } from "./runner.js";
 
@@ -322,6 +323,7 @@ const COGNITIVE_INDICES = [0, 1, 2, 3, 4, 5];                   // 6 features
 const STRUCTURAL_INDICES = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]; // 15 features
 const TEMPORAL_INDICES = [21, 22, 23, 24, 25, 26, 27];          // 7 features
 const ERROR_INDICES = [28, 29, 30, 31, 32, 33];                 // 6 features
+const VOCABULARY_INDICES = [34, 35, 36, 37, 38, 39, 40, 41, 42, 43]; // 10 features (Sense 1)
 
 function selectFeatures(features: number[], indices: number[]): number[] {
   return indices.map((i) => features[i]);
@@ -454,7 +456,9 @@ async function loadLatestResults(): Promise<ExperimentRun> {
     throw new Error(`No experiment results found in ${dir}. Run the experiment first: pnpm run experiment`);
   }
 
-  const latest = files[files.length - 1];
+  // Prefer dated experiment files (experiment-YYYY-...) over synthetic/named files
+  const datedFiles = files.filter((f) => /^experiment-\d{4}/.test(f));
+  const latest = datedFiles.length > 0 ? datedFiles[datedFiles.length - 1] : files[files.length - 1];
   console.log(`Loading: ${dir}/${latest}`);
   const raw = await readFile(`${dir}/${latest}`, "utf-8");
   return JSON.parse(raw) as ExperimentRun;
@@ -470,6 +474,10 @@ function resultToSamples(
     if (r.error) continue;
     const label = labelFn(r);
     if (label === null) continue;
+    // Backfill vocabulary signals from response text if missing (pre-Phase 2 data)
+    if (!r.signals.vocabulary && r.responseText) {
+      r.signals.vocabulary = extractVocabularySignals(r.responseText);
+    }
     const allFeatures = signalsToFeatureVector(r.signals);
     const features = featureIndices ? selectFeatures(allFeatures, featureIndices) : allFeatures;
     samples.push({ features, label });
@@ -575,6 +583,14 @@ async function analyze(): Promise<void> {
     selectFeatureNames(ERROR_INDICES)
   );
 
+  // --- Vocabulary (Sense 1) Channel ---
+  const vocabSamples = resultToSamples(validResults, (r) => r.agentId, VOCABULARY_INDICES);
+  const vocabReport = runClassification(
+    "VOCABULARY CHANNEL ONLY (Sense 1)",
+    vocabSamples,
+    selectFeatureNames(VOCABULARY_INDICES)
+  );
+
   // --- 3. Model Family Classification ---
   const familySamples = resultToSamples(validResults, (r) => {
     const config = agentConfigMap.get(r.agentId);
@@ -629,6 +645,7 @@ async function analyze(): Promise<void> {
     strReport,
     tmpReport,
     errReport,
+    vocabReport,
   ];
   if (familyReport) reports.push(familyReport);
   if (epiReport) reports.push(epiReport);
@@ -659,6 +676,7 @@ ${"═".repeat(60)}
     Structural:  ${(strReport.accuracy * 100).toFixed(1)}%
     Temporal:    ${(tmpReport.accuracy * 100).toFixed(1)}%
     Error:       ${(errReport.accuracy * 100).toFixed(1)}%
+    Vocabulary:  ${(vocabReport.accuracy * 100).toFixed(1)}%  (Sense 1)
 
   ${verdictDescription(genomeReport.accuracy)}
 ${"═".repeat(60)}
@@ -690,6 +708,7 @@ ${"═".repeat(60)}
       structural: strReport.accuracy,
       temporal: tmpReport.accuracy,
       error: errReport.accuracy,
+      vocabulary: vocabReport.accuracy,
     },
     topFeatures: genomeReport.featureImportance.slice(0, 10),
     verdict: verdictEmoji(genomeReport.accuracy),
