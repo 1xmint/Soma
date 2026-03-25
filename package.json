@@ -1,0 +1,26 @@
+{
+  "name": "soma",
+  "version": "0.1.0",
+  "description": "Agent identity verification through computational phenotyping",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "experiment": "tsx src/experiment/runner.ts",
+    "analyze": "tsx src/experiment/analyze.ts"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "tweetnacl": "^1.0.3",
+    "tweetnacl-util": "^0.15.1"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.1"
+  }
+}

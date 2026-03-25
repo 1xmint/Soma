@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env
+results/raw/*
+!results/raw/.gitkeep
+results/analysis/*
+!results/analysis/.gitkeep
+*.tsbuildinfo
