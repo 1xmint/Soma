@@ -332,9 +332,9 @@ describe("Probe Battery", () => {
 // --- Config Tests ---
 
 describe("Agent Configs", () => {
-  it("has 10 agent genomes", async () => {
+  it("has 13 agent genomes", async () => {
     const { AGENT_CONFIGS } = await import("../src/experiment/configs.js");
-    expect(AGENT_CONFIGS.length).toBe(10);
+    expect(AGENT_CONFIGS.length).toBe(13);
   });
 
   it("has unique agent IDs", async () => {

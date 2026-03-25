@@ -51,6 +51,14 @@ export async function streamFromProvider(
         systemPrompt,
         userPrompt
       );
+    case "openrouter":
+      return streamFromOpenAICompatible(
+        "https://openrouter.ai/api/v1",
+        getEnvKey("OPENROUTER_API_KEY"),
+        model,
+        systemPrompt,
+        userPrompt
+      );
   }
 }
 

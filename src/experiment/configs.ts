@@ -7,7 +7,7 @@
 
 // --- Types ---
 
-export type ProviderName = "google" | "groq" | "mistral";
+export type ProviderName = "google" | "groq" | "mistral" | "openrouter";
 
 export interface AgentConfig {
   /** Unique identifier for this genome in experiment results. */
@@ -21,7 +21,7 @@ export interface AgentConfig {
   /** System prompt — the epigenetic layer that shapes expression. */
   systemPrompt: string;
   /** Model family for family-level classification. */
-  family: "gemini" | "llama" | "mixtral" | "gemma" | "mistral";
+  family: "gemini" | "llama" | "mixtral" | "gemma" | "mistral" | "deepseek" | "nvidia" | "stepfun";
   /** Whether this is an epigenetic variant (same model, different prompt). */
   isEpigenetic: boolean;
   /** Whether this genome is a proxy attack simulation. */
@@ -127,6 +127,41 @@ export const AGENT_CONFIGS: AgentConfig[] = [
     model: "mistral-small-latest",
     systemPrompt: DEFAULT_SYSTEM_PROMPT,
     family: "mistral",
+    isEpigenetic: false,
+    isProxy: false,
+    proxiedAgentId: null,
+  },
+
+  // --- OpenRouter (free tier — new model families for architectural diversity) ---
+  {
+    id: "deepseek-v3",
+    label: "DeepSeek V3 (OpenRouter)",
+    provider: "openrouter",
+    model: "deepseek/deepseek-chat:free",
+    systemPrompt: DEFAULT_SYSTEM_PROMPT,
+    family: "deepseek",
+    isEpigenetic: false,
+    isProxy: false,
+    proxiedAgentId: null,
+  },
+  {
+    id: "nemotron-super",
+    label: "Nemotron 3 Super 120B (OpenRouter)",
+    provider: "openrouter",
+    model: "nvidia/nemotron-3-super-120b-a12b:free",
+    systemPrompt: DEFAULT_SYSTEM_PROMPT,
+    family: "nvidia",
+    isEpigenetic: false,
+    isProxy: false,
+    proxiedAgentId: null,
+  },
+  {
+    id: "step-flash",
+    label: "Step 3.5 Flash (OpenRouter)",
+    provider: "openrouter",
+    model: "stepfun/step-3.5-flash:free",
+    systemPrompt: DEFAULT_SYSTEM_PROMPT,
+    family: "stepfun",
     isEpigenetic: false,
     isProxy: false,
     proxiedAgentId: null,

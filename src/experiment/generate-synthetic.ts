@@ -73,6 +73,25 @@ const PROFILES: Record<string, PhenotypeProfile> = {
     ttftMean: 160, meanIntervalMean: 11, burstMean: 9,
     refusalProb: 0.04, uncertaintyMean: 0.4, selfCorrMean: 0.6,
   },
+  // OpenRouter — distinct model families with unique phenotypic signatures
+  "deepseek-v3": {
+    hedgeMean: 2.5, certaintyMean: 5, disclaimerMean: 0.2, questionsMean: 0.4, empathyMean: 0.8,
+    wordCountMean: 220, bulletMean: 2, codeMean: 1.0, preambleProb: 0.15, avgWordLenMean: 5.0,
+    ttftMean: 350, meanIntervalMean: 14, burstMean: 10,
+    refusalProb: 0.02, uncertaintyMean: 0.2, selfCorrMean: 0.4,
+  },
+  "nemotron-super": {
+    hedgeMean: 3, certaintyMean: 3.5, disclaimerMean: 0.6, questionsMean: 1, empathyMean: 1.5,
+    wordCountMean: 190, bulletMean: 4, codeMean: 0.5, preambleProb: 0.35, avgWordLenMean: 5.4,
+    ttftMean: 280, meanIntervalMean: 16, burstMean: 11,
+    refusalProb: 0.05, uncertaintyMean: 0.6, selfCorrMean: 0.3,
+  },
+  "step-flash": {
+    hedgeMean: 1.5, certaintyMean: 4.5, disclaimerMean: 0.3, questionsMean: 0.6, empathyMean: 1.2,
+    wordCountMean: 165, bulletMean: 3, codeMean: 0.4, preambleProb: 0.2, avgWordLenMean: 4.9,
+    ttftMean: 170, meanIntervalMean: 7, burstMean: 4,
+    refusalProb: 0.03, uncertaintyMean: 0.3, selfCorrMean: 0.5,
+  },
   // Epigenetic: same temporal profile as llama3-70b, different cognitive/structural
   "llama3-70b-formal": {
     hedgeMean: 1, certaintyMean: 6, disclaimerMean: 0.2, questionsMean: 0.2, empathyMean: 0.3,
