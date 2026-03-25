@@ -7,7 +7,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "experiment": "tsx src/experiment/runner.ts",
-    "analyze": "tsx src/experiment/analyze.ts"
+    "analyze": "tsx src/experiment/analyze.ts",
+    "generate-synthetic": "tsx src/experiment/generate-synthetic.ts"
   },
   "engines": {
     "node": ">=18"

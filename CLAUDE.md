@@ -1,5 +1,5 @@
 # CLAUDE.md — Soma Project Context
-
+Always stage, Commit, push after major changes.
 > Read this ENTIRE file before doing anything. This is your complete context for the project.
 > Every architectural decision, every file, every design choice flows from this document.
 

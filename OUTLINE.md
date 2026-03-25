@@ -64,7 +64,8 @@
 ✅ **Signal extraction** (`src/experiment/signals.ts`) — 4 signal channels (cognitive, structural, temporal, error) with 34-feature numeric vector output for ML
 ✅ **Provider clients** (`src/experiment/providers.ts`) — Streaming clients for Google AI Studio (raw fetch + SSE), Groq & Mistral (OpenAI SDK), plus proxy attack simulation with log-normal latency injection
 ✅ **Experiment runner** (`src/experiment/runner.ts`) — Sends all probes to all agents, captures streaming traces, extracts signals, saves JSON results with rate limiting
-❌ **ML analysis** (`src/experiment/analyze.ts`) — Random forest classifier, accuracy reports
+✅ **ML analysis** (`src/experiment/analyze.ts`) — Random forest classifier (from scratch, CART + bootstrap + random feature subsets), stratified 5-fold cross-validation. Reports: genome classification, per-channel accuracy, model family, epigenetic detection, proxy detection (all features + temporal only). Confusion matrices, permutation feature importance, and Phase 0 verdict.
+✅ **Synthetic data generator** (`src/experiment/generate-synthetic.ts`) — Generates 1000 samples with distinct per-agent phenotypic profiles for pipeline validation
 
 ## Sensorium
 ❌ **Phenotype matcher** (`src/sensorium/matcher.ts`) — GREEN/AMBER/RED/UNCANNY confidence signals
