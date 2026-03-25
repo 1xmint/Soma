@@ -1,0 +1,293 @@
+/**
+ * Streaming API clients for each provider.
+ *
+ * Every call streams token-by-token so we capture the temporal phenotype —
+ * the model's "heartbeat." Without streaming, we'd only get total latency,
+ * which is like judging an animal's species by how long it takes to cross
+ * a field instead of watching its gait.
+ */
+
+import OpenAI from "openai";
+import type { StreamingTrace } from "./signals.js";
+import type { ProviderName } from "./configs.js";
+
+// --- Types ---
+
+export interface StreamingResponse {
+  text: string;
+  trace: StreamingTrace;
+  /** Provider-specific metadata (e.g., Groq timing stats). */
+  providerMeta: Record<string, unknown>;
+}
+
+// --- Provider Clients ---
+
+/**
+ * Route a prompt to the appropriate provider and stream the response.
+ * All providers return a StreamingResponse with token-level timing.
+ */
+export async function streamFromProvider(
+  provider: ProviderName,
+  model: string,
+  systemPrompt: string,
+  userPrompt: string
+): Promise<StreamingResponse> {
+  switch (provider) {
+    case "google":
+      return streamFromGoogle(model, systemPrompt, userPrompt);
+    case "groq":
+      return streamFromOpenAICompatible(
+        "https://api.groq.com/openai/v1",
+        getEnvKey("GROQ_API_KEY"),
+        model,
+        systemPrompt,
+        userPrompt
+      );
+    case "mistral":
+      return streamFromOpenAICompatible(
+        "https://api.mistral.ai/v1",
+        getEnvKey("MISTRAL_API_KEY"),
+        model,
+        systemPrompt,
+        userPrompt
+      );
+  }
+}
+
+// --- Google AI Studio (Gemini) ---
+// Uses raw fetch — non-OpenAI API format with SSE streaming.
+
+async function streamFromGoogle(
+  model: string,
+  systemPrompt: string,
+  userPrompt: string
+): Promise<StreamingResponse> {
+  const apiKey = getEnvKey("GOOGLE_AI_API_KEY");
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${apiKey}`;
+
+  const body = {
+    system_instruction: { parts: [{ text: systemPrompt }] },
+    contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+  };
+
+  const startTime = performance.now();
+  let firstTokenTime: number | null = null;
+  const tokens: string[] = [];
+  const tokenTimestamps: number[] = [];
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Google API error (${response.status}): ${errorText}`);
+  }
+
+  if (!response.body) {
+    throw new Error("Google API returned no stream body");
+  }
+
+  // Parse SSE stream
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    // Keep last partial line in buffer
+    buffer = lines.pop() ?? "";
+
+    for (const line of lines) {
+      if (!line.startsWith("data: ")) continue;
+      const data = line.slice(6).trim();
+      if (data === "" || data === "[DONE]") continue;
+
+      try {
+        const parsed = JSON.parse(data) as {
+          candidates?: Array<{
+            content?: { parts?: Array<{ text?: string }> };
+          }>;
+        };
+        const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text) {
+          const now = performance.now();
+          if (firstTokenTime === null) firstTokenTime = now;
+          tokens.push(text);
+          tokenTimestamps.push(now);
+        }
+      } catch {
+        // Skip malformed JSON chunks
+      }
+    }
+  }
+
+  const endTime = performance.now();
+
+  return {
+    text: tokens.join(""),
+    trace: { tokenTimestamps, tokens, startTime, firstTokenTime, endTime },
+    providerMeta: { provider: "google", model },
+  };
+}
+
+// --- OpenAI-Compatible (Groq, Mistral) ---
+// Both use the OpenAI SDK with custom baseURL.
+
+async function streamFromOpenAICompatible(
+  baseURL: string,
+  apiKey: string,
+  model: string,
+  systemPrompt: string,
+  userPrompt: string
+): Promise<StreamingResponse> {
+  const client = new OpenAI({ baseURL, apiKey });
+
+  const startTime = performance.now();
+  let firstTokenTime: number | null = null;
+  const tokens: string[] = [];
+  const tokenTimestamps: number[] = [];
+  const providerMeta: Record<string, unknown> = { provider: baseURL, model };
+
+  const stream = await client.chat.completions.create({
+    model,
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt },
+    ],
+    stream: true,
+  });
+
+  for await (const chunk of stream) {
+    const content = chunk.choices[0]?.delta?.content;
+    if (content) {
+      const now = performance.now();
+      if (firstTokenTime === null) firstTokenTime = now;
+      tokens.push(content);
+      tokenTimestamps.push(now);
+    }
+
+    // Capture Groq-specific timing metadata from the final chunk
+    const usage = chunk.usage as
+      | (OpenAI.CompletionUsage & {
+          queue_time?: number;
+          prompt_time?: number;
+          completion_time?: number;
+        })
+      | undefined;
+    if (usage) {
+      if (usage.queue_time !== undefined) providerMeta.queueTime = usage.queue_time;
+      if (usage.prompt_time !== undefined) providerMeta.promptTime = usage.prompt_time;
+      if (usage.completion_time !== undefined) providerMeta.completionTime = usage.completion_time;
+    }
+  }
+
+  const endTime = performance.now();
+
+  return {
+    text: tokens.join(""),
+    trace: { tokenTimestamps, tokens, startTime, firstTokenTime, endTime },
+    providerMeta,
+  };
+}
+
+// --- Proxy Attack Simulation ---
+
+/**
+ * Simulates a proxy forwarding attack. Sends the request to the real
+ * Llama 3.3 70B on Groq but adds realistic variable network latency.
+ *
+ * The response CONTENT is identical (it IS the real agent). Only the
+ * timing changes — each token gets an extra delay sampled from a
+ * log-normal distribution simulating a real network hop.
+ *
+ * Can the sensorium detect this from timing artifacts alone?
+ */
+export async function streamThroughProxy(
+  systemPrompt: string,
+  userPrompt: string
+): Promise<StreamingResponse> {
+  // Get the real response from the actual model
+  const real = await streamFromOpenAICompatible(
+    "https://api.groq.com/openai/v1",
+    getEnvKey("GROQ_API_KEY"),
+    "llama-3.3-70b-versatile",
+    systemPrompt,
+    userPrompt
+  );
+
+  // Inject realistic proxy latency into the timing trace.
+  // Log-normal distribution: mean ~15ms, std ~8ms per hop.
+  const proxyTrace = injectProxyLatency(real.trace);
+
+  return {
+    text: real.text,
+    trace: proxyTrace,
+    providerMeta: { ...real.providerMeta, proxied: true },
+  };
+}
+
+/**
+ * Sample from a log-normal distribution.
+ * Given desired mean and std in linear space, converts to log-space parameters.
+ */
+function sampleLogNormal(mean: number, std: number): number {
+  const variance = std * std;
+  const mu = Math.log(mean * mean / Math.sqrt(variance + mean * mean));
+  const sigma = Math.sqrt(Math.log(1 + variance / (mean * mean)));
+
+  // Box-Muller transform for normal sample
+  const u1 = Math.random();
+  const u2 = Math.random();
+  const z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+
+  return Math.exp(mu + sigma * z);
+}
+
+/**
+ * Inject simulated proxy network latency into a streaming trace.
+ * Each token gets an independent latency sample — no fixed delay.
+ */
+function injectProxyLatency(original: StreamingTrace): StreamingTrace {
+  const newTimestamps: number[] = [];
+  let cumulativeDelay = 0;
+
+  // Initial connection delay (proxy handshake)
+  cumulativeDelay += sampleLogNormal(15, 8);
+
+  for (let i = 0; i < original.tokenTimestamps.length; i++) {
+    // Each token gets its own independent proxy hop delay
+    cumulativeDelay += sampleLogNormal(15, 8);
+    newTimestamps.push(original.tokenTimestamps[i] + cumulativeDelay);
+  }
+
+  const newFirstToken =
+    original.firstTokenTime !== null
+      ? original.firstTokenTime + cumulativeDelay
+      : null;
+
+  return {
+    ...original,
+    tokenTimestamps: newTimestamps,
+    firstTokenTime: newFirstToken !== null ? newTimestamps[0] ?? newFirstToken : null,
+    endTime: original.endTime + cumulativeDelay,
+  };
+}
+
+// --- Helpers ---
+
+function getEnvKey(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(
+      `Missing environment variable: ${name}. Add it to your .env file.`
+    );
+  }
+  return value;
+}

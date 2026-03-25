@@ -12,8 +12,8 @@
 | ✅ | [Project Structure](#project-structure) | Directories + config files |
 | ✅ | [Core Logic](#core-logic) | Genome commitment + encrypted channel |
 | ✅ | [Configuration](#configuration) | .env.example, tsconfig, package.json |
-| ✅ | [Tests](#tests) | 18 core crypto tests passing |
-| ❌ | [Experiment (Phase 0)](#experiment-phase-0) | Phenotype proof |
+| ✅ | [Tests](#tests) | 60 tests passing (core + experiment) |
+| ✅ | [Experiment (Phase 0)](#experiment-phase-0) | All modules built, ready to run |
 | ❌ | [Sensorium](#sensorium) | Observation layer |
 | ❌ | [Documentation](#documentation) | |
 | ❌ | [CI/CD](#cicd) | |
@@ -49,13 +49,21 @@
   - Channel establishment, bidirectional encryption/decryption
   - Random nonce uniqueness, tamper rejection, eavesdropper isolation
   - Invalid genome commitment rejection during handshake
+✅ **Experiment tests** (`tests/signals.test.ts`) — 42 tests covering:
+  - Cognitive signal extraction (hedging, certainty, disclaimers, empathy, questions)
+  - Structural signal extraction (word counts, lists, headers, code blocks, opening/closing patterns)
+  - Temporal signal extraction (inter-token intervals, burstiness, median, std)
+  - Error signal extraction (refusals, uncertainty, self-corrections, assertive-when-wrong)
+  - Full signal pipeline + feature vector generation
+  - Probe battery integrity (100 probes, 20 per category, unique IDs)
+  - Agent config integrity (10 agents, 2 epigenetic, 1 proxy, unique IDs)
 
 ## Experiment (Phase 0)
-❌ **Agent genome configs** (`src/experiment/configs.ts`) — 9+ agent definitions across providers
-❌ **Probe battery** (`src/experiment/probes.ts`) — 100 prompts across 5 categories
-❌ **Signal extraction** (`src/experiment/signals.ts`) — Cognitive, structural, temporal, error signals
-❌ **Provider clients** (`src/experiment/providers.ts`) — Streaming API clients for Google, Groq, Mistral
-❌ **Experiment runner** (`src/experiment/runner.ts`) — Send probes, capture signals
+✅ **Agent genome configs** (`src/experiment/configs.ts`) — 10 agent definitions: 7 base models (Gemini Flash/Pro, Llama 70B/8B, Mixtral, Gemma2, Mistral Small) + 2 epigenetic variants (formal/chaotic Llama 70B) + 1 proxy attack
+✅ **Probe battery** (`src/experiment/probes.ts`) — 100 prompts across 5 categories (normal, ambiguity, edge case, failure induction, rapid-fire)
+✅ **Signal extraction** (`src/experiment/signals.ts`) — 4 signal channels (cognitive, structural, temporal, error) with 34-feature numeric vector output for ML
+✅ **Provider clients** (`src/experiment/providers.ts`) — Streaming clients for Google AI Studio (raw fetch + SSE), Groq & Mistral (OpenAI SDK), plus proxy attack simulation with log-normal latency injection
+✅ **Experiment runner** (`src/experiment/runner.ts`) — Sends all probes to all agents, captures streaming traces, extracts signals, saves JSON results with rate limiting
 ❌ **ML analysis** (`src/experiment/analyze.ts`) — Random forest classifier, accuracy reports
 
 ## Sensorium
