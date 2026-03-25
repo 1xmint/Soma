@@ -16,7 +16,7 @@ import type {
   TransportSendOptions,
 } from "@modelcontextprotocol/sdk/shared/transport.js";
 import type { JSONRPCMessage } from "@modelcontextprotocol/sdk/types.js";
-import { SomaSession } from "./soma-session.js";
+import { SomaSession, type SomaEncryptedEnvelope } from "./soma-session.js";
 import { ProfileStore } from "./profile-store.js";
 import { SOMA_METADATA_KEY, type SomaConfig, type SomaVerdict } from "./types.js";
 
@@ -38,10 +38,21 @@ export class SomaTransport implements Transport {
 
     // Intercept inbound messages from the inner transport
     this.inner.onmessage = (message: JSONRPCMessage, extra?: unknown) => {
-      // Observe the incoming message (non-blocking)
-      this.session.onIncomingMessage(message).catch(() => {});
-      // Forward to the MCP server's handler
-      this.onmessage?.(message, extra as undefined);
+      // If encrypted, decrypt first — the MITM sees only ciphertext
+      let plainMessage = message;
+      if (this.session.hasEncryptedChannel() && SomaSession.isEncryptedEnvelope(message)) {
+        try {
+          plainMessage = this.session.decryptMessage(message as unknown as SomaEncryptedEnvelope);
+        } catch {
+          this.onerror?.(new Error("Soma: failed to decrypt incoming message"));
+          return;
+        }
+      }
+
+      // Observe the DECRYPTED message — inside our process, after decryption (Rule 3)
+      this.session.onIncomingMessage(plainMessage).catch(() => {});
+      // Forward plaintext to the MCP server's handler
+      this.onmessage?.(plainMessage, extra as undefined);
     };
 
     this.inner.onclose = () => {
@@ -61,11 +72,19 @@ export class SomaTransport implements Transport {
     // Inject Soma metadata into the initialize response
     const enriched = this.maybeInjectMetadata(message);
 
-    // Observe outgoing message for phenotypic signal extraction
+    // Observe outgoing message BEFORE encryption — sensorium reads plaintext
+    // inside our process (Rule 3: observation happens after decryption, inside the observer)
     this.session.onOutgoingMessage(enriched).catch(() => {});
 
-    // Send through the inner transport — unmodified application data
-    await this.inner.send(enriched, options);
+    // Encrypt for the wire if we have an active channel.
+    // The initialize response itself travels in cleartext (handshake not yet complete).
+    // All subsequent messages are encrypted — MITM sees only ciphertext.
+    if (this.session.hasEncryptedChannel() && !this.isInitializeResponse(enriched)) {
+      const envelope = this.session.encryptMessage(enriched);
+      await this.inner.send(envelope as unknown as JSONRPCMessage, options);
+    } else {
+      await this.inner.send(enriched, options);
+    }
   }
 
   async close(): Promise<void> {
@@ -99,6 +118,13 @@ export class SomaTransport implements Transport {
   }
 
   // --- Internal ---
+
+  /** Check if a message is the initialize response (travels in cleartext). */
+  private isInitializeResponse(message: JSONRPCMessage): boolean {
+    if (!("result" in message) || !message.result) return false;
+    const result = message.result as Record<string, unknown>;
+    return !!(result.serverInfo && result.capabilities);
+  }
 
   /**
    * Inject this server's Soma metadata into the initialize response.

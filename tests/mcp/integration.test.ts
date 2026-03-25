@@ -228,6 +228,51 @@ describe("SomaTransport", () => {
     expect(soma.getVerdict()).toBeNull();
     expect(getVerdict(soma)).toBeNull();
   });
+
+  it("encrypts outgoing messages after handshake", async () => {
+    const client = makeClientIdentity();
+    const ephemeral = generateEphemeralKeyPair();
+    const clientMeta: SomaMetadata = {
+      genomeCommitment: client.commitment,
+      ephemeralPublicKey: Buffer.from(ephemeral.publicKey).toString("base64"),
+    };
+
+    await soma.start();
+    soma.onmessage = () => {};
+    // Complete handshake
+    inner.simulateIncoming(makeInitializeRequest(clientMeta));
+    await new Promise((r) => setTimeout(r, 10));
+    expect(soma.getPhase()).toBe("ACTIVE");
+
+    // Send initialize response (should be cleartext — handshake message)
+    await soma.send(makeInitializeResponse());
+    const initMsg = inner.sent[0] as Record<string, unknown>;
+    expect(initMsg.result).toBeTruthy(); // cleartext — has result field
+
+    // Send a regular message (should be encrypted)
+    inner.sent.length = 0;
+    await soma.send(makeToolCallResponse("Secret data"));
+    const encrypted = inner.sent[0] as Record<string, unknown>;
+    expect(encrypted._somaEncrypted).toBe(true);
+    expect((encrypted as Record<string, unknown>).payload).toBeTruthy();
+    // The plaintext should NOT be visible on the wire
+    expect(JSON.stringify(encrypted)).not.toContain("Secret data");
+  });
+
+  it("does not encrypt messages in DEGRADED mode", async () => {
+    await soma.start();
+    soma.onmessage = () => {};
+    // No Soma metadata — enters DEGRADED
+    inner.simulateIncoming(makeInitializeRequest());
+    await new Promise((r) => setTimeout(r, 10));
+    expect(soma.getPhase()).toBe("DEGRADED");
+
+    await soma.send(makeToolCallResponse("Visible data"));
+    const msg = inner.sent[0] as Record<string, unknown>;
+    // Should be cleartext — no encryption in DEGRADED mode
+    expect(msg._somaEncrypted).toBeUndefined();
+    expect(JSON.stringify(msg)).toContain("Visible data");
+  });
 });
 
 describe("SignalTap", () => {

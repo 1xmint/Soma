@@ -580,11 +580,13 @@ async function analyze(): Promise<void> {
     const config = agentConfigMap.get(r.agentId);
     return config?.family ?? null;
   });
-  const familyReport = runClassification(
-    "MODEL FAMILY CLASSIFICATION (Llama vs Gemini vs Mistral vs ...)",
-    familySamples,
-    FEATURE_NAMES
-  );
+  const familyReport = familySamples.length >= 15
+    ? runClassification(
+        "MODEL FAMILY CLASSIFICATION (Llama vs Gemini vs Mistral vs ...)",
+        familySamples,
+        FEATURE_NAMES
+      )
+    : null;
 
   // --- 4. Epigenetic Detection ---
   // Only include the three llama3-70b variants (base, formal, chaotic)
@@ -627,8 +629,8 @@ async function analyze(): Promise<void> {
     strReport,
     tmpReport,
     errReport,
-    familyReport,
   ];
+  if (familyReport) reports.push(familyReport);
   if (epiReport) reports.push(epiReport);
   if (proxyReport) reports.push(proxyReport);
   if (proxyTemporalReport) reports.push(proxyTemporalReport);
@@ -647,7 +649,7 @@ ${"═".repeat(60)}
 ${"═".repeat(60)}
 
   Overall Genome Accuracy:   ${(genomeReport.accuracy * 100).toFixed(1)}%  →  ${verdictEmoji(genomeReport.accuracy)}
-  Model Family Accuracy:     ${(familyReport.accuracy * 100).toFixed(1)}%
+  Model Family Accuracy:     ${familyReport ? (familyReport.accuracy * 100).toFixed(1) + "%" : "(insufficient data)"}
   ${epiReport ? `Epigenetic Detection:      ${(epiReport.accuracy * 100).toFixed(1)}%` : "Epigenetic Detection:      (insufficient data)"}
   ${proxyReport ? `Proxy Detection (all):     ${(proxyReport.accuracy * 100).toFixed(1)}%` : "Proxy Detection:           (insufficient data)"}
   ${proxyTemporalReport ? `Proxy Detection (timing):  ${(proxyTemporalReport.accuracy * 100).toFixed(1)}%` : "Proxy Detection (timing):  (insufficient data)"}
@@ -679,7 +681,7 @@ ${"═".repeat(60)}
     validSamples: validResults.length,
     errors: run.errors.length,
     genomeAccuracy: genomeReport.accuracy,
-    familyAccuracy: familyReport.accuracy,
+    familyAccuracy: familyReport?.accuracy ?? null,
     epigeneticAccuracy: epiReport?.accuracy ?? null,
     proxyAccuracy: proxyReport?.accuracy ?? null,
     proxyTemporalAccuracy: proxyTemporalReport?.accuracy ?? null,

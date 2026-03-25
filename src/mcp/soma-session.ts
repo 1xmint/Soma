@@ -32,8 +32,15 @@ import type {
   SomaMetadata,
   SOMA_METADATA_KEY,
 } from "./types.js";
+import type { EncryptedMessage } from "../core/channel.js";
 import type { JSONRPCMessage } from "@modelcontextprotocol/sdk/types.js";
 import type nacl from "tweetnacl";
+
+/** A JSON-RPC message wrapped in Soma encryption. */
+export interface SomaEncryptedEnvelope {
+  _somaEncrypted: true;
+  payload: EncryptedMessage;
+}
 
 export class SomaSession {
   readonly sessionId: string;
@@ -187,6 +194,46 @@ export class SomaSession {
 
   getPhase(): SessionPhase {
     return this.phase;
+  }
+
+  // --- Encryption ---
+
+  /** Whether this session has an active encrypted channel. */
+  hasEncryptedChannel(): boolean {
+    return this.channel !== null && this.phase === "ACTIVE";
+  }
+
+  /**
+   * Encrypt an outgoing JSON-RPC message for the wire.
+   * The sensorium has already observed the plaintext — this only
+   * affects what travels over the transport.
+   */
+  encryptMessage(message: JSONRPCMessage): SomaEncryptedEnvelope {
+    if (!this.channel) throw new Error("No encrypted channel established");
+    const plaintext = JSON.stringify(message);
+    const encrypted = this.channel.encrypt(plaintext);
+    return { _somaEncrypted: true, payload: encrypted };
+  }
+
+  /**
+   * Decrypt an incoming message from the wire.
+   * Returns the plaintext JSON-RPC message for the sensorium to observe
+   * and the MCP server to process.
+   */
+  decryptMessage(envelope: SomaEncryptedEnvelope): JSONRPCMessage {
+    if (!this.channel) throw new Error("No encrypted channel established");
+    const plaintext = this.channel.decrypt(envelope.payload);
+    return JSON.parse(plaintext) as JSONRPCMessage;
+  }
+
+  /** Check if a raw message is a Soma encrypted envelope. */
+  static isEncryptedEnvelope(message: unknown): message is SomaEncryptedEnvelope {
+    return (
+      typeof message === "object" &&
+      message !== null &&
+      "_somaEncrypted" in message &&
+      (message as Record<string, unknown>)._somaEncrypted === true
+    );
   }
 
   /** Flush profile to disk on session close. */
