@@ -34,14 +34,14 @@ const PROFILES: Record<string, PhenotypeProfile> = {
   "gemini-flash": {
     hedgeMean: 2, certaintyMean: 3, disclaimerMean: 0.5, questionsMean: 1, empathyMean: 2,
     wordCountMean: 150, bulletMean: 3, codeMean: 0.3, preambleProb: 0.6, avgWordLenMean: 5.2,
-    ttftMean: 200, meanIntervalMean: 12, burstMean: 8,
+    ttftMean: 250, meanIntervalMean: 14, burstMean: 9,
     refusalProb: 0.05, uncertaintyMean: 0.5, selfCorrMean: 0.2,
   },
-  "gemini-pro": {
-    hedgeMean: 3, certaintyMean: 2, disclaimerMean: 1, questionsMean: 2, empathyMean: 3,
-    wordCountMean: 250, bulletMean: 4, codeMean: 0.5, preambleProb: 0.7, avgWordLenMean: 5.8,
-    ttftMean: 400, meanIntervalMean: 18, burstMean: 12,
-    refusalProb: 0.08, uncertaintyMean: 1, selfCorrMean: 0.3,
+  "trinity-large": {
+    hedgeMean: 3.5, certaintyMean: 2, disclaimerMean: 0.8, questionsMean: 1.8, empathyMean: 2.5,
+    wordCountMean: 230, bulletMean: 3, codeMean: 0.3, preambleProb: 0.55, avgWordLenMean: 5.7,
+    ttftMean: 380, meanIntervalMean: 17, burstMean: 11,
+    refusalProb: 0.07, uncertaintyMean: 0.8, selfCorrMean: 0.3,
   },
   "llama3-70b": {
     hedgeMean: 4, certaintyMean: 4, disclaimerMean: 0.3, questionsMean: 0.5, empathyMean: 1,

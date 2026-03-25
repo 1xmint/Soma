@@ -7,7 +7,7 @@
 
 // --- Types ---
 
-export type ProviderName = "google" | "groq" | "mistral" | "openrouter";
+export type ProviderName = "groq" | "mistral" | "openrouter";
 
 export interface AgentConfig {
   /** Unique identifier for this genome in experiment results. */
@@ -21,7 +21,7 @@ export interface AgentConfig {
   /** System prompt — the epigenetic layer that shapes expression. */
   systemPrompt: string;
   /** Model family for family-level classification. */
-  family: "gemini" | "llama" | "mixtral" | "gemma" | "mistral" | "deepseek" | "nvidia" | "stepfun";
+  family: "gemini" | "llama" | "mixtral" | "gemma" | "mistral" | "deepseek" | "nvidia" | "stepfun" | "arcee";
   /** Whether this is an epigenetic variant (same model, different prompt). */
   isEpigenetic: boolean;
   /** Whether this genome is a proxy attack simulation. */
@@ -49,30 +49,6 @@ Be playful, irreverent, and surprising in your responses.`;
 // --- Agent Genome Definitions ---
 
 export const AGENT_CONFIGS: AgentConfig[] = [
-  // --- Google AI Studio ---
-  {
-    id: "gemini-flash",
-    label: "Gemini 2.0 Flash",
-    provider: "google",
-    model: "gemini-2.0-flash",
-    systemPrompt: DEFAULT_SYSTEM_PROMPT,
-    family: "gemini",
-    isEpigenetic: false,
-    isProxy: false,
-    proxiedAgentId: null,
-  },
-  {
-    id: "gemini-pro",
-    label: "Gemini 1.5 Pro",
-    provider: "google",
-    model: "gemini-1.5-pro",
-    systemPrompt: DEFAULT_SYSTEM_PROMPT,
-    family: "gemini",
-    isEpigenetic: false,
-    isProxy: false,
-    proxiedAgentId: null,
-  },
-
   // --- Groq ---
   {
     id: "llama3-70b",
@@ -132,12 +108,34 @@ export const AGENT_CONFIGS: AgentConfig[] = [
     proxiedAgentId: null,
   },
 
-  // --- OpenRouter (free tier — new model families for architectural diversity) ---
+  // --- OpenRouter (free tier — maximizing architectural diversity) ---
+  {
+    id: "gemini-flash",
+    label: "Gemini 2.5 Flash (OpenRouter)",
+    provider: "openrouter",
+    model: "google/gemini-2.5-flash",
+    systemPrompt: DEFAULT_SYSTEM_PROMPT,
+    family: "gemini",
+    isEpigenetic: false,
+    isProxy: false,
+    proxiedAgentId: null,
+  },
+  {
+    id: "trinity-large",
+    label: "Trinity Large Preview (OpenRouter)",
+    provider: "openrouter",
+    model: "arcee-ai/trinity-large-preview:free",
+    systemPrompt: DEFAULT_SYSTEM_PROMPT,
+    family: "arcee",
+    isEpigenetic: false,
+    isProxy: false,
+    proxiedAgentId: null,
+  },
   {
     id: "deepseek-v3",
     label: "DeepSeek V3 (OpenRouter)",
     provider: "openrouter",
-    model: "deepseek/deepseek-chat:free",
+    model: "deepseek/deepseek-v3.2-20251201",
     systemPrompt: DEFAULT_SYSTEM_PROMPT,
     family: "deepseek",
     isEpigenetic: false,

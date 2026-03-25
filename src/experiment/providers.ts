@@ -33,8 +33,6 @@ export async function streamFromProvider(
   userPrompt: string
 ): Promise<StreamingResponse> {
   switch (provider) {
-    case "google":
-      return streamFromGoogle(model, systemPrompt, userPrompt);
     case "groq":
       return streamFromOpenAICompatible(
         "https://api.groq.com/openai/v1",
@@ -62,91 +60,8 @@ export async function streamFromProvider(
   }
 }
 
-// --- Google AI Studio (Gemini) ---
-// Uses raw fetch — non-OpenAI API format with SSE streaming.
-
-async function streamFromGoogle(
-  model: string,
-  systemPrompt: string,
-  userPrompt: string
-): Promise<StreamingResponse> {
-  const apiKey = getEnvKey("GOOGLE_AI_API_KEY");
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${apiKey}`;
-
-  const body = {
-    system_instruction: { parts: [{ text: systemPrompt }] },
-    contents: [{ role: "user", parts: [{ text: userPrompt }] }],
-  };
-
-  const startTime = performance.now();
-  let firstTokenTime: number | null = null;
-  const tokens: string[] = [];
-  const tokenTimestamps: number[] = [];
-
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Google API error (${response.status}): ${errorText}`);
-  }
-
-  if (!response.body) {
-    throw new Error("Google API returned no stream body");
-  }
-
-  // Parse SSE stream
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split("\n");
-    // Keep last partial line in buffer
-    buffer = lines.pop() ?? "";
-
-    for (const line of lines) {
-      if (!line.startsWith("data: ")) continue;
-      const data = line.slice(6).trim();
-      if (data === "" || data === "[DONE]") continue;
-
-      try {
-        const parsed = JSON.parse(data) as {
-          candidates?: Array<{
-            content?: { parts?: Array<{ text?: string }> };
-          }>;
-        };
-        const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (text) {
-          const now = performance.now();
-          if (firstTokenTime === null) firstTokenTime = now;
-          tokens.push(text);
-          tokenTimestamps.push(now);
-        }
-      } catch {
-        // Skip malformed JSON chunks
-      }
-    }
-  }
-
-  const endTime = performance.now();
-
-  return {
-    text: tokens.join(""),
-    trace: { tokenTimestamps, tokens, startTime, firstTokenTime, endTime },
-    providerMeta: { provider: "google", model },
-  };
-}
-
-// --- OpenAI-Compatible (Groq, Mistral) ---
-// Both use the OpenAI SDK with custom baseURL.
+// --- OpenAI-Compatible (Groq, Mistral, OpenRouter) ---
+// All use the OpenAI SDK with custom baseURL.
 
 async function streamFromOpenAICompatible(
   baseURL: string,
