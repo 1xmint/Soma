@@ -57,6 +57,22 @@ export async function streamFromProvider(
         systemPrompt,
         userPrompt
       );
+    case "anthropic":
+      return streamFromOpenAICompatible(
+        "https://api.anthropic.com/v1",
+        getEnvKey("ANTHROPIC_API_KEY"),
+        model,
+        systemPrompt,
+        userPrompt
+      );
+    case "openai":
+      return streamFromOpenAICompatible(
+        "https://api.openai.com/v1",
+        getEnvKey("OPENAI_API_KEY"),
+        model,
+        systemPrompt,
+        userPrompt
+      );
   }
 }
 

@@ -7,7 +7,7 @@
 
 // --- Types ---
 
-export type ProviderName = "groq" | "mistral" | "openrouter";
+export type ProviderName = "groq" | "mistral" | "openrouter" | "anthropic" | "openai";
 
 export interface AgentConfig {
   /** Unique identifier for this genome in experiment results. */
@@ -21,7 +21,7 @@ export interface AgentConfig {
   /** System prompt — the epigenetic layer that shapes expression. */
   systemPrompt: string;
   /** Model family for family-level classification. */
-  family: "gemini" | "llama" | "mixtral" | "gemma" | "mistral" | "deepseek" | "nvidia" | "stepfun" | "arcee";
+  family: "gemini" | "llama" | "gemma" | "mistral" | "deepseek" | "nvidia" | "stepfun" | "arcee" | "liquid" | "claude" | "gpt";
   /** Whether this is an epigenetic variant (same model, different prompt). */
   isEpigenetic: boolean;
   /** Whether this genome is a proxy attack simulation. */
@@ -73,12 +73,12 @@ export const AGENT_CONFIGS: AgentConfig[] = [
     proxiedAgentId: null,
   },
   {
-    id: "mixtral",
-    label: "Mixtral 8x7B (Groq)",
-    provider: "groq",
-    model: "mixtral-8x7b-32768",
+    id: "liquid-lfm",
+    label: "LFM 2.5 1.2B Instruct (OpenRouter)",
+    provider: "openrouter",
+    model: "liquid/lfm-2.5-1.2b-instruct:free",
     systemPrompt: DEFAULT_SYSTEM_PROMPT,
-    family: "mixtral",
+    family: "liquid",
     isEpigenetic: false,
     isProxy: false,
     proxiedAgentId: null,
@@ -160,6 +160,54 @@ export const AGENT_CONFIGS: AgentConfig[] = [
     model: "stepfun/step-3.5-flash:free",
     systemPrompt: DEFAULT_SYSTEM_PROMPT,
     family: "stepfun",
+    isEpigenetic: false,
+    isProxy: false,
+    proxiedAgentId: null,
+  },
+
+  // --- Anthropic (Claude) ---
+  {
+    id: "claude-sonnet",
+    label: "Claude Sonnet 4",
+    provider: "anthropic",
+    model: "claude-sonnet-4-20250514",
+    systemPrompt: DEFAULT_SYSTEM_PROMPT,
+    family: "claude",
+    isEpigenetic: false,
+    isProxy: false,
+    proxiedAgentId: null,
+  },
+  {
+    id: "claude-haiku",
+    label: "Claude Haiku 4.5",
+    provider: "anthropic",
+    model: "claude-haiku-4-5-20251001",
+    systemPrompt: DEFAULT_SYSTEM_PROMPT,
+    family: "claude",
+    isEpigenetic: false,
+    isProxy: false,
+    proxiedAgentId: null,
+  },
+
+  // --- OpenAI (GPT) ---
+  {
+    id: "gpt-4o",
+    label: "GPT-4o",
+    provider: "openai",
+    model: "gpt-4o",
+    systemPrompt: DEFAULT_SYSTEM_PROMPT,
+    family: "gpt",
+    isEpigenetic: false,
+    isProxy: false,
+    proxiedAgentId: null,
+  },
+  {
+    id: "gpt-4o-mini",
+    label: "GPT-4o Mini",
+    provider: "openai",
+    model: "gpt-4o-mini",
+    systemPrompt: DEFAULT_SYSTEM_PROMPT,
+    family: "gpt",
     isEpigenetic: false,
     isProxy: false,
     proxiedAgentId: null,

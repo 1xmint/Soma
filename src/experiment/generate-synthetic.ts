@@ -55,11 +55,11 @@ const PROFILES: Record<string, PhenotypeProfile> = {
     ttftMean: 100, meanIntervalMean: 5, burstMean: 3,
     refusalProb: 0.02, uncertaintyMean: 0.2, selfCorrMean: 0.8,
   },
-  "mixtral": {
-    hedgeMean: 3, certaintyMean: 3, disclaimerMean: 0.8, questionsMean: 1.5, empathyMean: 1.5,
-    wordCountMean: 180, bulletMean: 5, codeMean: 0.6, preambleProb: 0.4, avgWordLenMean: 5.5,
-    ttftMean: 180, meanIntervalMean: 10, burstMean: 7,
-    refusalProb: 0.06, uncertaintyMean: 0.8, selfCorrMean: 0.4,
+  "liquid-lfm": {
+    hedgeMean: 1, certaintyMean: 3.5, disclaimerMean: 0.2, questionsMean: 0.3, empathyMean: 0.5,
+    wordCountMean: 80, bulletMean: 0.5, codeMean: 0.2, preambleProb: 0.15, avgWordLenMean: 4.6,
+    ttftMean: 220, meanIntervalMean: 18, burstMean: 12,
+    refusalProb: 0.04, uncertaintyMean: 0.3, selfCorrMean: 0.7,
   },
   "gemma2": {
     hedgeMean: 2, certaintyMean: 2, disclaimerMean: 1.5, questionsMean: 2, empathyMean: 2.5,
