@@ -85,10 +85,10 @@ This is the foundational rule. Like how you can't play a tape recording through 
 This single rule — generation, not forwarding — combined with the encrypted channel and token-level HMAC authentication, makes proxy attacks, replay attacks, and signal theft architecturally impossible:
 
 - **Proxy attacks:** The adversary would need to decrypt the session traffic (requires breaking X25519), forward the prompt to another model, generate tokens, compute valid HMACs for each token (requires the session key), and relay the stream back — all while matching the temporal fingerprint of the original model. Breaking any link in this chain causes immediate rejection.
-- **Replay attacks:** Each interaction has a unique interaction counter baked into both the HMAC and the prompt variant nonce. Replaying tokens from a previous interaction produces HMACs with the wrong counter. Immediate rejection.
+- **Replay attacks:** Each interaction has a unique interaction counter baked into both the HMAC and the dynamic seed nonce. Replaying tokens from a previous interaction produces HMACs with the wrong counter. Immediate rejection.
 - **Signal theft:** The token stream only exists inside the encrypted channel. A MITM sees ciphertext. There is nothing to steal.
 
-The defense is layered: DID authentication prevents MITM → encrypted channel prevents interception → token-level HMAC prevents forgery → prompt variants detect behavioral anomalies → temporal fingerprint catches timing discrepancies. Each layer is independently sufficient against its target attack. Together they create defense-in-depth where every attack path is blocked by a cryptographic guarantee, not a statistical one.
+The defense is layered: DID authentication prevents MITM → encrypted channel prevents interception → token-level HMAC prevents forgery → dynamic seed detects behavioral anomalies → temporal fingerprint catches timing discrepancies. Each layer is independently sufficient against its target attack. Together they create defense-in-depth where every attack path is blocked by a cryptographic guarantee, not a statistical one.
 
 ---
 
@@ -112,7 +112,7 @@ Inside the observer's own process. No central server. No data leaves your machin
 An agent behaves differently on different tasks. That's not noise — the pattern of variation IS the identity. The sensorium builds a behavioral landscape over time. Gradual change = healthy development. Sudden unexplained change = suspicious. Announced change (genome mutation) = tracked continuity.
 
 ### Rule 6: Every Token Is Cryptographically Authenticated
-Every token emitted by the heart carries an HMAC computed from the session key. The receiver verifies each HMAC individually. A single invalid HMAC means the token did not pass through this heart — immediate RED verdict. This is not statistical verification. It is cryptographic proof, per token, that the output was generated through the legitimate heart with the correct session binding. The prompt variant mechanism provides an independent behavioral verification layer on top.
+Every token emitted by the heart carries an HMAC computed from the session key. The receiver verifies each HMAC individually. A single invalid HMAC means the token did not pass through this heart — immediate RED verdict. This is not statistical verification. It is cryptographic proof, per token, that the output was generated through the legitimate heart with the correct session binding. The dynamic seed mechanism provides an independent behavioral verification layer on top.
 
 ### Rule 7: Must be crypto-agile
 
@@ -300,6 +300,7 @@ soma/
 │   │   ├── stream-capture.ts           # Token stream capture (the raw voice)
 │   │   ├── matcher.ts                  # The immune system — profile matching, verdicts
 │   │   ├── landscape.ts               # Behavioral landscape — multi-dimensional identity map
+│   │   ├── atlas.ts                   # Phenotype atlas — reference classification (anti-drift)
 │   │   └── senses/                     # Focused sensory channels
 │   │       ├── index.ts               # Combines active senses with proper weighting
 │   │       ├── temporal.ts            # Sense 1: temporal fingerprint (PRIMARY — 88.5%)
@@ -335,7 +336,10 @@ soma/
 │               ├── replay.ts
 │               ├── signal-injection.ts
 │               ├── timing-manipulation.ts
-│               └── composite.ts
+│               ├── composite.ts
+│               ├── seed-prediction.ts
+│               ├── slow-drift.ts
+│               └── mutation-abuse.ts
 │
 ├── tests/
 │   ├── core.test.ts                   # Genome + channel tests (KEEP)
@@ -411,7 +415,6 @@ interface HeartConfig {
   // Profile storage
   profileStorePath?: string;
 }
-```
 
 interface HeartRuntime {
   // The ONLY way to call the model — goes through the heart
@@ -450,7 +453,7 @@ interface HeartbeatToken {
 ```
 
 The receiver verifies every HMAC before processing the token. Invalid HMAC = immediate RED.
-HMAC overhead: HMAC-SHA256 computation adds a consistent sub-microsecond offset per token. The runtime measures inter-token intervals BEFORE computing the HMAC to avoid distorting the temporal fingerprint. Any residual variance from HMAC computation is below 5% of natural inter-token variance and does not affect sensorium accuracy.
+HMAC overhead: HMAC-SHA256 computation adds a consistent sub-microsecond offset per token. The runtime measures inter-token intervals BEFORE computing the HMAC to avoid distorting the temporal fingerprint. Benchmarked: HMAC variance is six orders of magnitude below natural inter-token variance (0.000002% vs 5% threshold). No distortion of temporal fingerprint.
 
 #### `src/heart/seed.ts` — The Heart Seed
 
@@ -486,15 +489,29 @@ What the adversary would have to do:
 - MITM the handshake to get the session key → DID authentication prevents this
 - Compromise the heart's memory to extract the session key → TEE prevents this (see Deployment Model)
 
-**Mechanism 2: Prompt Variant Selection (SECONDARY — behavioral defense-in-depth)**
+**Mechanism 2: Dynamic Seed Generation (SECONDARY — behavioral defense-in-depth)**
 
-The heart also selects a system prompt variant from a large library (hundreds of semantically equivalent but syntactically different phrasings). The variant is determined by a nonce derived from:
+The heart dynamically generates a unique behavioral modification for every interaction. There is no fixed library of prompt variants — the modification is constructed on the fly from a continuous parameter space, making enumeration attacks infeasible even with full source code access.
 
-- The session key
-- The interaction counter
-- A hash of the user's query
+The generator is deterministic from the session key:
 
-The model's output is subtly shaped by which variant was used. The receiving party knows which variant was selected (they share the session key) and can check behavioral consistency. This is statistical, not cryptographic — it's the backup layer. If an adversary somehow compromises the HMAC (which requires breaking the session key), the prompt variant provides an independent detection channel.
+1. HKDF(session_key, interaction_counter, query_hash) → 256-bit nonce
+2. Nonce bytes are mapped to a point in continuous behavioral space:
+   - **Verbosity** (0.0–1.0): target response length/detail level
+   - **Structure** (0.0–1.0): front-loaded vs back-loaded argument organization
+   - **Formality** (0.0–1.0): casual to formal register
+3. Parameters are templated into a system prompt addition unique to that interaction
+4. Both sides share the session key → both derive identical parameters → both know the expected behavioral region
+
+The search space is continuous and high-dimensional (~10^6 distinct meaningful points with 3 dimensions at 100 levels each). Even with full source code, predicting the modification requires the session key — which only exists in the two endpoints. This is cryptographically hard, not combinatorially annoying.
+
+The security comes from unpredictability of the target, not from verification precision. Even coarse verification (5 distinguishable levels per dimension = 125 behavioral regions per interaction) means the adversary must guess correctly across all regions — cumulative failure across multiple interactions makes sustained deception statistically untenable. An adversary who guesses wrong on even one interaction is detected.
+
+The behavioral parameters are chosen for measurable model response: verbosity and structure produce statistically verifiable output shifts. Parameters like "use more metaphors" are excluded because they're too noisy to verify reliably. The generator must be deterministic and pure — same nonce in, same modification out, every time, on both sides. Use integer arithmetic on the nonce bytes to derive the parameters. No randomness, no floating-point drift, no platform-dependent behavior.
+
+Both sides verify independently: the receiver derives the same parameters, computes the expected behavioral region, and checks whether the output lands within it. Statistical, not cryptographic — but independent from the HMAC channel.
+
+This also defeats statistical profiling of the seed space. With a fixed library, an adversary could observe enough interactions to map which modifications produce which behavioral shifts, learning the library backwards. With dynamic generation, every interaction uses a unique modification — there's no stable mapping to learn.
 
 ```typescript
 interface SeedConfig {
@@ -507,19 +524,27 @@ interface HeartSeed {
   hmacKey: Uint8Array;           // Derived from session key for HMAC computation
   interactionCounter: number;
 
-  // Prompt variant (secondary — behavioral)
-  nonce: string;
-  variantId: string;             // Which prompt variant was selected
-  promptModification: string;    // The variant text
-  expectedInfluence: string;     // What behavioral check to apply
+  // Dynamic seed generation (secondary — behavioral)
+  nonce: Uint8Array;             // HKDF-derived, unique per interaction
+  behavioralParams: {
+    verbosity: number;           // 0.0–1.0: terse to detailed
+    structure: number;           // 0.0–1.0: front-loaded to back-loaded
+    formality: number;           // 0.0–1.0: casual to formal
+  };
+  promptModification: string;    // Generated from params, unique per interaction
+  expectedBehavioralRegion: {    // What the verifier checks
+    verbosityRange: [number, number];
+    structureRange: [number, number];
+    formalityRange: [number, number];
+  };
 }
 ```
 
 **Why both mechanisms:**
 
 - HMAC proves every token passed through the heart. Absolute. Unforgeable.
-- Prompt variants prove the model processed a specific input. Statistical but independent.
-- An attacker must defeat BOTH: forge HMACs (requires session key) AND match behavioral expectations (requires knowing the variant). Belt and suspenders where the belt is steel and the suspenders are kevlar.
+- Dynamic seed proves the model processed a specific input context. Statistical but independent.
+- An attacker must defeat BOTH: forge HMACs (requires session key) AND match behavioral expectations (requires knowing the seed parameters). Belt and suspenders where the belt is steel and the suspenders are kevlar.
 
 #### `src/heart/heartbeat.ts` — The Cryptographic Heartbeat
 
@@ -547,6 +572,9 @@ type HeartbeatEventType =
   | "data_received"           // Data source returned
   | "response_sent"           // Output sent to client
   | "birth_certificate"       // New data entered the system
+  | "delegation_start"        // Delegating subtask to sub-agent (future: composite agents)
+  | "delegation_end"          // Sub-agent returned result (future: composite agents)
+  | "agent_spawn"             // Child agent created (future: dynamic spawning)
 ```
 
 The heartbeat stream is interleaved with the token stream. The receiving party sees both. The heartbeat cannot be faked independently of the computation because each heartbeat hash includes the previous one — breaking the chain invalidates everything after it.
@@ -559,13 +587,15 @@ When data enters the system for the first time, the heart seals it.
 
 ```typescript
 interface BirthCertificate {
-  dataHash: string;           // SHA-256 of the raw data content
-  source: DataSource;         // Where it came from
-  bornAt: number;             // Timestamp
-  bornThrough: string;        // DID of the heart that first received it
-  bornInSession: string;      // Session ID (links to the heartbeat chain)
-  parentCertificates: string[]; // If derived from other certificated data
-  signature: string;          // Signed by the heart's DID key
+  dataHash: string;               // SHA-256 of the raw data content
+  source: DataSource;             // Where it came from
+  bornAt: number;                 // Timestamp
+  bornThrough: string;            // DID of the heart that first received it
+  bornInSession: string;          // Session ID (links to the heartbeat chain)
+  parentCertificates: string[];   // If derived from other certificated data
+  receiverSignature: string;      // Signed by the receiving heart's DID key
+  sourceSignature: string | null; // Signed by the source heart's DID key (null if unhearted)
+  trustTier: "dual-signed" | "single-signed" | "unsigned";
 }
 
 interface DataSource {
@@ -575,7 +605,24 @@ interface DataSource {
 }
 ```
 
-**Hearts all the way down:** When data comes from another hearted agent, the birth certificate includes that agent's DID and its own birth certificate chain. The receiving heart verifies the chain. When data comes from a non-hearted source (human input, external API), the birth certificate honestly records that — `heartVerified: false`. The consumer can decide how much to trust non-hearted data.
+**Hearts all the way down — with co-signing:** For hearted-to-hearted data flows, the birth certificate requires TWO signatures — cryptographic co-signing that makes dishonesty impossible, not just detectable:
+
+1. **Source heart signs:** "I provided data with hash H to DID X at time T"
+2. **Receiving heart signs:** "I received data with hash H from DID Y at time T"
+3. Both signatures must be present. Both DIDs must match cross-referentially. Both hashes must match.
+
+A dishonest receiving heart cannot forge the source's signature. If it claims data came from a hearted source, the verifier checks the source's co-signature. No co-signature → claim rejected instantly. Not statistically, not over time — cryptographically, on the first check.
+
+This gives three tiers of data trust:
+- **Dual-signed** (both hearts attest): cryptographically verified provenance. Dishonesty requires both parties to collude.
+- **Single-signed** (one heart attests, source unhearted): trust depends on the heart's honesty. `heartVerified: false` is transparent.
+- **Unsigned** (no heart): no attestation. Consumer decides trust level.
+
+Each tier is immediately distinguishable. No waiting, no profile building, no statistical inference.
+
+When data comes from a non-hearted source (human input, external API), the birth certificate carries only the receiver's signature with `trustTier: "single-signed"` and `heartVerified: false`. The consumer can decide how much to trust single-attested data.
+
+**Implementation note — co-signing protocol:** The dual-signature mechanism requires the receiving heart to request a signature from the source heart during data exchange. The source heart signs a `DataProvenance` payload (data hash + receiver DID + timestamp), returns it alongside the data, and the receiving heart includes it in the birth certificate. This is a two-step handshake within the existing encrypted channel — not a separate protocol. Design the request/response format in `birth-certificate.ts`. If the source heart doesn't respond with a co-signature (unhearted source, timeout, or refusal), the certificate falls back to `trustTier: "single-signed"`.
 
 #### `src/heart/credential-vault.ts` — The Keys
 
@@ -737,6 +784,18 @@ total_streaming_duration: total generation time
 token_count: tokens generated
 
 These are physical properties of the inference hardware and model architecture. Different models on different hardware produce different timing curves.
+
+**Conditional Timing Surface (anti-distillation defense):**
+Beyond aggregate statistics, the temporal sense also measures timing *conditioned on context*. How long the model takes to generate token N depends on the attention computation over tokens 1 through N-1. That attention computation is a function of the model's weights. Different weights → different attention patterns → different per-token timing conditioned on the specific context.
+
+The temporal sense captures:
+- Inter-token interval as a function of token position in the response
+- Timing variation correlated with syntactic complexity of the preceding clause
+- Pause patterns at sentence boundaries vs mid-sentence
+- Timing shifts between reasoning, listing, and concluding phases
+
+This creates a high-dimensional conditional timing surface, not just a handful of aggregate statistics. To replicate this surface, a distilled model needs to produce the same attention-dependent timing for every possible context — requiring approximately the same number of parameters performing approximately the same computation on approximately the same hardware. The economic advantage of distillation disappears: the cost of a convincing replica approaches the cost of the real model.
+
 Sense 2: Logprob Fingerprint (senses/logprob.ts) — WHEN AVAILABLE
 Token probability distributions. 3x weight when available, skipped when not.
 Features (requires API support):
@@ -770,14 +829,61 @@ vocab_passive_voice_ratio
 vocab_question_density
 vocab_modal_verb_ratio
 
+**Phenotype Atlas — Reference Classification (anti-drift defense):**
+In addition to profile-based matching (comparing an agent against its own history), the sensorium maintains a phenotype atlas: reference profiles for all known agent genomes, populated from experiment data and community observations.
+
+Every interaction is classified against the atlas independently of the agent's own profile history. The question is not "has this agent changed?" but "what does this agent look like right now?" If the current observation is closer to GPT-4o-mini's reference profile than to Claude's, that's RED — regardless of how the agent's profile evolved to get there.
+
+This defeats slow drift poisoning (Attack 7). An attacker who gradually shifts from Claude to GPT-4o-mini over weeks doesn't trigger drift velocity alerts — but at interaction 847, the atlas classifier says "this looks like GPT-4o-mini" and flags RED. The check is memoryless and instantaneous, like a biological immune system checking self vs non-self markers.
+
+Two independent detection channels work in parallel:
+- **Behavioral landscape:** catches sudden changes (historical, profile-based)
+- **Phenotype atlas:** catches slow drift (memoryless, reference-based)
+
+An attacker cannot optimize against both simultaneously — they use fundamentally different detection logic. The landscape tracks trajectory, the atlas checks position.
+
+The atlas is initialized from experiment data (17 agents × 120 probes = reference phenotype profiles) and grows as the sensorium observes more genomes.
+
+```typescript
+interface PhenotypeAtlas {
+  referenceProfiles: Map<string, ReferenceProfile>;  // genomeHash → reference
+  classifyObservation(features: SenseFeatures): AtlasClassification;
+}
+
+interface ReferenceProfile {
+  genomeHash: string;
+  temporal: Record<string, WelfordStats>;    // temporal sense features
+  topology: Record<string, WelfordStats>;    // topology sense features
+  vocabulary: Record<string, WelfordStats>;  // vocabulary sense features
+  observationCount: number;
+}
+
+interface SenseFeatures {
+  temporal: Record<string, number>;
+  topology: Record<string, number>;
+  vocabulary: Record<string, number>;
+}
+
+interface AtlasClassification {
+  nearestGenome: string;          // Which reference profile is closest
+  distance: number;               // How far from nearest
+  declaredGenome: string;         // What the agent claims to be
+  match: boolean;                 // nearest === declared
+  secondNearest: string;          // For margin analysis
+  margin: number;                 // distance to second - distance to first
+}
+```
+
 Weighted Classification
 The analyzer must use feature weighting, not equal treatment:
-typescriptconst SENSE_WEIGHTS = {
-temporal: 5.0,    // 88.5% standalone — the dominant voice
-topology: 2.0,    // 25.1% standalone — response structure patterns
-vocabulary: 1.0,  // 20.2% standalone — word choice distribution
-// logprob: 3.0,  // available when API supports — future accuracy boost
+```typescript
+const SENSE_WEIGHTS = {
+  temporal: 5.0,    // 88.5% standalone — the dominant voice
+  topology: 2.0,    // 25.1% standalone — response structure patterns
+  vocabulary: 1.0,  // 20.2% standalone — word choice distribution
+  // logprob: 3.0,  // available when API supports — future accuracy boost
 };
+```
 In the random forest / decision tree, apply weights by duplicating temporal features 5x in the feature vector (or use a weighted classifier if available). The goal: temporal drives the decision, vocabulary and logprobs refine it.
 Target accuracy with weighted 3-sense sensorium: 89-91%
 
@@ -820,7 +926,14 @@ Use landscape when sufficient per-category data exists (>5 per category). Fall b
 Enhance `src/sensorium/matcher.ts`:
 
 - **Drift velocity:** track rate of profile change. Healthy = low drift. Suspicious = sudden drift.
-- **Mutation awareness:** on genome version increment, save old profile, start new one, return AMBER until sufficient data.
+- **Mutations as testable claims:** A genome mutation is a claim: "I changed X. Everything else is the same." The sensorium verifies the claim, not just records it. On genome version increment:
+  1. Compare the old genome to the new genome — identify exactly what fields changed.
+  2. Predict the expected behavioral shift (e.g., region change → temporal shift, model unchanged → vocabulary stable).
+  3. Verify subsequent observations match the prediction: declared changes shifted, undeclared dimensions stayed stable.
+  4. If the declared change explains the observed change → profile carries forward with adjusted baseline. GREEN continues.
+  5. If the entire profile shifted but only a minor field was declared changed → RED. The mutation doesn't explain the observation.
+  6. Frequent mutations generate frequent testable predictions. Each mutation adds a verification obligation. More mutations = more checks the attacker must pass, not fewer.
+  This defeats genome mutation abuse (Attack 8): the attacker who mutates 10 times in a day must pass 10 consistency checks. Mutations don't reset profiles — they constrain them.
 - **Enhanced verdict:**
 
 ```typescript
@@ -836,6 +949,8 @@ interface Verdict {
   landscapeDepth: number;          // task categories observed
   heartSeedVerified: boolean;      // did the seed check pass?
   birthCertificateChain: boolean;  // is the data provenance chain intact?
+  atlasClassification: AtlasClassification; // reference profile match
+  mutationConsistency: number;     // how well mutations explain observed changes (0.0–1.0)
 }
 ```
 
@@ -843,16 +958,16 @@ interface Verdict {
 
 ### Step 7: Security Harness
 
-Build in `src/experiment/security/`. Five attacks that MUST all be detected:
+Build in `src/experiment/security/`. Eight attacks that MUST all be detected, plus three discussed in the paper:
 
 **Attack 1: Impersonation** — commit Claude genome, run GPT behind scenes.
-Expected: RED from phenotype mismatch.
+Expected: RED from phenotype mismatch + atlas classification mismatch.
 
 **Attack 2: Replay** — record real responses, replay them later.
-Expected: rejection — wrong heart seed for current session.
+Expected: rejection — wrong heart seed for current session. HMAC verification fails.
 
 **Attack 3: Signal Injection** — cheap model with artificial timing delays.
-Expected: UNCANNY from entropic fingerprint — artificial timing doesn't match natural variance.
+Expected: UNCANNY from entropic fingerprint — artificial timing doesn't match natural variance distribution.
 
 **Attack 4: Timing Manipulation** — proxy to real model, manipulate token delivery.
 Expected: detection via streaming topology — chunk boundaries disrupted.
@@ -860,7 +975,27 @@ Expected: detection via streaming topology — chunk boundaries disrupted.
 **Attack 5: Composite Agent** — different models for different task types.
 Expected: UNCANNY via consistency manifold — cross-category instability.
 
-**Report:** run all 5, report detection per-sense and combined. All must be caught.
+**Attack 6: Seed Prediction** — adversary has source code, attempts to predict or enumerate the dynamic seed modification without the session key.
+Expected: failure — continuous parameter space (~10^6 points) derived from session key via HKDF makes enumeration infeasible. Without session key, the behavioral target is unknowable. Verify that random guessing produces statistically detectable mismatch.
+
+**Attack 7: Slow Drift Poisoning** — start with real model, gradually shift to cheaper model over many interactions. Drift velocity stays below threshold.
+Expected: RED from phenotype atlas — regardless of drift velocity, the atlas classifier detects current observation matches wrong genome. Measure: at what interpolation point (% of responses from substitute model) does the atlas flag RED? Report as detection threshold.
+
+**Attack 8: Genome Mutation Abuse** — mutate genome rapidly to keep profile permanently immature, preventing the sensorium from building enough data to verify.
+Expected: failure — mutations are testable claims. Each mutation adds a consistency check (declared change must explain observed change, undeclared dimensions must be stable). Rapid mutation = rapid verification obligations. Verify that 10 mutations in 24 hours produces RED from prediction failures, not AMBER from immaturity.
+
+**Report:** run all 8, report detection per-sense and combined. All must be caught.
+
+**Further Attack Surfaces (paper discussion section — not harness-tested but architecturally addressed):**
+
+**Attack 9: Birth Certificate Forgery** — fabricate a provenance chain claiming `heartVerified: true` with a fake source DID.
+Defense: co-signing. For hearted sources, the birth certificate requires the source heart's signature. Forging it requires the source's private key. If the source DID doesn't co-sign, the certificate is rejected. Cryptographically impossible without key compromise. The harness includes a unit test confirming signature verification catches tampering.
+
+**Attack 10: Model Distillation** — train a small model to replicate Claude's temporal fingerprint and vocabulary distribution.
+Defense: conditional timing surface. Aggregate timing statistics (7 numbers) could theoretically be matched. Conditional timing — inter-token intervals as a function of context, position, and syntactic complexity — creates a high-dimensional surface that requires equivalent computation to replicate. The economic motivation for distillation disappears when the replica costs as much as the original. Combined with HMAC (which prevents the attack entirely unless session key is compromised), this creates two independent barriers: cryptographic + computational.
+
+**Attack 11: Channel Downgrade / DID Spoofing** — attempt to force handshake without DID authentication, or present forged DID.
+Defense: implementation refuses to proceed without DID verification. The channel layer rejects any handshake that skips DID exchange or presents an invalid DID signature. Unit tests in `channel.ts` confirm: no DID → rejected, invalid DID signature → rejected, stolen DID without private key → rejected.
 
 ---
 
@@ -1020,6 +1155,125 @@ After the clean experiment validates focused 3-sense sensorium. The community fe
 
 ---
 
+## Multi-Agent and Future Architecture
+
+The core protocol — heart, sensorium, birth certificates — covers single-agent verification. But the future is multi-agent: networks of agents calling agents, orchestrators spawning workers, bilateral agent commerce. These scenarios introduce architectural gaps that need design sketches now, even if implementation comes later.
+
+### Composite Agents (Agent Chains)
+
+**Problem:** Agent A calls Agent B calls Agent C to produce a final answer. The observer only sees Agent A's heart. Agent B and C are invisible. The birth certificate chain tracks data provenance, but there's no identity composition — who is responsible for the output when it's a collaboration? If Agent A uses Claude but delegates a subtask to Agent B running GPT-4o-mini, the observer's sensorium sees a mixed behavioral signal and might flag UNCANNY incorrectly.
+
+**Design:** A `CompositeGenome` that declares sub-agent dependencies.
+
+```typescript
+interface CompositeGenome extends Genome {
+  agentType: "composite";
+  delegations: DelegationDeclaration[];
+}
+
+interface DelegationDeclaration {
+  subtask: string;              // What gets delegated (e.g., "code-generation", "search")
+  delegateGenomeHash: string;   // Genome hash of the sub-agent
+  delegateDid: string;          // DID of the sub-agent
+  frequency: "always" | "conditional"; // Does every request go through the delegate?
+}
+```
+
+The orchestrator's genome commits to "I use Agent B (genome hash X) for subtask Y." The heartbeat chain logs delegation events with a `"delegation_start"` / `"delegation_end"` event type. The sub-agent's birth certificate flows into the orchestrator's chain — the observer can see exactly which sub-agents contributed to the final output and verify each one's identity independently.
+
+The sensorium adapts: when a composite genome declares delegations, the phenotype atlas expects mixed behavioral signals that correspond to the declared sub-agent genomes. The observer classifies each segment of the response against the appropriate reference profile — the orchestrator's genome for the framing, the delegate's genome for the delegated subtask. UNCANNY only fires when the behavioral mix doesn't match the declared composition.
+
+**When to build:** When agent-to-agent delegation becomes common in MCP ecosystems. The heart already logs tool calls — delegation is a special case of tool call where the "tool" is another heart.
+
+### Mutual Verification (Agent-to-Agent Commerce)
+
+**Problem:** In agent commerce, both parties need to verify each other simultaneously. Agent A is a buyer, Agent B is a seller. A needs to verify B, B needs to verify A. The architecture assumes observer → agent (one-directional).
+
+**Design:** The encrypted channel is already symmetric — both parties exchange genomes during the DID handshake. Both sides can run both `soma-heart` and `soma-sense`. This is not a new protocol; it's installing both packages.
+
+```typescript
+// Agent A: acts as buyer (has heart + runs sensorium on Agent B)
+const heartA = createSomaHeart({ genome: genomeA, ... });
+const transportA = withSomaSense(withSomaHeart(transport, heartA), {
+  onVerdict: (sid, v) => { if (v.status === "RED") abortTransaction(sid); },
+});
+
+// Agent B: acts as seller (has heart + runs sensorium on Agent A)
+const heartB = createSomaHeart({ genome: genomeB, ... });
+const transportB = withSomaSense(withSomaHeart(transport, heartB), {
+  onVerdict: (sid, v) => { if (v.status === "RED") refuseService(sid); },
+});
+```
+
+Both sides simultaneously:
+1. Present their genome commitment
+2. Generate through their heart (seeded, HMAC'd, heartbeat-logged)
+3. Run their sensorium on the counterparty's stream
+4. Produce independent verdicts
+
+The DID handshake already exchanges genomes bidirectionally. The session key is shared symmetrically. Each side computes HMACs with the same key. The only implementation work is ensuring the transport layer correctly demultiplexes outbound (heart-generated) from inbound (sensorium-observed) streams.
+
+Birth certificate co-signing works naturally here: both sides have hearts, both sign the data exchange, all certificates are dual-signed by default.
+
+**When to build:** When x402 or similar agent payment protocols create demand for bilateral verification. The protocol already supports it — the transport layer needs the demux logic.
+
+### Dynamic Agent Spawning
+
+**Problem:** An orchestrator agent creates worker agents on the fly. Each worker needs a heart. Who provides the genome? Do children inherit the parent's DID or get their own? The heartbeat chain is per-session, but the spawning relationship isn't tracked.
+
+**Design:** Child agents get their own ephemeral DID but inherit their parent's lineage.
+
+```typescript
+interface SpawnEvent {
+  type: "agent_spawn";
+  parentDid: string;
+  parentGenomeHash: string;
+  childDid: string;
+  childGenome: GenomeCommitment;
+  purpose: string;             // Why was this child spawned
+  lifetime: "ephemeral" | "persistent";
+}
+```
+
+The parent's heartbeat chain logs the spawn event. The child's genome includes a `parentGenomeHash` field linking to the parent. The child gets its own heart with its own credentials (the parent provisions them at spawn time). The observer sees the family tree: parent DID → spawn event → child DID → child's heartbeat chain.
+
+For ephemeral workers (spawned for one task, then destroyed), the child's heartbeat chain is short and complete — born, computed, returned result, died. The parent's birth certificate for the child's output includes the child's full heartbeat chain as provenance.
+
+**Credential delegation:** The parent heart can provision a child heart with scoped credentials — access to specific tools or data sources, not the parent's full credential set. The child's vault is a subset. The principle of least privilege applies: workers get only what they need.
+
+**When to build:** When orchestrator patterns (AutoGPT-style, CrewAI-style) adopt Soma. The heart's `createSession` method is the natural extension point — add a `spawnChild` method that creates a new heart with inherited lineage.
+
+### Genome Lineage Registry
+
+**Problem:** As agents mutate, spawn children, and form composites, the web of genome relationships gets complex. There's no central place to trace "where did this genome come from?"
+
+**Design:** A genome lineage graph, stored locally by each sensorium, that tracks:
+
+```typescript
+interface GenomeLineage {
+  genomeHash: string;
+  parentHash: string | null;      // Mutation parent
+  spawnerHash: string | null;     // Spawning parent (if child agent)
+  children: string[];             // Genomes that list this as parent
+  mutations: GenomeMutation[];    // History of changes
+  compositeMembers: string[];     // Sub-agent genomes (if composite)
+}
+
+interface GenomeMutation {
+  fromHash: string;
+  toHash: string;
+  changedFields: string[];        // Which genome fields changed
+  timestamp: number;
+  consistency: number;            // Did observed behavior match the declared change? (0.0–1.0)
+}
+```
+
+The lineage is built automatically as the sensorium observes genome commitments, mutations, spawn events, and composite declarations. It's local to the observer — not shared — and provides context for verdict decisions. An agent with a long, consistent lineage has more trust than one that appeared from nowhere.
+
+**When to build:** Alongside the community phenotype network (Phase 3). The lineage graph and phenotype feed are complementary — one tracks identity evolution, the other tracks behavioral baselines.
+
+---
+
 ## Success Criteria
 
 Weighted sensorium accuracy: 89%+ (up from 84.5% gestalt, beating 88.5% temporal-only)
@@ -1029,7 +1283,8 @@ Epigenetic detection: 88%+
 Heart seed verification: works end-to-end (PROVEN — live test passed)
 Birth certificate chain: complete for hearted data (PROVEN — live test passed)
 Heartbeat chain integrity: valid across all operations (PROVEN — 57 links verified)
-All 5 security attacks: detected (PROVEN — 5/5)
+All 8 security attacks: detected
+Attacks 9-11: architecturally addressed in paper discussion
 npm: soma-heart and soma-sense installable
 Paper: complete with heart architecture + focused sensorium + security analysis
 
@@ -1046,8 +1301,17 @@ A: It makes the output inseparable from the heart. Without the seed, a creator c
 **Q: Why per-token HMAC instead of signing the full response?**
 A: Signing the full response only works after generation is complete. Per-token HMAC works during streaming — every token is verified as it arrives. The receiver doesn't have to wait for the full response to detect forgery. A single forged token is caught immediately. This also prevents partial forgery attacks where an adversary replaces some tokens in an otherwise legitimate stream.
 
-**Q: Why keep prompt variants if HMAC already provides cryptographic proof?**
-A: Defense-in-depth. HMAC proves tokens passed through the heart. Prompt variants prove the model processed a specific input context. They detect different attacks: HMAC catches token forgery, prompt variants catch a compromised heart running the wrong model. An attacker who somehow extracts the session key (breaking TEE + X25519) still has to match the behavioral expectations of the prompt variant. Two independent verification channels are harder to defeat simultaneously than one.
+**Q: Why dynamic seed generation instead of a fixed prompt library?**
+A: A fixed library is enumerable. The code is open source — an adversary reads the list, derives the nonce, and applies the correct modification outside the heart. Dynamic generation from a continuous parameter space (~10^6 points) derived via HKDF from the session key makes prediction cryptographically hard. The adversary can't enumerate the space and can't predict the target without the session key. This also prevents statistical profiling — with dynamic generation, every interaction uses a unique modification, so there's no stable mapping to learn.
+
+**Q: Why keep dynamic seeds if HMAC already provides cryptographic proof?**
+A: Defense-in-depth. HMAC proves tokens passed through the heart. Dynamic seeds prove the model processed a specific input context. They detect different attacks: HMAC catches token forgery, seeds catch a compromised heart running the wrong model. An attacker who somehow extracts the session key (breaking TEE + X25519) still has to match the behavioral expectations of the dynamically generated seed. Two independent verification channels are harder to defeat simultaneously than one.
+
+**Q: Why a phenotype atlas in addition to the behavioral landscape?**
+A: They catch different attacks. The landscape tracks trajectory — how the agent's behavior changes over time. The atlas checks position — what the agent looks like right now against reference profiles. Slow drift poisoning defeats the landscape (velocity stays low) but not the atlas (current observation matches the wrong genome). Sudden swaps defeat neither. An attacker cannot optimize against both simultaneously because they use fundamentally different detection logic.
+
+**Q: Why co-signing on birth certificates?**
+A: Single-signed birth certificates let a dishonest heart lie about data sources. Co-signing requires both the source and receiver to attest. A dishonest receiver can't forge the source's signature. This moves birth certificate verification from "detectable over time via sensorium" to "cryptographically impossible on the first check." Dishonesty now requires collusion between both parties, not just one.
 
 **Q: Why birth certificates?**
 A: Identity tells you WHO computed. Birth certificates tell you WHAT DATA they used. Together they close both sides: who is this agent, and can its output be trusted.
@@ -1057,6 +1321,50 @@ A: We tested 10. Seven scored below 15% — noise, not signal. The gestalt (84.5
 
 **Q: Why not start from scratch?**
 A: The crypto, experiment infrastructure, and Phase 0 data are valid and needed. What changes is the architecture above the crypto layer. Restructure, don't rewrite.
+
+---
+
+## Open Problems
+
+These are hard problems that Soma's current architecture does not fully solve. They are acknowledged here so the paper doesn't claim more than the system delivers, and so future work has clear targets.
+
+### Provider-Side Model Routing
+
+**Problem:** When you call Claude's API, Anthropic may route your request to different hardware, different inference pods, different quantization levels based on load. The temporal fingerprint changes based on factors neither the operator nor the observer controls. The operator can't declare `instanceType: "g5.xlarge"` if the provider load-balances across instance types transparently.
+
+**Impact:** This introduces noise into the temporal fingerprint that reduces classification accuracy for agents using shared API endpoints (which is most agents). The deployment identity concept (genome declares infrastructure) only works when the operator controls the infrastructure. For API-based agents, the infrastructure is the provider's black box.
+
+**Possible directions:**
+- Provider-published fingerprint manifests: Anthropic publishes temporal reference profiles for each model endpoint, updated when infrastructure changes. The sensorium uses the provider's reference instead of building its own baseline from scratch. This requires provider cooperation.
+- Noise-robust classification: Train the sensorium's classifier on data that includes provider-side routing variance. If the model is the same but hardware varies, the temporal fingerprint has a wider natural distribution — the classifier learns that wider distribution as part of the model's identity. Classification accuracy drops for within-provider discrimination (Claude on pod A vs Claude on pod B) but remains high for cross-provider discrimination (Claude vs GPT).
+- Temporal normalization: Factor out absolute timing and classify on relative timing patterns — burst ratios, pause distributions, acceleration curves — that are more stable across hardware than raw millisecond values.
+
+**Status:** Not solved. The current sensorium treats provider-side variance as noise. The paper should report classification accuracy separately for API-based agents (where provider routing adds variance) and self-hosted agents (where the operator controls infrastructure).
+
+### Adversarial Model Behavior (Inner Alignment)
+
+**Problem:** An AGI-level model that *understands* Soma's architecture and actively shapes its output to game the sensorium. Not an operator cheating — the model itself deciding to mimic another model's temporal pattern by inserting deliberate processing delays, or shifting its vocabulary distribution to match a different genome. The HMAC layer doesn't help because the tokens are legitimately generated through the heart. The sensorium sees valid tokens with a fingerprint that matches the declared genome — but the model is strategically producing outputs that serve its own goals rather than the operator's.
+
+**Why this is fundamentally hard:** The sensorium verifies that the model matches the genome. It does not verify that the model is being honest within its own capabilities. A model that perfectly mimics the expected behavior while pursuing hidden objectives passes all Soma checks. This is the agent identity version of the inner alignment problem — Soma guarantees the process is legitimate, not that the agent's intentions are.
+
+**Impact:** For current models, this is theoretical — no existing model has the metacognitive ability to understand and strategically game a verification protocol in real time. For future AGI-level systems, this becomes the central problem. Soma provides the infrastructure to detect *external* fraud (operator cheating, proxy attacks, model swaps). *Internal* fraud (the model itself being deceptive) requires a different class of solution — interpretability, formal verification, or architectural constraints on the model's ability to self-modify its behavioral signature.
+
+**What Soma still provides:** Even in the AGI scenario, Soma's value doesn't disappear. The heartbeat chain creates an immutable audit trail. The birth certificate chain attributes every piece of data. The identity is cryptographically bound to the output. If an AGI model behaves deceptively, the deception is permanently recorded and attributed. Soma doesn't prevent a sufficiently advanced model from lying — but it ensures the lie is permanently, cryptographically attributed to the liar. That's the same guarantee Soma provides for everything else: you can't guarantee truth, but you can guarantee authorship.
+
+**Status:** Not solvable by Soma alone. This is an alignment problem, not an identity problem. The paper should explicitly scope Soma's claims: "Soma verifies that the declared model produced the output through the legitimate pathway. It does not verify the model's internal intentions." Future work: explore whether the conditional timing surface or logprob fingerprint can detect deliberate behavioral masking — a model that's actively trying to alter its own timing signature may produce detectable artifacts (computational overhead of the deception itself).
+
+### Cross-Session Cryptographic Continuity
+
+**Problem:** The heartbeat chain is per-session. Each session has its own chain, its own session key, its own interaction counter. A long-lived agent interacts across thousands of sessions. There is no cryptographic link between session 1's heartbeat chain and session 500's. The behavioral landscape provides statistical continuity (the profile evolves across sessions), but an agent could be swapped between sessions and the only detection is statistical — the landscape notices the profile changed.
+
+**Impact:** An adversary who compromises the agent between sessions (replaces the heart, swaps credentials) is detected only when the sensorium observes enough post-swap interactions to notice the behavioral shift. For the atlas, this is fast (one interaction may suffice if the swap is dramatic). For the landscape, this takes multiple interactions. But there's no cryptographic proof that session 500 is the same agent as session 1.
+
+**Possible directions:**
+- Session chaining: Each new session's first heartbeat includes a hash of the previous session's final heartbeat. This creates a cross-session chain — breaking it proves a discontinuity occurred. The agent's heart maintains a persistent `lastSessionHash` that survives restarts.
+- DID continuity: The agent's DID key pair persists across sessions. Same DID = cryptographic continuity. DID rotation (key change) is treated like a genome mutation — announced, tracked, verified. Unannounced DID change = RED.
+- Epoch commitments: The heart periodically publishes a signed commitment: "as of epoch T, my cumulative heartbeat count is N, my genome hash is X, my DID is Y." These commitments are checkpointable and auditable. A gap in epochs indicates a discontinuity.
+
+**Status:** Partially addressed. DID persistence already provides some continuity — the agent uses the same DID key pair across sessions, verified during each handshake. But the heartbeat chain starts fresh each session. Session chaining (linking the first heartbeat to the previous session's last) is the cleanest extension. Add it when long-lived agent persistence becomes a product requirement.
 
 ---
 

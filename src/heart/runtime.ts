@@ -34,7 +34,7 @@ import {
 } from "../core/channel.js";
 import { CredentialVault } from "./credential-vault.js";
 import { HeartbeatChain, type Heartbeat } from "./heartbeat.js";
-import { deriveSeed, applySeed, deriveHmacKey, computeTokenHmac, type HeartSeed } from "./seed.js";
+import { deriveSeed, applySeed, deriveHmacKey, computeTokenHmac, type HeartSeed, type BehavioralParams } from "./seed.js";
 import {
   createBirthCertificate,
   type BirthCertificate,
@@ -295,8 +295,8 @@ export class HeartRuntime {
       const seedBeat = chain.record(
         "seed_generated",
         JSON.stringify({
-          modificationId: seed.modificationId,
           nonce: seed.nonce.slice(0, 16),
+          behavioralParams: seed.behavioralParams,
         })
       );
       yield { type: "heartbeat", heartbeat: seedBeat, timestamp: Date.now() };

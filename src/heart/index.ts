@@ -44,14 +44,13 @@ export {
   deriveSeed,
   applySeed,
   verifySeedInfluence,
-  getSeedModifications,
   deriveHmacKey,
   computeTokenHmac,
   verifyTokenHmac,
   type HeartSeed,
   type SeedConfig,
-  type SeedModificationId,
-  type ExpectedInfluence,
+  type BehavioralParams,
+  type BehavioralRegion,
 } from "./seed.js";
 
 // ─── Heartbeat (tamper-evident hash chain) ──────────────────────────────────
@@ -66,12 +65,19 @@ export {
 
 export {
   createBirthCertificate,
+  createUnsignedBirthCertificate,
+  createDataProvenance,
+  signDataProvenance,
+  verifyDataProvenance,
   verifyBirthCertificate,
+  verifySourceSignature,
   verifyDataIntegrity,
   verifyBirthCertificateChain,
   type BirthCertificate,
   type DataSource,
   type DataSourceType,
+  type DataProvenance,
+  type TrustTier,
 } from "./birth-certificate.js";
 
 // ─── Credential Vault (internal — not for direct use) ───────────────────────

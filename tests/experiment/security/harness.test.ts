@@ -6,6 +6,9 @@ import { runReplayAttack } from "../../../src/experiment/security/attacks/replay
 import { runSignalInjectionAttack } from "../../../src/experiment/security/attacks/signal-injection.js";
 import { runTimingManipulationAttack } from "../../../src/experiment/security/attacks/timing-manipulation.js";
 import { runCompositeAttack } from "../../../src/experiment/security/attacks/composite.js";
+import { runSeedPredictionAttack } from "../../../src/experiment/security/attacks/seed-prediction.js";
+import { runSlowDriftAttack } from "../../../src/experiment/security/attacks/slow-drift.js";
+import { runMutationAbuseAttack } from "../../../src/experiment/security/attacks/mutation-abuse.js";
 
 describe("Security Harness", () => {
   describe("Individual Attacks", () => {
@@ -41,22 +44,41 @@ describe("Security Harness", () => {
       expect(result.detected).toBe(true);
       expect(result.attackName).toBe("Composite Agent");
     });
+
+    it("Attack 6: Seed Prediction — enumeration is infeasible", () => {
+      const result = runSeedPredictionAttack();
+      expect(result.detected).toBe(true);
+      expect(result.attackName).toBe("Seed Prediction");
+      expect(result.details.exactNonceMatches).toBe(0);
+    });
+
+    it("Attack 7: Slow Drift Poisoning — atlas catches drift", () => {
+      const result = runSlowDriftAttack();
+      expect(result.detected).toBe(true);
+      expect(result.attackName).toBe("Slow Drift Poisoning");
+    });
+
+    it("Attack 8: Mutation Abuse — consistency checks catch deception", () => {
+      const result = runMutationAbuseAttack();
+      expect(result.detected).toBe(true);
+      expect(result.attackName).toBe("Genome Mutation Abuse");
+      expect(result.details.failedConsistencyChecks).toBeGreaterThanOrEqual(7);
+    });
   });
 
   describe("Full Harness", () => {
-    it("runs all 5 attacks", () => {
+    it("runs all 8 attacks", () => {
       const report = runSecurityHarness();
-      expect(report.totalAttacks).toBe(5);
-      expect(report.results.length).toBe(5);
+      expect(report.totalAttacks).toBe(8);
+      expect(report.results.length).toBe(8);
     });
 
     it("ALL attacks must be detected", () => {
       const report = runSecurityHarness();
       expect(report.allDetected).toBe(true);
-      expect(report.detected).toBe(5);
+      expect(report.detected).toBe(8);
       expect(report.undetected).toBe(0);
 
-      // Print the report for visibility
       for (const result of report.results) {
         expect(result.detected).toBe(true);
       }
@@ -79,13 +101,19 @@ describe("Security Harness", () => {
       const report = runSecurityHarness();
       const formatted = formatSecurityReport(report);
       expect(formatted).toContain("SOMA SECURITY HARNESS REPORT");
-      expect(formatted).toContain("ALL DETECTED");
       expect(formatted).toContain("Impersonation");
       expect(formatted).toContain("Replay");
       expect(formatted).toContain("Signal Injection");
       expect(formatted).toContain("Timing Manipulation");
       expect(formatted).toContain("Composite Agent");
-      expect(formatted).toContain("5/5");
+      expect(formatted).toContain("Seed Prediction");
+      expect(formatted).toContain("Slow Drift");
+      expect(formatted).toContain("Mutation Abuse");
+      // Check total count
+      if (report.allDetected) {
+        expect(formatted).toContain("ALL DETECTED");
+        expect(formatted).toContain("8/8");
+      }
     });
   });
 });

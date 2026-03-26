@@ -4,7 +4,6 @@ import {
   deriveSeed,
   applySeed,
   verifySeedInfluence,
-  getSeedModifications,
   deriveHmacKey,
   computeTokenHmac,
   verifyTokenHmac,
@@ -12,7 +11,7 @@ import {
 
 const crypto = getCryptoProvider();
 
-describe("HeartSeed", () => {
+describe("HeartSeed — Dynamic Continuous Generation", () => {
   function makeSessionKey(): Uint8Array {
     return crypto.random.randomBytes(32);
   }
@@ -23,8 +22,10 @@ describe("HeartSeed", () => {
       const seed1 = deriveSeed({ sessionKey, interactionCounter: 0 }, "query-hash-abc");
       const seed2 = deriveSeed({ sessionKey, interactionCounter: 0 }, "query-hash-abc");
       expect(seed1.nonce).toBe(seed2.nonce);
-      expect(seed1.modificationId).toBe(seed2.modificationId);
-      expect(seed1.sessionContext).toBe(seed2.sessionContext);
+      expect(seed1.behavioralParams.verbosity).toBe(seed2.behavioralParams.verbosity);
+      expect(seed1.behavioralParams.structure).toBe(seed2.behavioralParams.structure);
+      expect(seed1.behavioralParams.formality).toBe(seed2.behavioralParams.formality);
+      expect(seed1.promptModification).toBe(seed2.promptModification);
     });
 
     it("produces different seeds for different interaction counters", () => {
@@ -49,34 +50,70 @@ describe("HeartSeed", () => {
       expect(seed1.nonce).not.toBe(seed2.nonce);
     });
 
-    it("always selects a valid modification", () => {
-      const mods = getSeedModifications();
-      const modIds = new Set(mods.map((m) => m.id));
-
-      for (let i = 0; i < 50; i++) {
-        const sessionKey = crypto.random.randomBytes(32);
-        const seed = deriveSeed({ sessionKey, interactionCounter: i }, `query-${i}`);
-        expect(modIds.has(seed.modificationId)).toBe(true);
-        expect(seed.promptModification).toContain("SOMA-");
-        expect(seed.sessionContext).toMatch(/^SOMA-[0-9a-f]{8}$/);
+    it("behavioral parameters are always in [0, 1] range", () => {
+      for (let i = 0; i < 100; i++) {
+        const key = crypto.random.randomBytes(32);
+        const seed = deriveSeed({ sessionKey: key, interactionCounter: i }, `query-${i}`);
+        expect(seed.behavioralParams.verbosity).toBeGreaterThanOrEqual(0);
+        expect(seed.behavioralParams.verbosity).toBeLessThanOrEqual(1);
+        expect(seed.behavioralParams.structure).toBeGreaterThanOrEqual(0);
+        expect(seed.behavioralParams.structure).toBeLessThanOrEqual(1);
+        expect(seed.behavioralParams.formality).toBeGreaterThanOrEqual(0);
+        expect(seed.behavioralParams.formality).toBeLessThanOrEqual(1);
       }
     });
 
-    it("covers multiple modification types across many derivations", () => {
-      const seen = new Set<string>();
-      for (let i = 0; i < 200; i++) {
+    it("expected behavioral region bins parameters correctly", () => {
+      for (let i = 0; i < 50; i++) {
+        const key = crypto.random.randomBytes(32);
+        const seed = deriveSeed({ sessionKey: key, interactionCounter: i }, `q-${i}`);
+        const { verbosityRange, structureRange, formalityRange } = seed.expectedBehavioralRegion;
+
+        // Ranges should be 0.2 wide (5 bins)
+        expect(verbosityRange[1] - verbosityRange[0]).toBeCloseTo(0.2, 5);
+        expect(structureRange[1] - structureRange[0]).toBeCloseTo(0.2, 5);
+        expect(formalityRange[1] - formalityRange[0]).toBeCloseTo(0.2, 5);
+
+        // Parameter should fall within its range
+        expect(seed.behavioralParams.verbosity).toBeGreaterThanOrEqual(verbosityRange[0]);
+        expect(seed.behavioralParams.verbosity).toBeLessThan(verbosityRange[1]);
+        expect(seed.behavioralParams.structure).toBeGreaterThanOrEqual(structureRange[0]);
+        expect(seed.behavioralParams.structure).toBeLessThan(structureRange[1]);
+        expect(seed.behavioralParams.formality).toBeGreaterThanOrEqual(formalityRange[0]);
+        expect(seed.behavioralParams.formality).toBeLessThan(formalityRange[1]);
+      }
+    });
+
+    it("covers the full parameter space across many derivations", () => {
+      const verbosityBins = new Set<number>();
+      const structureBins = new Set<number>();
+      const formalityBins = new Set<number>();
+
+      for (let i = 0; i < 500; i++) {
         const key = crypto.random.randomBytes(32);
         const seed = deriveSeed({ sessionKey: key, interactionCounter: 0 }, "q");
-        seen.add(seed.modificationId);
+        verbosityBins.add(seed.expectedBehavioralRegion.verbosityRange[0]);
+        structureBins.add(seed.expectedBehavioralRegion.structureRange[0]);
+        formalityBins.add(seed.expectedBehavioralRegion.formalityRange[0]);
       }
-      // With 8 modifications and 200 random keys, we should hit most of them
-      expect(seen.size).toBeGreaterThanOrEqual(4);
+
+      // With 500 random keys and 5 bins, we should hit all 5 bins per dimension
+      expect(verbosityBins.size).toBe(5);
+      expect(structureBins.size).toBe(5);
+      expect(formalityBins.size).toBe(5);
     });
 
     it("stores the correct interaction counter", () => {
       const key = makeSessionKey();
       const seed = deriveSeed({ sessionKey: key, interactionCounter: 42 }, "hash");
       expect(seed.interactionCounter).toBe(42);
+    });
+
+    it("prompt modification contains session context", () => {
+      const key = makeSessionKey();
+      const seed = deriveSeed({ sessionKey: key, interactionCounter: 0 }, "hash");
+      expect(seed.promptModification).toContain("SOMA-");
+      expect(seed.promptModification).toContain("Session context:");
     });
   });
 
@@ -87,7 +124,6 @@ describe("HeartSeed", () => {
       const result = applySeed("You are a helpful assistant.", seed);
       expect(result).toContain("You are a helpful assistant.");
       expect(result).toContain(seed.promptModification);
-      expect(result).toContain("SOMA-");
     });
 
     it("preserves the original prompt content", () => {
@@ -100,62 +136,34 @@ describe("HeartSeed", () => {
   });
 
   describe("verifySeedInfluence()", () => {
-    it("verifies shorter_output when response is shorter than baseline", () => {
+    it("returns per-dimension scores and overall confidence", () => {
       const key = makeSessionKey();
-      // Find a seed that produces shorter_output
-      let seed;
-      for (let i = 0; i < 100; i++) {
-        seed = deriveSeed({ sessionKey: key, interactionCounter: i }, "hash");
-        if (seed.expectedInfluence === "shorter_output") break;
-      }
-      if (!seed || seed.expectedInfluence !== "shorter_output") return;
-
-      const result = verifySeedInfluence("Short response.", seed, 100);
-      expect(result.verified).toBe(true);
-      expect(result.confidence).toBeGreaterThan(0.5);
+      const seed = deriveSeed({ sessionKey: key, interactionCounter: 0 }, "hash");
+      const result = verifySeedInfluence("A response with some text.", seed, 10);
+      expect(result).toHaveProperty("verified");
+      expect(result).toHaveProperty("confidence");
+      expect(result).toHaveProperty("details");
+      expect(result).toHaveProperty("perDimension");
+      expect(result.perDimension).toHaveProperty("verbosity");
+      expect(result.perDimension).toHaveProperty("structure");
+      expect(result.perDimension).toHaveProperty("formality");
     });
 
-    it("verifies example_presence when examples are present", () => {
+    it("returns reasonable confidence for aligned text", () => {
       const key = makeSessionKey();
+      // Find a seed with high formality
       let seed;
-      for (let i = 0; i < 100; i++) {
+      for (let i = 0; i < 200; i++) {
         seed = deriveSeed({ sessionKey: key, interactionCounter: i }, "hash");
-        if (seed.expectedInfluence === "example_presence") break;
+        if (seed.behavioralParams.formality > 0.8) break;
       }
-      if (!seed || seed.expectedInfluence !== "example_presence") return;
+      if (!seed || seed.behavioralParams.formality <= 0.8) return;
 
-      const withExamples = "Here is the concept. For example, consider a database that stores user data.";
-      const result = verifySeedInfluence(withExamples, seed, 15);
-      expect(result.verified).toBe(true);
-      expect(result.confidence).toBeGreaterThan(0.5);
-    });
-
-    it("verifies formatted_output when markdown is present", () => {
-      const key = makeSessionKey();
-      let seed;
-      for (let i = 0; i < 100; i++) {
-        seed = deriveSeed({ sessionKey: key, interactionCounter: i }, "hash");
-        if (seed.expectedInfluence === "formatted_output") break;
-      }
-      if (!seed || seed.expectedInfluence !== "formatted_output") return;
-
-      const formatted = "# Header\n\n- Point 1\n- Point 2\n\n**Bold text** here.";
-      const result = verifySeedInfluence(formatted, seed, 10);
-      expect(result.verified).toBe(true);
-    });
-
-    it("returns low confidence when influence is not observed", () => {
-      const key = makeSessionKey();
-      let seed;
-      for (let i = 0; i < 100; i++) {
-        seed = deriveSeed({ sessionKey: key, interactionCounter: i }, "hash");
-        if (seed.expectedInfluence === "example_presence") break;
-      }
-      if (!seed || seed.expectedInfluence !== "example_presence") return;
-
-      const noExamples = "This is a plain response without any illustrations.";
-      const result = verifySeedInfluence(noExamples, seed, 10);
-      expect(result.confidence).toBeLessThanOrEqual(0.5);
+      const formalText = "Specifically, the implementation architecture requires precise methodology. " +
+        "The protocol mechanism configuration parameters are consequently aligned. " +
+        "Furthermore, the algorithm implementation precisely addresses technical requirements.";
+      const result = verifySeedInfluence(formalText, seed, 30);
+      expect(result.perDimension.formality).toBeGreaterThan(0.3);
     });
   });
 
@@ -227,21 +235,6 @@ describe("HeartSeed", () => {
       const hmac = computeTokenHmac(hmacKey, "test", 0, 0);
       const tampered = "00" + hmac.slice(2);
       expect(verifyTokenHmac(hmacKey, "test", 0, 0, tampered)).toBe(false);
-    });
-  });
-
-  describe("getSeedModifications()", () => {
-    it("returns all 8 modifications", () => {
-      const mods = getSeedModifications();
-      expect(mods.length).toBe(8);
-    });
-
-    it("each modification has id, prompt, and expectedInfluence", () => {
-      for (const mod of getSeedModifications()) {
-        expect(mod.id).toBeTruthy();
-        expect(mod.prompt).toBeTruthy();
-        expect(mod.expectedInfluence).toBeTruthy();
-      }
     });
   });
 });

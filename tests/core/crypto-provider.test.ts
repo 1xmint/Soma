@@ -373,8 +373,8 @@ describe("CryptoProvider", () => {
         MOCK_PROVIDER
       );
       expect(seed.nonce).toBeTruthy();
-      expect(seed.modificationId).toBeTruthy();
-      expect(seed.sessionContext).toContain("SOMA-");
+      expect(seed.behavioralParams).toBeTruthy();
+      expect(seed.promptModification).toContain("SOMA-");
     });
 
     it("birth certificate works with mock provider", () => {
@@ -392,7 +392,7 @@ describe("CryptoProvider", () => {
       );
 
       expect(cert.dataHash).toBeTruthy();
-      expect(cert.signature).toBeTruthy();
+      expect(cert.receiverSignature).toBeTruthy();
       expect(verifyBirthCertificate(cert, kp.publicKey, MOCK_PROVIDER)).toBe(true);
       expect(verifyDataIntegrity("test data", cert, MOCK_PROVIDER)).toBe(true);
       expect(verifyDataIntegrity("tampered", cert, MOCK_PROVIDER)).toBe(false);

@@ -5,7 +5,12 @@ import { publicKeyToDid } from "../../src/core/genome.js";
 const crypto = getCryptoProvider();
 import {
   createBirthCertificate,
+  createUnsignedBirthCertificate,
+  createDataProvenance,
+  signDataProvenance,
+  verifyDataProvenance,
   verifyBirthCertificate,
+  verifySourceSignature,
   verifyDataIntegrity,
   verifyBirthCertificateChain,
   type DataSource,
@@ -16,7 +21,7 @@ describe("BirthCertificate", () => {
     return crypto.signing.generateKeyPair();
   }
 
-  function makeDid(keyPair: nacl.SignKeyPair): string {
+  function makeDid(keyPair: { publicKey: Uint8Array }): string {
     return publicKeyToDid(keyPair.publicKey);
   }
 
@@ -50,7 +55,9 @@ describe("BirthCertificate", () => {
       expect(cert.bornThrough).toBe(did);
       expect(cert.bornInSession).toBe("session-1");
       expect(cert.parentCertificates).toEqual([]);
-      expect(cert.signature).toBeTruthy();
+      expect(cert.receiverSignature).toBeTruthy();
+      expect(cert.sourceSignature).toBeNull();
+      expect(cert.trustTier).toBe("single-signed");
     });
 
     it("creates different hashes for different data", () => {
@@ -102,7 +109,6 @@ describe("BirthCertificate", () => {
         "session-1",
         keyPair1
       );
-      // Verify with wrong public key
       expect(verifyBirthCertificate(cert, keyPair2.publicKey)).toBe(false);
     });
 
@@ -150,6 +156,169 @@ describe("BirthCertificate", () => {
       const tampered = { ...cert, bornInSession: "session-fake" };
       expect(verifyBirthCertificate(tampered, keyPair.publicKey)).toBe(false);
     });
+
+    it("rejects unsigned certificates", () => {
+      const keyPair = makeKeyPair();
+      const cert = createUnsignedBirthCertificate(
+        "data",
+        apiSource,
+        "session-1"
+      );
+      expect(verifyBirthCertificate(cert, keyPair.publicKey)).toBe(false);
+    });
+  });
+
+  describe("co-signing protocol", () => {
+    it("creates and verifies data provenance", () => {
+      const sourceKp = makeKeyPair();
+      const sourceDid = makeDid(sourceKp);
+      const receiverDid = "did:key:receiver";
+
+      const provenance = createDataProvenance("data", sourceDid, receiverDid);
+      expect(provenance.dataHash).toBeTruthy();
+      expect(provenance.sourceDid).toBe(sourceDid);
+      expect(provenance.receiverDid).toBe(receiverDid);
+
+      const sig = signDataProvenance(provenance, sourceKp);
+      expect(verifyDataProvenance(provenance, sig, sourceKp.publicKey)).toBe(true);
+    });
+
+    it("rejects forged data provenance", () => {
+      const realKp = makeKeyPair();
+      const fakeKp = makeKeyPair();
+      const provenance = createDataProvenance("data", makeDid(realKp), "recv");
+      const fakeSig = signDataProvenance(provenance, fakeKp);
+      expect(verifyDataProvenance(provenance, fakeSig, realKp.publicKey)).toBe(false);
+    });
+
+    it("creates dual-signed certificate", () => {
+      const sourceKp = makeKeyPair();
+      const receiverKp = makeKeyPair();
+      const sourceDid = makeDid(sourceKp);
+      const receiverDid = makeDid(receiverKp);
+
+      const provenance = createDataProvenance("data", sourceDid, receiverDid);
+      const sourceSig = signDataProvenance(provenance, sourceKp);
+
+      const cert = createBirthCertificate(
+        "data",
+        { type: "agent", identifier: sourceDid, heartVerified: true },
+        receiverDid,
+        "session-1",
+        receiverKp,
+        [],
+        undefined,
+        sourceSig
+      );
+
+      expect(cert.trustTier).toBe("dual-signed");
+      expect(cert.sourceSignature).toBe(sourceSig);
+    });
+
+    it("verifies both signatures on dual-signed cert", () => {
+      const sourceKp = makeKeyPair();
+      const receiverKp = makeKeyPair();
+      const sourceDid = makeDid(sourceKp);
+      const receiverDid = makeDid(receiverKp);
+
+      const provenance = createDataProvenance("data", sourceDid, receiverDid);
+      const sourceSig = signDataProvenance(provenance, sourceKp);
+
+      const cert = createBirthCertificate(
+        "data",
+        { type: "agent", identifier: sourceDid, heartVerified: true },
+        receiverDid,
+        "s1",
+        receiverKp,
+        [],
+        undefined,
+        sourceSig,
+        provenance.timestamp // Sync timestamp with provenance
+      );
+
+      expect(verifyBirthCertificate(cert, receiverKp.publicKey)).toBe(true);
+      expect(verifySourceSignature(cert, sourceKp.publicKey)).toBe(true);
+    });
+
+    it("rejects forged source co-signature", () => {
+      const sourceKp = makeKeyPair();
+      const fakeKp = makeKeyPair();
+      const receiverKp = makeKeyPair();
+      const sourceDid = makeDid(sourceKp);
+      const receiverDid = makeDid(receiverKp);
+
+      const provenance = createDataProvenance("data", sourceDid, receiverDid);
+      const fakeSig = signDataProvenance(provenance, fakeKp);
+
+      const cert = createBirthCertificate(
+        "data",
+        { type: "agent", identifier: sourceDid, heartVerified: true },
+        receiverDid,
+        "s1",
+        receiverKp,
+        [],
+        undefined,
+        fakeSig,
+        provenance.timestamp
+      );
+
+      expect(verifyBirthCertificate(cert, receiverKp.publicKey)).toBe(true);
+      expect(verifySourceSignature(cert, sourceKp.publicKey)).toBe(false);
+    });
+
+    it("verifySourceSignature returns false for single-signed certs", () => {
+      const receiverKp = makeKeyPair();
+      const cert = createBirthCertificate(
+        "data",
+        apiSource,
+        makeDid(receiverKp),
+        "s1",
+        receiverKp
+      );
+      expect(verifySourceSignature(cert, receiverKp.publicKey)).toBe(false);
+    });
+  });
+
+  describe("trust tiers", () => {
+    it("dual-signed when hearted source provides co-signature", () => {
+      const sourceKp = makeKeyPair();
+      const receiverKp = makeKeyPair();
+      const provenance = createDataProvenance("d", makeDid(sourceKp), makeDid(receiverKp));
+      const sig = signDataProvenance(provenance, sourceKp);
+
+      const cert = createBirthCertificate(
+        "d",
+        { type: "agent", identifier: makeDid(sourceKp), heartVerified: true },
+        makeDid(receiverKp),
+        "s1",
+        receiverKp,
+        [],
+        undefined,
+        sig
+      );
+      expect(cert.trustTier).toBe("dual-signed");
+    });
+
+    it("single-signed when source is unhearted", () => {
+      const kp = makeKeyPair();
+      const cert = createBirthCertificate(
+        "data",
+        { type: "api", identifier: "url", heartVerified: false },
+        makeDid(kp),
+        "s1",
+        kp
+      );
+      expect(cert.trustTier).toBe("single-signed");
+    });
+
+    it("unsigned from createUnsignedBirthCertificate", () => {
+      const cert = createUnsignedBirthCertificate(
+        "data",
+        { type: "api", identifier: "url", heartVerified: false },
+        "s1"
+      );
+      expect(cert.trustTier).toBe("unsigned");
+    });
   });
 
   describe("verifyDataIntegrity()", () => {
@@ -164,13 +333,7 @@ describe("BirthCertificate", () => {
     it("detects tampered data", () => {
       const keyPair = makeKeyPair();
       const did = makeDid(keyPair);
-      const cert = createBirthCertificate(
-        "original data",
-        apiSource,
-        did,
-        "s1",
-        keyPair
-      );
+      const cert = createBirthCertificate("original data", apiSource, did, "s1", keyPair);
       expect(verifyDataIntegrity("modified data", cert)).toBe(false);
     });
 
@@ -192,14 +355,7 @@ describe("BirthCertificate", () => {
     it("verifies a single-certificate chain", () => {
       const keyPair = makeKeyPair();
       const did = makeDid(keyPair);
-      const cert = createBirthCertificate(
-        "data",
-        apiSource,
-        did,
-        "s1",
-        keyPair
-      );
-
+      const cert = createBirthCertificate("data", apiSource, did, "s1", keyPair);
       const pubKeys = new Map([[did, keyPair.publicKey]]);
       const result = verifyBirthCertificateChain([cert], pubKeys);
       expect(result.valid).toBe(true);
@@ -218,8 +374,6 @@ describe("BirthCertificate", () => {
         "s1",
         heart1
       );
-
-      // No parent reference needed for second cert in this test
       const cert2 = createBirthCertificate(
         "processed data",
         { type: "agent", identifier: did1, heartVerified: true },
@@ -239,15 +393,7 @@ describe("BirthCertificate", () => {
     it("rejects chain with unknown heart DID", () => {
       const keyPair = makeKeyPair();
       const did = makeDid(keyPair);
-      const cert = createBirthCertificate(
-        "data",
-        apiSource,
-        did,
-        "s1",
-        keyPair
-      );
-
-      // Empty pub key map — DID is unknown
+      const cert = createBirthCertificate("data", apiSource, did, "s1", keyPair);
       const result = verifyBirthCertificateChain([cert], new Map());
       expect(result.valid).toBe(false);
       expect(result.brokenAt).toBe(0);
@@ -259,19 +405,18 @@ describe("BirthCertificate", () => {
       const keyPair2 = makeKeyPair();
       const did1 = makeDid(keyPair1);
 
-      const cert = createBirthCertificate(
-        "data",
-        apiSource,
-        did1,
-        "s1",
-        keyPair1
-      );
-
-      // Map DID to wrong public key
+      const cert = createBirthCertificate("data", apiSource, did1, "s1", keyPair1);
       const pubKeys = new Map([[did1, keyPair2.publicKey]]);
       const result = verifyBirthCertificateChain([cert], pubKeys);
       expect(result.valid).toBe(false);
-      expect(result.reason).toContain("Invalid signature");
+      expect(result.reason).toContain("Invalid receiver signature");
+    });
+
+    it("rejects chain with unsigned certificate", () => {
+      const cert = createUnsignedBirthCertificate("data", apiSource, "s1");
+      const result = verifyBirthCertificateChain([cert], new Map());
+      expect(result.valid).toBe(false);
+      expect(result.reason).toContain("Unsigned");
     });
   });
 });

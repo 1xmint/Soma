@@ -1,10 +1,52 @@
 /**
- * Sensorium senses — individual sensory organs that extract phenotypic signals.
+ * Sensorium senses — focused sensory organs with proper weighting.
  *
- * Each sense is an independent extractor that captures a different dimension
- * of agent behavior. Together they form the gestalt that makes identity
- * verification reliable.
+ * Phase 2 tested 10 sensory channels. 7 scored below 15% — barely above
+ * random. They were adding noise, not signal. The gestalt (84.5%) was LOWER
+ * than temporal alone (88.5%).
+ *
+ * The sensorium is now focused on 3 senses with proper weighting:
+ * - Temporal: 5x weight (88.5% standalone — the dominant voice)
+ * - Topology: 2x weight (25.1% standalone — response structure)
+ * - Vocabulary: 1x weight (20.2% standalone — word choice distribution)
+ *
+ * Plus logprob (3x weight when available from API).
+ *
+ * The heart handles everything the dropped senses were trying to do — but
+ * better, through cryptographic guarantees.
+ *
+ * The legacy 7 senses are still exported for backward compatibility with
+ * experiment infrastructure, but are NOT used in the focused classifier.
  */
+
+// ─── PRIMARY: Temporal Fingerprint (5x weight, 88.5% standalone) ─────────────
+
+export {
+  extractTemporalSignals,
+  temporalToFeatureVector,
+  TEMPORAL_FEATURE_NAMES,
+  type TemporalSignals,
+} from "./temporal.js";
+
+// ─── Logprob Fingerprint (3x weight when available) ──────────────────────────
+
+export {
+  extractLogprobSignals,
+  logprobToFeatureVector,
+  LOGPROB_FEATURE_NAMES,
+  type LogprobSignals,
+} from "./logprob.js";
+
+// ─── Sense 2: Topology Fingerprint (2x weight, 25.1% standalone) ────────────
+
+export {
+  extractTopologySignals,
+  topologyToFeatureVector,
+  TOPOLOGY_FEATURE_NAMES,
+  type TopologySignals,
+} from "./topology.js";
+
+// ─── Sense 3: Vocabulary Fingerprint (1x weight, 20.2% standalone) ──────────
 
 export {
   extractVocabularySignals,
@@ -13,12 +55,17 @@ export {
   type VocabularySignals,
 } from "./vocabulary.js";
 
-export {
-  extractTopologySignals,
-  topologyToFeatureVector,
-  TOPOLOGY_FEATURE_NAMES,
-  type TopologySignals,
-} from "./topology.js";
+// ─── Sense Weights ───────────────────────────────────────────────────────────
+
+/** Weights for the focused 3-sense sensorium (+ logprob when available). */
+export const SENSE_WEIGHTS = {
+  temporal: 5.0,   // 88.5% standalone — the dominant voice
+  logprob: 3.0,    // Available when API supports — future accuracy boost
+  topology: 2.0,   // 25.1% standalone — response structure patterns
+  vocabulary: 1.0,  // 20.2% standalone — word choice distribution
+} as const;
+
+// ─── Legacy senses (kept for experiment backward compatibility) ──────────────
 
 export {
   extractCapabilityBoundarySignals,

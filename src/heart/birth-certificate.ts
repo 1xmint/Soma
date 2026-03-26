@@ -1,14 +1,21 @@
 /**
- * Birth certificates — data provenance sealing.
+ * Birth certificates — data provenance sealing with co-signing.
  *
  * When data enters the digital world — a human types something, a sensor
  * reads a temperature, an API returns a response — the first heart it
  * touches seals it with a birth certificate: who created it, when, through
  * what interface, and a hash of the original content.
  *
- * From that moment, the data is alive. Every agent that processes it adds
- * its own heartbeat to the chain. The chain is immutable. Lies are
- * permanently, inescapably attributed to their source.
+ * For hearted-to-hearted data flows, birth certificates require TWO signatures
+ * — cryptographic co-signing that makes dishonesty impossible, not just detectable:
+ *
+ * 1. Source heart signs: "I provided data with hash H to DID X at time T"
+ * 2. Receiving heart signs: "I received data with hash H from DID Y at time T"
+ *
+ * Three trust tiers:
+ * - dual-signed: both hearts attest. Dishonesty requires collusion.
+ * - single-signed: one heart attests, source unhearted. Trust depends on heart's honesty.
+ * - unsigned: no heart. Consumer decides trust level.
  */
 
 import { sha256 } from "../core/genome.js";
@@ -18,8 +25,13 @@ import {
   type SignKeyPair,
 } from "../core/crypto-provider.js";
 
+// ─── Types ───────────────────────────────────────────────────────────────────
+
 /** Source types for data entering the system. */
 export type DataSourceType = "agent" | "api" | "human" | "sensor" | "file";
+
+/** Trust tier — how many hearts attest to this data's provenance. */
+export type TrustTier = "dual-signed" | "single-signed" | "unsigned";
 
 /** Description of where data came from. */
 export interface DataSource {
@@ -28,6 +40,21 @@ export interface DataSource {
   identifier: string;
   /** Did this source have its own heart? */
   heartVerified: boolean;
+}
+
+/**
+ * A data provenance payload — signed by the source heart during co-signing.
+ * The source heart signs this to attest: "I provided this data."
+ */
+export interface DataProvenance {
+  /** Hash of the data being attested. */
+  dataHash: string;
+  /** DID of the source heart providing the data. */
+  sourceDid: string;
+  /** DID of the receiving heart. */
+  receiverDid: string;
+  /** Timestamp of the attestation. */
+  timestamp: number;
 }
 
 /** A birth certificate — seals data at its genesis point. */
@@ -44,15 +71,76 @@ export interface BirthCertificate {
   bornInSession: string;
   /** If derived from other certificated data. */
   parentCertificates: string[];
-  /** Signature by the heart's key. */
-  signature: string;
+  /** Signature by the receiving heart's key. */
+  receiverSignature: string;
+  /** Signature by the source heart's key (null if unhearted source). */
+  sourceSignature: string | null;
+  /** Trust tier based on signature coverage. */
+  trustTier: TrustTier;
+}
+
+// ─── Co-signing Protocol ─────────────────────────────────────────────────────
+
+/**
+ * Create a data provenance payload for the source heart to sign.
+ * This is step 1 of the co-signing handshake: the receiving heart
+ * prepares the payload and sends it to the source for signing.
+ */
+export function createDataProvenance(
+  data: string,
+  sourceDid: string,
+  receiverDid: string,
+  provider?: CryptoProvider
+): DataProvenance {
+  const p = provider ?? getCryptoProvider();
+  return {
+    dataHash: sha256(data, p),
+    sourceDid,
+    receiverDid,
+    timestamp: Date.now(),
+  };
 }
 
 /**
- * Create a birth certificate for data entering the system.
+ * Sign a data provenance payload as the source heart.
+ * This is step 2 of the co-signing handshake: the source heart
+ * signs the payload to attest "I provided this data to receiver X."
+ */
+export function signDataProvenance(
+  provenance: DataProvenance,
+  signingKeyPair: SignKeyPair,
+  provider?: CryptoProvider
+): string {
+  const p = provider ?? getCryptoProvider();
+  const content = canonicalizeProvenance(provenance);
+  const contentBytes = new TextEncoder().encode(content);
+  const signature = p.signing.sign(contentBytes, signingKeyPair.secretKey);
+  return p.encoding.encodeBase64(signature);
+}
+
+/**
+ * Verify a source's data provenance signature.
+ */
+export function verifyDataProvenance(
+  provenance: DataProvenance,
+  signature: string,
+  publicKey: Uint8Array,
+  provider?: CryptoProvider
+): boolean {
+  const p = provider ?? getCryptoProvider();
+  const content = canonicalizeProvenance(provenance);
+  const contentBytes = new TextEncoder().encode(content);
+  const sigBytes = p.encoding.decodeBase64(signature);
+  return p.signing.verify(contentBytes, sigBytes, publicKey);
+}
+
+// ─── Birth Certificate Creation ──────────────────────────────────────────────
+
+/**
+ * Create a birth certificate with full co-signing support.
  *
- * The first heart that touches new data seals it. From that moment,
- * the data has provenance — authorship is guaranteed, truth is not.
+ * For hearted sources: provide sourceSignature from the co-signing handshake.
+ * For unhearted sources: sourceSignature is null, trustTier is "single-signed".
  */
 export function createBirthCertificate(
   data: string,
@@ -61,39 +149,84 @@ export function createBirthCertificate(
   sessionId: string,
   signingKeyPair: SignKeyPair,
   parentCertificates: string[] = [],
-  provider?: CryptoProvider
+  provider?: CryptoProvider,
+  sourceSignature?: string | null,
+  bornAt?: number
 ): BirthCertificate {
   const p = provider ?? getCryptoProvider();
   const dataHash = sha256(data, p);
-  const bornAt = Date.now();
+  const resolvedBornAt = bornAt ?? Date.now();
+
+  // Determine trust tier
+  const resolvedSourceSig = sourceSignature ?? null;
+  let trustTier: TrustTier;
+  if (source.heartVerified && resolvedSourceSig !== null) {
+    trustTier = "dual-signed";
+  } else if (source.heartVerified || resolvedSourceSig !== null) {
+    // Source claims to be hearted but no co-signature — treat as single-signed
+    trustTier = "single-signed";
+  } else {
+    trustTier = "single-signed"; // Receiver's heart always signs
+  }
 
   const certContent = canonicalizeCertContent({
     dataHash,
     source,
-    bornAt,
+    bornAt: resolvedBornAt,
     bornThrough: heartDid,
     bornInSession: sessionId,
     parentCertificates,
+    trustTier,
   });
 
-  // Sign with the heart's key
+  // Receiver signs
   const contentBytes = new TextEncoder().encode(certContent);
-  const signature = p.signing.sign(contentBytes, signingKeyPair.secretKey);
+  const receiverSignature = p.encoding.encodeBase64(
+    p.signing.sign(contentBytes, signingKeyPair.secretKey)
+  );
 
   return {
     dataHash,
     source,
-    bornAt,
+    bornAt: resolvedBornAt,
     bornThrough: heartDid,
     bornInSession: sessionId,
     parentCertificates,
-    signature: p.encoding.encodeBase64(signature),
+    receiverSignature,
+    sourceSignature: resolvedSourceSig,
+    trustTier,
   };
 }
 
 /**
- * Verify a birth certificate's signature.
- * Confirms the certificate was issued by the claimed heart.
+ * Create an unsigned birth certificate placeholder — no heart attests.
+ * The consumer decides how much to trust unsigned data.
+ */
+export function createUnsignedBirthCertificate(
+  data: string,
+  source: DataSource,
+  sessionId: string,
+  provider?: CryptoProvider
+): BirthCertificate {
+  const p = provider ?? getCryptoProvider();
+  return {
+    dataHash: sha256(data, p),
+    source: { ...source, heartVerified: false },
+    bornAt: Date.now(),
+    bornThrough: "",
+    bornInSession: sessionId,
+    parentCertificates: [],
+    receiverSignature: "",
+    sourceSignature: null,
+    trustTier: "unsigned",
+  };
+}
+
+// ─── Verification ────────────────────────────────────────────────────────────
+
+/**
+ * Verify a birth certificate's receiver signature.
+ * Confirms the certificate was issued by the claimed receiving heart.
  */
 export function verifyBirthCertificate(
   cert: BirthCertificate,
@@ -101,6 +234,9 @@ export function verifyBirthCertificate(
   provider?: CryptoProvider
 ): boolean {
   const p = provider ?? getCryptoProvider();
+
+  if (cert.trustTier === "unsigned") return false;
+
   const certContent = canonicalizeCertContent({
     dataHash: cert.dataHash,
     source: cert.source,
@@ -108,12 +244,39 @@ export function verifyBirthCertificate(
     bornThrough: cert.bornThrough,
     bornInSession: cert.bornInSession,
     parentCertificates: cert.parentCertificates,
+    trustTier: cert.trustTier,
   });
 
   const contentBytes = new TextEncoder().encode(certContent);
-  const signature = p.encoding.decodeBase64(cert.signature);
-
+  const signature = p.encoding.decodeBase64(cert.receiverSignature);
   return p.signing.verify(contentBytes, signature, publicKey);
+}
+
+/**
+ * Verify the source's co-signature on a birth certificate.
+ * Only applicable for dual-signed certificates.
+ *
+ * The source signed a DataProvenance payload, not the full certificate.
+ * We need the provenance data to reconstruct what was signed.
+ */
+export function verifySourceSignature(
+  cert: BirthCertificate,
+  sourcePublicKey: Uint8Array,
+  provider?: CryptoProvider
+): boolean {
+  const p = provider ?? getCryptoProvider();
+
+  if (!cert.sourceSignature || cert.trustTier !== "dual-signed") return false;
+
+  // Reconstruct the provenance payload that the source signed
+  const provenance: DataProvenance = {
+    dataHash: cert.dataHash,
+    sourceDid: cert.source.identifier,
+    receiverDid: cert.bornThrough,
+    timestamp: cert.bornAt,
+  };
+
+  return verifyDataProvenance(provenance, cert.sourceSignature, sourcePublicKey, p);
 }
 
 /**
@@ -138,21 +301,37 @@ export function verifyBirthCertificateChain(
 
   for (let i = 0; i < chain.length; i++) {
     const cert = chain[i];
-    const pubKey = publicKeys.get(cert.bornThrough);
 
+    // Skip unsigned certificates
+    if (cert.trustTier === "unsigned") {
+      return { valid: false, brokenAt: i, reason: `Unsigned certificate at index ${i}` };
+    }
+
+    const pubKey = publicKeys.get(cert.bornThrough);
     if (!pubKey) {
       return { valid: false, brokenAt: i, reason: `Unknown heart DID: ${cert.bornThrough}` };
     }
 
     if (!verifyBirthCertificate(cert, pubKey, p)) {
-      return { valid: false, brokenAt: i, reason: `Invalid signature at index ${i}` };
+      return { valid: false, brokenAt: i, reason: `Invalid receiver signature at index ${i}` };
+    }
+
+    // For dual-signed certs, verify source signature too
+    if (cert.trustTier === "dual-signed" && cert.sourceSignature) {
+      const sourceKey = publicKeys.get(cert.source.identifier);
+      if (!sourceKey) {
+        return { valid: false, brokenAt: i, reason: `Unknown source DID: ${cert.source.identifier}` };
+      }
+      if (!verifySourceSignature(cert, sourceKey, p)) {
+        return { valid: false, brokenAt: i, reason: `Invalid source co-signature at index ${i}` };
+      }
     }
 
     // Verify parent references exist in earlier chain entries
     for (const parentHash of cert.parentCertificates) {
       const parentExists = chain
         .slice(0, i)
-        .some((c) => sha256(c.signature, p) === parentHash);
+        .some(c => sha256(c.receiverSignature, p) === parentHash);
       if (!parentExists) {
         return {
           valid: false,
@@ -166,6 +345,8 @@ export function verifyBirthCertificateChain(
   return { valid: true, brokenAt: -1, reason: "Chain intact" };
 }
 
+// ─── Canonicalization ────────────────────────────────────────────────────────
+
 /** Deterministic serialization of certificate content for signing. */
 function canonicalizeCertContent(content: {
   dataHash: string;
@@ -174,8 +355,8 @@ function canonicalizeCertContent(content: {
   bornThrough: string;
   bornInSession: string;
   parentCertificates: string[];
+  trustTier: TrustTier;
 }): string {
-  // Keys sorted alphabetically for deterministic output
   return JSON.stringify({
     bornAt: content.bornAt,
     bornInSession: content.bornInSession,
@@ -187,5 +368,16 @@ function canonicalizeCertContent(content: {
       identifier: content.source.identifier,
       type: content.source.type,
     },
+    trustTier: content.trustTier,
+  });
+}
+
+/** Deterministic serialization of provenance payload for co-signing. */
+function canonicalizeProvenance(provenance: DataProvenance): string {
+  return JSON.stringify({
+    dataHash: provenance.dataHash,
+    receiverDid: provenance.receiverDid,
+    sourceDid: provenance.sourceDid,
+    timestamp: provenance.timestamp,
   });
 }
