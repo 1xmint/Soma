@@ -5,8 +5,9 @@
 import type { GenomeCommitment } from "../core/genome.js";
 import type { Channel } from "../core/channel.js";
 import type { PhenotypicSignals } from "../experiment/signals.js";
-import type { VerdictStatus, Verdict, PhenotypicProfile } from "../sensorium/matcher.js";
+import type { VerdictStatus, Verdict, EnhancedVerdict, PhenotypicProfile } from "../sensorium/matcher.js";
 import type { SignKeyPair } from "../core/crypto-provider.js";
+import type { HeartRuntime } from "../heart/runtime.js";
 
 // --- Configuration ---
 
@@ -21,6 +22,12 @@ export interface SomaConfig {
   minObservations?: number;
   /** Called whenever a session's verdict changes. */
   onVerdict?: (sessionId: string, verdict: SomaVerdict) => void;
+  /**
+   * The heart runtime — when provided, computation routes through the heart.
+   * The transport handles communication. The heart handles computation.
+   * Different organs, one system.
+   */
+  heart?: HeartRuntime;
 }
 
 // --- Verdict ---

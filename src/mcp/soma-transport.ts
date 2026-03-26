@@ -19,16 +19,20 @@ import type { JSONRPCMessage } from "@modelcontextprotocol/sdk/types.js";
 import { SomaSession, type SomaEncryptedEnvelope } from "./soma-session.js";
 import { ProfileStore } from "./profile-store.js";
 import { SOMA_METADATA_KEY, type SomaConfig, type SomaVerdict } from "./types.js";
+import type { HeartRuntime } from "../heart/runtime.js";
+import type { BehavioralLandscape } from "../sensorium/landscape.js";
 
 export class SomaTransport implements Transport {
   private readonly inner: Transport;
   private readonly session: SomaSession;
   private readonly profileStore: ProfileStore;
+  private readonly _heart: HeartRuntime | null;
 
   sessionId?: string;
 
   constructor(inner: Transport, config: SomaConfig) {
     this.inner = inner;
+    this._heart = config.heart ?? null;
     this.profileStore = new ProfileStore(config.profileStorePath);
     this.session = new SomaSession(config, this.profileStore);
   }
@@ -115,6 +119,24 @@ export class SomaTransport implements Transport {
   /** Get the session phase (PENDING, ACTIVE, DEGRADED, etc). */
   getPhase(): string {
     return this.session.getPhase();
+  }
+
+  /**
+   * Get the heart runtime — the execution pathway for all computation.
+   * Returns null if no heart was configured (Phase 1 observation-only mode).
+   *
+   * MCP server tools use this to route computation through the heart:
+   *   const heart = transport.getHeart();
+   *   const data = await heart.fetchData("market-api", params.query);
+   *   const analysis = await heart.generate({ messages: [...] });
+   */
+  getHeart(): HeartRuntime | null {
+    return this._heart;
+  }
+
+  /** Get the behavioral landscape for the connected client (null if no handshake yet). */
+  getLandscape(): BehavioralLandscape | null {
+    return this.session.getLandscape();
   }
 
   // --- Internal ---

@@ -4,8 +4,9 @@
  * Manages the state machine for a single MCP connection:
  * PENDING → HANDSHAKE → ACTIVE (or DEGRADED/REJECTED)
  *
- * Like a developing immune system: starts naive (PENDING),
- * calibrates during the handshake, then actively monitors.
+ * Phase 2: When a heart is present, observations route through the
+ * behavioral landscape for category-aware matching and drift detection.
+ * The transport handles communication. The heart handles computation.
  */
 
 import { getCryptoProvider } from "../core/crypto-provider.js";
@@ -18,10 +19,19 @@ import {
 } from "../core/channel.js";
 import type { GenomeCommitment } from "../core/genome.js";
 import {
+  createProfile,
   updateProfile,
   match,
+  matchEnhanced,
   type PhenotypicProfile,
+  type EnhancedVerdict,
 } from "../sensorium/matcher.js";
+import {
+  createLandscape,
+  updateLandscape,
+  type BehavioralLandscape,
+  type LandscapeMatchResult,
+} from "../sensorium/landscape.js";
 import type { PhenotypicSignals } from "../experiment/signals.js";
 import { SignalTap } from "./signal-tap.js";
 import { ProfileStore } from "./profile-store.js";
@@ -31,10 +41,11 @@ import type {
   SomaSessionState,
   SessionPhase,
   SomaMetadata,
-  SOMA_METADATA_KEY,
 } from "./types.js";
 import type { EncryptedMessage } from "../core/channel.js";
 import type { JSONRPCMessage } from "@modelcontextprotocol/sdk/types.js";
+import type { HeartRuntime } from "../heart/runtime.js";
+
 /** A JSON-RPC message wrapped in Soma encryption. */
 export interface SomaEncryptedEnvelope {
   _somaEncrypted: true;
@@ -48,9 +59,13 @@ export class SomaSession {
   private remoteGenomeCommitment: GenomeCommitment | null = null;
   private channel: Channel | null = null;
   private profile: PhenotypicProfile | null = null;
+  private landscape: BehavioralLandscape | null = null;
+  private recentLandscapeResults: LandscapeMatchResult[] = [];
+  private lastCategory: string | null = null;
   private currentVerdict: SomaVerdict | null = null;
   private readonly signalTap = new SignalTap();
   private readonly ephemeralKeyPair: BoxKeyPair;
+  private readonly heart: HeartRuntime | null;
   private pendingRequestTimes: Map<string | number, number> = new Map();
 
   constructor(
@@ -58,10 +73,10 @@ export class SomaSession {
     private readonly profileStore: ProfileStore
   ) {
     const provider = getCryptoProvider();
-    // Generate 16 random bytes for session ID
     const idBytes = provider.random.randomBytes(16);
     this.sessionId = Array.from(idBytes).map(b => b.toString(16).padStart(2, "0")).join("");
     this.ephemeralKeyPair = generateEphemeralKeyPair();
+    this.heart = config.heart ?? null;
   }
 
   /** Get this server's Soma metadata for the initialize response. */
@@ -121,33 +136,57 @@ export class SomaSession {
     const signals = this.signalTap.tap(message, timing);
     if (!signals) return;
 
-    // Update profile if we have a genome to verify against
-    if (this.profile) {
+    // Infer category for landscape routing
+    const category = this.inferCategory(message);
+
+    // Route through landscape if available, else flat profile
+    if (this.landscape) {
+      updateLandscape(this.landscape, signals, category, this.lastCategory ?? undefined);
+      this.lastCategory = category;
+
+      const verdict = matchEnhanced(
+        this.landscape,
+        signals,
+        category,
+        this.recentLandscapeResults,
+        this.config.minObservations ?? 5,
+        {
+          heartSeedVerified: this.heart !== null,
+          birthCertificateChain: this.heart !== null,
+        }
+      );
+
+      // Track recent results for drift detection
+      this.recentLandscapeResults.push({
+        matchRatio: verdict.matchRatio,
+        featureDeviations: verdict.featureDeviations,
+        usedCategoryProfile: verdict.usedCategoryProfile,
+        landscapeDepth: verdict.landscapeDepth,
+        maturity: verdict.profileMaturity,
+        totalObservations: verdict.observationCount,
+      });
+      if (this.recentLandscapeResults.length > 20) {
+        this.recentLandscapeResults.shift();
+      }
+
+      this.emitVerdict(verdict);
+    } else if (this.profile) {
+      // Fallback: flat profile matching (Phase 1 behavior)
       updateProfile(this.profile, signals);
       const verdict = match(
         this.profile,
         signals,
         this.config.minObservations ?? 5
       );
+      this.emitVerdict(verdict);
+    }
 
-      const newVerdict: SomaVerdict = {
-        status: verdict.status,
-        confidence: verdict.confidence,
-        observationCount: verdict.observationCount,
-        remoteGenomeHash: this.remoteGenomeCommitment
-          ? this.profile.genomeHash
-          : null,
-        remoteDid: this.remoteDid,
-        timestamp: Date.now(),
-      };
-
-      this.currentVerdict = newVerdict;
-      this.config.onVerdict?.(this.sessionId, newVerdict);
-
-      // Periodically persist the profile
-      if (verdict.observationCount % 10 === 0) {
-        await this.profileStore.save(this.profile);
-      }
+    // Persist periodically
+    const obsCount = this.landscape?.totalObservations
+      ?? Object.values(this.profile?.features ?? {})[0]?.count
+      ?? 0;
+    if (obsCount > 0 && obsCount % 10 === 0 && this.profile) {
+      await this.profileStore.save(this.profile);
     }
   }
 
@@ -173,6 +212,37 @@ export class SomaSession {
     // Load or create phenotypic profile for this genome
     const hash = remote.genomeCommitment.hash;
     this.profile = await this.profileStore.load(hash);
+
+    // Create behavioral landscape for enhanced matching
+    this.landscape = createLandscape(hash);
+  }
+
+  /** Infer a probe category from the MCP message. */
+  private inferCategory(message: JSONRPCMessage): string {
+    if ("error" in message) return "failure";
+    if ("method" in message) {
+      const method = message.method;
+      if (method === "tools/call") return "normal";
+      if (method === "prompts/get") return "normal";
+      if (method === "resources/read") return "normal";
+    }
+    return "normal";
+  }
+
+  /** Emit a verdict from either flat or enhanced matching. */
+  private emitVerdict(verdict: { status: string; confidence: number; observationCount: number }): void {
+    const newVerdict: SomaVerdict = {
+      status: verdict.status as SomaVerdict["status"],
+      confidence: verdict.confidence,
+      observationCount: verdict.observationCount,
+      remoteGenomeHash: this.remoteGenomeCommitment
+        ? this.profile?.genomeHash ?? null
+        : null,
+      remoteDid: this.remoteDid,
+      timestamp: Date.now(),
+    };
+    this.currentVerdict = newVerdict;
+    this.config.onVerdict?.(this.sessionId, newVerdict);
   }
 
   /** Get the current state snapshot. */
@@ -198,6 +268,11 @@ export class SomaSession {
     return this.phase;
   }
 
+  /** Get the behavioral landscape (null if no handshake yet). */
+  getLandscape(): BehavioralLandscape | null {
+    return this.landscape;
+  }
+
   // --- Encryption ---
 
   /** Whether this session has an active encrypted channel. */
@@ -205,11 +280,6 @@ export class SomaSession {
     return this.channel !== null && this.phase === "ACTIVE";
   }
 
-  /**
-   * Encrypt an outgoing JSON-RPC message for the wire.
-   * The sensorium has already observed the plaintext — this only
-   * affects what travels over the transport.
-   */
   encryptMessage(message: JSONRPCMessage): SomaEncryptedEnvelope {
     if (!this.channel) throw new Error("No encrypted channel established");
     const plaintext = JSON.stringify(message);
@@ -217,18 +287,12 @@ export class SomaSession {
     return { _somaEncrypted: true, payload: encrypted };
   }
 
-  /**
-   * Decrypt an incoming message from the wire.
-   * Returns the plaintext JSON-RPC message for the sensorium to observe
-   * and the MCP server to process.
-   */
   decryptMessage(envelope: SomaEncryptedEnvelope): JSONRPCMessage {
     if (!this.channel) throw new Error("No encrypted channel established");
     const plaintext = this.channel.decrypt(envelope.payload);
     return JSON.parse(plaintext) as JSONRPCMessage;
   }
 
-  /** Check if a raw message is a Soma encrypted envelope. */
   static isEncryptedEnvelope(message: unknown): message is SomaEncryptedEnvelope {
     return (
       typeof message === "object" &&

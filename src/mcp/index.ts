@@ -1,13 +1,17 @@
 /**
  * Soma MCP Middleware — public API.
  *
- * Install with one line:
- *
+ * Phase 1 (observation only):
  *   const transport = withSoma(new StdioServerTransport(), somaConfig);
  *   await server.connect(transport);
  *
- * That's it. The sensorium is now observing. Like adding a sense of smell
- * to your server — passive, local, involuntary for the connecting agent.
+ * Phase 2 (heart-integrated):
+ *   const heart = createSomaHeart({ genome, signingKeyPair, modelApiKey, ... });
+ *   const transport = withSoma(new StdioServerTransport(), { ...somaConfig, heart });
+ *   await server.connect(transport);
+ *
+ * The transport handles communication. The heart handles computation.
+ * Different organs, one system.
  */
 
 import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
@@ -22,35 +26,45 @@ import {
   type GenomeCommitment,
 } from "../core/genome.js";
 import type { SomaConfig, SomaVerdict } from "./types.js";
+import type { HeartRuntime } from "../heart/runtime.js";
 
 // --- One-Liner API ---
 
 /**
- * Wrap an MCP transport with Soma phenotypic verification.
+ * Wrap an MCP transport with Soma identity verification.
  *
  * The returned transport is a drop-in replacement — the MCP server
- * connects to it exactly as it would the original. Soma observes
- * passively inside the channel.
+ * connects to it exactly as it would the original.
  *
- * @example
+ * When a heart is provided via config, computation routes through it:
+ * - Observations go through the behavioral landscape (not flat profile)
+ * - Enhanced verdicts include drift velocity and category awareness
+ * - The heart is accessible via transport.getHeart() for MCP tools
+ *
+ * @example Phase 1 (observation only):
  * ```ts
- * import { withSoma, createSomaIdentity } from "soma/mcp";
- *
- * const identity = createSomaIdentity({
- *   modelProvider: "anthropic",
- *   modelId: "claude-sonnet-4-20250514",
- *   modelVersion: "2025-05-14",
- *   systemPrompt: "You are a helpful assistant.",
- *   toolManifest: JSON.stringify(myTools),
- *   runtimeId: `node-${process.version}-${process.platform}-${process.arch}`,
- * });
- *
  * const transport = withSoma(new StdioServerTransport(), {
  *   genome: identity.commitment,
  *   signingKeyPair: identity.keyPair,
  * });
+ * ```
  *
- * await server.connect(transport);
+ * @example Phase 2 (heart-integrated):
+ * ```ts
+ * const heart = createSomaHeart({
+ *   genome: identity.commitment,
+ *   signingKeyPair: identity.keyPair,
+ *   modelApiKey: process.env.API_KEY,
+ *   modelBaseUrl: "https://api.anthropic.com/v1",
+ *   modelId: "claude-sonnet-4-20250514",
+ * });
+ * const transport = withSoma(new StdioServerTransport(), {
+ *   genome: identity.commitment,
+ *   signingKeyPair: identity.keyPair,
+ *   heart,
+ * });
+ * // MCP tools now use the heart:
+ * // const analysis = await transport.getHeart().generate({ messages });
  * ```
  */
 export function withSoma(inner: Transport, config: SomaConfig): SomaTransport {
@@ -96,6 +110,17 @@ export function getVerdict(transport: Transport): SomaVerdict | null {
 }
 
 /**
+ * Get the heart runtime from a Soma-wrapped transport.
+ * Returns null if no heart configured or transport is not Soma.
+ */
+export function getHeart(transport: Transport): HeartRuntime | null {
+  if (transport instanceof SomaTransport) {
+    return transport.getHeart();
+  }
+  return null;
+}
+
+/**
  * Check if a transport has Soma active.
  */
 export function isSomaEnabled(transport: Transport): boolean {
@@ -105,5 +130,7 @@ export function isSomaEnabled(transport: Transport): boolean {
 // --- Re-exports ---
 
 export { SomaTransport } from "./soma-transport.js";
+export { createSomaHeart, HeartRuntime } from "../heart/runtime.js";
+export type { HeartConfig } from "../heart/runtime.js";
 export type { SomaConfig, SomaVerdict, SomaMetadata } from "./types.js";
-export type { VerdictStatus, Verdict } from "../sensorium/matcher.js";
+export type { VerdictStatus, Verdict, EnhancedVerdict } from "../sensorium/matcher.js";
