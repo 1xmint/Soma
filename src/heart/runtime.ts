@@ -347,14 +347,17 @@ export class HeartRuntime {
     for await (const chunk of stream) {
       const content = chunk.choices[0]?.delta?.content;
       if (content) {
+        // Capture timestamp BEFORE HMAC computation to avoid distorting
+        // inter-token intervals used by the temporal fingerprint.
+        const ts = Date.now();
         const seq = tokenCount;
         tokenCount++;
 
         if (hmacKey) {
           const hmac = computeTokenHmac(hmacKey, content, seq, interactionCounter, this.provider);
-          yield { type: "token", token: content, timestamp: Date.now(), hmac, sequence: seq };
+          yield { type: "token", token: content, timestamp: ts, hmac, sequence: seq };
         } else {
-          yield { type: "token", token: content, timestamp: Date.now() };
+          yield { type: "token", token: content, timestamp: ts };
         }
       }
     }
