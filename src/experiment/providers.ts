@@ -238,55 +238,80 @@ async function streamFromOpenAICompatible(
     throw err;
   }
 
-  for await (const chunk of stream) {
-    const now = performance.now();
-    const choice = chunk.choices[0];
-    const content = choice?.delta?.content;
+  // Consume stream with a per-chunk stall timeout.
+  // On Windows, SSE connections sometimes don't close cleanly,
+  // causing `for await` to hang after the last chunk. This watchdog
+  // aborts the stream if no chunk arrives within 15 seconds.
+  const CHUNK_STALL_MS = 15_000;
+  let stallTimer: ReturnType<typeof setTimeout> | null = null;
+  const resetStallTimer = () => {
+    if (stallTimer) clearTimeout(stallTimer);
+    stallTimer = setTimeout(() => {
+      try { stream.controller.abort(); } catch {}
+    }, CHUNK_STALL_MS);
+  };
 
-    if (content) {
-      if (firstTokenTime === null) firstTokenTime = now;
+  resetStallTimer();
+  try {
+    for await (const chunk of stream) {
+      resetStallTimer();
+      const now = performance.now();
+      const choice = chunk.choices[0];
+      const content = choice?.delta?.content;
 
-      // Chunk boundary detection: if gap > 0.5ms from last recorded token, new chunk
-      if (lastChunkTime < 0 || (now - lastChunkTime) > 0.5) {
-        chunkBoundaries.push(tokens.length);
-      }
+      if (content) {
+        if (firstTokenTime === null) firstTokenTime = now;
 
-      tokens.push(content);
-      tokenTimestamps.push(now);
-      lastChunkTime = now;
+        // Chunk boundary detection: if gap > 0.5ms from last recorded token, new chunk
+        if (lastChunkTime < 0 || (now - lastChunkTime) > 0.5) {
+          chunkBoundaries.push(tokens.length);
+        }
 
-      // Capture logprob data if available
-      const lpData = choice?.logprobs?.content;
-      if (lpData && Array.isArray(lpData)) {
-        for (const lp of lpData) {
-          hasLogprobs = true;
-          logprobs.push({
-            token: lp.token ?? content,
-            logprob: lp.logprob ?? 0,
-            topAlternatives: (lp.top_logprobs ?? []).map(
-              (alt: { token: string; logprob: number }) => ({
-                token: alt.token,
-                logprob: alt.logprob,
-              })
-            ),
-          });
+        tokens.push(content);
+        tokenTimestamps.push(now);
+        lastChunkTime = now;
+
+        // Capture logprob data if available
+        const lpData = choice?.logprobs?.content;
+        if (lpData && Array.isArray(lpData)) {
+          for (const lp of lpData) {
+            hasLogprobs = true;
+            logprobs.push({
+              token: lp.token ?? content,
+              logprob: lp.logprob ?? 0,
+              topAlternatives: (lp.top_logprobs ?? []).map(
+                (alt: { token: string; logprob: number }) => ({
+                  token: alt.token,
+                  logprob: alt.logprob,
+                })
+              ),
+            });
+          }
         }
       }
-    }
 
-    // Capture Groq-specific timing metadata from the final chunk
-    const usage = chunk.usage as
-      | (OpenAI.CompletionUsage & {
-          queue_time?: number;
-          prompt_time?: number;
-          completion_time?: number;
-        })
-      | undefined;
-    if (usage) {
-      if (usage.queue_time !== undefined) providerMeta.queueTime = usage.queue_time;
-      if (usage.prompt_time !== undefined) providerMeta.promptTime = usage.prompt_time;
-      if (usage.completion_time !== undefined) providerMeta.completionTime = usage.completion_time;
+      // Capture Groq-specific timing metadata from the final chunk
+      const usage = chunk.usage as
+        | (OpenAI.CompletionUsage & {
+            queue_time?: number;
+            prompt_time?: number;
+            completion_time?: number;
+          })
+        | undefined;
+      if (usage) {
+        if (usage.queue_time !== undefined) providerMeta.queueTime = usage.queue_time;
+        if (usage.prompt_time !== undefined) providerMeta.promptTime = usage.prompt_time;
+        if (usage.completion_time !== undefined) providerMeta.completionTime = usage.completion_time;
+      }
     }
+  } catch (err: unknown) {
+    // AbortError from stall timer is expected — stream completed, connection hung
+    if (!(err && typeof err === "object" && "name" in err && (err as {name: string}).name === "AbortError")) {
+      // Only re-throw if we got zero tokens (real failure vs stale connection)
+      if (tokens.length === 0) throw err;
+    }
+  } finally {
+    if (stallTimer) clearTimeout(stallTimer);
   }
 
   const endTime = performance.now();
