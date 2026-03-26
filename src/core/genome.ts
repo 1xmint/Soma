@@ -16,6 +16,14 @@ export interface Genome {
   systemPromptHash: string;
   toolManifestHash: string;
   runtimeId: string;
+  /** Cloud provider (e.g. "aws", "gcp", "azure"). */
+  cloudProvider?: string;
+  /** Deployment region (e.g. "us-east-1"). */
+  region?: string;
+  /** Instance type (e.g. "g5.xlarge"). */
+  instanceType?: string;
+  /** Deployment tier: "tier1" (software) or "tier2" (TEE). */
+  deploymentTier?: string;
   createdAt: number;
   version: number;
   parentHash: string | null;
@@ -64,6 +72,10 @@ export function createGenome(config: {
   systemPrompt: string;
   toolManifest: string;
   runtimeId: string;
+  cloudProvider?: string;
+  region?: string;
+  instanceType?: string;
+  deploymentTier?: string;
   parentHash?: string | null;
   version?: number;
 }, provider?: CryptoProvider): Genome {
@@ -75,6 +87,10 @@ export function createGenome(config: {
     systemPromptHash: hash(config.systemPrompt),
     toolManifestHash: hash(config.toolManifest),
     runtimeId: config.runtimeId,
+    cloudProvider: config.cloudProvider,
+    region: config.region,
+    instanceType: config.instanceType,
+    deploymentTier: config.deploymentTier,
     createdAt: Date.now(),
     version: config.version ?? 1,
     parentHash: config.parentHash ?? null,

@@ -24,28 +24,29 @@ Like a heart. Blood doesn't flow past the heart. Blood flows through the heart. 
 
 ### Layer 1: The Voice (Identity)
 
-"Who is this agent?"
+**"Who is this agent?"**
 The heart guarantees process integrity — computation went through the legitimate execution pathway. But the OPERATOR controls the heart. The operator could commit a genome claiming "I'm running Claude Sonnet" but secretly put a GPT-4o-mini API key in the vault to save money. The heart would work perfectly. The heartbeat chain would be valid. The seed would be applied. Everything passes — except the model inside isn't what was claimed.
 That's what the sensorium catches. The temporal fingerprint says "this doesn't sound like Claude Sonnet, this sounds like GPT-4o-mini." The heart guarantees the process was legitimate. The sensorium guarantees the model is real.
 The sensorium's job is exactly one thing: verify that the model inside the heart matches the genome commitment.
 The sensorium operates in two modes depending on what kind of agent it's observing:
 LLM Mode (when genome declares a model)
 For agents powered by LLMs, the sensorium listens to the token stream and verifies the computational voice through 3 focused senses:
-Sense 1: Temporal Fingerprint (PRIMARY — 88.5% standalone accuracy)
+**Sense 1: Temporal Fingerprint (PRIMARY — 88.5% standalone accuracy)**
 The inference rhythm — token-by-token timing, inter-token intervals, burst patterns, time-to-first-token. This is the model's heartbeat. Every model architecture produces a distinctive timing signature determined by its weights, attention mechanism, and hardware. You cannot produce Claude's rhythm without running Claude's inference. This is the voice.
-Sense 2: Topology Fingerprint (25.1% standalone accuracy)
+Note: Temporal verifies deployment identity, not just model identity. The temporal fingerprint identifies a model-on-infrastructure combination — Claude on AWS us-east-1 has a different timing profile than Claude on GCP europe-west-1. This is a feature: the genome commitment includes deploymentEnvironment (cloud provider, region, instance type) so the sensorium knows what infrastructure to expect. If the operator migrates, they publish a genome mutation. Unannounced migration triggers AMBER/RED — correct behavior, since something changed unexpectedly. This means Soma doesn't just prove "this is Claude" — it proves "this is Claude running on this specific infrastructure."
+**Sense 2: Topology Fingerprint (25.1% standalone accuracy)**
 Response structure patterns — paragraph flow, transition density, frontloading ratio, topic coherence, nesting depth. How the model organizes its output is involuntary and model-specific. Claude structures arguments differently than GPT structures them differently than Llama. This is the gait — not individual steps but the overall movement pattern.
-Sense 3: Vocabulary Fingerprint (backup — 20.2% standalone)
+**Sense 3: Vocabulary Fingerprint (backup — 20.2% standalone)**
 Word choice distribution — type-token ratio, sentence starter patterns, contraction usage, modal verb frequency. Weaker than temporal but catches edge cases where two models have similar timing but different vocabulary profiles.
 Weighting: Temporal gets 5x weight. Topology gets 2x. Vocabulary gets 1x. The classifier is weighted, not equal — low-signal features don't dilute high-signal features.
 Why only 3 senses, not 10: Phase 2 tested 10 sensory channels. 7 of them scored below 15% — barely above random. They were adding noise, not signal. The gestalt (84.5%) was LOWER than temporal alone (88.5%). The heart already handles process integrity, data provenance, session binding, and credential security through cryptographic guarantees. The senses only need to answer one question: is the model real? Three focused senses answer that question better than ten diluted ones.
 Compute Mode (when genome has no model / non-LLM agents)
-For agents that don't use LLMs — payment processors, data aggregators, routing agents, x402 agents — there's no token stream, no inference rhythm, no vocabulary. The temporal fingerprint doesn't exist. The sensorium switches to computational profiling:
-Sense A: Latency Profile
+**For agents that don't use LLMs — payment processors, data aggregators, routing agents, x402 agents — there's no token stream, no inference rhythm, no vocabulary. The temporal fingerprint doesn't exist. The sensorium switches to computational profiling:**
+**Sense A: Latency Profile**
 Request-response timing distribution across different query types. Every implementation has a characteristic latency signature determined by its infrastructure, processing logic, and dependencies.
-Sense B: Transform Signature
+**Sense B: Transform Signature**
 Given the same input, how does the agent transform it? Field extraction patterns, output formatting, data ordering, precision levels. These are deterministic properties of the code.
-Sense C: Error Handling Signature
+**Sense C: Error Handling Signature**
 How the agent fails — timeout behavior, retry patterns, error message formatting, graceful degradation patterns. Every implementation fails differently.
 The genome commitment declares the agent type. If modelId is present, use LLM mode. If absent or "none", use compute mode. The sensorium adapts its senses to what the agent claims to be.
 Compute mode is designed but not yet built. Build it when non-LLM agent adoption demands it. The heart already works for non-LLM agents — it provides full process integrity regardless of whether an LLM is involved.
@@ -373,24 +374,44 @@ The heart is the execution runtime that all agent computation passes through. It
 The heart manages the agent's entire computational lifecycle:
 
 ```typescript
+/** The genome — the agent's declared identity. Hashed and signed into a GenomeCommitment. */
+interface Genome {
+  modelProvider: string;
+  modelId: string;
+  modelVersion: string;
+  systemPromptHash: string;    // SHA-256 of the system prompt (original never leaves the agent)
+  toolManifestHash: string;    // SHA-256 of the tool manifest
+  runtimeId: string;
+  // Deployment identity
+  cloudProvider?: string;      // e.g. "aws", "gcp", "azure"
+  region?: string;             // e.g. "us-east-1"
+  instanceType?: string;       // e.g. "g5.xlarge"
+  deploymentTier?: string;     // "tier1" (software) or "tier2" (TEE)
+  // Versioning
+  createdAt: number;
+  version: number;
+  parentHash: string | null;   // Links to previous genome version (mutation chain)
+}
+
 interface HeartConfig {
   genome: GenomeCommitment;
   signingKeyPair: nacl.SignKeyPair;
-  
+
   // The heart holds the credentials — they're only accessible through the heart
   modelApiKey: string;
   modelBaseUrl: string;
   modelId: string;
-  
+
   // Tool credentials — only accessible through the heart
   toolCredentials: Record<string, string>;
-  
+
   // Data source configurations — only accessible through the heart
   dataSources: DataSourceConfig[];
-  
+
   // Profile storage
   profileStorePath?: string;
 }
+```
 
 interface HeartRuntime {
   // The ONLY way to call the model — goes through the heart
@@ -429,6 +450,7 @@ interface HeartbeatToken {
 ```
 
 The receiver verifies every HMAC before processing the token. Invalid HMAC = immediate RED.
+HMAC overhead: HMAC-SHA256 computation adds a consistent sub-microsecond offset per token. The runtime measures inter-token intervals BEFORE computing the HMAC to avoid distorting the temporal fingerprint. Any residual variance from HMAC computation is below 5% of natural inter-token variance and does not affect sensorium accuracy.
 
 #### `src/heart/seed.ts` — The Heart Seed
 
