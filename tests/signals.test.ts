@@ -308,9 +308,9 @@ describe("Full Signal Extraction", () => {
 // --- Probe Battery Tests ---
 
 describe("Probe Battery", () => {
-  it("has exactly 100 probes", async () => {
+  it("has exactly 120 probes", async () => {
     const { ALL_PROBES } = await import("../src/experiment/probes.js");
-    expect(ALL_PROBES.length).toBe(100);
+    expect(ALL_PROBES.length).toBe(120);
   });
 
   it("has 20 probes per category", async () => {

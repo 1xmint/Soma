@@ -14,6 +14,12 @@
  */
 
 import { signalsToFeatureVector, FEATURE_NAMES, type PhenotypicSignals } from "../experiment/signals.js";
+import {
+  type BehavioralLandscape,
+  matchLandscape,
+  computeDriftVelocity,
+  type LandscapeMatchResult,
+} from "./landscape.js";
 
 // --- Types ---
 
@@ -29,6 +35,22 @@ export interface Verdict {
   matchRatio: number;
   /** Variance in match ratios across recent observations — high = UNCANNY territory. */
   consistencyScore: number;
+}
+
+/** Enhanced verdict with landscape awareness, drift detection, and heart verification. */
+export interface EnhancedVerdict extends Verdict {
+  /** Rate of profile change — low = healthy, sudden spike = suspicious. */
+  driftVelocity: number;
+  /** Profile maturity based on observation depth. */
+  profileMaturity: "embryonic" | "juvenile" | "adult" | "elder";
+  /** Number of task categories observed. */
+  landscapeDepth: number;
+  /** Whether a category-specific profile was used (vs flat). */
+  usedCategoryProfile: boolean;
+  /** Did the heart seed verification pass? (set externally) */
+  heartSeedVerified: boolean;
+  /** Is the data provenance chain intact? (set externally) */
+  birthCertificateChain: boolean;
 }
 
 /** Running statistics for a single feature — Welford's online algorithm. */
@@ -161,6 +183,61 @@ export function match(
     featureDeviations: deviations,
     matchRatio,
     consistencyScore,
+  };
+}
+
+// --- Enhanced Matching (Landscape-Aware) ---
+
+/**
+ * Compare an observation against a behavioral landscape.
+ *
+ * Uses category-specific profiles when available, includes drift detection,
+ * and produces the full enhanced verdict. This is the Phase 2 matcher.
+ */
+export function matchEnhanced(
+  landscape: BehavioralLandscape,
+  signals: PhenotypicSignals,
+  category: string,
+  recentResults: LandscapeMatchResult[] = [],
+  minObservations: number = DEFAULT_MIN_OBSERVATIONS,
+  options: { heartSeedVerified?: boolean; birthCertificateChain?: boolean } = {}
+): EnhancedVerdict {
+  const landscapeResult = matchLandscape(landscape, signals, category);
+
+  const matchRatio = landscapeResult.matchRatio;
+  const confidence = matchRatio;
+  const observationCount = landscapeResult.totalObservations;
+  const driftVelocity = computeDriftVelocity(landscape, [...recentResults, landscapeResult]);
+
+  // Track for consistency scoring — use landscape observation history
+  const recentMatchRatios = recentResults.map((r) => r.matchRatio);
+  recentMatchRatios.push(matchRatio);
+  const consistencyScore = computeConsistency(recentMatchRatios.slice(-MAX_RECENT));
+
+  // Determine status
+  let status: VerdictStatus;
+  if (observationCount < minObservations) {
+    status = "AMBER";
+  } else if (driftVelocity > 0.3 && confidence >= 0.6 && confidence <= 0.8) {
+    // High drift + moderate match = UNCANNY (more suspicious than drift alone)
+    status = "UNCANNY";
+  } else {
+    status = classifyVerdict(confidence, consistencyScore);
+  }
+
+  return {
+    status,
+    confidence,
+    observationCount,
+    featureDeviations: landscapeResult.featureDeviations,
+    matchRatio,
+    consistencyScore,
+    driftVelocity,
+    profileMaturity: landscapeResult.maturity,
+    landscapeDepth: landscapeResult.landscapeDepth,
+    usedCategoryProfile: landscapeResult.usedCategoryProfile,
+    heartSeedVerified: options.heartSeedVerified ?? false,
+    birthCertificateChain: options.birthCertificateChain ?? false,
   };
 }
 
