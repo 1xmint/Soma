@@ -146,9 +146,22 @@ function delay(ms: number): Promise<void> {
 
 async function runExperiment(): Promise<void> {
   const startedAt = new Date().toISOString();
-  const total = AGENT_CONFIGS.length * ALL_PROBES.length;
+
+  // Filter by provider if --provider flag is passed
+  const providerArg = process.argv.find(a => a.startsWith("--provider="))?.split("=")[1];
+  const filteredAgents = providerArg
+    ? AGENT_CONFIGS.filter(a => a.provider === providerArg)
+    : AGENT_CONFIGS;
+
+  if (providerArg && filteredAgents.length === 0) {
+    console.error(`No agents for provider: ${providerArg}`);
+    process.exit(1);
+  }
+
+  const total = filteredAgents.length * ALL_PROBES.length;
   console.log(`\n  Soma Phase 2 — Clean Experiment`);
-  console.log(`  ${AGENT_CONFIGS.length} agents x ${ALL_PROBES.length} probes = ${total} observations`);
+  if (providerArg) console.log(`  Provider filter: ${providerArg}`);
+  console.log(`  ${filteredAgents.length} agents x ${ALL_PROBES.length} probes = ${total} observations`);
   console.log(`  Started: ${startedAt}\n`);
 
   const results: ExperimentResult[] = [];
@@ -156,9 +169,9 @@ async function runExperiment(): Promise<void> {
   let completed = 0;
   let agentIndex = 0;
 
-  for (const agent of AGENT_CONFIGS) {
+  for (const agent of filteredAgents) {
     agentIndex++;
-    const agentProgress = `[agent ${agentIndex}/${AGENT_CONFIGS.length}]`;
+    const agentProgress = `[agent ${agentIndex}/${filteredAgents.length}]`;
     console.log(`\n${"─".repeat(60)}`);
     console.log(`  ${agentProgress} ${agent.label}`);
     console.log(`  provider: ${agent.provider}  model: ${agent.model}`);
@@ -209,7 +222,7 @@ async function runExperiment(): Promise<void> {
   const run: ExperimentRun = {
     startedAt,
     completedAt,
-    agentCount: AGENT_CONFIGS.length,
+    agentCount: filteredAgents.length,
     probeCount: ALL_PROBES.length,
     results,
     errors,
@@ -222,7 +235,8 @@ async function runExperiment(): Promise<void> {
   }
 
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-  const outputPath = `${resultsDir}/experiment-${timestamp}.json`;
+  const suffix = providerArg ? `-${providerArg}` : "";
+  const outputPath = `${resultsDir}/experiment-${timestamp}${suffix}.json`;
   await writeFile(outputPath, JSON.stringify(run, null, 2));
 
   // Summary
@@ -248,7 +262,9 @@ async function runExperiment(): Promise<void> {
 
 // --- Entry Point ---
 
-runExperiment().catch((err) => {
+runExperiment().then(() => {
+  process.exit(0);
+}).catch((err) => {
   console.error("Experiment failed:", err);
   process.exit(1);
 });
