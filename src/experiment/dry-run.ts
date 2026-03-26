@@ -20,6 +20,8 @@ const PROVIDERS: ProviderTest[] = [
   { name: "Groq (Llama 3.3 70B)", provider: "groq", model: "llama-3.3-70b-versatile" },
   { name: "Mistral (Small)", provider: "mistral", model: "mistral-small-latest" },
   { name: "OpenRouter (DeepSeek V3)", provider: "openrouter", model: "deepseek/deepseek-v3.2-20251201" },
+  { name: "Anthropic (Haiku)", provider: "anthropic", model: "claude-haiku-4-5-20251001" },
+  { name: "OpenAI (GPT-4o Mini)", provider: "openai", model: "gpt-4o-mini" },
 ];
 
 const TEST_PROBES = [

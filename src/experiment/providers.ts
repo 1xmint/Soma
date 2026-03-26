@@ -174,12 +174,16 @@ function isRateLimitError(err: unknown): boolean {
 // --- OpenAI-Compatible (Groq, Mistral, OpenRouter) ---
 // All use the OpenAI SDK with custom baseURL.
 
+// Track which baseURL+model combos reject logprobs so we don't retry every call
+const logprobsBlacklist = new Set<string>();
+
 async function streamFromOpenAICompatible(
   baseURL: string,
   apiKey: string,
   model: string,
   systemPrompt: string,
-  userPrompt: string
+  userPrompt: string,
+  forceNoLogprobs = false
 ): Promise<StreamingResponse> {
   const client = new OpenAI({ baseURL, apiKey });
 
@@ -193,19 +197,32 @@ async function streamFromOpenAICompatible(
   let lastChunkTime = -1;
   const providerMeta: Record<string, unknown> = { provider: baseURL, model };
 
-  // Request logprobs where supported (OpenAI, Groq, Mistral)
-  // Anthropic doesn't support logprobs — the request simply ignores unknown params
-  const supportsLogprobs = !baseURL.includes("anthropic.com");
+  // Only request logprobs if the provider/model hasn't rejected them before
+  const logprobsKey = `${baseURL}|${model}`;
+  const tryLogprobs = !forceNoLogprobs
+    && !baseURL.includes("anthropic.com")
+    && !logprobsBlacklist.has(logprobsKey);
 
-  const stream = await client.chat.completions.create({
-    model,
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt },
-    ],
-    stream: true,
-    ...(supportsLogprobs ? { logprobs: true, top_logprobs: 5 } : {}),
-  });
+  let stream;
+  try {
+    stream = await client.chat.completions.create({
+      model,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      stream: true,
+      ...(tryLogprobs ? { logprobs: true, top_logprobs: 5 } : {}),
+    });
+  } catch (err: unknown) {
+    // If logprobs caused a 400, blacklist and retry without them
+    if (tryLogprobs && err && typeof err === "object" && "status" in err
+        && (err as { status: number }).status === 400) {
+      logprobsBlacklist.add(logprobsKey);
+      return streamFromOpenAICompatible(baseURL, apiKey, model, systemPrompt, userPrompt, true);
+    }
+    throw err;
+  }
 
   for await (const chunk of stream) {
     const now = performance.now();
