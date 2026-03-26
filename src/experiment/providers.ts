@@ -10,12 +10,17 @@
 import OpenAI from "openai";
 import type { StreamingTrace } from "./signals.js";
 import type { ProviderName } from "./configs.js";
+import type { TokenLogprob } from "../sensorium/stream-capture.js";
 
 // --- Types ---
 
 export interface StreamingResponse {
   text: string;
   trace: StreamingTrace;
+  /** Logprob data for each token (null if API doesn't support it). */
+  logprobs: TokenLogprob[] | null;
+  /** Indices where new network chunks started. */
+  chunkBoundaries: number[];
   /** Provider-specific metadata (e.g., Groq timing stats). */
   providerMeta: Record<string, unknown>;
 }
@@ -92,7 +97,15 @@ async function streamFromOpenAICompatible(
   let firstTokenTime: number | null = null;
   const tokens: string[] = [];
   const tokenTimestamps: number[] = [];
+  const logprobs: TokenLogprob[] = [];
+  const chunkBoundaries: number[] = [];
+  let hasLogprobs = false;
+  let lastChunkTime = -1;
   const providerMeta: Record<string, unknown> = { provider: baseURL, model };
+
+  // Request logprobs where supported (OpenAI, Groq, Mistral)
+  // Anthropic doesn't support logprobs — the request simply ignores unknown params
+  const supportsLogprobs = !baseURL.includes("anthropic.com");
 
   const stream = await client.chat.completions.create({
     model,
@@ -101,15 +114,43 @@ async function streamFromOpenAICompatible(
       { role: "user", content: userPrompt },
     ],
     stream: true,
+    ...(supportsLogprobs ? { logprobs: true, top_logprobs: 5 } : {}),
   });
 
   for await (const chunk of stream) {
-    const content = chunk.choices[0]?.delta?.content;
+    const now = performance.now();
+    const choice = chunk.choices[0];
+    const content = choice?.delta?.content;
+
     if (content) {
-      const now = performance.now();
       if (firstTokenTime === null) firstTokenTime = now;
+
+      // Chunk boundary detection: if gap > 0.5ms from last recorded token, new chunk
+      if (lastChunkTime < 0 || (now - lastChunkTime) > 0.5) {
+        chunkBoundaries.push(tokens.length);
+      }
+
       tokens.push(content);
       tokenTimestamps.push(now);
+      lastChunkTime = now;
+
+      // Capture logprob data if available
+      const lpData = choice?.logprobs?.content;
+      if (lpData && Array.isArray(lpData)) {
+        for (const lp of lpData) {
+          hasLogprobs = true;
+          logprobs.push({
+            token: lp.token ?? content,
+            logprob: lp.logprob ?? 0,
+            topAlternatives: (lp.top_logprobs ?? []).map(
+              (alt: { token: string; logprob: number }) => ({
+                token: alt.token,
+                logprob: alt.logprob,
+              })
+            ),
+          });
+        }
+      }
     }
 
     // Capture Groq-specific timing metadata from the final chunk
@@ -132,6 +173,8 @@ async function streamFromOpenAICompatible(
   return {
     text: tokens.join(""),
     trace: { tokenTimestamps, tokens, startTime, firstTokenTime, endTime },
+    logprobs: hasLogprobs ? logprobs : null,
+    chunkBoundaries,
     providerMeta,
   };
 }
@@ -168,6 +211,8 @@ export async function streamThroughProxy(
   return {
     text: real.text,
     trace: proxyTrace,
+    logprobs: real.logprobs,
+    chunkBoundaries: real.chunkBoundaries,
     providerMeta: { ...real.providerMeta, proxied: true },
   };
 }
