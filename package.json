@@ -14,6 +14,7 @@
     "experiment:openrouter": "tsx src/experiment/runner.ts --provider=openrouter",
     "analyze": "tsx src/experiment/analyze.ts",
     "analyze:full": "tsx src/experiment/merge-and-analyze.ts",
+    "analyze:optimize": "tsx src/experiment/optimize-sensorium.ts",
     "generate-synthetic": "tsx src/experiment/generate-synthetic.ts",
     "experiment:agents": "tsx src/experiment/agents/run-agent-experiment.ts",
     "test:heart-live": "tsx src/experiment/heart-live-test.ts"
