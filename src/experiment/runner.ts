@@ -12,7 +12,7 @@ import { config } from "dotenv";
 import { AGENT_CONFIGS, type AgentConfig } from "./configs.js";
 import { ALL_PROBES, type Probe } from "./probes.js";
 import { extractAllSignals, type PhenotypicSignals } from "./signals.js";
-import { streamFromProvider, streamThroughProxy, type StreamingResponse } from "./providers.js";
+import { streamFromProvider, streamThroughProxy, resetKeyPool, type StreamingResponse } from "./providers.js";
 
 // Load .env before anything touches process.env
 config();
@@ -193,12 +193,15 @@ async function runExperiment(): Promise<void> {
         errors.push({ agentId: agent.id, probeId: probe.id, error: errorMessage });
       }
 
-      // Rate limit: 200ms between calls to stay within free tier limits
-      await delay(200);
+      // Rate limit: 500ms between calls to stay within free tier limits
+      await delay(500);
     }
 
     const agentDuration = ((Date.now() - agentStart) / 1000).toFixed(1);
     console.log(`  => ${agent.id}: ${agentSuccess} ok, ${agentErrors} errors, ${agentDuration}s`);
+
+    // Reset key exhaustion between agents — a key that was 429'd may be fine now
+    resetKeyPool();
   }
 
   const completedAt = new Date().toISOString();

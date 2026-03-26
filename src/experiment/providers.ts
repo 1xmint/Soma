@@ -147,7 +147,8 @@ export async function streamFromProvider(
         if (!rotated) {
           throw new Error(`All ${pool.keys.length} API keys for ${provider} are rate-limited`);
         }
-        // Retry with the next key
+        // Brief pause before retrying with the next key
+        await new Promise((r) => setTimeout(r, 2000));
         continue;
       }
       throw err;
@@ -198,7 +199,7 @@ async function streamFromOpenAICompatible(
   userPrompt: string,
   forceNoLogprobs = false
 ): Promise<StreamingResponse> {
-  const client = new OpenAI({ baseURL, apiKey });
+  const client = new OpenAI({ baseURL, apiKey, timeout: CALL_TIMEOUT_MS });
 
   const startTime = performance.now();
   let firstTokenTime: number | null = null;
