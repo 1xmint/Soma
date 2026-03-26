@@ -17,6 +17,8 @@ export interface Channel {
   remoteDid: string;
   localGenomeCommitment: GenomeCommitment;
   remoteGenomeCommitment: GenomeCommitment;
+  /** The shared session key — used by the heart seed mechanism. */
+  sessionKey: Uint8Array;
   /** Encrypt a plaintext message for the remote party. */
   encrypt(plaintext: string): EncryptedMessage;
   /** Decrypt a message from the remote party. */
@@ -84,6 +86,7 @@ export function establishChannel(
     remoteDid: remoteHandshake.did,
     localGenomeCommitment: local.handshake.genomeCommitment,
     remoteGenomeCommitment: remoteHandshake.genomeCommitment,
+    sessionKey: sharedKey,
 
     encrypt(plaintext: string): EncryptedMessage {
       const nonce = nacl.randomBytes(nacl.secretbox.nonceLength);

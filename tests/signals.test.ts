@@ -301,7 +301,7 @@ describe("Full Signal Extraction", () => {
   });
 
   it("feature vector length matches feature names", () => {
-    expect(FEATURE_NAMES.length).toBe(44); // 34 original + 10 vocabulary (Sense 1)
+    expect(FEATURE_NAMES.length).toBe(80); // 34 + 10 vocab + 9 topo + 8 cap + 6 tool + 8 adv + 5 ctx
   });
 });
 

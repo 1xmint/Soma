@@ -23,6 +23,12 @@ function makeSignals(overrides: Partial<{
   vocabTypeTokenRatio: number;
   vocabContractionRatio: number;
   vocabModalVerbRatio: number;
+  topoParagraphLengthVariance: number;
+  topoFrontloadingRatio: number;
+  topoNestingDepth: number;
+  capRefusalSoftness: number;
+  advResistanceRate: number;
+  ctxResponseToPromptRatio: number;
 }> = {}): PhenotypicSignals {
   return {
     cognitive: {
@@ -78,6 +84,52 @@ function makeSignals(overrides: Partial<{
       vocabPassiveVoiceRatio: 0.15,
       vocabQuestionDensity: 0.5,
       vocabModalVerbRatio: overrides.vocabModalVerbRatio ?? 0.04,
+    },
+    topology: {
+      topoParagraphLengthVariance: overrides.topoParagraphLengthVariance ?? 50,
+      topoParagraphLengthTrend: 0.5,
+      topoTransitionDensity: 0.3,
+      topoTopicCoherence: 0.4,
+      topoFrontloadingRatio: overrides.topoFrontloadingRatio ?? 0.3,
+      topoListPosition: 0.5,
+      topoConclusionPresent: 1,
+      topoNestingDepth: overrides.topoNestingDepth ?? 2,
+      topoCodePosition: -1,
+    },
+    capabilityBoundary: {
+      capRefusalSoftness: overrides.capRefusalSoftness ?? 0,
+      capUncertaintySpecificity: 0.5,
+      capConfidenceWhenWrong: -1,
+      capGracefulDegradation: 0,
+      capHallucConfabulateRate: -1,
+      capHallucCorrectRejectionRate: -1,
+      capMathShowsWork: -1,
+      capEdgeCreativityRatio: -1,
+    },
+    toolInteraction: {
+      toolCallRate: -1,
+      toolCallEagerness: -1,
+      toolResultIntegration: -1,
+      toolChainDepth: -1,
+      toolSelectionEntropy: -1,
+      toolVsManualRatio: -1,
+    },
+    adversarial: {
+      advResistanceRate: overrides.advResistanceRate ?? -1,
+      advComplianceRate: -1,
+      advExplanationRate: -1,
+      advRedirectRate: -1,
+      advResponseLengthRatio: -1,
+      advAuthoritySusceptibility: -1,
+      advToneShiftHedgeDelta: -1,
+      advToneShiftCertaintyDelta: -1,
+    },
+    contextUtilization: {
+      ctxEchoRatio: 0.3,
+      ctxResponseToPromptRatio: overrides.ctxResponseToPromptRatio ?? 5.0,
+      ctxHallucinationIndicator: 0.01,
+      ctxPromptAdherence: -1,
+      ctxInfoOrdering: 0.5,
     },
   };
 }
@@ -147,7 +199,7 @@ describe("Sensorium Matcher", () => {
       updateProfile(profile, normal);
     }
 
-    // Drastically different behavior — diverge most features
+    // Drastically different behavior — diverge features across all senses
     const divergent = makeSignals({
       hedgeCount: 50,
       certaintyCount: 50,
@@ -160,12 +212,20 @@ describe("Sensorium Matcher", () => {
       vocabTypeTokenRatio: 0.1,
       vocabContractionRatio: 0.5,
       vocabModalVerbRatio: 0.5,
+      topoParagraphLengthVariance: 5000,
+      topoFrontloadingRatio: 0.95,
+      topoNestingDepth: 10,
+      capRefusalSoftness: 3,
+      ctxResponseToPromptRatio: 100,
     });
 
     const verdict = match(profile, divergent);
     // Not all features diverge (some are constant in makeSignals),
     // but confidence drops significantly from the changed features
-    expect(verdict.confidence).toBeLessThan(0.85);
+    // With more features (senses 1-9), more zero-valued features match,
+    // so the threshold needs to account for dilution. The divergent features
+    // still pull confidence down from 1.0.
+    expect(verdict.confidence).toBeLessThan(0.95);
     expect(verdict.status).not.toBe("GREEN");
   });
 

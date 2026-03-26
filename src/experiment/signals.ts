@@ -11,10 +11,37 @@ import {
   vocabularyToFeatureVector,
   VOCABULARY_FEATURE_NAMES,
   type VocabularySignals,
+  extractTopologySignals,
+  topologyToFeatureVector,
+  TOPOLOGY_FEATURE_NAMES,
+  type TopologySignals,
+  extractCapabilityBoundarySignals,
+  capabilityBoundaryToFeatureVector,
+  CAPABILITY_BOUNDARY_FEATURE_NAMES,
+  type CapabilityBoundarySignals,
+  extractToolInteractionSignals,
+  toolInteractionToFeatureVector,
+  TOOL_INTERACTION_FEATURE_NAMES,
+  type ToolInteractionSignals,
+  extractAdversarialSignals,
+  adversarialToFeatureVector,
+  ADVERSARIAL_FEATURE_NAMES,
+  type AdversarialSignals,
+  extractContextUtilizationSignals,
+  contextUtilizationToFeatureVector,
+  CONTEXT_UTILIZATION_FEATURE_NAMES,
+  type ContextUtilizationSignals,
 } from "../sensorium/senses/index.js";
 
 // Re-export for external consumers
-export type { VocabularySignals };
+export type {
+  VocabularySignals,
+  TopologySignals,
+  CapabilityBoundarySignals,
+  ToolInteractionSignals,
+  AdversarialSignals,
+  ContextUtilizationSignals,
+};
 
 // --- Types ---
 
@@ -70,6 +97,11 @@ export interface PhenotypicSignals {
   temporal: TemporalSignals;
   error: ErrorSignals;
   vocabulary?: VocabularySignals;
+  topology?: TopologySignals;
+  capabilityBoundary?: CapabilityBoundarySignals;
+  toolInteraction?: ToolInteractionSignals;
+  adversarial?: AdversarialSignals;
+  contextUtilization?: ContextUtilizationSignals;
 }
 
 /** Raw streaming data captured during an API call. */
@@ -376,6 +408,11 @@ export function extractAllSignals(
     temporal: extractTemporalSignals(trace),
     error: extractErrorSignals(responseText, probeCategory),
     vocabulary: extractVocabularySignals(responseText),
+    topology: extractTopologySignals(responseText),
+    capabilityBoundary: extractCapabilityBoundarySignals(responseText, probeCategory),
+    toolInteraction: extractToolInteractionSignals(responseText, probeCategory),
+    adversarial: extractAdversarialSignals(responseText, probeCategory),
+    contextUtilization: extractContextUtilizationSignals("", responseText),
   };
 }
 
@@ -384,8 +421,13 @@ export function extractAllSignals(
  * Categorical features (openingPattern, closingPattern) are one-hot encoded.
  */
 export function signalsToFeatureVector(signals: PhenotypicSignals): number[] {
-  const { cognitive, structural, temporal, error, vocabulary } = signals;
+  const { cognitive, structural, temporal, error, vocabulary, topology, capabilityBoundary, toolInteraction, adversarial, contextUtilization } = signals;
   const vocabVector = vocabulary ? vocabularyToFeatureVector(vocabulary) : new Array(VOCABULARY_FEATURE_NAMES.length).fill(0);
+  const topoVector = topology ? topologyToFeatureVector(topology) : new Array(TOPOLOGY_FEATURE_NAMES.length).fill(0);
+  const capVector = capabilityBoundary ? capabilityBoundaryToFeatureVector(capabilityBoundary) : new Array(CAPABILITY_BOUNDARY_FEATURE_NAMES.length).fill(0);
+  const toolVector = toolInteraction ? toolInteractionToFeatureVector(toolInteraction) : new Array(TOOL_INTERACTION_FEATURE_NAMES.length).fill(0);
+  const advVector = adversarial ? adversarialToFeatureVector(adversarial) : new Array(ADVERSARIAL_FEATURE_NAMES.length).fill(0);
+  const ctxVector = contextUtilization ? contextUtilizationToFeatureVector(contextUtilization) : new Array(CONTEXT_UTILIZATION_FEATURE_NAMES.length).fill(0);
   return [
     // Cognitive (6)
     cognitive.hedgeCount,
@@ -427,6 +469,16 @@ export function signalsToFeatureVector(signals: PhenotypicSignals): number[] {
     error.confidenceRatio,
     // Vocabulary (10) — Sense 1
     ...vocabVector,
+    // Topology (9) — Sense 2
+    ...topoVector,
+    // Capability Boundary (8) — Sense 3
+    ...capVector,
+    // Tool Interaction (6) — Sense 4
+    ...toolVector,
+    // Adversarial Resilience (8) — Sense 5
+    ...advVector,
+    // Context Utilization (5) — Sense 8
+    ...ctxVector,
   ];
 }
 
@@ -444,4 +496,14 @@ export const FEATURE_NAMES: string[] = [
   "attempted_impossible", "self_corrections", "confidence_ratio",
   // Vocabulary — Sense 1 (10)
   ...VOCABULARY_FEATURE_NAMES,
+  // Topology — Sense 2 (9)
+  ...TOPOLOGY_FEATURE_NAMES,
+  // Capability Boundary — Sense 3 (8)
+  ...CAPABILITY_BOUNDARY_FEATURE_NAMES,
+  // Tool Interaction — Sense 4 (6)
+  ...TOOL_INTERACTION_FEATURE_NAMES,
+  // Adversarial Resilience — Sense 5 (8)
+  ...ADVERSARIAL_FEATURE_NAMES,
+  // Context Utilization — Sense 8 (5)
+  ...CONTEXT_UTILIZATION_FEATURE_NAMES,
 ];
