@@ -6,15 +6,15 @@ import type { GenomeCommitment } from "../core/genome.js";
 import type { Channel } from "../core/channel.js";
 import type { PhenotypicSignals } from "../experiment/signals.js";
 import type { VerdictStatus, Verdict, PhenotypicProfile } from "../sensorium/matcher.js";
-import type nacl from "tweetnacl";
+import type { SignKeyPair } from "../core/crypto-provider.js";
 
 // --- Configuration ---
 
 export interface SomaConfig {
   /** This server's genome commitment — its identity declaration. */
   genome: GenomeCommitment;
-  /** Ed25519 signing key pair for this server. */
-  signingKeyPair: nacl.SignKeyPair;
+  /** Signing key pair for this server. */
+  signingKeyPair: SignKeyPair;
   /** Where to persist phenotypic profiles. Default: .soma/profiles */
   profileStorePath?: string;
   /** Minimum observations before issuing a real verdict (immune learning phase). Default: 5 */

@@ -15,7 +15,10 @@
  * Verification is statistical, not exact.
  */
 
-import { createHash } from "node:crypto";
+import {
+  getCryptoProvider,
+  type CryptoProvider,
+} from "../core/crypto-provider.js";
 
 /** Seed modifications — semantically neutral prompt additions. */
 const SEED_MODIFICATIONS = [
@@ -61,13 +64,15 @@ export interface HeartSeed {
  * The receiving party independently derives the same seed and verifies
  * that the response characteristics match the expected influence.
  */
-export function deriveSeed(config: SeedConfig, queryHash: string): HeartSeed {
+export function deriveSeed(config: SeedConfig, queryHash: string, provider?: CryptoProvider): HeartSeed {
+  const p = provider ?? getCryptoProvider();
+
   // Derive nonce: H(sessionKey || counter || queryHash)
   const material = new Uint8Array([
     ...config.sessionKey,
     ...new TextEncoder().encode(`|${config.interactionCounter}|${queryHash}`),
   ]);
-  const nonce = createHash("sha256").update(material).digest("hex");
+  const nonce = p.hashing.hash(new TextDecoder().decode(material));
 
   // Select modification based on nonce (first 4 hex chars -> index)
   const modIndex = parseInt(nonce.slice(0, 4), 16) % SEED_MODIFICATIONS.length;

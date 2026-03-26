@@ -8,7 +8,8 @@
  * calibrates during the handshake, then actively monitors.
  */
 
-import { randomBytes } from "node:crypto";
+import { getCryptoProvider } from "../core/crypto-provider.js";
+import type { BoxKeyPair } from "../core/crypto-provider.js";
 import {
   establishChannel,
   generateEphemeralKeyPair,
@@ -34,8 +35,6 @@ import type {
 } from "./types.js";
 import type { EncryptedMessage } from "../core/channel.js";
 import type { JSONRPCMessage } from "@modelcontextprotocol/sdk/types.js";
-import type nacl from "tweetnacl";
-
 /** A JSON-RPC message wrapped in Soma encryption. */
 export interface SomaEncryptedEnvelope {
   _somaEncrypted: true;
@@ -51,14 +50,17 @@ export class SomaSession {
   private profile: PhenotypicProfile | null = null;
   private currentVerdict: SomaVerdict | null = null;
   private readonly signalTap = new SignalTap();
-  private readonly ephemeralKeyPair: nacl.BoxKeyPair;
+  private readonly ephemeralKeyPair: BoxKeyPair;
   private pendingRequestTimes: Map<string | number, number> = new Map();
 
   constructor(
     private readonly config: SomaConfig,
     private readonly profileStore: ProfileStore
   ) {
-    this.sessionId = randomBytes(16).toString("hex");
+    const provider = getCryptoProvider();
+    // Generate 16 random bytes for session ID
+    const idBytes = provider.random.randomBytes(16);
+    this.sessionId = Array.from(idBytes).map(b => b.toString(16).padStart(2, "0")).join("");
     this.ephemeralKeyPair = generateEphemeralKeyPair();
   }
 

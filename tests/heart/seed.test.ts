@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import nacl from "tweetnacl";
+import { getCryptoProvider } from "../../src/core/crypto-provider.js";
 import {
   deriveSeed,
   applySeed,
@@ -7,9 +7,11 @@ import {
   getSeedModifications,
 } from "../../src/heart/seed.js";
 
+const crypto = getCryptoProvider();
+
 describe("HeartSeed", () => {
   function makeSessionKey(): Uint8Array {
-    return nacl.randomBytes(32);
+    return crypto.random.randomBytes(32);
   }
 
   describe("deriveSeed()", () => {
@@ -49,7 +51,7 @@ describe("HeartSeed", () => {
       const modIds = new Set(mods.map((m) => m.id));
 
       for (let i = 0; i < 50; i++) {
-        const sessionKey = nacl.randomBytes(32);
+        const sessionKey = crypto.random.randomBytes(32);
         const seed = deriveSeed({ sessionKey, interactionCounter: i }, `query-${i}`);
         expect(modIds.has(seed.modificationId)).toBe(true);
         expect(seed.promptModification).toContain("SOMA-");
@@ -60,7 +62,7 @@ describe("HeartSeed", () => {
     it("covers multiple modification types across many derivations", () => {
       const seen = new Set<string>();
       for (let i = 0; i < 200; i++) {
-        const key = nacl.randomBytes(32);
+        const key = crypto.random.randomBytes(32);
         const seed = deriveSeed({ sessionKey: key, interactionCounter: 0 }, "q");
         seen.add(seed.modificationId);
       }

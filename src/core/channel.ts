@@ -1,6 +1,12 @@
-import nacl from "tweetnacl";
-import { encodeBase64, decodeBase64, encodeUTF8, decodeUTF8 } from "tweetnacl-util";
+import {
+  getCryptoProvider,
+  type CryptoProvider,
+  type BoxKeyPair,
+} from "./crypto-provider.js";
 import { type GenomeCommitment, verifyCommitment, publicKeyToDid } from "./genome.js";
+
+// Re-export key pair type for consumers
+export type { BoxKeyPair };
 
 // --- Types ---
 
@@ -8,7 +14,7 @@ import { type GenomeCommitment, verifyCommitment, publicKeyToDid } from "./genom
 export interface HandshakePayload {
   did: string;
   genomeCommitment: GenomeCommitment;
-  ephemeralPublicKey: string; // base64-encoded X25519 public key
+  ephemeralPublicKey: string; // base64-encoded public key
 }
 
 /** An established encrypted channel between two agents. */
@@ -32,20 +38,22 @@ export interface EncryptedMessage {
 
 // --- Handshake ---
 
-/** Generate an ephemeral X25519 key pair for a single session — forward secrecy. */
-export function generateEphemeralKeyPair(): nacl.BoxKeyPair {
-  return nacl.box.keyPair();
+/** Generate an ephemeral key pair for a single session — forward secrecy. */
+export function generateEphemeralKeyPair(provider?: CryptoProvider): BoxKeyPair {
+  return (provider ?? getCryptoProvider()).keyExchange.generateKeyPair();
 }
 
 /** Build the handshake payload an agent presents to initiate a channel. */
 export function createHandshakePayload(
   genomeCommitment: GenomeCommitment,
-  ephemeralKeyPair: nacl.BoxKeyPair
+  ephemeralKeyPair: BoxKeyPair,
+  provider?: CryptoProvider
 ): HandshakePayload {
+  const p = provider ?? getCryptoProvider();
   return {
     did: genomeCommitment.did,
     genomeCommitment,
-    ephemeralPublicKey: encodeBase64(ephemeralKeyPair.publicKey),
+    ephemeralPublicKey: p.encoding.encodeBase64(ephemeralKeyPair.publicKey),
   };
 }
 
@@ -54,20 +62,23 @@ export function createHandshakePayload(
  *
  * Both sides:
  * 1. Verify the other's genome commitment signature
- * 2. Derive a shared session key via X25519 Diffie-Hellman
- * 3. All subsequent traffic is NaCl secretbox encrypted
+ * 2. Derive a shared session key via key exchange
+ * 3. All subsequent traffic is authenticated-encrypted
  *
  * A proxy between A and B cannot decrypt, read, or inject — reduced to a dumb pipe.
  */
 export function establishChannel(
   local: {
     handshake: HandshakePayload;
-    ephemeralKeyPair: nacl.BoxKeyPair;
+    ephemeralKeyPair: BoxKeyPair;
   },
-  remoteHandshake: HandshakePayload
+  remoteHandshake: HandshakePayload,
+  provider?: CryptoProvider
 ): Channel {
+  const p = provider ?? getCryptoProvider();
+
   // Step 1: Verify the remote party's genome commitment
-  if (!verifyCommitment(remoteHandshake.genomeCommitment)) {
+  if (!verifyCommitment(remoteHandshake.genomeCommitment, p)) {
     throw new Error("Remote genome commitment verification failed");
   }
 
@@ -76,9 +87,9 @@ export function establishChannel(
     throw new Error("Remote DID does not match genome commitment");
   }
 
-  // Step 3: Derive shared session key via X25519
-  const remoteEphemeralKey = decodeBase64(remoteHandshake.ephemeralPublicKey);
-  const sharedKey = nacl.box.before(remoteEphemeralKey, local.ephemeralKeyPair.secretKey);
+  // Step 3: Derive shared session key via key exchange
+  const remoteEphemeralKey = p.encoding.decodeBase64(remoteHandshake.ephemeralPublicKey);
+  const sharedKey = p.keyExchange.deriveSharedKey(remoteEphemeralKey, local.ephemeralKeyPair.secretKey);
 
   // Step 4: Return a channel object with encrypt/decrypt using the shared key
   return {
@@ -89,23 +100,23 @@ export function establishChannel(
     sessionKey: sharedKey,
 
     encrypt(plaintext: string): EncryptedMessage {
-      const nonce = nacl.randomBytes(nacl.secretbox.nonceLength);
-      const messageBytes = decodeUTF8(plaintext);
-      const ciphertext = nacl.secretbox(messageBytes, nonce, sharedKey);
+      const nonce = p.random.randomBytes(p.encryption.nonceLength);
+      const messageBytes = p.encoding.decodeUTF8(plaintext);
+      const ciphertext = p.encryption.encrypt(messageBytes, nonce, sharedKey);
       return {
-        nonce: encodeBase64(nonce),
-        ciphertext: encodeBase64(ciphertext),
+        nonce: p.encoding.encodeBase64(nonce),
+        ciphertext: p.encoding.encodeBase64(ciphertext),
       };
     },
 
     decrypt(message: EncryptedMessage): string {
-      const nonce = decodeBase64(message.nonce);
-      const ciphertext = decodeBase64(message.ciphertext);
-      const plaintext = nacl.secretbox.open(ciphertext, nonce, sharedKey);
+      const nonce = p.encoding.decodeBase64(message.nonce);
+      const ciphertext = p.encoding.decodeBase64(message.ciphertext);
+      const plaintext = p.encryption.decrypt(ciphertext, nonce, sharedKey);
       if (plaintext === null) {
         throw new Error("Decryption failed — message tampered or wrong key");
       }
-      return encodeUTF8(plaintext);
+      return p.encoding.encodeUTF8(plaintext);
     },
   };
 }

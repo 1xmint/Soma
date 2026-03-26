@@ -1,10 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { HeartbeatChain, GENESIS_HASH } from "../../src/heart/heartbeat.js";
+import { HeartbeatChain } from "../../src/heart/heartbeat.js";
 
 describe("HeartbeatChain", () => {
   it("starts with genesis hash and zero length", () => {
     const chain = new HeartbeatChain();
-    expect(chain.head).toBe(GENESIS_HASH);
+    expect(chain.head).toBe(chain.genesisHash);
     expect(chain.length).toBe(0);
     expect(chain.getChain()).toEqual([]);
   });
@@ -14,7 +14,7 @@ describe("HeartbeatChain", () => {
     const beat = chain.record("session_start", "test-session-data");
 
     expect(beat.sequence).toBe(0);
-    expect(beat.previousHash).toBe(GENESIS_HASH);
+    expect(beat.previousHash).toBe(chain.genesisHash);
     expect(beat.eventType).toBe("session_start");
     expect(beat.eventHash).toBeTruthy();
     expect(beat.hash).toBeTruthy();
@@ -30,7 +30,7 @@ describe("HeartbeatChain", () => {
     const beat2 = chain.record("query_received", "data2");
     const beat3 = chain.record("model_call_start", "data3");
 
-    expect(beat1.previousHash).toBe(GENESIS_HASH);
+    expect(beat1.previousHash).toBe(chain.genesisHash);
     expect(beat2.previousHash).toBe(beat1.hash);
     expect(beat3.previousHash).toBe(beat2.hash);
     expect(chain.length).toBe(3);

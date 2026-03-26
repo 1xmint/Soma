@@ -12,8 +12,11 @@
  */
 
 import { sha256 } from "../core/genome.js";
-import nacl from "tweetnacl";
-import { encodeBase64, decodeBase64 } from "tweetnacl-util";
+import {
+  getCryptoProvider,
+  type CryptoProvider,
+  type SignKeyPair,
+} from "../core/crypto-provider.js";
 
 /** Source types for data entering the system. */
 export type DataSourceType = "agent" | "api" | "human" | "sensor" | "file";
@@ -29,7 +32,7 @@ export interface DataSource {
 
 /** A birth certificate — seals data at its genesis point. */
 export interface BirthCertificate {
-  /** SHA-256 of the raw data content. */
+  /** Hash of the raw data content. */
   dataHash: string;
   /** Where the data came from. */
   source: DataSource;
@@ -41,7 +44,7 @@ export interface BirthCertificate {
   bornInSession: string;
   /** If derived from other certificated data. */
   parentCertificates: string[];
-  /** Ed25519 signature by the heart's DID key. */
+  /** Signature by the heart's key. */
   signature: string;
 }
 
@@ -56,10 +59,12 @@ export function createBirthCertificate(
   source: DataSource,
   heartDid: string,
   sessionId: string,
-  signingKeyPair: nacl.SignKeyPair,
-  parentCertificates: string[] = []
+  signingKeyPair: SignKeyPair,
+  parentCertificates: string[] = [],
+  provider?: CryptoProvider
 ): BirthCertificate {
-  const dataHash = sha256(data);
+  const p = provider ?? getCryptoProvider();
+  const dataHash = sha256(data, p);
   const bornAt = Date.now();
 
   const certContent = canonicalizeCertContent({
@@ -71,9 +76,9 @@ export function createBirthCertificate(
     parentCertificates,
   });
 
-  // Sign with the heart's Ed25519 key
+  // Sign with the heart's key
   const contentBytes = new TextEncoder().encode(certContent);
-  const signature = nacl.sign.detached(contentBytes, signingKeyPair.secretKey);
+  const signature = p.signing.sign(contentBytes, signingKeyPair.secretKey);
 
   return {
     dataHash,
@@ -82,7 +87,7 @@ export function createBirthCertificate(
     bornThrough: heartDid,
     bornInSession: sessionId,
     parentCertificates,
-    signature: encodeBase64(signature),
+    signature: p.encoding.encodeBase64(signature),
   };
 }
 
@@ -92,8 +97,10 @@ export function createBirthCertificate(
  */
 export function verifyBirthCertificate(
   cert: BirthCertificate,
-  publicKey: Uint8Array
+  publicKey: Uint8Array,
+  provider?: CryptoProvider
 ): boolean {
+  const p = provider ?? getCryptoProvider();
   const certContent = canonicalizeCertContent({
     dataHash: cert.dataHash,
     source: cert.source,
@@ -104,9 +111,9 @@ export function verifyBirthCertificate(
   });
 
   const contentBytes = new TextEncoder().encode(certContent);
-  const signature = decodeBase64(cert.signature);
+  const signature = p.encoding.decodeBase64(cert.signature);
 
-  return nacl.sign.detached.verify(contentBytes, signature, publicKey);
+  return p.signing.verify(contentBytes, signature, publicKey);
 }
 
 /**
@@ -114,8 +121,8 @@ export function verifyBirthCertificate(
  * Detects tampering — if the data was modified after certification,
  * the hash won't match.
  */
-export function verifyDataIntegrity(data: string, cert: BirthCertificate): boolean {
-  return sha256(data) === cert.dataHash;
+export function verifyDataIntegrity(data: string, cert: BirthCertificate, provider?: CryptoProvider): boolean {
+  return sha256(data, provider) === cert.dataHash;
 }
 
 /**
@@ -124,8 +131,11 @@ export function verifyDataIntegrity(data: string, cert: BirthCertificate): boole
  */
 export function verifyBirthCertificateChain(
   chain: BirthCertificate[],
-  publicKeys: Map<string, Uint8Array>
+  publicKeys: Map<string, Uint8Array>,
+  provider?: CryptoProvider
 ): { valid: boolean; brokenAt: number; reason: string } {
+  const p = provider ?? getCryptoProvider();
+
   for (let i = 0; i < chain.length; i++) {
     const cert = chain[i];
     const pubKey = publicKeys.get(cert.bornThrough);
@@ -134,7 +144,7 @@ export function verifyBirthCertificateChain(
       return { valid: false, brokenAt: i, reason: `Unknown heart DID: ${cert.bornThrough}` };
     }
 
-    if (!verifyBirthCertificate(cert, pubKey)) {
+    if (!verifyBirthCertificate(cert, pubKey, p)) {
       return { valid: false, brokenAt: i, reason: `Invalid signature at index ${i}` };
     }
 
@@ -142,7 +152,7 @@ export function verifyBirthCertificateChain(
     for (const parentHash of cert.parentCertificates) {
       const parentExists = chain
         .slice(0, i)
-        .some((c) => sha256(c.signature) === parentHash);
+        .some((c) => sha256(c.signature, p) === parentHash);
       if (!parentExists) {
         return {
           valid: false,

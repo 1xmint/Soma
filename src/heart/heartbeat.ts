@@ -10,7 +10,10 @@
  * lies, the lie is permanently recorded with the creator's genome attached.
  */
 
-import { sha256 } from "../core/genome.js";
+import {
+  getCryptoProvider,
+  type CryptoProvider,
+} from "../core/crypto-provider.js";
 
 /** Types of events that the heart records in its hash chain. */
 export type HeartbeatEventType =
@@ -36,11 +39,6 @@ export interface Heartbeat {
   hash: string;
 }
 
-/** The genesis hash — the beginning of all heartbeat chains. */
-const GENESIS_HASH = sha256("soma:genesis");
-
-export { GENESIS_HASH };
-
 /**
  * The heartbeat chain — a tamper-evident log of all computation.
  *
@@ -50,21 +48,31 @@ export { GENESIS_HASH };
  */
 export class HeartbeatChain {
   private chain: Heartbeat[] = [];
-  private currentHash: string = GENESIS_HASH;
+  private currentHash: string;
   private sequence: number = 0;
+  private readonly provider: CryptoProvider;
+  /** The genesis hash for this chain (depends on the hash algorithm). */
+  readonly genesisHash: string;
+
+  constructor(provider?: CryptoProvider) {
+    this.provider = provider ?? getCryptoProvider();
+    this.genesisHash = this.provider.hashing.hash("soma:genesis");
+    this.currentHash = this.genesisHash;
+  }
 
   /** Record a new heartbeat event. Returns the heartbeat for transmission. */
   record(eventType: HeartbeatEventType, eventData: string): Heartbeat {
+    const hash = this.provider.hashing.hash;
     const heartbeat: Heartbeat = {
       sequence: this.sequence,
       previousHash: this.currentHash,
       eventType,
-      eventHash: sha256(eventData),
+      eventHash: hash(eventData),
       timestamp: Date.now(),
       hash: "", // computed below
     };
 
-    heartbeat.hash = computeHeartbeatHash(heartbeat);
+    heartbeat.hash = computeHeartbeatHash(heartbeat, this.provider);
 
     this.currentHash = heartbeat.hash;
     this.sequence++;
@@ -97,17 +105,19 @@ export class HeartbeatChain {
    * Verify chain integrity — every link must hash correctly
    * and reference the previous hash.
    */
-  static verify(chain: Heartbeat[]): boolean {
+  static verify(chain: Heartbeat[], provider?: CryptoProvider): boolean {
+    const p = provider ?? getCryptoProvider();
     if (chain.length === 0) return true;
 
     // First heartbeat must reference genesis
-    if (chain[0].previousHash !== GENESIS_HASH) return false;
+    const genesisHash = p.hashing.hash("soma:genesis");
+    if (chain[0].previousHash !== genesisHash) return false;
 
     for (let i = 0; i < chain.length; i++) {
       const beat = chain[i];
 
       // Verify hash computation
-      const expectedHash = computeHeartbeatHash(beat);
+      const expectedHash = computeHeartbeatHash(beat, p);
       if (beat.hash !== expectedHash) return false;
 
       // Verify chain linkage (except first)
@@ -122,8 +132,8 @@ export class HeartbeatChain {
 }
 
 /** Compute the hash of a heartbeat from its fields. */
-function computeHeartbeatHash(beat: Heartbeat): string {
-  return sha256(
+function computeHeartbeatHash(beat: Heartbeat, provider: CryptoProvider): string {
+  return provider.hashing.hash(
     `${beat.sequence}|${beat.previousHash}|${beat.eventType}|${beat.eventHash}|${beat.timestamp}`
   );
 }

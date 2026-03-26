@@ -10,9 +10,12 @@
  * to your server — passive, local, involuntary for the connecting agent.
  */
 
-import nacl from "tweetnacl";
 import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import { SomaTransport } from "./soma-transport.js";
+import {
+  getCryptoProvider,
+  type SignKeyPair,
+} from "../core/crypto-provider.js";
 import {
   createGenome,
   commitGenome,
@@ -57,7 +60,7 @@ export function withSoma(inner: Transport, config: SomaConfig): SomaTransport {
 // --- Identity Helpers ---
 
 export interface SomaIdentity {
-  keyPair: nacl.SignKeyPair;
+  keyPair: SignKeyPair;
   commitment: GenomeCommitment;
 }
 
@@ -73,7 +76,7 @@ export function createSomaIdentity(genomeConfig: {
   toolManifest: string;
   runtimeId: string;
 }): SomaIdentity {
-  const keyPair = nacl.sign.keyPair();
+  const keyPair = getCryptoProvider().signing.generateKeyPair();
   const genome = createGenome(genomeConfig);
   const commitment = commitGenome(genome, keyPair);
   return { keyPair, commitment };

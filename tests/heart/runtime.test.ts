@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import nacl from "tweetnacl";
+import { getCryptoProvider, type SignKeyPair } from "../../src/core/crypto-provider.js";
 import {
   HeartRuntime,
   createSomaHeart,
@@ -18,9 +18,11 @@ import {
 import { HeartbeatChain } from "../../src/heart/heartbeat.js";
 import { verifyBirthCertificate } from "../../src/heart/birth-certificate.js";
 
+const crypto = getCryptoProvider();
+
 // --- Test helpers ---
 
-function makeGenomeCommitment(keyPair: nacl.SignKeyPair): GenomeCommitment {
+function makeGenomeCommitment(keyPair: SignKeyPair): GenomeCommitment {
   const genome = createGenome({
     modelProvider: "test",
     modelId: "test-model",
@@ -33,7 +35,7 @@ function makeGenomeCommitment(keyPair: nacl.SignKeyPair): GenomeCommitment {
 }
 
 function makeHeartConfig(overrides?: Partial<HeartConfig>): HeartConfig {
-  const keyPair = nacl.sign.keyPair();
+  const keyPair = crypto.signing.generateKeyPair();
   const genome = makeGenomeCommitment(keyPair);
   return {
     genome,
@@ -82,7 +84,7 @@ describe("HeartRuntime", () => {
   describe("session management", () => {
     it("creates a session with a remote party", () => {
       const heart = createSomaHeart(makeHeartConfig());
-      const remoteKeyPair = nacl.sign.keyPair();
+      const remoteKeyPair = crypto.signing.generateKeyPair();
       const remoteGenome = makeGenomeCommitment(remoteKeyPair);
 
       const session = heart.createSession(remoteGenome.did, remoteGenome);
@@ -96,7 +98,7 @@ describe("HeartRuntime", () => {
 
     it("retrieves a session by ID", () => {
       const heart = createSomaHeart(makeHeartConfig());
-      const remoteKeyPair = nacl.sign.keyPair();
+      const remoteKeyPair = crypto.signing.generateKeyPair();
       const remoteGenome = makeGenomeCommitment(remoteKeyPair);
 
       const session = heart.createSession(remoteGenome.did, remoteGenome);
@@ -113,7 +115,7 @@ describe("HeartRuntime", () => {
       const config = makeHeartConfig();
       const heart = new HeartRuntime(config);
 
-      const remoteKeyPair = nacl.sign.keyPair();
+      const remoteKeyPair = crypto.signing.generateKeyPair();
       const remoteGenome = makeGenomeCommitment(remoteKeyPair);
 
       const session = heart.createSession(remoteGenome.did, remoteGenome);
@@ -137,7 +139,7 @@ describe("HeartRuntime", () => {
       const config = makeHeartConfig();
       const heart = new HeartRuntime(config);
 
-      const remoteKeyPair = nacl.sign.keyPair();
+      const remoteKeyPair = crypto.signing.generateKeyPair();
       const remoteGenome = makeGenomeCommitment(remoteKeyPair);
 
       const session = heart.createSession(remoteGenome.did, remoteGenome);
@@ -302,7 +304,7 @@ describe("HeartRuntime", () => {
 
     it("createSession() throws after destroy", () => {
       const heart = createSomaHeart(makeHeartConfig());
-      const remoteKeyPair = nacl.sign.keyPair();
+      const remoteKeyPair = crypto.signing.generateKeyPair();
       const remoteGenome = makeGenomeCommitment(remoteKeyPair);
 
       heart.destroy();

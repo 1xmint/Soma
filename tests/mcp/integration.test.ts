@@ -5,7 +5,9 @@
  */
 
 import { describe, it, expect, beforeEach } from "vitest";
-import nacl from "tweetnacl";
+import { getCryptoProvider } from "../../src/core/crypto-provider.js";
+
+const crypto = getCryptoProvider();
 import { SomaTransport } from "../../src/mcp/soma-transport.js";
 import { createSomaIdentity, withSoma, getVerdict, isSomaEnabled } from "../../src/mcp/index.js";
 import { commitGenome, createGenome, computeHash } from "../../src/core/genome.js";
@@ -60,7 +62,7 @@ function makeServerIdentity() {
 }
 
 function makeClientIdentity() {
-  const keyPair = nacl.sign.keyPair();
+  const keyPair = crypto.signing.generateKeyPair();
   const genome = createGenome({
     modelProvider: "client",
     modelId: "client-model",

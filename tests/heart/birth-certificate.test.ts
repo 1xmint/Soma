@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
-import nacl from "tweetnacl";
+import { getCryptoProvider } from "../../src/core/crypto-provider.js";
 import { publicKeyToDid } from "../../src/core/genome.js";
+
+const crypto = getCryptoProvider();
 import {
   createBirthCertificate,
   verifyBirthCertificate,
@@ -11,7 +13,7 @@ import {
 
 describe("BirthCertificate", () => {
   function makeKeyPair() {
-    return nacl.sign.keyPair();
+    return crypto.signing.generateKeyPair();
   }
 
   function makeDid(keyPair: nacl.SignKeyPair): string {

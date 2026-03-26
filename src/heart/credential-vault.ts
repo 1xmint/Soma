@@ -6,9 +6,10 @@
  * the heart module. The credentials never leave the heart.
  */
 
-import { createHash } from "node:crypto";
-import nacl from "tweetnacl";
-import { encodeBase64, decodeBase64, encodeUTF8, decodeUTF8 } from "tweetnacl-util";
+import {
+  getCryptoProvider,
+  type CryptoProvider,
+} from "../core/crypto-provider.js";
 
 interface EncryptedCredential {
   nonce: string; // base64
@@ -18,22 +19,23 @@ interface EncryptedCredential {
 export class CredentialVault {
   private readonly encryptionKey: Uint8Array;
   private readonly credentials: Map<string, EncryptedCredential> = new Map();
+  private readonly provider: CryptoProvider;
 
-  constructor(signingSecretKey: Uint8Array) {
-    // Derive a 32-byte encryption key from the signing secret key via SHA-256.
-    // The signing key is 64 bytes (Ed25519); we need 32 for NaCl secretbox.
-    const hash = createHash("sha256").update(signingSecretKey).digest();
-    this.encryptionKey = new Uint8Array(hash);
+  constructor(signingSecretKey: Uint8Array, provider?: CryptoProvider) {
+    this.provider = provider ?? getCryptoProvider();
+    // Derive a 32-byte encryption key from the signing secret key.
+    this.encryptionKey = this.provider.hashing.deriveKey(signingSecretKey, 32);
   }
 
   /** Store a credential encrypted at rest. */
   store(name: string, value: string): void {
-    const nonce = nacl.randomBytes(nacl.secretbox.nonceLength);
-    const plaintext = decodeUTF8(value);
-    const ciphertext = nacl.secretbox(plaintext, nonce, this.encryptionKey);
+    const { encryption, encoding, random } = this.provider;
+    const nonce = random.randomBytes(encryption.nonceLength);
+    const plaintext = encoding.decodeUTF8(value);
+    const ciphertext = encryption.encrypt(plaintext, nonce, this.encryptionKey);
     this.credentials.set(name, {
-      nonce: encodeBase64(nonce),
-      ciphertext: encodeBase64(ciphertext),
+      nonce: encoding.encodeBase64(nonce),
+      ciphertext: encoding.encodeBase64(ciphertext),
     });
   }
 
@@ -46,13 +48,14 @@ export class CredentialVault {
     if (!encrypted) {
       throw new Error(`Credential not found: ${name}`);
     }
-    const nonce = decodeBase64(encrypted.nonce);
-    const ciphertext = decodeBase64(encrypted.ciphertext);
-    const plaintext = nacl.secretbox.open(ciphertext, nonce, this.encryptionKey);
+    const { encryption, encoding } = this.provider;
+    const nonce = encoding.decodeBase64(encrypted.nonce);
+    const ciphertext = encoding.decodeBase64(encrypted.ciphertext);
+    const plaintext = encryption.decrypt(ciphertext, nonce, this.encryptionKey);
     if (plaintext === null) {
       throw new Error(`Failed to decrypt credential: ${name}`);
     }
-    return encodeUTF8(plaintext);
+    return encoding.encodeUTF8(plaintext);
   }
 
   /** Check if a credential exists. */

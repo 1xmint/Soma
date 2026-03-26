@@ -15,7 +15,11 @@
  */
 
 import OpenAI from "openai";
-import nacl from "tweetnacl";
+import {
+  getCryptoProvider,
+  type CryptoProvider,
+  type SignKeyPair,
+} from "../core/crypto-provider.js";
 import {
   type GenomeCommitment,
   sha256,
@@ -26,6 +30,7 @@ import {
   createHandshakePayload,
   establishChannel,
   type HandshakePayload,
+  type BoxKeyPair,
 } from "../core/channel.js";
 import { CredentialVault } from "./credential-vault.js";
 import { HeartbeatChain, type Heartbeat } from "./heartbeat.js";
@@ -33,7 +38,6 @@ import { deriveSeed, applySeed, type HeartSeed } from "./seed.js";
 import {
   createBirthCertificate,
   type BirthCertificate,
-  type DataSource,
 } from "./birth-certificate.js";
 
 // --- Types ---
@@ -46,7 +50,7 @@ export interface DataSourceConfig {
 
 export interface HeartConfig {
   genome: GenomeCommitment;
-  signingKeyPair: nacl.SignKeyPair;
+  signingKeyPair: SignKeyPair;
 
   // Model credentials — only accessible through the heart
   modelApiKey: string;
@@ -61,6 +65,9 @@ export interface HeartConfig {
 
   // Profile storage path
   profileStorePath?: string;
+
+  /** Crypto provider — swap algorithms without changing the protocol. */
+  cryptoProvider?: CryptoProvider;
 }
 
 export interface GenerationInput {
@@ -101,7 +108,7 @@ export interface HeartSession {
   remoteGenome: GenomeCommitment;
   channel: Channel | null;
   sessionKey: Uint8Array | null;
-  ephemeralKeyPair: nacl.BoxKeyPair;
+  ephemeralKeyPair: BoxKeyPair;
   heartbeatChain: HeartbeatChain;
   interactionCounter: number;
   createdAt: number;
@@ -113,22 +120,24 @@ export class HeartRuntime {
   private readonly vault: CredentialVault;
   private readonly heartbeatChain: HeartbeatChain;
   private readonly genome: GenomeCommitment;
-  private readonly signingKeyPair: nacl.SignKeyPair;
+  private readonly signingKeyPair: SignKeyPair;
   private readonly modelId: string;
   private readonly modelBaseUrl: string;
   private readonly dataSources: Map<string, DataSourceConfig>;
   private readonly sessions: Map<string, HeartSession> = new Map();
+  private readonly provider: CryptoProvider;
   private alive: boolean = true;
 
   constructor(config: HeartConfig) {
+    this.provider = config.cryptoProvider ?? getCryptoProvider();
     this.genome = config.genome;
     this.signingKeyPair = config.signingKeyPair;
     this.modelId = config.modelId;
     this.modelBaseUrl = config.modelBaseUrl;
-    this.heartbeatChain = new HeartbeatChain();
+    this.heartbeatChain = new HeartbeatChain(this.provider);
 
     // Store all credentials in the vault — encrypted at rest
-    this.vault = new CredentialVault(config.signingKeyPair.secretKey);
+    this.vault = new CredentialVault(config.signingKeyPair.secretKey, this.provider);
     this.vault.store("model_api_key", config.modelApiKey);
 
     // Store tool credentials
@@ -174,6 +183,11 @@ export class HeartRuntime {
     return this.heartbeatChain;
   }
 
+  /** The crypto provider this heart uses. */
+  get cryptoProvider(): CryptoProvider {
+    return this.provider;
+  }
+
   // --- Session Management ---
 
   /**
@@ -183,8 +197,8 @@ export class HeartRuntime {
   createSession(remoteDid: string, remoteGenome: GenomeCommitment): HeartSession {
     this.ensureAlive();
 
-    const ephemeralKeyPair = generateEphemeralKeyPair();
-    const sessionId = sha256(`${this.did}|${remoteDid}|${Date.now()}|${Math.random()}`);
+    const ephemeralKeyPair = generateEphemeralKeyPair(this.provider);
+    const sessionId = sha256(`${this.did}|${remoteDid}|${Date.now()}|${Math.random()}`, this.provider);
 
     const session: HeartSession = {
       sessionId,
@@ -193,7 +207,7 @@ export class HeartRuntime {
       channel: null,
       sessionKey: null,
       ephemeralKeyPair,
-      heartbeatChain: new HeartbeatChain(),
+      heartbeatChain: new HeartbeatChain(this.provider),
       interactionCounter: 0,
       createdAt: Date.now(),
     };
@@ -217,7 +231,7 @@ export class HeartRuntime {
     this.ensureAlive();
     const session = this.sessions.get(sessionId);
     if (!session) throw new Error(`Session not found: ${sessionId}`);
-    return createHandshakePayload(this.genome, session.ephemeralKeyPair);
+    return createHandshakePayload(this.genome, session.ephemeralKeyPair, this.provider);
   }
 
   /**
@@ -229,10 +243,11 @@ export class HeartRuntime {
     const session = this.sessions.get(sessionId);
     if (!session) throw new Error(`Session not found: ${sessionId}`);
 
-    const localHandshake = createHandshakePayload(this.genome, session.ephemeralKeyPair);
+    const localHandshake = createHandshakePayload(this.genome, session.ephemeralKeyPair, this.provider);
     const channel = establishChannel(
       { handshake: localHandshake, ephemeralKeyPair: session.ephemeralKeyPair },
-      remoteHandshake
+      remoteHandshake,
+      this.provider
     );
 
     session.channel = channel;
@@ -246,16 +261,6 @@ export class HeartRuntime {
 
   // --- The ONLY Way to Generate ---
 
-  /**
-   * Generate a response through the heart.
-   *
-   * This is the ONLY way to call the model. The heart:
-   * 1. Records the query in the heartbeat chain
-   * 2. Derives and applies a cryptographic seed (if session exists)
-   * 3. Calls the model through the vault's credentials
-   * 4. Logs each step in the heartbeat chain
-   * 5. Returns tokens interleaved with heartbeats
-   */
   async *generate(
     input: GenerationInput,
     sessionId?: string
@@ -267,7 +272,7 @@ export class HeartRuntime {
 
     // Step 1: Record query received
     const queryData = JSON.stringify(
-      input.messages.map((m) => ({ role: m.role, contentHash: sha256(m.content) }))
+      input.messages.map((m) => ({ role: m.role, contentHash: sha256(m.content, this.provider) }))
     );
     const queryBeat = chain.record("query_received", queryData);
     yield { type: "heartbeat", heartbeat: queryBeat, timestamp: Date.now() };
@@ -275,10 +280,11 @@ export class HeartRuntime {
     // Step 2: Derive and apply seed (only if we have a session key)
     let seed: HeartSeed | undefined;
     if (session?.sessionKey) {
-      const queryHash = sha256(JSON.stringify(input.messages));
+      const queryHash = sha256(JSON.stringify(input.messages), this.provider);
       seed = deriveSeed(
         { sessionKey: session.sessionKey, interactionCounter: session.interactionCounter },
-        queryHash
+        queryHash,
+        this.provider
       );
       session.interactionCounter++;
 
@@ -350,12 +356,6 @@ export class HeartRuntime {
 
   // --- The ONLY Way to Call Tools ---
 
-  /**
-   * Call a tool through the heart.
-   *
-   * Tool credentials are only accessible through this method.
-   * Every invocation is logged in the heartbeat chain.
-   */
   async callTool(
     name: string,
     args: Record<string, unknown>,
@@ -372,7 +372,7 @@ export class HeartRuntime {
     // Record tool call
     const callBeat = chain.record(
       "tool_call",
-      JSON.stringify({ name, argsHash: sha256(JSON.stringify(args)) })
+      JSON.stringify({ name, argsHash: sha256(JSON.stringify(args), this.provider) })
     );
     heartbeats.push(callBeat);
 
@@ -388,7 +388,7 @@ export class HeartRuntime {
     // Record tool result
     const resultBeat = chain.record(
       "tool_result",
-      JSON.stringify({ name, resultHash: sha256(JSON.stringify(result)) })
+      JSON.stringify({ name, resultHash: sha256(JSON.stringify(result), this.provider) })
     );
     heartbeats.push(resultBeat);
 
@@ -398,7 +398,9 @@ export class HeartRuntime {
       { type: "api", identifier: name, heartVerified: true },
       this.did,
       sessionId ?? "local",
-      this.signingKeyPair
+      this.signingKeyPair,
+      [],
+      this.provider
     );
 
     const certBeat = chain.record("birth_certificate", birthCert.dataHash);
@@ -409,12 +411,6 @@ export class HeartRuntime {
 
   // --- The ONLY Way to Fetch Data ---
 
-  /**
-   * Fetch data through the heart.
-   *
-   * Data source credentials are only accessible through this method.
-   * Every fetch is logged and the result gets a birth certificate.
-   */
   async fetchData(
     sourceName: string,
     query: string,
@@ -434,7 +430,7 @@ export class HeartRuntime {
     // Record data fetch
     const fetchBeat = chain.record(
       "data_fetch",
-      JSON.stringify({ source: sourceName, queryHash: sha256(query) })
+      JSON.stringify({ source: sourceName, queryHash: sha256(query, this.provider) })
     );
     heartbeats.push(fetchBeat);
 
@@ -458,7 +454,7 @@ export class HeartRuntime {
     // Record data received
     const receiveBeat = chain.record(
       "data_received",
-      JSON.stringify({ source: sourceName, contentHash: sha256(content) })
+      JSON.stringify({ source: sourceName, contentHash: sha256(content, this.provider) })
     );
     heartbeats.push(receiveBeat);
 
@@ -468,7 +464,9 @@ export class HeartRuntime {
       { type: "api", identifier: source.url, heartVerified: false },
       this.did,
       sessionId ?? "local",
-      this.signingKeyPair
+      this.signingKeyPair,
+      [],
+      this.provider
     );
 
     const certBeat = chain.record("birth_certificate", birthCert.dataHash);

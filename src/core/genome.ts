@@ -1,6 +1,11 @@
-import { createHash } from "node:crypto";
-import nacl from "tweetnacl";
-import { encodeBase64, decodeBase64 } from "tweetnacl-util";
+import {
+  getCryptoProvider,
+  type CryptoProvider,
+  type SignKeyPair,
+} from "./crypto-provider.js";
+
+// Re-export key pair type for consumers
+export type { SignKeyPair };
 
 // --- Types ---
 
@@ -19,16 +24,16 @@ export interface Genome {
 export interface GenomeCommitment {
   genome: Genome;
   hash: string;
-  signature: string; // base64-encoded Ed25519 signature
-  publicKey: string; // base64-encoded Ed25519 public key
+  signature: string; // base64-encoded signature
+  publicKey: string; // base64-encoded public key
   did: string; // did:key identifier
 }
 
 // --- Helpers ---
 
-/** SHA-256 hash of an arbitrary string, returned as hex. */
-export function sha256(data: string): string {
-  return createHash("sha256").update(data).digest("hex");
+/** Hash an arbitrary string, returned as hex. Delegates to the active provider. */
+export function sha256(data: string, provider?: CryptoProvider): string {
+  return (provider ?? getCryptoProvider()).hashing.hash(data);
 }
 
 /** Deterministic JSON serialization — sorted keys, no whitespace. */
@@ -36,14 +41,14 @@ function canonicalize(obj: unknown): string {
   return JSON.stringify(obj, Object.keys(obj as object).sort());
 }
 
-/** Derive a did:key identifier from an Ed25519 public key. */
-export function publicKeyToDid(publicKey: Uint8Array): string {
-  // Multicodec prefix for Ed25519 public key: 0xed 0x01
-  const multicodec = new Uint8Array(2 + publicKey.length);
-  multicodec[0] = 0xed;
-  multicodec[1] = 0x01;
-  multicodec.set(publicKey, 2);
-  return `did:key:z${encodeBase64(multicodec)}`;
+/** Derive a did:key identifier from a public key. Uses the provider's multicodec prefix. */
+export function publicKeyToDid(publicKey: Uint8Array, provider?: CryptoProvider): string {
+  const p = provider ?? getCryptoProvider();
+  const prefix = p.signing.multicodecPrefix;
+  const multicodec = new Uint8Array(prefix.length + publicKey.length);
+  multicodec.set(prefix, 0);
+  multicodec.set(publicKey, prefix.length);
+  return `did:key:z${p.encoding.encodeBase64(multicodec)}`;
 }
 
 // --- Core Operations ---
@@ -61,13 +66,14 @@ export function createGenome(config: {
   runtimeId: string;
   parentHash?: string | null;
   version?: number;
-}): Genome {
+}, provider?: CryptoProvider): Genome {
+  const hash = (data: string) => sha256(data, provider);
   return {
     modelProvider: config.modelProvider,
     modelId: config.modelId,
     modelVersion: config.modelVersion,
-    systemPromptHash: sha256(config.systemPrompt),
-    toolManifestHash: sha256(config.toolManifest),
+    systemPromptHash: hash(config.systemPrompt),
+    toolManifestHash: hash(config.toolManifest),
     runtimeId: config.runtimeId,
     createdAt: Date.now(),
     version: config.version ?? 1,
@@ -75,29 +81,31 @@ export function createGenome(config: {
   };
 }
 
-/** Compute the SHA-256 hash of a genome's canonical form. */
-export function computeHash(genome: Genome): string {
-  return sha256(canonicalize(genome));
+/** Compute the hash of a genome's canonical form. */
+export function computeHash(genome: Genome, provider?: CryptoProvider): string {
+  return sha256(canonicalize(genome), provider);
 }
 
 /**
- * Commit a genome by signing its hash with an Ed25519 key pair.
+ * Commit a genome by signing its hash with a key pair.
  * This is the "DNA sequencing" step — the agent declares what it is.
  */
 export function commitGenome(
   genome: Genome,
-  keyPair: nacl.SignKeyPair
+  keyPair: SignKeyPair,
+  provider?: CryptoProvider
 ): GenomeCommitment {
-  const hash = computeHash(genome);
+  const p = provider ?? getCryptoProvider();
+  const hash = computeHash(genome, p);
   const hashBytes = new TextEncoder().encode(hash);
-  const signature = nacl.sign.detached(hashBytes, keyPair.secretKey);
+  const signature = p.signing.sign(hashBytes, keyPair.secretKey);
 
   return {
     genome,
     hash,
-    signature: encodeBase64(signature),
-    publicKey: encodeBase64(keyPair.publicKey),
-    did: publicKeyToDid(keyPair.publicKey),
+    signature: p.encoding.encodeBase64(signature),
+    publicKey: p.encoding.encodeBase64(keyPair.publicKey),
+    did: publicKeyToDid(keyPair.publicKey, p),
   };
 }
 
@@ -107,24 +115,26 @@ export function commitGenome(
  * 2. Signature is valid for the hash
  * 3. DID matches the public key
  */
-export function verifyCommitment(commitment: GenomeCommitment): boolean {
+export function verifyCommitment(commitment: GenomeCommitment, provider?: CryptoProvider): boolean {
+  const p = provider ?? getCryptoProvider();
+
   // Recompute hash from genome and check it matches
-  const recomputedHash = computeHash(commitment.genome);
+  const recomputedHash = computeHash(commitment.genome, p);
   if (recomputedHash !== commitment.hash) {
     return false;
   }
 
-  // Verify Ed25519 signature
-  const publicKey = decodeBase64(commitment.publicKey);
-  const signature = decodeBase64(commitment.signature);
+  // Verify signature
+  const publicKey = p.encoding.decodeBase64(commitment.publicKey);
+  const signature = p.encoding.decodeBase64(commitment.signature);
   const hashBytes = new TextEncoder().encode(commitment.hash);
 
-  if (!nacl.sign.detached.verify(hashBytes, signature, publicKey)) {
+  if (!p.signing.verify(hashBytes, signature, publicKey)) {
     return false;
   }
 
   // Verify DID matches public key
-  const expectedDid = publicKeyToDid(publicKey);
+  const expectedDid = publicKeyToDid(publicKey, p);
   if (commitment.did !== expectedDid) {
     return false;
   }

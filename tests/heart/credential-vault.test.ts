@@ -1,10 +1,12 @@
 import { describe, it, expect } from "vitest";
-import nacl from "tweetnacl";
+import { getCryptoProvider } from "../../src/core/crypto-provider.js";
 import { CredentialVault } from "../../src/heart/credential-vault.js";
+
+const crypto = getCryptoProvider();
 
 describe("CredentialVault", () => {
   function createVault(): CredentialVault {
-    const keyPair = nacl.sign.keyPair();
+    const keyPair = crypto.signing.generateKeyPair();
     return new CredentialVault(keyPair.secretKey);
   }
 
@@ -79,8 +81,8 @@ describe("CredentialVault", () => {
   });
 
   it("different signing keys produce independent vaults", () => {
-    const key1 = nacl.sign.keyPair();
-    const key2 = nacl.sign.keyPair();
+    const key1 = crypto.signing.generateKeyPair();
+    const key2 = crypto.signing.generateKeyPair();
     const vault1 = new CredentialVault(key1.secretKey);
     const vault2 = new CredentialVault(key2.secretKey);
 

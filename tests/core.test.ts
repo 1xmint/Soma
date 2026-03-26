@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
-import nacl from "tweetnacl";
-import { encodeBase64, decodeBase64 } from "tweetnacl-util";
+import { getCryptoProvider } from "../src/core/crypto-provider.js";
 import {
   createGenome,
   computeHash,
@@ -15,6 +14,8 @@ import {
   createHandshakePayload,
   establishChannel,
 } from "../src/core/channel.js";
+
+const crypto = getCryptoProvider();
 
 // --- Genome Tests ---
 
@@ -73,7 +74,7 @@ describe("Genome", () => {
 });
 
 describe("Genome Commitment", () => {
-  const keyPair = nacl.sign.keyPair();
+  const keyPair = crypto.signing.generateKeyPair();
   const genome = createGenome({
     modelProvider: "meta",
     modelId: "llama-3.3-70b",
@@ -114,7 +115,7 @@ describe("Genome Commitment", () => {
 
   it("rejects a commitment with wrong signing key", () => {
     const commitment = commitGenome(genome, keyPair);
-    const otherKeyPair = nacl.sign.keyPair();
+    const otherKeyPair = crypto.signing.generateKeyPair();
     const tampered = {
       ...commitment,
       // Swap in a different public key — signature won't match
@@ -177,7 +178,7 @@ describe("Genome Mutation", () => {
 describe("Authenticated Encrypted Channel", () => {
   // Helper: create an agent with signing keys, genome, and commitment
   function createAgent(modelId: string, systemPrompt: string) {
-    const signingKeyPair = nacl.sign.keyPair();
+    const signingKeyPair = crypto.signing.generateKeyPair();
     const genome = createGenome({
       modelProvider: "test",
       modelId,
@@ -292,10 +293,10 @@ describe("Authenticated Encrypted Channel", () => {
 
     const encrypted = channelA.encrypt("secret message");
     // Tamper with ciphertext by flipping bits in the decoded bytes
-    const ciphertextBytes = decodeBase64(encrypted.ciphertext);
+    const ciphertextBytes = crypto.encoding.decodeBase64(encrypted.ciphertext);
     ciphertextBytes[0] ^= 0xff;
     ciphertextBytes[1] ^= 0xff;
-    const tampered = { ...encrypted, ciphertext: encodeBase64(ciphertextBytes) };
+    const tampered = { ...encrypted, ciphertext: crypto.encoding.encodeBase64(ciphertextBytes) };
 
     expect(() => channelB.decrypt(tampered)).toThrow("Decryption failed");
   });
