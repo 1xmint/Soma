@@ -114,9 +114,13 @@ const PROVIDER_BASE_URLS: Record<ProviderName, string> = {
   openai: "https://api.openai.com/v1",
 };
 
+/** Per-call timeout in milliseconds. */
+const CALL_TIMEOUT_MS = 60_000;
+
 /**
  * Route a prompt to the appropriate provider and stream the response.
  * Automatically rotates API keys on 429 rate-limit errors.
+ * Aborts any call that takes longer than 60 seconds.
  * All providers return a StreamingResponse with token-level timing.
  */
 export async function streamFromProvider(
@@ -132,12 +136,10 @@ export async function streamFromProvider(
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const apiKey = getCurrentKey(provider);
     try {
-      return await streamFromOpenAICompatible(
-        baseURL,
-        apiKey,
-        model,
-        systemPrompt,
-        userPrompt
+      return await withTimeout(
+        streamFromOpenAICompatible(baseURL, apiKey, model, systemPrompt, userPrompt),
+        CALL_TIMEOUT_MS,
+        `${provider}/${model} timed out after ${CALL_TIMEOUT_MS / 1000}s`
       );
     } catch (err: unknown) {
       if (isRateLimitError(err)) {
@@ -153,6 +155,17 @@ export async function streamFromProvider(
   }
 
   throw new Error(`All ${maxAttempts} API keys for ${provider} are rate-limited`);
+}
+
+/** Wrap a promise with a timeout. Rejects with TimeoutError if it takes too long. */
+function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(message)), ms);
+    promise.then(
+      (val) => { clearTimeout(timer); resolve(val); },
+      (err) => { clearTimeout(timer); reject(err); },
+    );
+  });
 }
 
 /** Check if an error is a 429 rate-limit response. */

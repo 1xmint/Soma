@@ -11,7 +11,7 @@ import { existsSync } from "node:fs";
 import { config } from "dotenv";
 import { AGENT_CONFIGS, type AgentConfig } from "./configs.js";
 import { ALL_PROBES, type Probe } from "./probes.js";
-import { extractAllSignals, type PhenotypicSignals, type StreamingTrace } from "./signals.js";
+import { extractAllSignals, type PhenotypicSignals } from "./signals.js";
 import { streamFromProvider, streamThroughProxy, type StreamingResponse } from "./providers.js";
 
 // Load .env before anything touches process.env
@@ -146,16 +146,27 @@ function delay(ms: number): Promise<void> {
 
 async function runExperiment(): Promise<void> {
   const startedAt = new Date().toISOString();
-  console.log(`\n🧬 Soma Phase 0 — Phenotype Experiment`);
-  console.log(`   ${AGENT_CONFIGS.length} agents × ${ALL_PROBES.length} probes = ${AGENT_CONFIGS.length * ALL_PROBES.length} observations\n`);
+  const total = AGENT_CONFIGS.length * ALL_PROBES.length;
+  console.log(`\n  Soma Phase 2 — Clean Experiment`);
+  console.log(`  ${AGENT_CONFIGS.length} agents x ${ALL_PROBES.length} probes = ${total} observations`);
+  console.log(`  Started: ${startedAt}\n`);
 
   const results: ExperimentResult[] = [];
   const errors: Array<{ agentId: string; probeId: string; error: string }> = [];
   let completed = 0;
-  const total = AGENT_CONFIGS.length * ALL_PROBES.length;
+  let agentIndex = 0;
 
   for (const agent of AGENT_CONFIGS) {
-    console.log(`\n── Agent: ${agent.label} (${agent.id}) ──`);
+    agentIndex++;
+    const agentProgress = `[agent ${agentIndex}/${AGENT_CONFIGS.length}]`;
+    console.log(`\n${"─".repeat(60)}`);
+    console.log(`  ${agentProgress} ${agent.label}`);
+    console.log(`  provider: ${agent.provider}  model: ${agent.model}`);
+    console.log(`${"─".repeat(60)}`);
+
+    let agentErrors = 0;
+    let agentSuccess = 0;
+    const agentStart = Date.now();
 
     for (const probe of ALL_PROBES) {
       completed++;
@@ -166,22 +177,28 @@ async function runExperiment(): Promise<void> {
         results.push(result);
 
         if (result.error) {
-          console.log(`  ${progress} ❌ ${probe.id} — ${result.error}`);
+          agentErrors++;
+          console.log(`  ${progress} FAIL ${probe.id} — ${result.error}`);
           errors.push({ agentId: agent.id, probeId: probe.id, error: result.error });
         } else {
+          agentSuccess++;
           const tokens = result.trace.tokenCount;
           const duration = result.signals.temporal.totalStreamingDuration.toFixed(0);
-          console.log(`  ${progress} ✓ ${probe.id} (${probe.category}) — ${tokens} tokens, ${duration}ms`);
+          console.log(`  ${progress} OK   ${probe.id} (${probe.category}) ${tokens}tok ${duration}ms`);
         }
       } catch (err) {
+        agentErrors++;
         const errorMessage = err instanceof Error ? err.message : String(err);
-        console.log(`  ${progress} ❌ ${probe.id} — FATAL: ${errorMessage}`);
+        console.log(`  ${progress} FAIL ${probe.id} — ${errorMessage}`);
         errors.push({ agentId: agent.id, probeId: probe.id, error: errorMessage });
       }
 
       // Rate limit: 200ms between calls to stay within free tier limits
       await delay(200);
     }
+
+    const agentDuration = ((Date.now() - agentStart) / 1000).toFixed(1);
+    console.log(`  => ${agent.id}: ${agentSuccess} ok, ${agentErrors} errors, ${agentDuration}s`);
   }
 
   const completedAt = new Date().toISOString();
