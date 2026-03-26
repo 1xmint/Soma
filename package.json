@@ -13,6 +13,7 @@
     "experiment:mistral": "tsx src/experiment/runner.ts --provider=mistral",
     "experiment:openrouter": "tsx src/experiment/runner.ts --provider=openrouter",
     "analyze": "tsx src/experiment/analyze.ts",
+    "analyze:full": "tsx src/experiment/merge-and-analyze.ts",
     "generate-synthetic": "tsx src/experiment/generate-synthetic.ts",
     "experiment:agents": "tsx src/experiment/agents/run-agent-experiment.ts",
     "test:heart-live": "tsx src/experiment/heart-live-test.ts"
