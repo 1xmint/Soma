@@ -12,7 +12,7 @@
 import nacl from "tweetnacl";
 import naclUtil from "tweetnacl-util";
 const { encodeBase64, decodeBase64, encodeUTF8, decodeUTF8 } = naclUtil;
-import { createHash } from "node:crypto";
+import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 
 // ─── Algorithm-agnostic key pair types ───────────────────────────────────────
 
@@ -81,6 +81,15 @@ export interface EncodingProvider {
   decodeUTF8(str: string): Uint8Array;
 }
 
+/** HMAC (keyed hash for message authentication). */
+export interface HmacProvider {
+  readonly algorithmId: string;
+  /** Compute HMAC of message with key. Returns hex digest. */
+  compute(key: Uint8Array, message: string): string;
+  /** Verify HMAC. Constant-time comparison. */
+  verify(key: Uint8Array, message: string, expectedHmac: string): boolean;
+}
+
 /** Cryptographically secure random bytes. */
 export interface RandomProvider {
   randomBytes(length: number): Uint8Array;
@@ -100,6 +109,7 @@ export interface CryptoProvider {
   readonly keyExchange: KeyExchangeProvider;
   readonly encryption: SymmetricEncryptionProvider;
   readonly hashing: HashingProvider;
+  readonly hmac: HmacProvider;
   readonly encoding: EncodingProvider;
   readonly random: RandomProvider;
 }
@@ -178,18 +188,35 @@ const base64Encoding: EncodingProvider = {
   },
 };
 
+const sha256Hmac: HmacProvider = {
+  algorithmId: "hmac-sha256",
+
+  compute(key: Uint8Array, message: string): string {
+    return createHmac("sha256", key).update(message).digest("hex");
+  },
+
+  verify(key: Uint8Array, message: string, expectedHmac: string): boolean {
+    const actual = this.compute(key, message);
+    const a = Buffer.from(actual, "hex");
+    const b = Buffer.from(expectedHmac, "hex");
+    if (a.length !== b.length) return false;
+    return timingSafeEqual(a, b);
+  },
+};
+
 const naclRandom: RandomProvider = {
   randomBytes(length: number): Uint8Array {
     return nacl.randomBytes(length);
   },
 };
 
-/** The default provider: Ed25519 + X25519 + XSalsa20-Poly1305 + SHA-256. */
+/** The default provider: Ed25519 + X25519 + XSalsa20-Poly1305 + SHA-256 + HMAC-SHA256. */
 export const DEFAULT_PROVIDER: CryptoProvider = {
   signing: naclSigning,
   keyExchange: naclKeyExchange,
   encryption: naclEncryption,
   hashing: sha256Hashing,
+  hmac: sha256Hmac,
   encoding: base64Encoding,
   random: naclRandom,
 };

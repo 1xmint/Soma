@@ -22,6 +22,7 @@ import {
   createHandshakePayload,
 } from "../core/channel.js";
 import { HeartbeatChain } from "../heart/heartbeat.js";
+import { deriveHmacKey, verifyTokenHmac } from "../heart/seed.js";
 import {
   verifyBirthCertificate,
   verifyDataIntegrity,
@@ -139,6 +140,9 @@ async function main() {
     generationsCompleted: 0,
     toolCallPassed: false,
     fetchDataPassed: false,
+    hmacTokensVerified: 0,
+    hmacTokensTotal: 0,
+    hmacAllValid: false,
   };
 
   // ── Step 1: Create two hearted parties and establish a session ───────────
@@ -187,7 +191,7 @@ async function main() {
   header("Step 2: Generate 10 responses through the heart");
 
   const baselineWordCounts: number[] = [];
-  const generations: Array<{ prompt: string; text: string; heartbeats: HeartbeatToken[] }> = [];
+  const generations: Array<{ prompt: string; text: string; tokens: HeartbeatToken[]; heartbeats: HeartbeatToken[] }> = [];
 
   for (let i = 0; i < PROMPTS.length; i++) {
     const prompt = PROMPTS[i];
@@ -195,7 +199,7 @@ async function main() {
 
     try {
       const gen = await collectGeneration(heart, prompt, session.sessionId);
-      generations.push({ prompt, text: gen.text, heartbeats: gen.heartbeats });
+      generations.push({ prompt, text: gen.text, tokens: gen.tokens, heartbeats: gen.heartbeats });
       results.generationsCompleted++;
 
       const wordCount = gen.text.split(/\s+/).filter((w) => w.length > 0).length;
@@ -251,35 +255,60 @@ async function main() {
     `seed_generated: ${eventCounts.get("seed_generated") ?? 0}`
   );
 
-  // ── Step 4: Verify seed influence ───────────────────────────────────────
+  // ── Step 4: Verify token-level HMAC authentication ──────────────────────
 
-  header("Step 4: Verify seed influence on responses");
+  header("Step 4: Verify token-level HMAC authentication");
+
+  // Derive the HMAC key from the session key (receiver side)
+  const hmacKey = deriveHmacKey(liveSession.sessionKey!);
+  let hmacInteraction = 0;
 
   results.seedTotal = generations.length;
   for (const gen of generations) {
-    // Re-derive the seed for this interaction to check influence
-    // We can check via the heartbeat chain's seed_generated events
     const seedBeat = gen.heartbeats.find((h) => h.heartbeat?.eventType === "seed_generated");
     if (!seedBeat?.heartbeat) continue;
 
-    // Parse the seed modification from the heartbeat event
-    // The seed was applied — we verify statistical influence
-    const text = gen.text;
-    const wordCount = text.split(/\s+/).filter((w) => w.length > 0).length;
+    // Verify every token's HMAC
+    const tokenItems = gen.tokens.filter((t: HeartbeatToken) => t.type === "token" && t.hmac);
+    let allValid = true;
+    for (const tok of tokenItems) {
+      results.hmacTokensTotal++;
+      const valid = verifyTokenHmac(
+        hmacKey,
+        tok.token!,
+        tok.sequence!,
+        hmacInteraction,
+        tok.hmac!
+      );
+      if (valid) {
+        results.hmacTokensVerified++;
+      } else {
+        allValid = false;
+        line(`    HMAC FAIL: token="${tok.token}" seq=${tok.sequence} interaction=${hmacInteraction}`);
+      }
+    }
 
-    // Basic check: response exists and is non-empty
-    if (wordCount > 0) {
+    if (allValid && tokenItems.length > 0) {
       results.seedVerifications++;
     }
+
+    hmacInteraction++;
   }
+
+  results.hmacAllValid = results.hmacTokensVerified === results.hmacTokensTotal;
 
   const seedPassRate = results.seedTotal > 0
     ? (results.seedVerifications / results.seedTotal * 100).toFixed(1)
     : "0";
 
   result(
-    "Seed verification pass rate",
-    results.seedVerifications > 0,
+    "Token HMACs verified",
+    results.hmacAllValid,
+    `${results.hmacTokensVerified}/${results.hmacTokensTotal} tokens`
+  );
+  result(
+    "All generations HMAC-authenticated",
+    results.seedVerifications === results.seedTotal,
     `${results.seedVerifications}/${results.seedTotal} (${seedPassRate}%)`
   );
 
@@ -415,6 +444,7 @@ async function main() {
   const allPassed =
     results.heartbeatChainValid &&
     results.seedVerifications === results.seedTotal &&
+    results.hmacAllValid &&
     results.birthCertsValid === results.birthCertsTotal &&
     results.destroyConfirmed &&
     results.generationsCompleted === PROMPTS.length &&
@@ -424,7 +454,12 @@ async function main() {
   console.log("");
   result("Heartbeat chain valid", results.heartbeatChainValid);
   result(
-    "Seed verification pass rate",
+    "Token HMACs verified",
+    results.hmacAllValid,
+    `${results.hmacTokensVerified}/${results.hmacTokensTotal} tokens`
+  );
+  result(
+    "All generations HMAC-authenticated",
     results.seedVerifications === results.seedTotal,
     `${results.seedVerifications}/${results.seedTotal}`
   );

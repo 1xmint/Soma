@@ -34,7 +34,7 @@ import {
 } from "../core/channel.js";
 import { CredentialVault } from "./credential-vault.js";
 import { HeartbeatChain, type Heartbeat } from "./heartbeat.js";
-import { deriveSeed, applySeed, type HeartSeed } from "./seed.js";
+import { deriveSeed, applySeed, deriveHmacKey, computeTokenHmac, type HeartSeed } from "./seed.js";
 import {
   createBirthCertificate,
   type BirthCertificate,
@@ -85,6 +85,10 @@ export interface HeartbeatToken {
   heartbeat?: Heartbeat;
   /** Timestamp of emission. */
   timestamp: number;
+  /** HMAC-SHA256(hmacKey, token || sequence || interaction_counter). Present when type === "token" and session has a key. */
+  hmac?: string;
+  /** Monotonic per-interaction token counter. Present when type === "token" and session has a key. */
+  sequence?: number;
 }
 
 /** Result of a tool call routed through the heart. */
@@ -324,7 +328,7 @@ export class HeartRuntime {
     );
     yield { type: "heartbeat", heartbeat: callStartBeat, timestamp: Date.now() };
 
-    // Step 5: Stream tokens
+    // Step 5: Stream tokens with per-token HMAC authentication
     const stream = await client.chat.completions.create({
       model: this.modelId,
       messages: messages.map((m) => ({ role: m.role, content: m.content })),
@@ -333,12 +337,25 @@ export class HeartRuntime {
       max_tokens: input.maxTokens,
     });
 
+    // Derive HMAC key from session key (if available) for token authentication
+    const hmacKey = session?.sessionKey
+      ? deriveHmacKey(session.sessionKey, this.provider)
+      : undefined;
+    const interactionCounter = seed?.interactionCounter ?? 0;
+
     let tokenCount = 0;
     for await (const chunk of stream) {
       const content = chunk.choices[0]?.delta?.content;
       if (content) {
+        const seq = tokenCount;
         tokenCount++;
-        yield { type: "token", token: content, timestamp: Date.now() };
+
+        if (hmacKey) {
+          const hmac = computeTokenHmac(hmacKey, content, seq, interactionCounter, this.provider);
+          yield { type: "token", token: content, timestamp: Date.now(), hmac, sequence: seq };
+        } else {
+          yield { type: "token", token: content, timestamp: Date.now() };
+        }
       }
     }
 

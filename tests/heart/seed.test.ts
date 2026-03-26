@@ -5,6 +5,9 @@ import {
   applySeed,
   verifySeedInfluence,
   getSeedModifications,
+  deriveHmacKey,
+  computeTokenHmac,
+  verifyTokenHmac,
 } from "../../src/heart/seed.js";
 
 const crypto = getCryptoProvider();
@@ -153,6 +156,77 @@ describe("HeartSeed", () => {
       const noExamples = "This is a plain response without any illustrations.";
       const result = verifySeedInfluence(noExamples, seed, 10);
       expect(result.confidence).toBeLessThanOrEqual(0.5);
+    });
+  });
+
+  describe("Token-Level HMAC Authentication", () => {
+    it("deriveHmacKey produces deterministic key from session key", () => {
+      const sessionKey = makeSessionKey();
+      const key1 = deriveHmacKey(sessionKey);
+      const key2 = deriveHmacKey(sessionKey);
+      expect(Buffer.from(key1).toString("hex")).toBe(Buffer.from(key2).toString("hex"));
+      expect(key1.length).toBe(32);
+    });
+
+    it("different session keys produce different HMAC keys", () => {
+      const key1 = deriveHmacKey(makeSessionKey());
+      const key2 = deriveHmacKey(makeSessionKey());
+      expect(Buffer.from(key1).toString("hex")).not.toBe(Buffer.from(key2).toString("hex"));
+    });
+
+    it("computeTokenHmac is deterministic", () => {
+      const hmacKey = deriveHmacKey(makeSessionKey());
+      const h1 = computeTokenHmac(hmacKey, "Hello", 0, 42);
+      const h2 = computeTokenHmac(hmacKey, "Hello", 0, 42);
+      expect(h1).toBe(h2);
+      expect(h1.length).toBe(64); // SHA-256 hex
+    });
+
+    it("different tokens produce different HMACs", () => {
+      const hmacKey = deriveHmacKey(makeSessionKey());
+      const h1 = computeTokenHmac(hmacKey, "Hello", 0, 0);
+      const h2 = computeTokenHmac(hmacKey, "World", 0, 0);
+      expect(h1).not.toBe(h2);
+    });
+
+    it("different sequences produce different HMACs", () => {
+      const hmacKey = deriveHmacKey(makeSessionKey());
+      const h1 = computeTokenHmac(hmacKey, "Hello", 0, 0);
+      const h2 = computeTokenHmac(hmacKey, "Hello", 1, 0);
+      expect(h1).not.toBe(h2);
+    });
+
+    it("different interaction counters produce different HMACs", () => {
+      const hmacKey = deriveHmacKey(makeSessionKey());
+      const h1 = computeTokenHmac(hmacKey, "Hello", 0, 0);
+      const h2 = computeTokenHmac(hmacKey, "Hello", 0, 1);
+      expect(h1).not.toBe(h2);
+    });
+
+    it("verifyTokenHmac accepts valid HMAC", () => {
+      const hmacKey = deriveHmacKey(makeSessionKey());
+      const hmac = computeTokenHmac(hmacKey, "test", 5, 10);
+      expect(verifyTokenHmac(hmacKey, "test", 5, 10, hmac)).toBe(true);
+    });
+
+    it("verifyTokenHmac rejects wrong token", () => {
+      const hmacKey = deriveHmacKey(makeSessionKey());
+      const hmac = computeTokenHmac(hmacKey, "real", 0, 0);
+      expect(verifyTokenHmac(hmacKey, "fake", 0, 0, hmac)).toBe(false);
+    });
+
+    it("verifyTokenHmac rejects wrong key", () => {
+      const hmacKey1 = deriveHmacKey(makeSessionKey());
+      const hmacKey2 = deriveHmacKey(makeSessionKey());
+      const hmac = computeTokenHmac(hmacKey1, "test", 0, 0);
+      expect(verifyTokenHmac(hmacKey2, "test", 0, 0, hmac)).toBe(false);
+    });
+
+    it("verifyTokenHmac rejects tampered HMAC", () => {
+      const hmacKey = deriveHmacKey(makeSessionKey());
+      const hmac = computeTokenHmac(hmacKey, "test", 0, 0);
+      const tampered = "00" + hmac.slice(2);
+      expect(verifyTokenHmac(hmacKey, "test", 0, 0, tampered)).toBe(false);
     });
   });
 

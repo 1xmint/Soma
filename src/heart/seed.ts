@@ -183,3 +183,56 @@ export function getSeedModifications(): ReadonlyArray<{
 }> {
   return SEED_MODIFICATIONS;
 }
+
+// ─── Token-Level HMAC Authentication ────────────────────────────────────────
+
+/**
+ * Derive an HMAC key from the session key for token authentication.
+ * Separate from the session key itself — domain separation.
+ */
+export function deriveHmacKey(sessionKey: Uint8Array, provider?: CryptoProvider): Uint8Array {
+  const p = provider ?? getCryptoProvider();
+  // Domain-separated key derivation: H(sessionKey || "soma:hmac")
+  const material = new Uint8Array([
+    ...sessionKey,
+    ...new TextEncoder().encode("|soma:hmac"),
+  ]);
+  return p.hashing.deriveKey(material, 32);
+}
+
+/**
+ * Compute HMAC for a single token.
+ *
+ * HMAC(hmacKey, token || sequence || interactionCounter)
+ *
+ * Every token is individually authenticated. The receiver verifies
+ * each HMAC as it arrives — a single mismatch = immediate RED.
+ */
+export function computeTokenHmac(
+  hmacKey: Uint8Array,
+  token: string,
+  sequence: number,
+  interactionCounter: number,
+  provider?: CryptoProvider
+): string {
+  const p = provider ?? getCryptoProvider();
+  const message = `${token}|${sequence}|${interactionCounter}`;
+  return p.hmac.compute(hmacKey, message);
+}
+
+/**
+ * Verify a token's HMAC. Constant-time comparison.
+ * Returns true if the token was authenticated by this heart.
+ */
+export function verifyTokenHmac(
+  hmacKey: Uint8Array,
+  token: string,
+  sequence: number,
+  interactionCounter: number,
+  expectedHmac: string,
+  provider?: CryptoProvider
+): boolean {
+  const p = provider ?? getCryptoProvider();
+  const message = `${token}|${sequence}|${interactionCounter}`;
+  return p.hmac.verify(hmacKey, message, expectedHmac);
+}
