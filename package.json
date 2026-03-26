@@ -9,7 +9,8 @@
     "experiment": "tsx src/experiment/runner.ts",
     "analyze": "tsx src/experiment/analyze.ts",
     "generate-synthetic": "tsx src/experiment/generate-synthetic.ts",
-    "experiment:agents": "tsx src/experiment/agents/run-agent-experiment.ts"
+    "experiment:agents": "tsx src/experiment/agents/run-agent-experiment.ts",
+    "test:heart-live": "tsx src/experiment/heart-live-test.ts"
   },
   "engines": {
     "node": ">=18"

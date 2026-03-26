@@ -10,7 +10,8 @@
  */
 
 import nacl from "tweetnacl";
-import { encodeBase64, decodeBase64, encodeUTF8, decodeUTF8 } from "tweetnacl-util";
+import naclUtil from "tweetnacl-util";
+const { encodeBase64, decodeBase64, encodeUTF8, decodeUTF8 } = naclUtil;
 import { createHash } from "node:crypto";
 
 // ─── Algorithm-agnostic key pair types ───────────────────────────────────────
