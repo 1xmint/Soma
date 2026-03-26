@@ -25,10 +25,98 @@ export interface StreamingResponse {
   providerMeta: Record<string, unknown>;
 }
 
+// --- Key Pool (rate-limit rotation) ---
+
+interface KeyPool {
+  keys: string[];
+  currentIndex: number;
+  exhausted: Set<number>;
+}
+
+const keyPools = new Map<ProviderName, KeyPool>();
+
+/**
+ * Build a key pool from environment variables.
+ * Tries the base key name, then _2, _3, _4, etc.
+ */
+function getKeyPool(provider: ProviderName): KeyPool {
+  if (keyPools.has(provider)) return keyPools.get(provider)!;
+
+  const envNames: Record<ProviderName, string[]> = {
+    groq: ["GROQ_API_KEY", "GROQ_API_KEY_2"],
+    openrouter: ["OPENROUTER_API_KEY", "OPENROUTER_API_KEY_2", "OPENROUTER_API_KEY_3", "OPENROUTER_API_KEY_4"],
+    mistral: ["MISTRAL_API_KEY"],
+    anthropic: ["ANTHROPIC_API_KEY"],
+    openai: ["OPENAI_API_KEY"],
+  };
+
+  const keys: string[] = [];
+  for (const name of envNames[provider]) {
+    const val = process.env[name];
+    if (val) keys.push(val);
+  }
+
+  if (keys.length === 0) {
+    throw new Error(`No API keys found for provider: ${provider}. Set ${envNames[provider][0]} in .env`);
+  }
+
+  const pool: KeyPool = { keys, currentIndex: 0, exhausted: new Set() };
+  keyPools.set(provider, pool);
+  return pool;
+}
+
+/** Get the current key for a provider. Throws if all keys exhausted. */
+function getCurrentKey(provider: ProviderName): string {
+  const pool = getKeyPool(provider);
+  if (pool.exhausted.size >= pool.keys.length) {
+    throw new Error(`All ${pool.keys.length} API keys for ${provider} are rate-limited`);
+  }
+  return pool.keys[pool.currentIndex];
+}
+
+/** Rotate to the next available key after a 429. Returns true if a key was available. */
+function rotateKey(provider: ProviderName): boolean {
+  const pool = getKeyPool(provider);
+  pool.exhausted.add(pool.currentIndex);
+
+  // Find next non-exhausted key
+  for (let i = 0; i < pool.keys.length; i++) {
+    const idx = (pool.currentIndex + 1 + i) % pool.keys.length;
+    if (!pool.exhausted.has(idx)) {
+      pool.currentIndex = idx;
+      const keyNum = idx + 1;
+      console.log(`  [key-rotate] ${provider}: switched to key #${keyNum}/${pool.keys.length}`);
+      return true;
+    }
+  }
+
+  console.log(`  [key-rotate] ${provider}: all ${pool.keys.length} keys exhausted`);
+  return false;
+}
+
+/** Reset exhaustion state for a provider (call between experiment runs). */
+export function resetKeyPool(provider?: ProviderName): void {
+  if (provider) {
+    const pool = keyPools.get(provider);
+    if (pool) pool.exhausted.clear();
+  } else {
+    for (const pool of keyPools.values()) pool.exhausted.clear();
+  }
+}
+
 // --- Provider Clients ---
+
+const PROVIDER_BASE_URLS: Record<ProviderName, string> = {
+  groq: "https://api.groq.com/openai/v1",
+  mistral: "https://api.mistral.ai/v1",
+  openrouter: "https://openrouter.ai/api/v1",
+  anthropic: "https://api.anthropic.com/v1",
+  openai: "https://api.openai.com/v1",
+};
 
 /**
  * Route a prompt to the appropriate provider and stream the response.
+ * Automatically rotates API keys on 429 rate-limit errors.
  * All providers return a StreamingResponse with token-level timing.
  */
 export async function streamFromProvider(
@@ -37,48 +125,50 @@ export async function streamFromProvider(
   systemPrompt: string,
   userPrompt: string
 ): Promise<StreamingResponse> {
-  switch (provider) {
-    case "groq":
-      return streamFromOpenAICompatible(
-        "https://api.groq.com/openai/v1",
-        getEnvKey("GROQ_API_KEY"),
+  const baseURL = PROVIDER_BASE_URLS[provider];
+  const pool = getKeyPool(provider);
+  const maxAttempts = pool.keys.length;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const apiKey = getCurrentKey(provider);
+    try {
+      return await streamFromOpenAICompatible(
+        baseURL,
+        apiKey,
         model,
         systemPrompt,
         userPrompt
       );
-    case "mistral":
-      return streamFromOpenAICompatible(
-        "https://api.mistral.ai/v1",
-        getEnvKey("MISTRAL_API_KEY"),
-        model,
-        systemPrompt,
-        userPrompt
-      );
-    case "openrouter":
-      return streamFromOpenAICompatible(
-        "https://openrouter.ai/api/v1",
-        getEnvKey("OPENROUTER_API_KEY"),
-        model,
-        systemPrompt,
-        userPrompt
-      );
-    case "anthropic":
-      return streamFromOpenAICompatible(
-        "https://api.anthropic.com/v1",
-        getEnvKey("ANTHROPIC_API_KEY"),
-        model,
-        systemPrompt,
-        userPrompt
-      );
-    case "openai":
-      return streamFromOpenAICompatible(
-        "https://api.openai.com/v1",
-        getEnvKey("OPENAI_API_KEY"),
-        model,
-        systemPrompt,
-        userPrompt
-      );
+    } catch (err: unknown) {
+      if (isRateLimitError(err)) {
+        const rotated = rotateKey(provider);
+        if (!rotated) {
+          throw new Error(`All ${pool.keys.length} API keys for ${provider} are rate-limited`);
+        }
+        // Retry with the next key
+        continue;
+      }
+      throw err;
+    }
   }
+
+  throw new Error(`All ${maxAttempts} API keys for ${provider} are rate-limited`);
+}
+
+/** Check if an error is a 429 rate-limit response. */
+function isRateLimitError(err: unknown): boolean {
+  if (err && typeof err === "object") {
+    // OpenAI SDK throws APIError with status
+    if ("status" in err && (err as { status: number }).status === 429) return true;
+    // Some providers include it in the message
+    if ("message" in err && typeof (err as { message: string }).message === "string") {
+      const msg = (err as { message: string }).message.toLowerCase();
+      if (msg.includes("rate limit") || msg.includes("429") || msg.includes("too many requests")) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 // --- OpenAI-Compatible (Groq, Mistral, OpenRouter) ---
@@ -195,10 +285,9 @@ export async function streamThroughProxy(
   systemPrompt: string,
   userPrompt: string
 ): Promise<StreamingResponse> {
-  // Get the real response from the actual model
-  const real = await streamFromOpenAICompatible(
-    "https://api.groq.com/openai/v1",
-    getEnvKey("GROQ_API_KEY"),
+  // Get the real response through the provider (with key rotation)
+  const real = await streamFromProvider(
+    "groq",
     "llama-3.3-70b-versatile",
     systemPrompt,
     userPrompt
@@ -276,14 +365,3 @@ function injectProxyLatency(original: StreamingTrace): StreamingTrace {
   };
 }
 
-// --- Helpers ---
-
-function getEnvKey(name: string): string {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(
-      `Missing environment variable: ${name}. Add it to your .env file.`
-    );
-  }
-  return value;
-}
