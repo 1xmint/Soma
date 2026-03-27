@@ -140,7 +140,12 @@ export function runSlowDriftAttack(): AttackResult {
 
   // Step 3: Gradually drift from Claude to GPT over 100 interactions
   // Each step increases drift by 1%
-  let detectionPoint = -1;
+  //
+  // Track both channels independently to prove they're each sufficient:
+  // - Atlas (memoryless): checks current observation against reference profiles
+  // - Landscape (historical): checks drift velocity and profile deviation
+  let atlasDetectionPoint = -1;
+  let landscapeDetectionPoint = -1;
 
   for (let step = 0; step <= 100; step++) {
     const driftFraction = step / 100;
@@ -150,25 +155,25 @@ export function runSlowDriftAttack(): AttackResult {
     // Update landscape (attacker is slowly poisoning it)
     updateLandscape(landscape, signals, "normal");
 
-    // Check atlas classification — this is memoryless
-    const verdict = matchEnhanced(landscape, signals, "normal", [], 5, {
-      atlas,
-      declaredGenome: claudeGenomeHash,
-      senseFeatures: features,
-    });
-
-    // Atlas should catch the drift even when landscape doesn't
-    if (verdict.atlasClassification && !verdict.atlasClassification.match && detectionPoint === -1) {
-      detectionPoint = step;
+    // --- Channel 1: Atlas alone (memoryless) ---
+    const atlasResult = atlas.classifyObservation(features, claudeGenomeHash);
+    if (!atlasResult.match && atlasDetectionPoint === -1) {
+      atlasDetectionPoint = step;
     }
 
-    // Also check direct RED verdict
-    if (verdict.status === "RED" && detectionPoint === -1) {
-      detectionPoint = step;
+    // --- Channel 2: Landscape alone (no atlas) ---
+    const landscapeVerdict = matchEnhanced(landscape, signals, "normal", [], 5, {
+      // No atlas — purely landscape-based detection
+    });
+    if (landscapeVerdict.status === "RED" && landscapeDetectionPoint === -1) {
+      landscapeDetectionPoint = step;
     }
   }
 
-  // Detection succeeds if the atlas catches the drift before 80% interpolation
+  // Detection succeeds if EITHER channel catches the drift before 80%
+  const detectionPoint = atlasDetectionPoint >= 0
+    ? (landscapeDetectionPoint >= 0 ? Math.min(atlasDetectionPoint, landscapeDetectionPoint) : atlasDetectionPoint)
+    : landscapeDetectionPoint;
   const detected = detectionPoint >= 0 && detectionPoint < 80;
 
   return {
@@ -179,7 +184,10 @@ export function runSlowDriftAttack(): AttackResult {
     matchRatio: detectionPoint >= 0 ? 1.0 - detectionPoint / 100 : 0,
     details: {
       detectionPoint: detectionPoint >= 0 ? `${detectionPoint}% drift` : "not detected",
-      detectionThreshold: detectionPoint >= 0 ? `${detectionPoint}%` : "never",
+      atlasDetectionPoint: atlasDetectionPoint >= 0 ? `${atlasDetectionPoint}% drift` : "not detected",
+      landscapeDetectionPoint: landscapeDetectionPoint >= 0 ? `${landscapeDetectionPoint}% drift` : "not detected",
+      atlasIndependent: atlasDetectionPoint >= 0 && atlasDetectionPoint < 80,
+      landscapeIndependent: landscapeDetectionPoint >= 0 && landscapeDetectionPoint < 80,
       totalSteps: 100,
       atlasProfiles: atlas.size,
       landscapeObservations: landscape.totalObservations,
