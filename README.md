@@ -1,6 +1,9 @@
 # Soma: Identity as Execution in Autonomous Agent Systems
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19260081.svg)](https://doi.org/10.5281/zenodo.19260081)
+[![npm: soma-heart](https://img.shields.io/npm/v/soma-heart?label=soma-heart&color=238636)](https://www.npmjs.com/package/soma-heart)
+[![npm: soma-sense](https://img.shields.io/npm/v/soma-sense?label=soma-sense&color=238636)](https://www.npmjs.com/package/soma-sense)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 **Every existing agent identity system has a gap: the agent computes, and then separately, a credential proves who computed. Soma eliminates that gap by making identity inseparable from computation.**
 
