@@ -1,5 +1,6 @@
 # Soma: Identity as Execution in Autonomous Agent Systems
 
+[![Cryptographic Agent Identity](https://img.shields.io/badge/agent_identity-cryptographic_execution_proof-8b5cf6)](https://github.com/1xmint/Soma)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19260081.svg)](https://doi.org/10.5281/zenodo.19260081)
 [![npm: soma-heart](https://img.shields.io/npm/v/soma-heart?label=soma-heart&color=238636)](https://www.npmjs.com/package/soma-heart)
 [![npm: soma-sense](https://img.shields.io/npm/v/soma-sense?label=soma-sense&color=238636)](https://www.npmjs.com/package/soma-sense)
