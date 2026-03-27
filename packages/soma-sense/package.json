@@ -1,0 +1,55 @@
+{
+  "name": "soma-sense",
+  "version": "0.1.0",
+  "description": "The sensorium — phenotypic verification for agent identity via temporal fingerprinting, behavioral landscape, and phenotype atlas",
+  "type": "module",
+  "main": "./dist/sensorium/index.js",
+  "types": "./dist/sensorium/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/sensorium/index.js",
+      "types": "./dist/sensorium/index.d.ts"
+    },
+    "./senses": {
+      "import": "./dist/sensorium/senses/index.js",
+      "types": "./dist/sensorium/senses/index.d.ts"
+    },
+    "./atlas": {
+      "import": "./dist/sensorium/atlas.js",
+      "types": "./dist/sensorium/atlas.d.ts"
+    },
+    "./core": {
+      "import": "./dist/core/genome.js",
+      "types": "./dist/core/genome.d.ts"
+    }
+  },
+  "files": [
+    "dist/",
+    "README.md"
+  ],
+  "keywords": [
+    "agent-identity",
+    "mcp",
+    "model-context-protocol",
+    "temporal-fingerprint",
+    "sensorium",
+    "phenotype",
+    "behavioral-analysis",
+    "soma"
+  ],
+  "author": "Joshua Fair",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/1xmint/Soma"
+  },
+  "homepage": "https://github.com/1xmint/Soma",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": ">=1.0.0",
+    "tweetnacl": "^1.0.3",
+    "tweetnacl-util": "^0.15.1"
+  }
+}
