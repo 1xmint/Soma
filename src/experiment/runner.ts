@@ -241,8 +241,15 @@ async function runExperiment(): Promise<void> {
         errors.push({ agentId: agent.id, probeId: probe.id, error: errorMessage });
       }
 
-      // Rate limit: 500ms between calls to stay within free tier limits
-      await delay(500);
+      // Rate limit delay — per-provider to respect free tier limits
+      // Google: 15 RPM = 4s between calls
+      // Groq/OpenRouter: 30 RPM free tier = 2s safe margin
+      // Others: 500ms default
+      const delayMs = agent.provider === "google" ? 4500
+        : (agent.provider === "groq" || agent.provider === "openrouter") ? 2000
+        : agent.provider === "ollama" ? 100
+        : 500;
+      await delay(delayMs);
     }
 
     const agentDuration = ((Date.now() - agentStart) / 1000).toFixed(1);
