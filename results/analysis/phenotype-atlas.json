@@ -1,0 +1,2385 @@
+{
+  "profiles": [
+    {
+      "genomeHash": "mistral-small",
+      "label": "mistral-small",
+      "temporal": {
+        "temporal_time_to_first_token": {
+          "count": 23,
+          "mean": 425.9392391304345,
+          "m2": 471678.2248148059
+        },
+        "temporal_mean_interval": {
+          "count": 23,
+          "mean": 15.655060458645922,
+          "m2": 238.62809010423683
+        },
+        "temporal_median_interval": {
+          "count": 23,
+          "mean": 13.848332608696618,
+          "m2": 254.4935528481729
+        },
+        "temporal_std_interval": {
+          "count": 23,
+          "mean": 12.01730866876131,
+          "m2": 6090.749264406845
+        },
+        "temporal_burstiness": {
+          "count": 23,
+          "mean": 17.741152513714017,
+          "m2": 48922.51079946981
+        },
+        "temporal_total_streaming_duration": {
+          "count": 23,
+          "mean": 1769.6207000000009,
+          "m2": 59310567.864200056
+        },
+        "temporal_token_count": {
+          "count": 23,
+          "mean": 86.34782608695652,
+          "m2": 227155.21739130435
+        },
+        "temporal_early_mean_interval": {
+          "count": 23,
+          "mean": 14.13696045563029,
+          "m2": 105.44245333762906
+        },
+        "temporal_mid_mean_interval": {
+          "count": 23,
+          "mean": 17.255787765923117,
+          "m2": 1241.745052713181
+        },
+        "temporal_late_mean_interval": {
+          "count": 23,
+          "mean": 14.093218968092696,
+          "m2": 465.69015238525805
+        },
+        "temporal_acceleration": {
+          "count": 23,
+          "mean": -0.043741487537590745,
+          "m2": 506.1159487940071
+        },
+        "temporal_sentence_boundary_pause_ratio": {
+          "count": 23,
+          "mean": 1.125589968346921,
+          "m2": 12.757542670197717
+        },
+        "temporal_burst_count": {
+          "count": 23,
+          "mean": 4.739130434782608,
+          "m2": 652.4347826086957
+        },
+        "temporal_burst_fraction": {
+          "count": 23,
+          "mean": 0.2173707292347232,
+          "m2": 1.3679846167159138
+        },
+        "temporal_mean_burst_length": {
+          "count": 23,
+          "mean": 2.535316761804176,
+          "m2": 74.47395785606878
+        },
+        "temporal_inter_burst_interval": {
+          "count": 23,
+          "mean": 150.1934480203847,
+          "m2": 498395.76013724273
+        },
+        "temporal_chunk_count": {
+          "count": 23,
+          "mean": 82.86956521739131,
+          "m2": 210750.60869565216
+        },
+        "temporal_mean_chunk_size": {
+          "count": 23,
+          "mean": 1.0980346563860286,
+          "m2": 2.8748764026626823
+        },
+        "temporal_timing_entropy": {
+          "count": 23,
+          "mean": 2.8525270978004786,
+          "m2": 16.862217662539905
+        },
+        "temporal_p90_interval": {
+          "count": 23,
+          "mean": 25.012013043476898,
+          "m2": 10986.391038130265
+        },
+        "temporal_p10_interval": {
+          "count": 23,
+          "mean": 7.09977826087118,
+          "m2": 278.7968602194328
+        },
+        "temporal_interval_skewness": {
+          "count": 23,
+          "mean": 2.199828466608009,
+          "m2": 156.1096349869172
+        }
+      },
+      "topology": {
+        "topo_paragraph_length_variance": {
+          "count": 23,
+          "mean": 327.4406164649909,
+          "m2": 11770257.321056094
+        },
+        "topo_paragraph_length_trend": {
+          "count": 23,
+          "mean": -2.016073459302696,
+          "m2": 673.628425061663
+        },
+        "topo_transition_density": {
+          "count": 23,
+          "mean": 0.03862876254180602,
+          "m2": 0.22965912014407006
+        },
+        "topo_topic_coherence": {
+          "count": 23,
+          "mean": 0.04362936555691584,
+          "m2": 0.08513808220823596
+        },
+        "topo_frontloading_ratio": {
+          "count": 23,
+          "mean": 0.5048366148688294,
+          "m2": 4.036812712791488
+        },
+        "topo_list_position": {
+          "count": 23,
+          "mean": -0.4232573274724578,
+          "m2": 10.836444391835364
+        },
+        "topo_conclusion_present": {
+          "count": 23,
+          "mean": 0,
+          "m2": 0
+        },
+        "topo_nesting_depth": {
+          "count": 23,
+          "mean": 0.6086956521739132,
+          "m2": 31.478260869565215
+        },
+        "topo_code_position": {
+          "count": 23,
+          "mean": -0.9530832123481316,
+          "m2": 1.1137995915666725
+        }
+      },
+      "vocabulary": {
+        "vocab_type_token_ratio": {
+          "count": 23,
+          "mean": 0.7137664575371933,
+          "m2": 0.8688702199538597
+        },
+        "vocab_hapax_ratio": {
+          "count": 23,
+          "mean": 0.7779442915947716,
+          "m2": 0.5212618707986378
+        },
+        "vocab_avg_word_frequency_rank": {
+          "count": 23,
+          "mean": 670.1684901062592,
+          "m2": 433877.3823289962
+        },
+        "vocab_top_bigrams_hash": {
+          "count": 23,
+          "mean": 585289.6086956522,
+          "m2": 2634206455553.478
+        },
+        "vocab_sentence_starter_entropy": {
+          "count": 23,
+          "mean": 1.9929868270568147,
+          "m2": 47.79090638330753
+        },
+        "vocab_filler_phrase_count": {
+          "count": 23,
+          "mean": 0.13043478260869565,
+          "m2": 4.608695652173912
+        },
+        "vocab_contraction_ratio": {
+          "count": 23,
+          "mean": 0.011508848397972615,
+          "m2": 0.010537774733968521
+        },
+        "vocab_passive_voice_ratio": {
+          "count": 23,
+          "mean": 0.062317459988748186,
+          "m2": 0.3103217361832124
+        },
+        "vocab_question_density": {
+          "count": 23,
+          "mean": 0.9280823920495966,
+          "m2": 133.94624628451388
+        },
+        "vocab_modal_verb_ratio": {
+          "count": 23,
+          "mean": 0.015651881412962244,
+          "m2": 0.014807805937323497
+        }
+      },
+      "observationCount": 23
+    },
+    {
+      "genomeHash": "deepseek-v3",
+      "label": "deepseek-v3",
+      "temporal": {
+        "temporal_time_to_first_token": {
+          "count": 25,
+          "mean": 2103.891868000005,
+          "m2": 37512494.89348633
+        },
+        "temporal_mean_interval": {
+          "count": 25,
+          "mean": 93.64222688009903,
+          "m2": 145916.11628504272
+        },
+        "temporal_median_interval": {
+          "count": 25,
+          "mean": 75.67435399999377,
+          "m2": 139086.7279223976
+        },
+        "temporal_std_interval": {
+          "count": 25,
+          "mean": 131.6690241669211,
+          "m2": 1752209.8289310667
+        },
+        "temporal_burstiness": {
+          "count": 25,
+          "mean": 535.7252633108116,
+          "m2": 95112779.1659624
+        },
+        "temporal_total_streaming_duration": {
+          "count": 25,
+          "mean": 12297.418736,
+          "m2": 1861539334.7836795
+        },
+        "temporal_token_count": {
+          "count": 25,
+          "mean": 153.24,
+          "m2": 513740.56
+        },
+        "temporal_early_mean_interval": {
+          "count": 25,
+          "mean": 122.4393885323172,
+          "m2": 529856.7862518402
+        },
+        "temporal_mid_mean_interval": {
+          "count": 25,
+          "mean": 86.95767483441738,
+          "m2": 156195.61799486412
+        },
+        "temporal_late_mean_interval": {
+          "count": 25,
+          "mean": 79.96863727103174,
+          "m2": 188407.75362748164
+        },
+        "temporal_acceleration": {
+          "count": 25,
+          "mean": -42.470751261285486,
+          "m2": 553598.1210652993
+        },
+        "temporal_sentence_boundary_pause_ratio": {
+          "count": 25,
+          "mean": 0.896998402664971,
+          "m2": 8.642863837692362
+        },
+        "temporal_burst_count": {
+          "count": 25,
+          "mean": 35.28,
+          "m2": 76747.04000000001
+        },
+        "temporal_burst_fraction": {
+          "count": 25,
+          "mean": 0.43795482062956853,
+          "m2": 2.5898580936860767
+        },
+        "temporal_mean_burst_length": {
+          "count": 25,
+          "mean": 3.88155367975464,
+          "m2": 1062.5999788833635
+        },
+        "temporal_inter_burst_interval": {
+          "count": 25,
+          "mean": 790.9194051120993,
+          "m2": 64676716.779861175
+        },
+        "temporal_chunk_count": {
+          "count": 25,
+          "mean": 144.55999999999997,
+          "m2": 443092.16
+        },
+        "temporal_mean_chunk_size": {
+          "count": 25,
+          "mean": 1.0587549573919808,
+          "m2": 0.14417436588335375
+        },
+        "temporal_timing_entropy": {
+          "count": 25,
+          "mean": 2.8672928763781815,
+          "m2": 11.064155674004159
+        },
+        "temporal_p90_interval": {
+          "count": 25,
+          "mean": 137.63762400001056,
+          "m2": 282684.18662041606
+        },
+        "temporal_p10_interval": {
+          "count": 25,
+          "mean": 36.46444400000852,
+          "m2": 133922.02518760588
+        },
+        "temporal_interval_skewness": {
+          "count": 25,
+          "mean": 4.101283903602423,
+          "m2": 591.9966218337091
+        }
+      },
+      "topology": {
+        "topo_paragraph_length_variance": {
+          "count": 25,
+          "mean": 645.5994419323066,
+          "m2": 49415624.38213616
+        },
+        "topo_paragraph_length_trend": {
+          "count": 25,
+          "mean": 1.3443288476229651,
+          "m2": 11554.610498192007
+        },
+        "topo_transition_density": {
+          "count": 25,
+          "mean": 0.07738095238095237,
+          "m2": 0.48356009070294775
+        },
+        "topo_topic_coherence": {
+          "count": 25,
+          "mean": 0.03669445351520663,
+          "m2": 0.02931456277687873
+        },
+        "topo_frontloading_ratio": {
+          "count": 25,
+          "mean": 0.27307602834102884,
+          "m2": 2.653099856520766
+        },
+        "topo_list_position": {
+          "count": 25,
+          "mean": -0.21928567877772348,
+          "m2": 9.026159364764782
+        },
+        "topo_conclusion_present": {
+          "count": 25,
+          "mean": 0,
+          "m2": 0
+        },
+        "topo_nesting_depth": {
+          "count": 25,
+          "mean": 1.1600000000000001,
+          "m2": 51.36
+        },
+        "topo_code_position": {
+          "count": 25,
+          "mean": -1,
+          "m2": 0
+        }
+      },
+      "vocabulary": {
+        "vocab_type_token_ratio": {
+          "count": 25,
+          "mean": 0.7064522514252682,
+          "m2": 0.5753426550434915
+        },
+        "vocab_hapax_ratio": {
+          "count": 25,
+          "mean": 0.777476849271806,
+          "m2": 0.3640559987031292
+        },
+        "vocab_avg_word_frequency_rank": {
+          "count": 25,
+          "mean": 670.2943826966322,
+          "m2": 164581.28575090528
+        },
+        "vocab_top_bigrams_hash": {
+          "count": 25,
+          "mean": 529590.9199999999,
+          "m2": 1592352710089.8396
+        },
+        "vocab_sentence_starter_entropy": {
+          "count": 25,
+          "mean": 2.3636661859542327,
+          "m2": 53.02061642033405
+        },
+        "vocab_filler_phrase_count": {
+          "count": 25,
+          "mean": 0.24000000000000005,
+          "m2": 4.56
+        },
+        "vocab_contraction_ratio": {
+          "count": 25,
+          "mean": 0.0067640383925831665,
+          "m2": 0.004309993180359931
+        },
+        "vocab_passive_voice_ratio": {
+          "count": 25,
+          "mean": 0.1129373531791862,
+          "m2": 0.5261598389999674
+        },
+        "vocab_question_density": {
+          "count": 25,
+          "mean": 0.536020023742386,
+          "m2": 35.16368035320745
+        },
+        "vocab_modal_verb_ratio": {
+          "count": 25,
+          "mean": 0.011818256776705473,
+          "m2": 0.004537629694704212
+        }
+      },
+      "observationCount": 25
+    },
+    {
+      "genomeHash": "ollama-mistral",
+      "label": "ollama-mistral",
+      "temporal": {
+        "temporal_time_to_first_token": {
+          "count": 26,
+          "mean": 792.7131230769088,
+          "m2": 187342163.91672304
+        },
+        "temporal_mean_interval": {
+          "count": 26,
+          "mean": 20.09359516330569,
+          "m2": 2.389233875073616
+        },
+        "temporal_median_interval": {
+          "count": 26,
+          "mean": 19.895028846145852,
+          "m2": 3.8618931108927943
+        },
+        "temporal_std_interval": {
+          "count": 26,
+          "mean": 1.3652092654105397,
+          "m2": 11.986256179778596
+        },
+        "temporal_burstiness": {
+          "count": 26,
+          "mean": 0.11593092256585302,
+          "m2": 0.7458758549213598
+        },
+        "temporal_total_streaming_duration": {
+          "count": 26,
+          "mean": 5442.2572230768765,
+          "m2": 1128249171.2955894
+        },
+        "temporal_token_count": {
+          "count": 26,
+          "mean": 232.19230769230768,
+          "m2": 1479630.0384615385
+        },
+        "temporal_early_mean_interval": {
+          "count": 26,
+          "mean": 20.178080038947147,
+          "m2": 6.261043338695834
+        },
+        "temporal_mid_mean_interval": {
+          "count": 26,
+          "mean": 20.078122992844516,
+          "m2": 6.1548928036249775
+        },
+        "temporal_late_mean_interval": {
+          "count": 26,
+          "mean": 20.071954984768876,
+          "m2": 2.4572611650547023
+        },
+        "temporal_acceleration": {
+          "count": 26,
+          "mean": -0.10612505417826833,
+          "m2": 10.200115224292864
+        },
+        "temporal_sentence_boundary_pause_ratio": {
+          "count": 26,
+          "mean": 1.0037015260367155,
+          "m2": 0.02174399939108209
+        },
+        "temporal_burst_count": {
+          "count": 26,
+          "mean": 0.34615384615384626,
+          "m2": 15.884615384615385
+        },
+        "temporal_burst_fraction": {
+          "count": 26,
+          "mean": 0.0017440004372853736,
+          "m2": 0.000497417424035936
+        },
+        "temporal_mean_burst_length": {
+          "count": 26,
+          "mean": 0.4038461538461538,
+          "m2": 18.009615384615387
+        },
+        "temporal_inter_burst_interval": {
+          "count": 26,
+          "mean": 88.67100384615615,
+          "m2": 4859853.69564884
+        },
+        "temporal_chunk_count": {
+          "count": 26,
+          "mean": 232.07692307692312,
+          "m2": 1477911.8461538462
+        },
+        "temporal_mean_chunk_size": {
+          "count": 26,
+          "mean": 1.000328898743533,
+          "m2": 0.00005553138327190277
+        },
+        "temporal_timing_entropy": {
+          "count": 26,
+          "mean": 1.250983062975809,
+          "m2": 0.1459970913348088
+        },
+        "temporal_p90_interval": {
+          "count": 26,
+          "mean": 21.503326923067036,
+          "m2": 8.5446065906054
+        },
+        "temporal_p10_interval": {
+          "count": 26,
+          "mean": 18.95515769230238,
+          "m2": 0.36872716332020994
+        },
+        "temporal_interval_skewness": {
+          "count": 26,
+          "mean": 2.245892842605721,
+          "m2": 142.31863443034422
+        }
+      },
+      "topology": {
+        "topo_paragraph_length_variance": {
+          "count": 26,
+          "mean": 104.73820158512122,
+          "m2": 721624.7625619485
+        },
+        "topo_paragraph_length_trend": {
+          "count": 26,
+          "mean": 1.5781065088757398,
+          "m2": 966.5202572496454
+        },
+        "topo_transition_density": {
+          "count": 26,
+          "mean": 0.09134615384615384,
+          "m2": 1.0972889957264957
+        },
+        "topo_topic_coherence": {
+          "count": 26,
+          "mean": 0.03144743613685296,
+          "m2": 0.03161266163439255
+        },
+        "topo_frontloading_ratio": {
+          "count": 26,
+          "mean": 0.5479839231563549,
+          "m2": 4.290999338221746
+        },
+        "topo_list_position": {
+          "count": 26,
+          "mean": -0.6991164836007309,
+          "m2": 6.439811333126006
+        },
+        "topo_conclusion_present": {
+          "count": 26,
+          "mean": 0.07692307692307691,
+          "m2": 1.8461538461538458
+        },
+        "topo_nesting_depth": {
+          "count": 26,
+          "mean": 0.11538461538461538,
+          "m2": 4.653846153846153
+        },
+        "topo_code_position": {
+          "count": 26,
+          "mean": -0.9564879564879566,
+          "m2": 1.2306436548860789
+        }
+      },
+      "vocabulary": {
+        "vocab_type_token_ratio": {
+          "count": 26,
+          "mean": 0.7219728734700336,
+          "m2": 0.6754532945184822
+        },
+        "vocab_hapax_ratio": {
+          "count": 26,
+          "mean": 0.7878686502812963,
+          "m2": 0.4000149246937249
+        },
+        "vocab_avg_word_frequency_rank": {
+          "count": 26,
+          "mean": 593.9481415255432,
+          "m2": 302400.1903860805
+        },
+        "vocab_top_bigrams_hash": {
+          "count": 26,
+          "mean": 528005.5,
+          "m2": 2268791229516.5005
+        },
+        "vocab_sentence_starter_entropy": {
+          "count": 26,
+          "mean": 2.387280764313515,
+          "m2": 41.95880719368304
+        },
+        "vocab_filler_phrase_count": {
+          "count": 26,
+          "mean": 0.30769230769230765,
+          "m2": 5.538461538461539
+        },
+        "vocab_contraction_ratio": {
+          "count": 26,
+          "mean": 0.010210030288652415,
+          "m2": 0.004291162098490102
+        },
+        "vocab_passive_voice_ratio": {
+          "count": 26,
+          "mean": 0.14067722980952596,
+          "m2": 1.010382070132887
+        },
+        "vocab_question_density": {
+          "count": 26,
+          "mean": 0.26398172434216094,
+          "m2": 25.391736776876414
+        },
+        "vocab_modal_verb_ratio": {
+          "count": 26,
+          "mean": 0.01571443589819446,
+          "m2": 0.006632784681363291
+        }
+      },
+      "observationCount": 26
+    },
+    {
+      "genomeHash": "ollama-gemma2",
+      "label": "ollama-gemma2",
+      "temporal": {
+        "temporal_time_to_first_token": {
+          "count": 23,
+          "mean": 1832.356908695656,
+          "m2": 735869740.5977398
+        },
+        "temporal_mean_interval": {
+          "count": 23,
+          "mean": 138.09404956267247,
+          "m2": 99.34167827308806
+        },
+        "temporal_median_interval": {
+          "count": 23,
+          "mean": 136.28820652175324,
+          "m2": 95.74609760702958
+        },
+        "temporal_std_interval": {
+          "count": 23,
+          "mean": 7.684887908975378,
+          "m2": 195.87148435112042
+        },
+        "temporal_burstiness": {
+          "count": 23,
+          "mean": 0.4886422600097714,
+          "m2": 3.5900008115539412
+        },
+        "temporal_total_streaming_duration": {
+          "count": 23,
+          "mean": 19345.92727391305,
+          "m2": 5645093197.209403
+        },
+        "temporal_token_count": {
+          "count": 23,
+          "mean": 127.7391304347826,
+          "m2": 316242.4347826087
+        },
+        "temporal_early_mean_interval": {
+          "count": 23,
+          "mean": 137.00941615358363,
+          "m2": 423.367813209508
+        },
+        "temporal_mid_mean_interval": {
+          "count": 23,
+          "mean": 138.23037567398146,
+          "m2": 196.06543492658267
+        },
+        "temporal_late_mean_interval": {
+          "count": 23,
+          "mean": 138.79973326427066,
+          "m2": 321.238131496546
+        },
+        "temporal_acceleration": {
+          "count": 23,
+          "mean": 1.7903171106870752,
+          "m2": 763.6184195966346
+        },
+        "temporal_sentence_boundary_pause_ratio": {
+          "count": 23,
+          "mean": 0.9930743407450185,
+          "m2": 0.005990467818198849
+        },
+        "temporal_burst_count": {
+          "count": 23,
+          "mean": 0,
+          "m2": 0
+        },
+        "temporal_burst_fraction": {
+          "count": 23,
+          "mean": 0,
+          "m2": 0
+        },
+        "temporal_mean_burst_length": {
+          "count": 23,
+          "mean": 0,
+          "m2": 0
+        },
+        "temporal_inter_burst_interval": {
+          "count": 23,
+          "mean": 0,
+          "m2": 0
+        },
+        "temporal_chunk_count": {
+          "count": 23,
+          "mean": 127.7391304347826,
+          "m2": 316242.4347826087
+        },
+        "temporal_mean_chunk_size": {
+          "count": 23,
+          "mean": 1,
+          "m2": 0
+        },
+        "temporal_timing_entropy": {
+          "count": 23,
+          "mean": 1.2323187105385731,
+          "m2": 1.2016994505164507
+        },
+        "temporal_p90_interval": {
+          "count": 23,
+          "mean": 147.10290434780913,
+          "m2": 312.0725944103986
+        },
+        "temporal_p10_interval": {
+          "count": 23,
+          "mean": 130.9780130434842,
+          "m2": 283.5458593669215
+        },
+        "temporal_interval_skewness": {
+          "count": 23,
+          "mean": 1.9401140134814248,
+          "m2": 43.382374272074834
+        }
+      },
+      "topology": {
+        "topo_paragraph_length_variance": {
+          "count": 23,
+          "mean": 170.30727321524424,
+          "m2": 969754.5606012474
+        },
+        "topo_paragraph_length_trend": {
+          "count": 23,
+          "mean": 2.5115942028985505,
+          "m2": 2846.0727773866765
+        },
+        "topo_transition_density": {
+          "count": 23,
+          "mean": 0.03623188405797102,
+          "m2": 0.1709178743961353
+        },
+        "topo_topic_coherence": {
+          "count": 23,
+          "mean": 0.027573790893295036,
+          "m2": 0.04736397777377991
+        },
+        "topo_frontloading_ratio": {
+          "count": 23,
+          "mean": 0.31764356577431685,
+          "m2": 2.4048456554094044
+        },
+        "topo_list_position": {
+          "count": 23,
+          "mean": -0.45017147822697073,
+          "m2": 9.39662703696692
+        },
+        "topo_conclusion_present": {
+          "count": 23,
+          "mean": 0,
+          "m2": 0
+        },
+        "topo_nesting_depth": {
+          "count": 23,
+          "mean": 0.08695652173913045,
+          "m2": 3.8260869565217384
+        },
+        "topo_code_position": {
+          "count": 23,
+          "mean": -1,
+          "m2": 0
+        }
+      },
+      "vocabulary": {
+        "vocab_type_token_ratio": {
+          "count": 23,
+          "mean": 0.788056430201258,
+          "m2": 0.48625561658036914
+        },
+        "vocab_hapax_ratio": {
+          "count": 23,
+          "mean": 0.8227448504637471,
+          "m2": 0.33929976880961144
+        },
+        "vocab_avg_word_frequency_rank": {
+          "count": 23,
+          "mean": 567.7901757582607,
+          "m2": 681067.9388880223
+        },
+        "vocab_top_bigrams_hash": {
+          "count": 23,
+          "mean": 455668.39130434784,
+          "m2": 1791645454981.478
+        },
+        "vocab_sentence_starter_entropy": {
+          "count": 23,
+          "mean": 1.8087991627911049,
+          "m2": 30.131317783553882
+        },
+        "vocab_filler_phrase_count": {
+          "count": 23,
+          "mean": 0.2173913043478261,
+          "m2": 5.913043478260868
+        },
+        "vocab_contraction_ratio": {
+          "count": 23,
+          "mean": 0.01933185552917162,
+          "m2": 0.007469986688218705
+        },
+        "vocab_passive_voice_ratio": {
+          "count": 23,
+          "mean": 0.07776349822385628,
+          "m2": 0.26929407354866575
+        },
+        "vocab_question_density": {
+          "count": 23,
+          "mean": 0.7114378338800085,
+          "m2": 44.04214489041096
+        },
+        "vocab_modal_verb_ratio": {
+          "count": 23,
+          "mean": 0.01767929825499027,
+          "m2": 0.008087944929706738
+        }
+      },
+      "observationCount": 23
+    },
+    {
+      "genomeHash": "ollama-phi3",
+      "label": "ollama-phi3",
+      "temporal": {
+        "temporal_time_to_first_token": {
+          "count": 21,
+          "mean": 5788.237514285704,
+          "m2": 4055201755.336153
+        },
+        "temporal_mean_interval": {
+          "count": 21,
+          "mean": 14.513466651965093,
+          "m2": 1.7710166955345021
+        },
+        "temporal_median_interval": {
+          "count": 21,
+          "mean": 14.290476190491713,
+          "m2": 2.1837559222132055
+        },
+        "temporal_std_interval": {
+          "count": 21,
+          "mean": 1.43805677689459,
+          "m2": 11.114807821070267
+        },
+        "temporal_burstiness": {
+          "count": 21,
+          "mean": 0.17864498730442954,
+          "m2": 0.6644129017204919
+        },
+        "temporal_total_streaming_duration": {
+          "count": 21,
+          "mean": 10846.945728571409,
+          "m2": 4356816462.614905
+        },
+        "temporal_token_count": {
+          "count": 21,
+          "mean": 347.28571428571433,
+          "m2": 1349460.2857142854
+        },
+        "temporal_early_mean_interval": {
+          "count": 21,
+          "mean": 14.33067521582571,
+          "m2": 2.331298298848016
+        },
+        "temporal_mid_mean_interval": {
+          "count": 21,
+          "mean": 14.535201528522276,
+          "m2": 2.8358641251532375
+        },
+        "temporal_late_mean_interval": {
+          "count": 21,
+          "mean": 14.653481500175142,
+          "m2": 4.2852234692693045
+        },
+        "temporal_acceleration": {
+          "count": 21,
+          "mean": 0.3228062843494324,
+          "m2": 6.057446059586429
+        },
+        "temporal_sentence_boundary_pause_ratio": {
+          "count": 21,
+          "mean": 0.9972447247115069,
+          "m2": 0.030111147618776753
+        },
+        "temporal_burst_count": {
+          "count": 21,
+          "mean": 0.42857142857142866,
+          "m2": 15.142857142857142
+        },
+        "temporal_burst_fraction": {
+          "count": 21,
+          "mean": 0.0023038844742293745,
+          "m2": 0.0004100280151863353
+        },
+        "temporal_mean_burst_length": {
+          "count": 21,
+          "mean": 0.5952380952380952,
+          "m2": 24.809523809523803
+        },
+        "temporal_inter_burst_interval": {
+          "count": 21,
+          "mean": 7.4114380952392125,
+          "m2": 10943.886111806454
+        },
+        "temporal_chunk_count": {
+          "count": 21,
+          "mean": 346.85714285714283,
+          "m2": 1346382.5714285714
+        },
+        "temporal_mean_chunk_size": {
+          "count": 21,
+          "mean": 1.0010173361338035,
+          "m2": 0.00009244145887774273
+        },
+        "temporal_timing_entropy": {
+          "count": 21,
+          "mean": 1.4693332988156473,
+          "m2": 2.6161383503627955
+        },
+        "temporal_p90_interval": {
+          "count": 21,
+          "mean": 15.846457142848523,
+          "m2": 3.5279066516865067
+        },
+        "temporal_p10_interval": {
+          "count": 21,
+          "mean": 13.447128571414702,
+          "m2": 4.384340741970952
+        },
+        "temporal_interval_skewness": {
+          "count": 21,
+          "mean": 3.766209764653275,
+          "m2": 296.3902692126968
+        }
+      },
+      "topology": {
+        "topo_paragraph_length_variance": {
+          "count": 21,
+          "mean": 1499.1069808201053,
+          "m2": 447598459.28190184
+        },
+        "topo_paragraph_length_trend": {
+          "count": 21,
+          "mean": 9.767522160379302,
+          "m2": 33964.033246985266
+        },
+        "topo_transition_density": {
+          "count": 21,
+          "mean": 0.18412698412698414,
+          "m2": 2.772486772486772
+        },
+        "topo_topic_coherence": {
+          "count": 21,
+          "mean": 0.023057507507313297,
+          "m2": 0.02571468826759087
+        },
+        "topo_frontloading_ratio": {
+          "count": 21,
+          "mean": 0.4330103024862648,
+          "m2": 3.276328627356366
+        },
+        "topo_list_position": {
+          "count": 21,
+          "mean": -0.7827934294018388,
+          "m2": 4.274115736205805
+        },
+        "topo_conclusion_present": {
+          "count": 21,
+          "mean": 0.04761904761904763,
+          "m2": 0.9523809523809523
+        },
+        "topo_nesting_depth": {
+          "count": 21,
+          "mean": 0.19047619047619052,
+          "m2": 15.238095238095237
+        },
+        "topo_code_position": {
+          "count": 21,
+          "mean": -0.9440765750999804,
+          "m2": 1.3135203700702185
+        }
+      },
+      "vocabulary": {
+        "vocab_type_token_ratio": {
+          "count": 21,
+          "mean": 0.7387348369598684,
+          "m2": 0.7928676315841783
+        },
+        "vocab_hapax_ratio": {
+          "count": 21,
+          "mean": 0.7896615045621415,
+          "m2": 0.7338497065719861
+        },
+        "vocab_avg_word_frequency_rank": {
+          "count": 21,
+          "mean": 614.0788716090924,
+          "m2": 639785.8797647834
+        },
+        "vocab_top_bigrams_hash": {
+          "count": 21,
+          "mean": 412175.8095238096,
+          "m2": 1744798290617.2383
+        },
+        "vocab_sentence_starter_entropy": {
+          "count": 21,
+          "mean": 2.210573623407101,
+          "m2": 25.91802138697572
+        },
+        "vocab_filler_phrase_count": {
+          "count": 21,
+          "mean": 0.28571428571428575,
+          "m2": 4.285714285714286
+        },
+        "vocab_contraction_ratio": {
+          "count": 21,
+          "mean": 0.003915184873748019,
+          "m2": 0.0003909714075364579
+        },
+        "vocab_passive_voice_ratio": {
+          "count": 21,
+          "mean": 0.15005668934240363,
+          "m2": 0.5275423441054238
+        },
+        "vocab_question_density": {
+          "count": 21,
+          "mean": 0.1525824630008596,
+          "m2": 2.73420632098952
+        },
+        "vocab_modal_verb_ratio": {
+          "count": 21,
+          "mean": 0.012214807999146718,
+          "m2": 0.00229180122436608
+        }
+      },
+      "observationCount": 21
+    },
+    {
+      "genomeHash": "gpt-4o-mini",
+      "label": "gpt-4o-mini",
+      "temporal": {
+        "temporal_time_to_first_token": {
+          "count": 4,
+          "mean": 1875.0429999999997,
+          "m2": 5536416.010484111
+        },
+        "temporal_mean_interval": {
+          "count": 4,
+          "mean": 21.055495287698346,
+          "m2": 67.20962213571525
+        },
+        "temporal_median_interval": {
+          "count": 4,
+          "mean": 18.287287500002094,
+          "m2": 163.83935348194274
+        },
+        "temporal_std_interval": {
+          "count": 4,
+          "mean": 14.822074825900474,
+          "m2": 39.533388489536385
+        },
+        "temporal_burstiness": {
+          "count": 4,
+          "mean": 11.655406953092818,
+          "m2": 92.96358871311531
+        },
+        "temporal_total_streaming_duration": {
+          "count": 4,
+          "mean": 2709.560299999999,
+          "m2": 8009355.510432834
+        },
+        "temporal_token_count": {
+          "count": 4,
+          "mean": 46.75,
+          "m2": 8510.75
+        },
+        "temporal_early_mean_interval": {
+          "count": 4,
+          "mean": 25.53033017241348,
+          "m2": 351.8466382922782
+        },
+        "temporal_mid_mean_interval": {
+          "count": 4,
+          "mean": 15.53587989532022,
+          "m2": 83.68715624553347
+        },
+        "temporal_late_mean_interval": {
+          "count": 4,
+          "mean": 29.379223809523683,
+          "m2": 500.5431804608197
+        },
+        "temporal_acceleration": {
+          "count": 4,
+          "mean": 3.8488936371102036,
+          "m2": 702.9753073731551
+        },
+        "temporal_sentence_boundary_pause_ratio": {
+          "count": 4,
+          "mean": 1.7509669576037168,
+          "m2": 14.749587539304848
+        },
+        "temporal_burst_count": {
+          "count": 4,
+          "mean": 7.25,
+          "m2": 280.75
+        },
+        "temporal_burst_fraction": {
+          "count": 4,
+          "mean": 0.33363068688670827,
+          "m2": 0.15774712109504624
+        },
+        "temporal_mean_burst_length": {
+          "count": 4,
+          "mean": 1.9047619047619049,
+          "m2": 5.346938775510204
+        },
+        "temporal_inter_burst_interval": {
+          "count": 4,
+          "mean": 45.062325416667136,
+          "m2": 8124.026169654253
+        },
+        "temporal_chunk_count": {
+          "count": 4,
+          "mean": 42.25,
+          "m2": 6464.75
+        },
+        "temporal_mean_chunk_size": {
+          "count": 4,
+          "mean": 1.05029665587918,
+          "m2": 0.014175813338081234
+        },
+        "temporal_timing_entropy": {
+          "count": 4,
+          "mean": 3.0264247811117513,
+          "m2": 4.2265647163471485
+        },
+        "temporal_p90_interval": {
+          "count": 4,
+          "mean": 39.083174999999756,
+          "m2": 138.23789914747584
+        },
+        "temporal_p10_interval": {
+          "count": 4,
+          "mean": 5.639649999999165,
+          "m2": 109.20208065012096
+        },
+        "temporal_interval_skewness": {
+          "count": 4,
+          "mean": 1.430512814160485,
+          "m2": 5.386234965767817
+        }
+      },
+      "topology": {
+        "topo_paragraph_length_variance": {
+          "count": 4,
+          "mean": 5.0625,
+          "m2": 307.546875
+        },
+        "topo_paragraph_length_trend": {
+          "count": 4,
+          "mean": 2.25,
+          "m2": 60.75
+        },
+        "topo_transition_density": {
+          "count": 4,
+          "mean": 0,
+          "m2": 0
+        },
+        "topo_topic_coherence": {
+          "count": 4,
+          "mean": 0.013513513513513514,
+          "m2": 0.0021913805697589485
+        },
+        "topo_frontloading_ratio": {
+          "count": 4,
+          "mean": 0.8640776699029127,
+          "m2": 0.22169855782825904
+        },
+        "topo_list_position": {
+          "count": 4,
+          "mean": -1,
+          "m2": 0
+        },
+        "topo_conclusion_present": {
+          "count": 4,
+          "mean": 0,
+          "m2": 0
+        },
+        "topo_nesting_depth": {
+          "count": 4,
+          "mean": 0,
+          "m2": 0
+        },
+        "topo_code_position": {
+          "count": 4,
+          "mean": -1,
+          "m2": 0
+        }
+      },
+      "vocabulary": {
+        "vocab_type_token_ratio": {
+          "count": 4,
+          "mean": 0.825121359223301,
+          "m2": 0.07233027382411159
+        },
+        "vocab_hapax_ratio": {
+          "count": 4,
+          "mean": 0.8291873963515753,
+          "m2": 0.06377729924176795
+        },
+        "vocab_avg_word_frequency_rank": {
+          "count": 4,
+          "mean": 783.298503236246,
+          "m2": 165447.88704953736
+        },
+        "vocab_top_bigrams_hash": {
+          "count": 4,
+          "mean": 523751.25,
+          "m2": 279213758688.75
+        },
+        "vocab_sentence_starter_entropy": {
+          "count": 4,
+          "mean": 0.48048202372184057,
+          "m2": 2.7703557014380245
+        },
+        "vocab_filler_phrase_count": {
+          "count": 4,
+          "mean": 0,
+          "m2": 0
+        },
+        "vocab_contraction_ratio": {
+          "count": 4,
+          "mean": 0,
+          "m2": 0
+        },
+        "vocab_passive_voice_ratio": {
+          "count": 4,
+          "mean": 0.1,
+          "m2": 0.12000000000000002
+        },
+        "vocab_question_density": {
+          "count": 4,
+          "mean": 0,
+          "m2": 0
+        },
+        "vocab_modal_verb_ratio": {
+          "count": 4,
+          "mean": 0.0024271844660194173,
+          "m2": 0.00007069469318503156
+        }
+      },
+      "observationCount": 4
+    },
+    {
+      "genomeHash": "ollama-qwen",
+      "label": "ollama-qwen",
+      "temporal": {
+        "temporal_time_to_first_token": {
+          "count": 26,
+          "mean": 2235.5740923077096,
+          "m2": 1349742005.5555062
+        },
+        "temporal_mean_interval": {
+          "count": 26,
+          "mean": 48.84374770019627,
+          "m2": 23.341250136142662
+        },
+        "temporal_median_interval": {
+          "count": 26,
+          "mean": 47.98786923076619,
+          "m2": 4.671103510228772
+        },
+        "temporal_std_interval": {
+          "count": 26,
+          "mean": 3.6226189146466745,
+          "m2": 34.627486176403124
+        },
+        "temporal_burstiness": {
+          "count": 26,
+          "mean": 0.2938328937578215,
+          "m2": 0.95927363191581
+        },
+        "temporal_total_streaming_duration": {
+          "count": 26,
+          "mean": 12030.236649999984,
+          "m2": 3804605025.8939342
+        },
+        "temporal_token_count": {
+          "count": 26,
+          "mean": 201.92307692307693,
+          "m2": 730947.8461538462
+        },
+        "temporal_early_mean_interval": {
+          "count": 26,
+          "mean": 48.88930083875466,
+          "m2": 23.209668840232467
+        },
+        "temporal_mid_mean_interval": {
+          "count": 26,
+          "mean": 48.89202435456924,
+          "m2": 62.92879264277712
+        },
+        "temporal_late_mean_interval": {
+          "count": 26,
+          "mean": 48.70503737271183,
+          "m2": 55.9646516865965
+        },
+        "temporal_acceleration": {
+          "count": 26,
+          "mean": -0.18426346604281957,
+          "m2": 92.25639137635055
+        },
+        "temporal_sentence_boundary_pause_ratio": {
+          "count": 26,
+          "mean": 0.9824611106424862,
+          "m2": 0.04046163630371081
+        },
+        "temporal_burst_count": {
+          "count": 26,
+          "mean": 0.03846153846153847,
+          "m2": 0.9615384615384615
+        },
+        "temporal_burst_fraction": {
+          "count": 26,
+          "mean": 0.00022492127755285654,
+          "m2": 0.00003288322771240592
+        },
+        "temporal_mean_burst_length": {
+          "count": 26,
+          "mean": 0.07692307692307694,
+          "m2": 3.846153846153846
+        },
+        "temporal_inter_burst_interval": {
+          "count": 26,
+          "mean": 0,
+          "m2": 0
+        },
+        "temporal_chunk_count": {
+          "count": 26,
+          "mean": 201.92307692307693,
+          "m2": 730947.8461538462
+        },
+        "temporal_mean_chunk_size": {
+          "count": 26,
+          "mean": 1,
+          "m2": 0
+        },
+        "temporal_timing_entropy": {
+          "count": 26,
+          "mean": 1.2589407601434577,
+          "m2": 0.5619551312307378
+        },
+        "temporal_p90_interval": {
+          "count": 26,
+          "mean": 53.151042307691206,
+          "m2": 232.89786194271488
+        },
+        "temporal_p10_interval": {
+          "count": 26,
+          "mean": 45.74686538462992,
+          "m2": 5.75937783947947
+        },
+        "temporal_interval_skewness": {
+          "count": 26,
+          "mean": 2.1274034658147145,
+          "m2": 100.91617858736329
+        }
+      },
+      "topology": {
+        "topo_paragraph_length_variance": {
+          "count": 26,
+          "mean": 147.86541696910425,
+          "m2": 3208648.9652143023
+        },
+        "topo_paragraph_length_trend": {
+          "count": 26,
+          "mean": -1.0287326549769988,
+          "m2": 316.88882326710325
+        },
+        "topo_transition_density": {
+          "count": 26,
+          "mean": 0.045693622616699535,
+          "m2": 0.2278661418207769
+        },
+        "topo_topic_coherence": {
+          "count": 26,
+          "mean": 0.030623019880727582,
+          "m2": 0.020128192659114707
+        },
+        "topo_frontloading_ratio": {
+          "count": 26,
+          "mean": 0.43806212189459887,
+          "m2": 4.007970671035922
+        },
+        "topo_list_position": {
+          "count": 26,
+          "mean": -0.36719950865987,
+          "m2": 9.119399329074884
+        },
+        "topo_conclusion_present": {
+          "count": 26,
+          "mean": 0.11538461538461536,
+          "m2": 2.653846153846154
+        },
+        "topo_nesting_depth": {
+          "count": 26,
+          "mean": 0.5769230769230769,
+          "m2": 26.346153846153854
+        },
+        "topo_code_position": {
+          "count": 26,
+          "mean": -0.9562298917812226,
+          "m2": 1.2452845427642663
+        }
+      },
+      "vocabulary": {
+        "vocab_type_token_ratio": {
+          "count": 26,
+          "mean": 0.7088287733573552,
+          "m2": 0.6964742072196896
+        },
+        "vocab_hapax_ratio": {
+          "count": 26,
+          "mean": 0.7746757390430802,
+          "m2": 0.39352107493861194
+        },
+        "vocab_avg_word_frequency_rank": {
+          "count": 26,
+          "mean": 629.5960673970194,
+          "m2": 629673.3802859896
+        },
+        "vocab_top_bigrams_hash": {
+          "count": 26,
+          "mean": 611005.3076923076,
+          "m2": 1642956657871.5383
+        },
+        "vocab_sentence_starter_entropy": {
+          "count": 26,
+          "mean": 2.394860845982873,
+          "m2": 55.85297488145938
+        },
+        "vocab_filler_phrase_count": {
+          "count": 26,
+          "mean": 0.19230769230769232,
+          "m2": 4.038461538461538
+        },
+        "vocab_contraction_ratio": {
+          "count": 26,
+          "mean": 0.0101475404611536,
+          "m2": 0.004743834767640088
+        },
+        "vocab_passive_voice_ratio": {
+          "count": 26,
+          "mean": 0.11682877508964463,
+          "m2": 0.5955275735259256
+        },
+        "vocab_question_density": {
+          "count": 26,
+          "mean": 0.5406591074275153,
+          "m2": 49.09260380199658
+        },
+        "vocab_modal_verb_ratio": {
+          "count": 26,
+          "mean": 0.013942950383865163,
+          "m2": 0.007171135807564774
+        }
+      },
+      "observationCount": 26
+    },
+    {
+      "genomeHash": "llama3-70b",
+      "label": "llama3-70b",
+      "temporal": {
+        "temporal_time_to_first_token": {
+          "count": 21,
+          "mean": 190.13341428571505,
+          "m2": 347983.1540744631
+        },
+        "temporal_mean_interval": {
+          "count": 21,
+          "mean": 3.07520987816396,
+          "m2": 13.452397027354312
+        },
+        "temporal_median_interval": {
+          "count": 21,
+          "mean": 0.19157619047647195,
+          "m2": 10.999130568091589
+        },
+        "temporal_std_interval": {
+          "count": 21,
+          "mean": 4.785860891394182,
+          "m2": 12.478661147081182
+        },
+        "temporal_burstiness": {
+          "count": 21,
+          "mean": 7.705226036502987,
+          "m2": 70.50938203155104
+        },
+        "temporal_total_streaming_duration": {
+          "count": 21,
+          "mean": 1014.0847428571442,
+          "m2": 10908312.047995534
+        },
+        "temporal_token_count": {
+          "count": 21,
+          "mean": 275.04761904761904,
+          "m2": 955628.9523809523
+        },
+        "temporal_early_mean_interval": {
+          "count": 21,
+          "mean": 2.827207984870197,
+          "m2": 10.168785233709407
+        },
+        "temporal_mid_mean_interval": {
+          "count": 21,
+          "mean": 3.0139398346554724,
+          "m2": 30.388086219168883
+        },
+        "temporal_late_mean_interval": {
+          "count": 21,
+          "mean": 3.4050809429141013,
+          "m2": 25.622623794733006
+        },
+        "temporal_acceleration": {
+          "count": 21,
+          "mean": 0.5778729580439046,
+          "m2": 27.70159294448572
+        },
+        "temporal_sentence_boundary_pause_ratio": {
+          "count": 21,
+          "mean": 1.1669436626559886,
+          "m2": 47.54272596805282
+        },
+        "temporal_burst_count": {
+          "count": 21,
+          "mean": 63.38095238095238,
+          "m2": 50608.95238095238
+        },
+        "temporal_burst_fraction": {
+          "count": 21,
+          "mean": 0.8807687001205792,
+          "m2": 0.10361848921284539
+        },
+        "temporal_mean_burst_length": {
+          "count": 21,
+          "mean": 3.8951474771885413,
+          "m2": 6.630540863150693
+        },
+        "temporal_inter_burst_interval": {
+          "count": 21,
+          "mean": 12.629189842222152,
+          "m2": 292.2753550997959
+        },
+        "temporal_chunk_count": {
+          "count": 21,
+          "mean": 92.71428571428571,
+          "m2": 111338.28571428571
+        },
+        "temporal_mean_chunk_size": {
+          "count": 21,
+          "mean": 2.80257027652427,
+          "m2": 6.298645771592228
+        },
+        "temporal_timing_entropy": {
+          "count": 21,
+          "mean": 1.4785450149326977,
+          "m2": 1.0329169128982878
+        },
+        "temporal_p90_interval": {
+          "count": 21,
+          "mean": 10.41904285714316,
+          "m2": 50.28968309140836
+        },
+        "temporal_p10_interval": {
+          "count": 21,
+          "mean": 0.01296190476129292,
+          "m2": 0.00010414952383495059
+        },
+        "temporal_interval_skewness": {
+          "count": 21,
+          "mean": 1.6193020386592165,
+          "m2": 17.564375509178202
+        }
+      },
+      "topology": {
+        "topo_paragraph_length_variance": {
+          "count": 21,
+          "mean": 916.4142805024555,
+          "m2": 53465842.842993796
+        },
+        "topo_paragraph_length_trend": {
+          "count": 21,
+          "mean": -0.9511853226138942,
+          "m2": 1625.1612945427416
+        },
+        "topo_transition_density": {
+          "count": 21,
+          "mean": 0.08219954648526079,
+          "m2": 0.4410160889752726
+        },
+        "topo_topic_coherence": {
+          "count": 21,
+          "mean": 0.05514551050473722,
+          "m2": 0.04003038654586395
+        },
+        "topo_frontloading_ratio": {
+          "count": 21,
+          "mean": 0.408090951653549,
+          "m2": 3.255822670319284
+        },
+        "topo_list_position": {
+          "count": 21,
+          "mean": -0.39941659625212855,
+          "m2": 8.761919713685874
+        },
+        "topo_conclusion_present": {
+          "count": 21,
+          "mean": 0,
+          "m2": 0
+        },
+        "topo_nesting_depth": {
+          "count": 21,
+          "mean": 0.23809523809523808,
+          "m2": 15.809523809523808
+        },
+        "topo_code_position": {
+          "count": 21,
+          "mean": -0.9480502798421873,
+          "m2": 1.133484838279519
+        }
+      },
+      "vocabulary": {
+        "vocab_type_token_ratio": {
+          "count": 21,
+          "mean": 0.6402141535698114,
+          "m2": 1.0401038206056827
+        },
+        "vocab_hapax_ratio": {
+          "count": 21,
+          "mean": 0.7432081756887027,
+          "m2": 0.4898196720677877
+        },
+        "vocab_avg_word_frequency_rank": {
+          "count": 21,
+          "mean": 600.763894202666,
+          "m2": 339530.9729817273
+        },
+        "vocab_top_bigrams_hash": {
+          "count": 21,
+          "mean": 518968.0952380952,
+          "m2": 2321309628827.8096
+        },
+        "vocab_sentence_starter_entropy": {
+          "count": 21,
+          "mean": 2.73775069626924,
+          "m2": 53.950073207330114
+        },
+        "vocab_filler_phrase_count": {
+          "count": 21,
+          "mean": 0.4285714285714286,
+          "m2": 13.14285714285714
+        },
+        "vocab_contraction_ratio": {
+          "count": 21,
+          "mean": 0.008836795514971796,
+          "m2": 0.0040888747093437644
+        },
+        "vocab_passive_voice_ratio": {
+          "count": 21,
+          "mean": 0.07326192510292465,
+          "m2": 0.17787089677388507
+        },
+        "vocab_question_density": {
+          "count": 21,
+          "mean": 0.5169853926042882,
+          "m2": 33.83236731139623
+        },
+        "vocab_modal_verb_ratio": {
+          "count": 21,
+          "mean": 0.010374762273235145,
+          "m2": 0.0030601162273967758
+        }
+      },
+      "observationCount": 21
+    },
+    {
+      "genomeHash": "llama3-8b",
+      "label": "llama3-8b",
+      "temporal": {
+        "temporal_time_to_first_token": {
+          "count": 22,
+          "mean": 191.168918181818,
+          "m2": 191026.5252842102
+        },
+        "temporal_mean_interval": {
+          "count": 22,
+          "mean": 2.0716506271047788,
+          "m2": 11.12009021006087
+        },
+        "temporal_median_interval": {
+          "count": 22,
+          "mean": 0.4609681818179855,
+          "m2": 24.894278922713344
+        },
+        "temporal_std_interval": {
+          "count": 22,
+          "mean": 3.658281238784035,
+          "m2": 56.944549153182486
+        },
+        "temporal_burstiness": {
+          "count": 22,
+          "mean": 7.171543129224221,
+          "m2": 644.7495329779084
+        },
+        "temporal_total_streaming_duration": {
+          "count": 22,
+          "mean": 718.69165,
+          "m2": 4988800.091144485
+        },
+        "temporal_token_count": {
+          "count": 22,
+          "mean": 259.77272727272725,
+          "m2": 885755.8636363635
+        },
+        "temporal_early_mean_interval": {
+          "count": 22,
+          "mean": 2.0132756042868145,
+          "m2": 33.4856578084782
+        },
+        "temporal_mid_mean_interval": {
+          "count": 22,
+          "mean": 2.155661545528933,
+          "m2": 14.832204224766492
+        },
+        "temporal_late_mean_interval": {
+          "count": 22,
+          "mean": 2.001568929915914,
+          "m2": 13.034713707057254
+        },
+        "temporal_acceleration": {
+          "count": 22,
+          "mean": -0.011706674370900158,
+          "m2": 18.67187750401905
+        },
+        "temporal_sentence_boundary_pause_ratio": {
+          "count": 22,
+          "mean": 3.980659475639442,
+          "m2": 4660.3474855342365
+        },
+        "temporal_burst_count": {
+          "count": 22,
+          "mean": 66.90909090909089,
+          "m2": 56307.81818181819
+        },
+        "temporal_burst_fraction": {
+          "count": 22,
+          "mean": 0.8658715345195361,
+          "m2": 0.13999920323353268
+        },
+        "temporal_mean_burst_length": {
+          "count": 22,
+          "mean": 3.4638872712443636,
+          "m2": 13.011911014814865
+        },
+        "temporal_inter_burst_interval": {
+          "count": 22,
+          "mean": 7.739623585840164,
+          "m2": 210.50296758308846
+        },
+        "temporal_chunk_count": {
+          "count": 22,
+          "mean": 102.54545454545453,
+          "m2": 135805.45454545453
+        },
+        "temporal_mean_chunk_size": {
+          "count": 22,
+          "mean": 2.5001692085029568,
+          "m2": 6.76428228766212
+        },
+        "temporal_timing_entropy": {
+          "count": 22,
+          "mean": 2.026024318780075,
+          "m2": 2.344993975833897
+        },
+        "temporal_p90_interval": {
+          "count": 22,
+          "mean": 5.961622727273855,
+          "m2": 38.00955053853078
+        },
+        "temporal_p10_interval": {
+          "count": 22,
+          "mean": 0.012772727270533904,
+          "m2": 0.00007424363641971025
+        },
+        "temporal_interval_skewness": {
+          "count": 22,
+          "mean": 3.2423363245908092,
+          "m2": 120.32804854478798
+        }
+      },
+      "topology": {
+        "topo_paragraph_length_variance": {
+          "count": 22,
+          "mean": 816.6270166730936,
+          "m2": 101342751.03740251
+        },
+        "topo_paragraph_length_trend": {
+          "count": 22,
+          "mean": 0.9707474343837981,
+          "m2": 1290.3985293460614
+        },
+        "topo_transition_density": {
+          "count": 22,
+          "mean": 0.09929653679653679,
+          "m2": 0.6038397366522368
+        },
+        "topo_topic_coherence": {
+          "count": 22,
+          "mean": 0.06396310804304432,
+          "m2": 0.07907639192188934
+        },
+        "topo_frontloading_ratio": {
+          "count": 22,
+          "mean": 0.35428195544011376,
+          "m2": 3.0747483225375984
+        },
+        "topo_list_position": {
+          "count": 22,
+          "mean": -0.4762391373306011,
+          "m2": 7.376766631280012
+        },
+        "topo_conclusion_present": {
+          "count": 22,
+          "mean": 0.04545454545454546,
+          "m2": 0.9545454545454545
+        },
+        "topo_nesting_depth": {
+          "count": 22,
+          "mean": 0.1363636363636364,
+          "m2": 4.590909090909091
+        },
+        "topo_code_position": {
+          "count": 22,
+          "mean": -0.9512871470166843,
+          "m2": 1.0962992251476438
+        }
+      },
+      "vocabulary": {
+        "vocab_type_token_ratio": {
+          "count": 22,
+          "mean": 0.6348768493883196,
+          "m2": 0.8891582005075914
+        },
+        "vocab_hapax_ratio": {
+          "count": 22,
+          "mean": 0.7445840560736314,
+          "m2": 0.4522136903713742
+        },
+        "vocab_avg_word_frequency_rank": {
+          "count": 22,
+          "mean": 612.4536230453156,
+          "m2": 199462.8349032333
+        },
+        "vocab_top_bigrams_hash": {
+          "count": 22,
+          "mean": 424635.0909090909,
+          "m2": 1856464253141.818
+        },
+        "vocab_sentence_starter_entropy": {
+          "count": 22,
+          "mean": 2.54691220763863,
+          "m2": 48.1970382162274
+        },
+        "vocab_filler_phrase_count": {
+          "count": 22,
+          "mean": 0.3181818181818182,
+          "m2": 4.7727272727272725
+        },
+        "vocab_contraction_ratio": {
+          "count": 22,
+          "mean": 0.008070098067700324,
+          "m2": 0.004599748516462587
+        },
+        "vocab_passive_voice_ratio": {
+          "count": 22,
+          "mean": 0.06623137904537427,
+          "m2": 0.28225864307434523
+        },
+        "vocab_question_density": {
+          "count": 22,
+          "mean": 0.3233979246463558,
+          "m2": 5.231212390994629
+        },
+        "vocab_modal_verb_ratio": {
+          "count": 22,
+          "mean": 0.01353303529164134,
+          "m2": 0.002932795683639088
+        }
+      },
+      "observationCount": 22
+    },
+    {
+      "genomeHash": "ollama-llama3",
+      "label": "ollama-llama3",
+      "temporal": {
+        "temporal_time_to_first_token": {
+          "count": 19,
+          "mean": 581.7872263157884,
+          "m2": 42168745.95614027
+        },
+        "temporal_mean_interval": {
+          "count": 19,
+          "mean": 42.253569945156535,
+          "m2": 7.696284236748365
+        },
+        "temporal_median_interval": {
+          "count": 19,
+          "mean": 41.39884736841984,
+          "m2": 2.971055677408096
+        },
+        "temporal_std_interval": {
+          "count": 19,
+          "mean": 2.926825712459885,
+          "m2": 17.388675245042556
+        },
+        "temporal_burstiness": {
+          "count": 19,
+          "mean": 0.22285108049829627,
+          "m2": 0.3128546472667719
+        },
+        "temporal_total_streaming_duration": {
+          "count": 19,
+          "mean": 9077.587963157896,
+          "m2": 1313031300.7072084
+        },
+        "temporal_token_count": {
+          "count": 19,
+          "mean": 201.78947368421055,
+          "m2": 767839.1578947369
+        },
+        "temporal_early_mean_interval": {
+          "count": 19,
+          "mean": 42.521342542704716,
+          "m2": 23.232718240917485
+        },
+        "temporal_mid_mean_interval": {
+          "count": 19,
+          "mean": 42.08251857059772,
+          "m2": 19.229842224039555
+        },
+        "temporal_late_mean_interval": {
+          "count": 19,
+          "mean": 42.33505816845604,
+          "m2": 39.34873149294519
+        },
+        "temporal_acceleration": {
+          "count": 19,
+          "mean": -0.18628437424867988,
+          "m2": 63.177582988744405
+        },
+        "temporal_sentence_boundary_pause_ratio": {
+          "count": 19,
+          "mean": 0.9994754786306509,
+          "m2": 0.034816508517695674
+        },
+        "temporal_burst_count": {
+          "count": 19,
+          "mean": 0,
+          "m2": 0
+        },
+        "temporal_burst_fraction": {
+          "count": 19,
+          "mean": 0,
+          "m2": 0
+        },
+        "temporal_mean_burst_length": {
+          "count": 19,
+          "mean": 0,
+          "m2": 0
+        },
+        "temporal_inter_burst_interval": {
+          "count": 19,
+          "mean": 0,
+          "m2": 0
+        },
+        "temporal_chunk_count": {
+          "count": 19,
+          "mean": 201.78947368421055,
+          "m2": 767839.1578947369
+        },
+        "temporal_mean_chunk_size": {
+          "count": 19,
+          "mean": 1,
+          "m2": 0
+        },
+        "temporal_timing_entropy": {
+          "count": 19,
+          "mean": 1.221002836115717,
+          "m2": 0.5677931182764133
+        },
+        "temporal_p90_interval": {
+          "count": 19,
+          "mean": 45.94786315790214,
+          "m2": 119.37817108448442
+        },
+        "temporal_p10_interval": {
+          "count": 19,
+          "mean": 39.841578947364866,
+          "m2": 2.414274411626499
+        },
+        "temporal_interval_skewness": {
+          "count": 19,
+          "mean": 2.026180110355189,
+          "m2": 19.199003802406192
+        }
+      },
+      "topology": {
+        "topo_paragraph_length_variance": {
+          "count": 19,
+          "mean": 501.8139876945414,
+          "m2": 17709340.67916028
+        },
+        "topo_paragraph_length_trend": {
+          "count": 19,
+          "mean": -0.18212664528453987,
+          "m2": 1865.9126928495905
+        },
+        "topo_transition_density": {
+          "count": 19,
+          "mean": 0.022328548644338118,
+          "m2": 0.06823618964767289
+        },
+        "topo_topic_coherence": {
+          "count": 19,
+          "mean": 0.027355266435822034,
+          "m2": 0.03994946533408676
+        },
+        "topo_frontloading_ratio": {
+          "count": 19,
+          "mean": 0.45279441227610473,
+          "m2": 3.4296598146253445
+        },
+        "topo_list_position": {
+          "count": 19,
+          "mean": -0.6444407811980156,
+          "m2": 5.222666412546876
+        },
+        "topo_conclusion_present": {
+          "count": 19,
+          "mean": 0,
+          "m2": 0
+        },
+        "topo_nesting_depth": {
+          "count": 19,
+          "mean": 0,
+          "m2": 0
+        },
+        "topo_code_position": {
+          "count": 19,
+          "mean": -1,
+          "m2": 0
+        }
+      },
+      "vocabulary": {
+        "vocab_type_token_ratio": {
+          "count": 19,
+          "mean": 0.7733340188014441,
+          "m2": 0.7242880546212658
+        },
+        "vocab_hapax_ratio": {
+          "count": 19,
+          "mean": 0.8393576694488356,
+          "m2": 0.32955600895133574
+        },
+        "vocab_avg_word_frequency_rank": {
+          "count": 19,
+          "mean": 612.7076966797815,
+          "m2": 171260.39583543426
+        },
+        "vocab_top_bigrams_hash": {
+          "count": 19,
+          "mean": 521063.15789473685,
+          "m2": 1294103231456.5261
+        },
+        "vocab_sentence_starter_entropy": {
+          "count": 19,
+          "mean": 2.1638970071878316,
+          "m2": 58.16814676911836
+        },
+        "vocab_filler_phrase_count": {
+          "count": 19,
+          "mean": 0.1578947368421053,
+          "m2": 4.526315789473684
+        },
+        "vocab_contraction_ratio": {
+          "count": 19,
+          "mean": 0.01575483261534073,
+          "m2": 0.012240671354870407
+        },
+        "vocab_passive_voice_ratio": {
+          "count": 19,
+          "mean": 0.06108184900754561,
+          "m2": 0.16923321061925123
+        },
+        "vocab_question_density": {
+          "count": 19,
+          "mean": 0.6999666237598675,
+          "m2": 24.886339410151667
+        },
+        "vocab_modal_verb_ratio": {
+          "count": 19,
+          "mean": 0.011573313368301677,
+          "m2": 0.0025142444425604506
+        }
+      },
+      "observationCount": 19
+    },
+    {
+      "genomeHash": "claude-sonnet",
+      "label": "claude-sonnet",
+      "temporal": {
+        "temporal_time_to_first_token": {
+          "count": 1,
+          "mean": 2156.7129999999997,
+          "m2": 0
+        },
+        "temporal_mean_interval": {
+          "count": 1,
+          "mean": 443.157575,
+          "m2": 0
+        },
+        "temporal_median_interval": {
+          "count": 1,
+          "mean": 468.4940999999999,
+          "m2": 0
+        },
+        "temporal_std_interval": {
+          "count": 1,
+          "mean": 110.14358083001002,
+          "m2": 0
+        },
+        "temporal_burstiness": {
+          "count": 1,
+          "mean": 27.37538311977845,
+          "m2": 0
+        },
+        "temporal_total_streaming_duration": {
+          "count": 1,
+          "mean": 7495.7217,
+          "m2": 0
+        },
+        "temporal_token_count": {
+          "count": 1,
+          "mean": 13,
+          "m2": 0
+        },
+        "temporal_early_mean_interval": {
+          "count": 1,
+          "mean": 480.96730000000025,
+          "m2": 0
+        },
+        "temporal_mid_mean_interval": {
+          "count": 1,
+          "mean": 471.6081166666666,
+          "m2": 0
+        },
+        "temporal_late_mean_interval": {
+          "count": 1,
+          "mean": 348.44676666666663,
+          "m2": 0
+        },
+        "temporal_acceleration": {
+          "count": 1,
+          "mean": -132.52053333333362,
+          "m2": 0
+        },
+        "temporal_sentence_boundary_pause_ratio": {
+          "count": 1,
+          "mean": 1.0613448194958133,
+          "m2": 0
+        },
+        "temporal_burst_count": {
+          "count": 1,
+          "mean": 1,
+          "m2": 0
+        },
+        "temporal_burst_fraction": {
+          "count": 1,
+          "mean": 0.15384615384615385,
+          "m2": 0
+        },
+        "temporal_mean_burst_length": {
+          "count": 1,
+          "mean": 2,
+          "m2": 0
+        },
+        "temporal_inter_burst_interval": {
+          "count": 1,
+          "mean": 0,
+          "m2": 0
+        },
+        "temporal_chunk_count": {
+          "count": 1,
+          "mean": 13,
+          "m2": 0
+        },
+        "temporal_mean_chunk_size": {
+          "count": 1,
+          "mean": 1,
+          "m2": 0
+        },
+        "temporal_timing_entropy": {
+          "count": 1,
+          "mean": 1.9473387961875537,
+          "m2": 0
+        },
+        "temporal_p90_interval": {
+          "count": 1,
+          "mean": 505.78210000000036,
+          "m2": 0
+        },
+        "temporal_p10_interval": {
+          "count": 1,
+          "mean": 382.41579999999885,
+          "m2": 0
+        },
+        "temporal_interval_skewness": {
+          "count": 1,
+          "mean": -2.0718880681918694,
+          "m2": 0
+        }
+      },
+      "topology": {
+        "topo_paragraph_length_variance": {
+          "count": 1,
+          "mean": 172.4722222222222,
+          "m2": 0
+        },
+        "topo_paragraph_length_trend": {
+          "count": 1,
+          "mean": -1.5714285714285714,
+          "m2": 0
+        },
+        "topo_transition_density": {
+          "count": 1,
+          "mean": 0,
+          "m2": 0
+        },
+        "topo_topic_coherence": {
+          "count": 1,
+          "mean": 0.022665868673050614,
+          "m2": 0
+        },
+        "topo_frontloading_ratio": {
+          "count": 1,
+          "mean": 0.09326424870466321,
+          "m2": 0
+        },
+        "topo_list_position": {
+          "count": 1,
+          "mean": 0.11298482293423272,
+          "m2": 0
+        },
+        "topo_conclusion_present": {
+          "count": 1,
+          "mean": 0,
+          "m2": 0
+        },
+        "topo_nesting_depth": {
+          "count": 1,
+          "mean": 0,
+          "m2": 0
+        },
+        "topo_code_position": {
+          "count": 1,
+          "mean": -1,
+          "m2": 0
+        }
+      },
+      "vocabulary": {
+        "vocab_type_token_ratio": {
+          "count": 1,
+          "mean": 0.6391752577319587,
+          "m2": 0
+        },
+        "vocab_hapax_ratio": {
+          "count": 1,
+          "mean": 0.7983870967741935,
+          "m2": 0
+        },
+        "vocab_avg_word_frequency_rank": {
+          "count": 1,
+          "mean": 527.5515463917526,
+          "m2": 0
+        },
+        "vocab_top_bigrams_hash": {
+          "count": 1,
+          "mean": 989950,
+          "m2": 0
+        },
+        "vocab_sentence_starter_entropy": {
+          "count": 1,
+          "mean": 2.584962500721156,
+          "m2": 0
+        },
+        "vocab_filler_phrase_count": {
+          "count": 1,
+          "mean": 0,
+          "m2": 0
+        },
+        "vocab_contraction_ratio": {
+          "count": 1,
+          "mean": 0.010309278350515464,
+          "m2": 0
+        },
+        "vocab_passive_voice_ratio": {
+          "count": 1,
+          "mean": 0,
+          "m2": 0
+        },
+        "vocab_question_density": {
+          "count": 1,
+          "mean": 5.670103092783505,
+          "m2": 0
+        },
+        "vocab_modal_verb_ratio": {
+          "count": 1,
+          "mean": 0.020618556701030927,
+          "m2": 0
+        }
+      },
+      "observationCount": 1
+    }
+  ],
+  "weights": {
+    "temporal": 5,
+    "topology": 2,
+    "vocabulary": 1
+  }
+}

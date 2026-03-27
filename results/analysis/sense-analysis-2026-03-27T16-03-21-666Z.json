@@ -1,0 +1,32 @@
+{
+  "timestamp": "2026-03-27T16:03:21.665Z",
+  "totalObservations": 264,
+  "agents": 11,
+  "classification": {
+    "weighted3Sense": 0.928030303030303,
+    "temporal": 0.9318181818181818,
+    "topology": 0.1856060606060606,
+    "vocabulary": 0.125,
+    "basicTemporal": 0.9128787878787878,
+    "conditionalTimingSurface": 0.9166666666666666
+  },
+  "atlas": {
+    "accuracy": 0.6415094339622641,
+    "profiles": 11,
+    "trainSize": 211,
+    "testSize": 53
+  },
+  "perAgent": {
+    "ollama-llama3": 28,
+    "ollama-gemma2": 25,
+    "ollama-qwen": 29,
+    "ollama-mistral": 30,
+    "ollama-phi3": 26,
+    "llama3-70b": 30,
+    "llama3-8b": 30,
+    "mistral-small": 30,
+    "deepseek-v3": 28,
+    "claude-sonnet": 2,
+    "gpt-4o-mini": 6
+  }
+}

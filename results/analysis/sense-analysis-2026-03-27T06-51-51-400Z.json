@@ -1,0 +1,26 @@
+{
+  "timestamp": "2026-03-27T06:51:51.399Z",
+  "totalObservations": 138,
+  "agents": 5,
+  "classification": {
+    "weighted3Sense": 1,
+    "temporal": 1,
+    "topology": 0.34782608695652173,
+    "vocabulary": 0.2463768115942029,
+    "basicTemporal": 1,
+    "conditionalTimingSurface": 1
+  },
+  "atlas": {
+    "accuracy": 0.9642857142857143,
+    "profiles": 5,
+    "trainSize": 110,
+    "testSize": 28
+  },
+  "perAgent": {
+    "ollama-llama3": 28,
+    "ollama-gemma2": 25,
+    "ollama-qwen": 29,
+    "ollama-mistral": 30,
+    "ollama-phi3": 26
+  }
+}

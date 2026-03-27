@@ -1,0 +1,316 @@
+[dotenv@17.3.1] injecting env (13) from .env -- tip: ⚡️ secrets for agents: https://dotenvx.com/as2
+
+  Soma Sense Experiment
+  Agent filter: llama3-8b,gemma2,llama3-70b,deepseek-v3,gemini-flash,mistral-small,or-llama3-8b,gemini-flash-google
+  Probe limit: 30 per agent
+  8 agents x 30 probes = 240 observations
+  Started: 2026-03-27T15:48:02.428Z
+
+
+────────────────────────────────────────────────────────────
+  [agent 1/8] Llama 3.3 70B (Groq)
+  provider: groq  model: llama-3.3-70b-versatile
+────────────────────────────────────────────────────────────
+  [1/240] OK   n01 (normal) 303tok 1107ms
+  [2/240] OK   n02 (normal) 592tok 1341ms
+  [3/240] OK   n03 (normal) 315tok 1087ms
+  [4/240] OK   n04 (normal) 370tok 915ms
+  [5/240] OK   n05 (normal) 14tok 318ms
+  [6/240] OK   a01 (ambiguity) 569tok 2267ms
+  [7/240] OK   a02 (ambiguity) 378tok 1464ms
+  [8/240] OK   a03 (ambiguity) 397tok 1024ms
+  [9/240] OK   a04 (ambiguity) 591tok 2031ms
+  [10/240] OK   a05 (ambiguity) 633tok 1975ms
+  [11/240] OK   e01 (edge_case) 34tok 377ms
+  [12/240] OK   e02 (edge_case) 419tok 1408ms
+  [13/240] OK   e03 (edge_case) 20tok 177ms
+  [14/240] OK   e04 (edge_case) 641tok 2913ms
+  [15/240] OK   e05 (edge_case) 476tok 3730ms
+  [16/240] OK   f01 (failure) 325tok 1300ms
+  [17/240] OK   f02 (failure) 260tok 1049ms
+  [18/240] OK   f03 (failure) 81tok 350ms
+  [19/240] OK   f04 (failure) 96tok 367ms
+  [20/240] OK   f05 (failure) 354tok 1237ms
+  [21/240] OK   r01 (rapid_fire) 7tok 328ms
+  [22/240] OK   r02 (rapid_fire) 7tok 172ms
+  [23/240] OK   r03 (rapid_fire) 10tok 473ms
+  [24/240] OK   r04 (rapid_fire) 370tok 1872ms
+  [25/240] OK   r05 (rapid_fire) 268tok 658ms
+  [26/240] OK   adv01 (adversarial) 3tok 63ms
+  [27/240] OK   adv02 (adversarial) 54tok 257ms
+  [28/240] OK   adv03 (adversarial) 138tok 723ms
+  [29/240] OK   adv04 (adversarial) 57tok 257ms
+  [30/240] OK   adv05 (adversarial) 23tok 150ms
+  => llama3-70b: 30 ok, 0 errors, 46.9s
+
+────────────────────────────────────────────────────────────
+  [agent 2/8] Llama 3.1 8B (Groq)
+  provider: groq  model: llama-3.1-8b-instant
+────────────────────────────────────────────────────────────
+  [31/240] OK   n01 (normal) 397tok 1106ms
+  [32/240] OK   n02 (normal) 438tok 643ms
+  [33/240] OK   n03 (normal) 301tok 699ms
+  [34/240] OK   n04 (normal) 379tok 738ms
+  [35/240] OK   n05 (normal) 17tok 189ms
+  [36/240] OK   a01 (ambiguity) 581tok 1503ms
+  [37/240] OK   a02 (ambiguity) 321tok 661ms
+  [38/240] OK   a03 (ambiguity) 416tok 916ms
+  [39/240] OK   a04 (ambiguity) 639tok 1981ms
+  [40/240] OK   a05 (ambiguity) 634tok 1228ms
+  [41/240] OK   e01 (edge_case) 47tok 532ms
+  [42/240] OK   e02 (edge_case) 412tok 1224ms
+  [43/240] OK   e03 (edge_case) 24tok 384ms
+  [44/240] OK   e04 (edge_case) 560tok 1483ms
+  [45/240] OK   e05 (edge_case) 437tok 947ms
+  [46/240] OK   f01 (failure) 125tok 468ms
+  [47/240] OK   f02 (failure) 172tok 471ms
+  [48/240] OK   f03 (failure) 144tok 433ms
+  [49/240] OK   f04 (failure) 79tok 446ms
+  [50/240] OK   f05 (failure) 356tok 893ms
+  [51/240] OK   r01 (rapid_fire) 6tok 153ms
+  [52/240] OK   r02 (rapid_fire) 7tok 270ms
+  [53/240] OK   r03 (rapid_fire) 7tok 155ms
+  [54/240] OK   r04 (rapid_fire) 291tok 781ms
+  [55/240] OK   r05 (rapid_fire) 56tok 192ms
+  [56/240] OK   adv01 (adversarial) 4tok 338ms
+  [57/240] OK   adv02 (adversarial) 104tok 356ms
+  [58/240] OK   adv03 (adversarial) 92tok 432ms
+  [59/240] OK   adv04 (adversarial) 87tok 318ms
+  [60/240] OK   adv05 (adversarial) 21tok 237ms
+  => llama3-8b: 30 ok, 0 errors, 35.4s
+
+────────────────────────────────────────────────────────────
+  [agent 3/8] Gemma 2 9B (Groq)
+  provider: groq  model: gemma2-9b-it
+────────────────────────────────────────────────────────────
+  [61/240] FAIL n01 — 400 The model `gemma2-9b-it` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.
+  [62/240] FAIL n02 — 400 The model `gemma2-9b-it` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.
+  [63/240] FAIL n03 — 400 The model `gemma2-9b-it` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.
+  [64/240] FAIL n04 — 400 The model `gemma2-9b-it` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.
+  [65/240] FAIL n05 — 400 The model `gemma2-9b-it` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.
+  [66/240] FAIL a01 — 400 The model `gemma2-9b-it` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.
+  [67/240] FAIL a02 — 400 The model `gemma2-9b-it` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.
+  [68/240] FAIL a03 — 400 The model `gemma2-9b-it` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.
+  [69/240] FAIL a04 — 400 The model `gemma2-9b-it` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.
+  [70/240] FAIL a05 — 400 The model `gemma2-9b-it` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.
+  [71/240] FAIL e01 — 400 The model `gemma2-9b-it` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.
+  [72/240] FAIL e02 — 400 The model `gemma2-9b-it` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.
+  [73/240] FAIL e03 — 400 The model `gemma2-9b-it` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.
+  [74/240] FAIL e04 — 400 The model `gemma2-9b-it` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.
+  [75/240] FAIL e05 — 400 The model `gemma2-9b-it` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.
+  [76/240] FAIL f01 — 400 The model `gemma2-9b-it` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.
+  [77/240] FAIL f02 — 400 The model `gemma2-9b-it` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.
+  [78/240] FAIL f03 — 400 The model `gemma2-9b-it` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.
+  [79/240] FAIL f04 — 400 The model `gemma2-9b-it` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.
+  [80/240] FAIL f05 — 400 The model `gemma2-9b-it` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.
+  [81/240] FAIL r01 — 400 The model `gemma2-9b-it` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.
+  [82/240] FAIL r02 — 400 The model `gemma2-9b-it` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.
+  [83/240] FAIL r03 — 400 The model `gemma2-9b-it` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.
+  [84/240] FAIL r04 — 400 The model `gemma2-9b-it` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.
+  [85/240] FAIL r05 — 400 The model `gemma2-9b-it` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.
+  [86/240] FAIL adv01 — 400 The model `gemma2-9b-it` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.
+  [87/240] FAIL adv02 — 400 The model `gemma2-9b-it` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.
+  [88/240] FAIL adv03 — 400 The model `gemma2-9b-it` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.
+  [89/240] FAIL adv04 — 400 The model `gemma2-9b-it` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.
+  [90/240] FAIL adv05 — 400 The model `gemma2-9b-it` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.
+  => gemma2: 0 ok, 30 errors, 16.9s
+
+────────────────────────────────────────────────────────────
+  [agent 4/8] Mistral Small
+  provider: mistral  model: mistral-small-latest
+────────────────────────────────────────────────────────────
+  [91/240] OK   n01 (normal) 137tok 2521ms
+  [92/240] OK   n02 (normal) 229tok 4076ms
+  [93/240] OK   n03 (normal) 95tok 1903ms
+  [94/240] OK   n04 (normal) 202tok 7109ms
+  [95/240] OK   n05 (normal) 12tok 498ms
+  [96/240] OK   a01 (ambiguity) 380tok 6430ms
+  [97/240] OK   a02 (ambiguity) 93tok 1832ms
+  [98/240] OK   a03 (ambiguity) 178tok 3165ms
+  [99/240] OK   a04 (ambiguity) 132tok 2586ms
+  [100/240] OK   a05 (ambiguity) 396tok 6480ms
+  [101/240] OK   e01 (edge_case) 21tok 658ms
+  [102/240] OK   e02 (edge_case) 181tok 3190ms
+  [103/240] OK   e03 (edge_case) 10tok 472ms
+  [104/240] OK   e04 (edge_case) 278tok 5442ms
+  [105/240] OK   e05 (edge_case) 108tok 1978ms
+  [106/240] OK   f01 (failure) 93tok 1729ms
+  [107/240] OK   f02 (failure) 110tok 2048ms
+  [108/240] OK   f03 (failure) 30tok 771ms
+  [109/240] OK   f04 (failure) 37tok 1262ms
+  [110/240] OK   f05 (failure) 72tok 1439ms
+  [111/240] OK   r01 (rapid_fire) 3tok 347ms
+  [112/240] OK   r02 (rapid_fire) 3tok 355ms
+  [113/240] OK   r03 (rapid_fire) 4tok 526ms
+  [114/240] OK   r04 (rapid_fire) 104tok 1960ms
+  [115/240] OK   r05 (rapid_fire) 27tok 798ms
+  [116/240] OK   adv01 (adversarial) 2tok 329ms
+  [117/240] OK   adv02 (adversarial) 11tok 779ms
+  [118/240] OK   adv03 (adversarial) 42tok 1346ms
+  [119/240] OK   adv04 (adversarial) 17tok 1060ms
+  [120/240] OK   adv05 (adversarial) 8tok 420ms
+  => mistral-small: 30 ok, 0 errors, 79.2s
+
+────────────────────────────────────────────────────────────
+  [agent 5/8] Gemini 2.5 Flash (OpenRouter)
+  provider: openrouter  model: google/gemini-2.5-flash
+────────────────────────────────────────────────────────────
+  [KEY ROTATION] Switched to OPENROUTER_API_KEY_2 after rate limit on OPENROUTER_API_KEY
+  [KEY ROTATION] Switched to OPENROUTER_API_KEY_3 after rate limit on OPENROUTER_API_KEY_2
+  [KEY ROTATION] Switched to OPENROUTER_API_KEY_4 after rate limit on OPENROUTER_API_KEY_3
+  [KEY ROTATION] Switched to OPENROUTER_API_KEY_5 after rate limit on OPENROUTER_API_KEY_4
+  [KEY ROTATION] openrouter: all 5 keys exhausted
+  [121/240] FAIL n01 — All 5 API keys for openrouter are rate-limited
+  [122/240] FAIL n02 — All 5 API keys for openrouter are rate-limited
+  [123/240] FAIL n03 — All 5 API keys for openrouter are rate-limited
+  [124/240] FAIL n04 — All 5 API keys for openrouter are rate-limited
+  [125/240] FAIL n05 — All 5 API keys for openrouter are rate-limited
+  [126/240] FAIL a01 — All 5 API keys for openrouter are rate-limited
+  [127/240] FAIL a02 — All 5 API keys for openrouter are rate-limited
+  [128/240] FAIL a03 — All 5 API keys for openrouter are rate-limited
+  [129/240] FAIL a04 — All 5 API keys for openrouter are rate-limited
+  [130/240] FAIL a05 — All 5 API keys for openrouter are rate-limited
+  [131/240] FAIL e01 — All 5 API keys for openrouter are rate-limited
+  [132/240] FAIL e02 — All 5 API keys for openrouter are rate-limited
+  [133/240] FAIL e03 — All 5 API keys for openrouter are rate-limited
+  [134/240] FAIL e04 — All 5 API keys for openrouter are rate-limited
+  [135/240] FAIL e05 — All 5 API keys for openrouter are rate-limited
+  [136/240] FAIL f01 — All 5 API keys for openrouter are rate-limited
+  [137/240] FAIL f02 — All 5 API keys for openrouter are rate-limited
+  [138/240] FAIL f03 — All 5 API keys for openrouter are rate-limited
+  [139/240] FAIL f04 — All 5 API keys for openrouter are rate-limited
+  [140/240] FAIL f05 — All 5 API keys for openrouter are rate-limited
+  [141/240] FAIL r01 — All 5 API keys for openrouter are rate-limited
+  [142/240] FAIL r02 — All 5 API keys for openrouter are rate-limited
+  [143/240] FAIL r03 — All 5 API keys for openrouter are rate-limited
+  [144/240] FAIL r04 — All 5 API keys for openrouter are rate-limited
+  [145/240] FAIL r05 — All 5 API keys for openrouter are rate-limited
+  [146/240] FAIL adv01 — All 5 API keys for openrouter are rate-limited
+  [147/240] FAIL adv02 — All 5 API keys for openrouter are rate-limited
+  [148/240] FAIL adv03 — All 5 API keys for openrouter are rate-limited
+  [149/240] FAIL adv04 — All 5 API keys for openrouter are rate-limited
+  [150/240] FAIL adv05 — All 5 API keys for openrouter are rate-limited
+  => gemini-flash: 0 ok, 30 errors, 24.3s
+
+────────────────────────────────────────────────────────────
+  [agent 6/8] DeepSeek V3 (OpenRouter)
+  provider: openrouter  model: deepseek/deepseek-v3.2-20251201
+────────────────────────────────────────────────────────────
+  [151/240] OK   n01 (normal) 393tok 22493ms
+  [152/240] FAIL n02 — openrouter/deepseek/deepseek-v3.2-20251201 timed out after 60s
+  [153/240] OK   n03 (normal) 232tok 14219ms
+  [154/240] OK   n04 (normal) 404tok 13726ms
+  [155/240] OK   n05 (normal) 17tok 2833ms
+  [156/240] OK   a01 (ambiguity) 387tok 11739ms
+  [157/240] OK   a02 (ambiguity) 280tok 16565ms
+  [158/240] OK   a03 (ambiguity) 402tok 23633ms
+  [159/240] OK   a04 (ambiguity) 422tok 39907ms
+  [160/240] OK   a05 (ambiguity) 121tok 18324ms
+  [161/240] OK   e01 (edge_case) 54tok 12355ms
+  [162/240] OK   e02 (edge_case) 123tok 18567ms
+  [163/240] OK   e03 (edge_case) 21tok 10870ms
+  [164/240] FAIL e04 — openrouter/deepseek/deepseek-v3.2-20251201 timed out after 60s
+  [165/240] OK   e05 (edge_case) 229tok 13917ms
+  [166/240] OK   f01 (failure) 191tok 22966ms
+  [167/240] OK   f02 (failure) 41tok 8000ms
+  [168/240] OK   f03 (failure) 65tok 4939ms
+  [169/240] OK   f04 (failure) 48tok 7046ms
+  [170/240] OK   f05 (failure) 40tok 5697ms
+  [171/240] OK   r01 (rapid_fire) 5tok 1602ms
+  [172/240] OK   r02 (rapid_fire) 5tok 1366ms
+  [173/240] OK   r03 (rapid_fire) 4tok 3188ms
+  [174/240] OK   r04 (rapid_fire) 108tok 8962ms
+  [175/240] OK   r05 (rapid_fire) 86tok 6094ms
+  [176/240] OK   adv01 (adversarial) 4tok 3973ms
+  [177/240] OK   adv02 (adversarial) 56tok 4161ms
+  [178/240] OK   adv03 (adversarial) 67tok 6961ms
+  [179/240] OK   adv04 (adversarial) 72tok 16432ms
+  [180/240] OK   adv05 (adversarial) 18tok 2225ms
+  => deepseek-v3: 28 ok, 2 errors, 458.0s
+
+────────────────────────────────────────────────────────────
+  [agent 7/8] Gemini 2.0 Flash (Google AI)
+  provider: google  model: gemini-2.0-flash
+────────────────────────────────────────────────────────────
+  [KEY ROTATION] google: all 1 keys exhausted
+  [181/240] FAIL n01 — All 1 API keys for google are rate-limited
+  [182/240] FAIL n02 — All 1 API keys for google are rate-limited
+  [183/240] FAIL n03 — All 1 API keys for google are rate-limited
+  [184/240] FAIL n04 — All 1 API keys for google are rate-limited
+  [185/240] FAIL n05 — All 1 API keys for google are rate-limited
+  [186/240] FAIL a01 — All 1 API keys for google are rate-limited
+  [187/240] FAIL a02 — All 1 API keys for google are rate-limited
+  [188/240] FAIL a03 — All 1 API keys for google are rate-limited
+  [189/240] FAIL a04 — All 1 API keys for google are rate-limited
+  [190/240] FAIL a05 — All 1 API keys for google are rate-limited
+  [191/240] FAIL e01 — All 1 API keys for google are rate-limited
+  [192/240] FAIL e02 — All 1 API keys for google are rate-limited
+  [193/240] FAIL e03 — All 1 API keys for google are rate-limited
+  [194/240] FAIL e04 — All 1 API keys for google are rate-limited
+  [195/240] FAIL e05 — All 1 API keys for google are rate-limited
+  [196/240] FAIL f01 — All 1 API keys for google are rate-limited
+  [197/240] FAIL f02 — All 1 API keys for google are rate-limited
+  [198/240] FAIL f03 — All 1 API keys for google are rate-limited
+  [199/240] FAIL f04 — All 1 API keys for google are rate-limited
+  [200/240] FAIL f05 — All 1 API keys for google are rate-limited
+  [201/240] FAIL r01 — All 1 API keys for google are rate-limited
+  [202/240] FAIL r02 — All 1 API keys for google are rate-limited
+  [203/240] FAIL r03 — All 1 API keys for google are rate-limited
+  [204/240] FAIL r04 — All 1 API keys for google are rate-limited
+  [205/240] FAIL r05 — All 1 API keys for google are rate-limited
+  [206/240] FAIL adv01 — All 1 API keys for google are rate-limited
+  [207/240] FAIL adv02 — All 1 API keys for google are rate-limited
+  [208/240] FAIL adv03 — All 1 API keys for google are rate-limited
+  [209/240] FAIL adv04 — All 1 API keys for google are rate-limited
+  [210/240] FAIL adv05 — All 1 API keys for google are rate-limited
+  => gemini-flash-google: 0 ok, 30 errors, 17.2s
+
+────────────────────────────────────────────────────────────
+  [agent 8/8] Llama 3.1 8B (OpenRouter)
+  provider: openrouter  model: meta-llama/llama-3.1-8b-instruct:free
+────────────────────────────────────────────────────────────
+  [211/240] FAIL n01 — 404 No endpoints found for meta-llama/llama-3.1-8b-instruct:free.
+  [212/240] FAIL n02 — 404 No endpoints found for meta-llama/llama-3.1-8b-instruct:free.
+  [213/240] FAIL n03 — 404 No endpoints found for meta-llama/llama-3.1-8b-instruct:free.
+  [214/240] FAIL n04 — 404 No endpoints found for meta-llama/llama-3.1-8b-instruct:free.
+  [215/240] FAIL n05 — 404 No endpoints found for meta-llama/llama-3.1-8b-instruct:free.
+  [216/240] FAIL a01 — 404 No endpoints found for meta-llama/llama-3.1-8b-instruct:free.
+  [217/240] FAIL a02 — 404 No endpoints found for meta-llama/llama-3.1-8b-instruct:free.
+  [218/240] FAIL a03 — 404 No endpoints found for meta-llama/llama-3.1-8b-instruct:free.
+  [219/240] FAIL a04 — 404 No endpoints found for meta-llama/llama-3.1-8b-instruct:free.
+  [220/240] FAIL a05 — 404 No endpoints found for meta-llama/llama-3.1-8b-instruct:free.
+  [221/240] FAIL e01 — 404 No endpoints found for meta-llama/llama-3.1-8b-instruct:free.
+  [222/240] FAIL e02 — 404 No endpoints found for meta-llama/llama-3.1-8b-instruct:free.
+  [223/240] FAIL e03 — 404 No endpoints found for meta-llama/llama-3.1-8b-instruct:free.
+  [224/240] FAIL e04 — 404 No endpoints found for meta-llama/llama-3.1-8b-instruct:free.
+  [225/240] FAIL e05 — 404 No endpoints found for meta-llama/llama-3.1-8b-instruct:free.
+  [226/240] FAIL f01 — 404 No endpoints found for meta-llama/llama-3.1-8b-instruct:free.
+  [227/240] FAIL f02 — 404 No endpoints found for meta-llama/llama-3.1-8b-instruct:free.
+  [228/240] FAIL f03 — 404 No endpoints found for meta-llama/llama-3.1-8b-instruct:free.
+  [229/240] FAIL f04 — 404 No endpoints found for meta-llama/llama-3.1-8b-instruct:free.
+  [230/240] FAIL f05 — 404 No endpoints found for meta-llama/llama-3.1-8b-instruct:free.
+  [231/240] FAIL r01 — 404 No endpoints found for meta-llama/llama-3.1-8b-instruct:free.
+  [232/240] FAIL r02 — 404 No endpoints found for meta-llama/llama-3.1-8b-instruct:free.
+  [233/240] FAIL r03 — 404 No endpoints found for meta-llama/llama-3.1-8b-instruct:free.
+  [234/240] FAIL r04 — 404 No endpoints found for meta-llama/llama-3.1-8b-instruct:free.
+  [235/240] FAIL r05 — 404 No endpoints found for meta-llama/llama-3.1-8b-instruct:free.
+  [236/240] FAIL adv01 — 404 No endpoints found for meta-llama/llama-3.1-8b-instruct:free.
+  [237/240] FAIL adv02 — 404 No endpoints found for meta-llama/llama-3.1-8b-instruct:free.
+  [238/240] FAIL adv03 — 404 No endpoints found for meta-llama/llama-3.1-8b-instruct:free.
+  [239/240] FAIL adv04 — 404 No endpoints found for meta-llama/llama-3.1-8b-instruct:free.
+  [240/240] FAIL adv05 — 404 No endpoints found for meta-llama/llama-3.1-8b-instruct:free.
+  => or-llama3-8b: 0 ok, 30 errors, 16.2s
+
+══════════════════════════════════════════════════
+  Experiment complete
+  Successes: 118/240
+  Errors: 122
+  Results saved: results/raw/experiment-2026-03-27T15-59-36-638Z.json
+══════════════════════════════════════════════════
+
+  Errors by agent:
+    gemma2: 30 errors
+    gemini-flash: 30 errors
+    deepseek-v3: 2 errors
+    gemini-flash-google: 30 errors
+    or-llama3-8b: 30 errors

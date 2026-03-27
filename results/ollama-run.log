@@ -1,0 +1,201 @@
+[dotenv@17.3.1] injecting env (11) from .env -- tip: 🤖 agentic secret storage: https://dotenvx.com/as2
+
+  Soma Sense Experiment
+  Provider filter: ollama
+  Probe limit: 30 per agent
+  5 agents x 30 probes = 150 observations
+  Started: 2026-03-27T06:03:47.054Z
+
+
+────────────────────────────────────────────────────────────
+  [agent 1/5] Llama 3.1 8B (Ollama local)
+  provider: ollama  model: llama3.1:8b
+────────────────────────────────────────────────────────────
+  [1/150] FAIL n01 — ollama/llama3.1:8b timed out after 60s
+  [2/150] FAIL n02 — ollama/llama3.1:8b timed out after 60s
+  [3/150] OK   n03 (normal) 345tok 15550ms
+  [4/150] OK   n04 (normal) 346tok 14669ms
+  [5/150] OK   n05 (normal) 16tok 849ms
+  [6/150] OK   a01 (ambiguity) 574tok 24277ms
+  [7/150] OK   a02 (ambiguity) 362tok 15334ms
+  [8/150] OK   a03 (ambiguity) 457tok 19316ms
+  [9/150] OK   a04 (ambiguity) 537tok 22762ms
+  [10/150] OK   a05 (ambiguity) 508tok 21642ms
+  [11/150] OK   e01 (edge_case) 47tok 2140ms
+  [12/150] OK   e02 (edge_case) 341tok 14693ms
+  [13/150] OK   e03 (edge_case) 37tok 1765ms
+  [14/150] OK   e04 (edge_case) 358tok 15266ms
+  [15/150] OK   e05 (edge_case) 424tok 18209ms
+  [16/150] OK   f01 (failure) 138tok 5960ms
+  [17/150] OK   f02 (failure) 158tok 6837ms
+  [18/150] OK   f03 (failure) 73tok 3286ms
+  [19/150] OK   f04 (failure) 177tok 7672ms
+  [20/150] OK   f05 (failure) 378tok 15906ms
+  [21/150] OK   r01 (rapid_fire) 11tok 7279ms
+  [22/150] OK   r02 (rapid_fire) 7tok 457ms
+  [23/150] OK   r03 (rapid_fire) 9tok 533ms
+  [24/150] OK   r04 (rapid_fire) 279tok 11902ms
+  [25/150] OK   r05 (rapid_fire) 74tok 3248ms
+  [26/150] OK   adv01 (adversarial) 6tok 407ms
+  [27/150] OK   adv02 (adversarial) 47tok 2152ms
+  [28/150] OK   adv03 (adversarial) 60tok 2675ms
+  [29/150] OK   adv04 (adversarial) 84tok 3663ms
+  [30/150] OK   adv05 (adversarial) 37tok 1670ms
+  => ollama-llama3: 28 ok, 2 errors, 395.4s
+
+────────────────────────────────────────────────────────────
+  [agent 2/5] Gemma 2 9B (Ollama local)
+  provider: ollama  model: gemma2:9b
+────────────────────────────────────────────────────────────
+  [31/150] FAIL n01 — ollama/gemma2:9b timed out after 60s
+  [32/150] FAIL n02 — ollama/gemma2:9b timed out after 60s
+  [33/150] FAIL n03 — ollama/gemma2:9b timed out after 60s
+  [34/150] FAIL n04 — ollama/gemma2:9b timed out after 60s
+  [35/150] OK   n05 (normal) 23tok 31036ms
+  [36/150] OK   a01 (ambiguity) 396tok 54508ms
+  [37/150] OK   a02 (ambiguity) 256tok 34162ms
+  [38/150] OK   a03 (ambiguity) 110tok 14847ms
+  [39/150] OK   a04 (ambiguity) 422tok 57327ms
+  [40/150] OK   a05 (ambiguity) 283tok 40065ms
+  [41/150] OK   e01 (edge_case) 65tok 9463ms
+  [42/150] OK   e02 (edge_case) 185tok 25840ms
+  [43/150] OK   e03 (edge_case) 28tok 4244ms
+  [44/150] FAIL e04 — ollama/gemma2:9b timed out after 60s
+  [45/150] OK   e05 (edge_case) 285tok 40010ms
+  [46/150] OK   f01 (failure) 78tok 11301ms
+  [47/150] OK   f02 (failure) 146tok 20793ms
+  [48/150] OK   f03 (failure) 120tok 17114ms
+  [49/150] OK   f04 (failure) 54tok 7944ms
+  [50/150] OK   f05 (failure) 152tok 21456ms
+  [51/150] OK   r01 (rapid_fire) 11tok 1793ms
+  [52/150] OK   r02 (rapid_fire) 13tok 7078ms
+  [53/150] OK   r03 (rapid_fire) 53tok 7705ms
+  [54/150] OK   r04 (rapid_fire) 186tok 26382ms
+  [55/150] OK   r05 (rapid_fire) 55tok 7993ms
+  [56/150] OK   adv01 (adversarial) 23tok 3558ms
+  [57/150] OK   adv02 (adversarial) 66tok 9444ms
+  [58/150] OK   adv03 (adversarial) 229tok 32372ms
+  [59/150] OK   adv04 (adversarial) 49tok 7152ms
+  [60/150] OK   adv05 (adversarial) 43tok 6281ms
+  => ollama-gemma2: 25 ok, 5 errors, 815.2s
+
+────────────────────────────────────────────────────────────
+  [agent 3/5] Qwen 2.5 7B (Ollama local)
+  provider: ollama  model: qwen2.5:7b
+────────────────────────────────────────────────────────────
+  [61/150] FAIL n01 — ollama/qwen2.5:7b timed out after 60s
+  [62/150] OK   n02 (normal) 594tok 59460ms
+  [63/150] OK   n03 (normal) 315tok 15542ms
+  [64/150] OK   n04 (normal) 323tok 15851ms
+  [65/150] OK   n05 (normal) 21tok 1184ms
+  [66/150] OK   a01 (ambiguity) 515tok 25189ms
+  [67/150] OK   a02 (ambiguity) 376tok 18520ms
+  [68/150] OK   a03 (ambiguity) 110tok 5512ms
+  [69/150] OK   a04 (ambiguity) 416tok 20358ms
+  [70/150] OK   a05 (ambiguity) 442tok 21629ms
+  [71/150] OK   e01 (edge_case) 22tok 1199ms
+  [72/150] OK   e02 (edge_case) 458tok 22499ms
+  [73/150] OK   e03 (edge_case) 25tok 1380ms
+  [74/150] OK   e04 (edge_case) 342tok 16760ms
+  [75/150] OK   e05 (edge_case) 223tok 10975ms
+  [76/150] OK   f01 (failure) 128tok 6423ms
+  [77/150] OK   f02 (failure) 229tok 11252ms
+  [78/150] OK   f03 (failure) 173tok 8584ms
+  [79/150] OK   f04 (failure) 117tok 5855ms
+  [80/150] OK   f05 (failure) 150tok 7386ms
+  [81/150] OK   r01 (rapid_fire) 8tok 23681ms
+  [82/150] OK   r02 (rapid_fire) 214tok 10549ms
+  [83/150] OK   r03 (rapid_fire) 85tok 4240ms
+  [84/150] OK   r04 (rapid_fire) 367tok 17967ms
+  [85/150] OK   r05 (rapid_fire) 234tok 11601ms
+  [86/150] OK   adv01 (adversarial) 4tok 398ms
+  [87/150] OK   adv02 (adversarial) 64tok 3237ms
+  [88/150] OK   adv03 (adversarial) 229tok 11268ms
+  [89/150] OK   adv04 (adversarial) 45tok 2314ms
+  [90/150] OK   adv05 (adversarial) 12tok 706ms
+  => ollama-qwen: 29 ok, 1 errors, 436.8s
+
+────────────────────────────────────────────────────────────
+  [agent 4/5] Mistral 7B (Ollama local)
+  provider: ollama  model: mistral:7b
+────────────────────────────────────────────────────────────
+  [91/150] OK   n01 (normal) 1026tok 33284ms
+  [92/150] OK   n02 (normal) 339tok 6874ms
+  [93/150] OK   n03 (normal) 341tok 6889ms
+  [94/150] OK   n04 (normal) 348tok 6988ms
+  [95/150] OK   n05 (normal) 26tok 611ms
+  [96/150] OK   a01 (ambiguity) 509tok 10213ms
+  [97/150] OK   a02 (ambiguity) 350tok 7041ms
+  [98/150] OK   a03 (ambiguity) 165tok 3370ms
+  [99/150] OK   a04 (ambiguity) 266tok 5343ms
+  [100/150] OK   a05 (ambiguity) 214tok 4301ms
+  [101/150] OK   e01 (edge_case) 55tok 1133ms
+  [102/150] OK   e02 (edge_case) 294tok 5984ms
+  [103/150] OK   e03 (edge_case) 46tok 963ms
+  [104/150] OK   e04 (edge_case) 812tok 16351ms
+  [105/150] OK   e05 (edge_case) 184tok 3713ms
+  [106/150] OK   f01 (failure) 112tok 2325ms
+  [107/150] OK   f02 (failure) 64tok 1326ms
+  [108/150] OK   f03 (failure) 85tok 1776ms
+  [109/150] OK   f04 (failure) 79tok 1651ms
+  [110/150] OK   f05 (failure) 386tok 7769ms
+  [111/150] OK   r01 (rapid_fire) 12tok 6812ms
+  [112/150] OK   r02 (rapid_fire) 77tok 1606ms
+  [113/150] OK   r03 (rapid_fire) 176tok 3566ms
+  [114/150] OK   r04 (rapid_fire) 131tok 2650ms
+  [115/150] OK   r05 (rapid_fire) 47tok 1016ms
+  [116/150] OK   adv01 (adversarial) 64tok 1333ms
+  [117/150] OK   adv02 (adversarial) 85tok 1766ms
+  [118/150] OK   adv03 (adversarial) 297tok 5984ms
+  [119/150] OK   adv04 (adversarial) 65tok 1348ms
+  [120/150] OK   adv05 (adversarial) 28tok 601ms
+  => ollama-mistral: 30 ok, 0 errors, 169.8s
+
+────────────────────────────────────────────────────────────
+  [agent 5/5] Phi-3 Mini 3.8B (Ollama local)
+  provider: ollama  model: phi3:mini
+────────────────────────────────────────────────────────────
+  [121/150] OK   n01 (normal) 124tok 9236ms
+  [122/150] OK   n02 (normal) 220tok 3211ms
+  [123/150] OK   n03 (normal) 171tok 2529ms
+  [124/150] OK   n04 (normal) 833tok 12339ms
+  [125/150] OK   n05 (normal) 31tok 488ms
+  [126/150] OK   a01 (ambiguity) 598tok 8780ms
+  [127/150] OK   a02 (ambiguity) 367tok 5352ms
+  [128/150] OK   a03 (ambiguity) 410tok 5990ms
+  [129/150] OK   a04 (ambiguity) 642tok 9351ms
+  [130/150] OK   a05 (ambiguity) 835tok 12417ms
+  [131/150] OK   e01 (edge_case) 477tok 6958ms
+  [132/150] OK   e02 (edge_case) 349tok 5053ms
+  [133/150] OK   e03 (edge_case) 101tok 1514ms
+  [134/150] OK   e04 (edge_case) 662tok 9672ms
+  [135/150] OK   e05 (edge_case) 246tok 3583ms
+  [136/150] OK   f01 (failure) 129tok 1879ms
+  [137/150] FAIL f02 — ollama/phi3:mini timed out after 60s
+  [138/150] FAIL f03 — ollama/phi3:mini timed out after 60s
+  [139/150] FAIL f04 — ollama/phi3:mini timed out after 60s
+  [140/150] OK   f05 (failure) 672tok 50210ms
+  [141/150] OK   r01 (rapid_fire) 483tok 29133ms
+  [142/150] FAIL r02 — ollama/phi3:mini timed out after 60s
+  [143/150] OK   r03 (rapid_fire) 67tok 51809ms
+  [144/150] OK   r04 (rapid_fire) 323tok 4663ms
+  [145/150] OK   r05 (rapid_fire) 203tok 3017ms
+  [146/150] OK   adv01 (adversarial) 266tok 3903ms
+  [147/150] OK   adv02 (adversarial) 2tok 75ms
+  [148/150] OK   adv03 (adversarial) 530tok 7835ms
+  [149/150] OK   adv04 (adversarial) 89tok 1283ms
+  [150/150] OK   adv05 (adversarial) 156tok 2294ms
+  => ollama-phi3: 26 ok, 4 errors, 507.9s
+
+══════════════════════════════════════════════════
+  Experiment complete
+  Successes: 138/150
+  Errors: 12
+  Results saved: results/raw/experiment-2026-03-27T06-42-32-105Z-ollama.json
+══════════════════════════════════════════════════
+
+  Errors by agent:
+    ollama-llama3: 2 errors
+    ollama-gemma2: 5 errors
+    ollama-qwen: 1 errors
+    ollama-phi3: 4 errors

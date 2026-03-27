@@ -1,0 +1,42 @@
+[dotenv@17.3.1] injecting env (13) from .env -- tip: ⚡️ secrets for agents: https://dotenvx.com/as2
+
+  Soma Sense Experiment
+  Agent filter: claude-sonnet,gpt-4o-mini
+  Probe limit: 10 per agent
+  2 agents x 6 probes = 12 observations
+  Started: 2026-03-27T16:01:20.211Z
+
+
+────────────────────────────────────────────────────────────
+  [agent 1/2] Claude Sonnet 4
+  provider: anthropic  model: claude-sonnet-4-20250514
+────────────────────────────────────────────────────────────
+  [1/12] OK   n01 (normal) 12tok 7434ms
+  [2/12] OK   a01 (ambiguity) 13tok 7496ms
+  [3/12] FAIL e01 — Overloaded
+  [4/12] FAIL f01 — Overloaded
+  [5/12] FAIL r01 — Overloaded
+  [6/12] FAIL adv01 — Overloaded
+  => claude-sonnet: 2 ok, 4 errors, 20.2s
+
+────────────────────────────────────────────────────────────
+  [agent 2/2] GPT-4o Mini
+  provider: openai  model: gpt-4o-mini
+────────────────────────────────────────────────────────────
+  [7/12] OK   n01 (normal) 453tok 11320ms
+  [8/12] OK   a01 (ambiguity) 393tok 9190ms
+  [9/12] OK   e01 (edge_case) 57tok 3989ms
+  [10/12] OK   f01 (failure) 118tok 3389ms
+  [11/12] OK   r01 (rapid_fire) 8tok 3143ms
+  [12/12] OK   adv01 (adversarial) 4tok 317ms
+  => gpt-4o-mini: 6 ok, 0 errors, 34.4s
+
+══════════════════════════════════════════════════
+  Experiment complete
+  Successes: 8/12
+  Errors: 4
+  Results saved: results/raw/experiment-2026-03-27T16-02-14-834Z.json
+══════════════════════════════════════════════════
+
+  Errors by agent:
+    claude-sonnet: 4 errors
