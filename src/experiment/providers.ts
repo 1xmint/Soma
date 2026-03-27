@@ -49,7 +49,7 @@ function getKeyPool(provider: ProviderName): KeyPool {
     anthropic: ["ANTHROPIC_API_KEY"],
     openai: ["OPENAI_API_KEY"],
     ollama: [],
-    google: ["GOOGLE_AI_API_KEY", "GOOGLE_AI_API_KEY_1"],
+    google: ["GOOGLE_AI_API_KEY", "GOOGLE_AI_API_KEY_2", "GOOGLE_AI_API_KEY_3", "GOOGLE_AI_API_KEY_4"],
   };
 
   const keys: string[] = [];
