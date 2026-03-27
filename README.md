@@ -1,8 +1,10 @@
 # Soma: Identity as Execution in Autonomous Agent Systems
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19260081.svg)](https://doi.org/10.5281/zenodo.19260081)
+
 **Every existing agent identity system has a gap: the agent computes, and then separately, a credential proves who computed. Soma eliminates that gap by making identity inseparable from computation.**
 
-> **[Read the paper (PDF)](soma-paper.pdf)**
+> **Paper:** [Soma: Identity as Execution in Autonomous Agent Systems](https://doi.org/10.5281/zenodo.19260081) | [PDF](soma-paper.pdf)
 
 ---
 
