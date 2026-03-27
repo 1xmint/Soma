@@ -147,21 +147,56 @@ function delay(ms: number): Promise<void> {
 async function runExperiment(): Promise<void> {
   const startedAt = new Date().toISOString();
 
-  // Filter by provider if --provider flag is passed
+  // --- Filters ---
+  // --provider=ollama   — only agents on this provider
+  // --agents=id1,id2    — only these agent IDs
+  // --limit=30          — max probes per agent (takes from each category proportionally)
+  // --category=normal   — only probes from this category
   const providerArg = process.argv.find(a => a.startsWith("--provider="))?.split("=")[1];
-  const filteredAgents = providerArg
-    ? AGENT_CONFIGS.filter(a => a.provider === providerArg)
-    : AGENT_CONFIGS;
+  const agentsArg = process.argv.find(a => a.startsWith("--agents="))?.split("=")[1];
+  const limitArg = process.argv.find(a => a.startsWith("--limit="))?.split("=")[1];
+  const categoryArg = process.argv.find(a => a.startsWith("--category="))?.split("=")[1];
 
-  if (providerArg && filteredAgents.length === 0) {
-    console.error(`No agents for provider: ${providerArg}`);
+  let filteredAgents = AGENT_CONFIGS;
+  if (providerArg) {
+    filteredAgents = filteredAgents.filter(a => a.provider === providerArg);
+  }
+  if (agentsArg) {
+    const agentIds = new Set(agentsArg.split(","));
+    filteredAgents = filteredAgents.filter(a => agentIds.has(a.id));
+  }
+
+  if (filteredAgents.length === 0) {
+    console.error(`No agents matched filters (provider=${providerArg ?? "any"}, agents=${agentsArg ?? "all"})`);
     process.exit(1);
   }
 
-  const total = filteredAgents.length * ALL_PROBES.length;
-  console.log(`\n  Soma Phase 2 — Clean Experiment`);
+  // Filter and limit probes
+  let probes = categoryArg
+    ? ALL_PROBES.filter(p => p.category === categoryArg)
+    : [...ALL_PROBES];
+
+  const probeLimit = limitArg ? parseInt(limitArg, 10) : probes.length;
+  if (probeLimit < probes.length) {
+    // Take proportionally from each category to maintain diversity
+    const categories = [...new Set(probes.map(p => p.category))];
+    const perCategory = Math.max(1, Math.floor(probeLimit / categories.length));
+    const limited: typeof probes = [];
+    for (const cat of categories) {
+      const catProbes = probes.filter(p => p.category === cat);
+      limited.push(...catProbes.slice(0, perCategory));
+      if (limited.length >= probeLimit) break;
+    }
+    probes = limited.slice(0, probeLimit);
+  }
+
+  const total = filteredAgents.length * probes.length;
+  console.log(`\n  Soma Sense Experiment`);
   if (providerArg) console.log(`  Provider filter: ${providerArg}`);
-  console.log(`  ${filteredAgents.length} agents x ${ALL_PROBES.length} probes = ${total} observations`);
+  if (agentsArg) console.log(`  Agent filter: ${agentsArg}`);
+  if (limitArg) console.log(`  Probe limit: ${probeLimit} per agent`);
+  if (categoryArg) console.log(`  Category filter: ${categoryArg}`);
+  console.log(`  ${filteredAgents.length} agents x ${probes.length} probes = ${total} observations`);
   console.log(`  Started: ${startedAt}\n`);
 
   const results: ExperimentResult[] = [];
@@ -181,7 +216,7 @@ async function runExperiment(): Promise<void> {
     let agentSuccess = 0;
     const agentStart = Date.now();
 
-    for (const probe of ALL_PROBES) {
+    for (const probe of probes) {
       completed++;
       const progress = `[${completed}/${total}]`;
 
@@ -223,7 +258,7 @@ async function runExperiment(): Promise<void> {
     startedAt,
     completedAt,
     agentCount: filteredAgents.length,
-    probeCount: ALL_PROBES.length,
+    probeCount: probes.length,
     results,
     errors,
   };

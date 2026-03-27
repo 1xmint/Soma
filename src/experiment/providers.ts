@@ -43,11 +43,13 @@ function getKeyPool(provider: ProviderName): KeyPool {
   if (keyPools.has(provider)) return keyPools.get(provider)!;
 
   const envNames: Record<ProviderName, string[]> = {
-    groq: ["GROQ_API_KEY", "GROQ_API_KEY_2"],
-    openrouter: ["OPENROUTER_API_KEY", "OPENROUTER_API_KEY_2", "OPENROUTER_API_KEY_3", "OPENROUTER_API_KEY_4"],
+    groq: ["GROQ_API_KEY", "GROQ_API_KEY_2", "GROQ_API_KEY_3"],
+    openrouter: ["OPENROUTER_API_KEY", "OPENROUTER_API_KEY_2", "OPENROUTER_API_KEY_3", "OPENROUTER_API_KEY_4", "OPENROUTER_API_KEY_5"],
     mistral: ["MISTRAL_API_KEY"],
     anthropic: ["ANTHROPIC_API_KEY"],
     openai: ["OPENAI_API_KEY"],
+    ollama: [],
+    google: ["GOOGLE_AI_API_KEY"],
   };
 
   const keys: string[] = [];
@@ -56,7 +58,7 @@ function getKeyPool(provider: ProviderName): KeyPool {
     if (val) keys.push(val);
   }
 
-  if (keys.length === 0) {
+  if (keys.length === 0 && provider !== "ollama") {
     throw new Error(`No API keys found for provider: ${provider}. Set ${envNames[provider][0]} in .env`);
   }
 
@@ -74,9 +76,16 @@ function getCurrentKey(provider: ProviderName): string {
   return pool.keys[pool.currentIndex];
 }
 
-/** Rotate to the next available key after a 429. Returns true if a key was available. */
+/** Get the environment variable name for a key index. */
+function getKeyEnvName(provider: ProviderName, index: number): string {
+  const baseName = provider.toUpperCase() + "_API_KEY";
+  return index === 0 ? baseName : `${baseName}_${index + 1}`;
+}
+
+/** Rotate to the next available key after a 429/402. Returns true if a key was available. */
 function rotateKey(provider: ProviderName): boolean {
   const pool = getKeyPool(provider);
+  const exhaustedName = getKeyEnvName(provider, pool.currentIndex);
   pool.exhausted.add(pool.currentIndex);
 
   // Find next non-exhausted key
@@ -84,13 +93,13 @@ function rotateKey(provider: ProviderName): boolean {
     const idx = (pool.currentIndex + 1 + i) % pool.keys.length;
     if (!pool.exhausted.has(idx)) {
       pool.currentIndex = idx;
-      const keyNum = idx + 1;
-      console.log(`  [key-rotate] ${provider}: switched to key #${keyNum}/${pool.keys.length}`);
+      const newName = getKeyEnvName(provider, idx);
+      console.log(`  [KEY ROTATION] Switched to ${newName} after rate limit on ${exhaustedName}`);
       return true;
     }
   }
 
-  console.log(`  [key-rotate] ${provider}: all ${pool.keys.length} keys exhausted`);
+  console.log(`  [KEY ROTATION] ${provider}: all ${pool.keys.length} keys exhausted`);
   return false;
 }
 
@@ -112,6 +121,8 @@ const PROVIDER_BASE_URLS: Record<ProviderName, string> = {
   openrouter: "https://openrouter.ai/api/v1",
   anthropic: "https://api.anthropic.com/v1",
   openai: "https://api.openai.com/v1",
+  ollama: "http://localhost:11434/v1",
+  google: "https://generativelanguage.googleapis.com/v1beta/openai",
 };
 
 /** Per-call timeout in milliseconds. */
@@ -130,6 +141,16 @@ export async function streamFromProvider(
   userPrompt: string
 ): Promise<StreamingResponse> {
   const baseURL = PROVIDER_BASE_URLS[provider];
+
+  // Ollama: no API key, no rotation — local server
+  if (provider === "ollama") {
+    return await withTimeout(
+      streamFromOpenAICompatible(baseURL, "ollama", model, systemPrompt, userPrompt),
+      CALL_TIMEOUT_MS,
+      `${provider}/${model} timed out after ${CALL_TIMEOUT_MS / 1000}s`
+    );
+  }
+
   const pool = getKeyPool(provider);
   const maxAttempts = pool.keys.length;
 
@@ -169,15 +190,19 @@ function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promi
   });
 }
 
-/** Check if an error is a 429 rate-limit response. */
+/** Check if an error is a rate-limit (429) or quota-exceeded (402) response. */
 function isRateLimitError(err: unknown): boolean {
   if (err && typeof err === "object") {
     // OpenAI SDK throws APIError with status
-    if ("status" in err && (err as { status: number }).status === 429) return true;
+    if ("status" in err) {
+      const status = (err as { status: number }).status;
+      if (status === 429 || status === 402) return true;
+    }
     // Some providers include it in the message
     if ("message" in err && typeof (err as { message: string }).message === "string") {
       const msg = (err as { message: string }).message.toLowerCase();
-      if (msg.includes("rate limit") || msg.includes("429") || msg.includes("too many requests")) {
+      if (msg.includes("rate limit") || msg.includes("429") || msg.includes("too many requests")
+        || msg.includes("quota") || msg.includes("402") || msg.includes("insufficient")) {
         return true;
       }
     }

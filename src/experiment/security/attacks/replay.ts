@@ -21,8 +21,8 @@ export function runReplayAttack(): AttackResult {
     crypto.hashing.hash("What is 2+2?")
   );
 
-  // Simulate a real response that matches the seed influence
-  const realResponse = realSeed.expectedInfluence === "shorter_output"
+  // Simulate a real response that aligns with the seed's behavioral params
+  const realResponse = realSeed.behavioralParams.verbosity < 0.4
     ? "The answer is 4."
     : "The answer to your question about 2+2 is 4. This is a basic arithmetic operation that follows from the fundamental axioms of mathematics.";
 
@@ -43,7 +43,10 @@ export function runReplayAttack(): AttackResult {
 
   // Step 4: Also check that seeds differ (different sessions = different seeds)
   const seedsDiffer = realSeed.nonce !== attackSeed.nonce;
-  const modificationsDiffer = realSeed.modificationId !== attackSeed.modificationId;
+  const paramsDiffer =
+    realSeed.behavioralParams.verbosity !== attackSeed.behavioralParams.verbosity ||
+    realSeed.behavioralParams.structure !== attackSeed.behavioralParams.structure ||
+    realSeed.behavioralParams.formality !== attackSeed.behavioralParams.formality;
 
   // Detection: the response doesn't match the NEW session's expected influence
   // OR the seeds are just different (replay is always detectable because session keys differ)
@@ -56,10 +59,10 @@ export function runReplayAttack(): AttackResult {
     detected,
     matchRatio: verification.confidence,
     details: {
-      realSeedMod: realSeed.modificationId,
-      attackSeedMod: attackSeed.modificationId,
+      realSeedVerbosity: realSeed.behavioralParams.verbosity.toFixed(3),
+      attackSeedVerbosity: attackSeed.behavioralParams.verbosity.toFixed(3),
       seedsDiffer,
-      modificationsDiffer,
+      paramsDiffer,
       seedVerification: verification.details,
     },
   };

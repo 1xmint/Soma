@@ -166,6 +166,27 @@ const MOCK_PROVIDER: CryptoProvider = {
     },
   },
 
+  hmac: {
+    algorithmId: "mock-hmac",
+    compute(key: Uint8Array, message: string): string {
+      // Simple mock HMAC: hash(key XOR message bytes)
+      let h = 0x811c9dc5;
+      for (let i = 0; i < message.length; i++) {
+        h ^= message.charCodeAt(i) ^ key[i % key.length];
+        h = Math.imul(h, 0x01000193);
+      }
+      return (h >>> 0).toString(16).padStart(64, "0");
+    },
+    verify(key: Uint8Array, message: string, expectedHmac: string): boolean {
+      let h = 0x811c9dc5;
+      for (let i = 0; i < message.length; i++) {
+        h ^= message.charCodeAt(i) ^ key[i % key.length];
+        h = Math.imul(h, 0x01000193);
+      }
+      return (h >>> 0).toString(16).padStart(64, "0") === expectedHmac;
+    },
+  },
+
   random: {
     randomBytes(length: number): Uint8Array {
       // Deterministic "random" for reproducible tests

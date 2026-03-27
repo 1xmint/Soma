@@ -98,9 +98,7 @@ export function deriveSeed(config: SeedConfig, queryHash: string, provider?: Cry
     ...new TextEncoder().encode(`|${config.interactionCounter}|${queryHash}`),
   ]);
   const nonce = p.hashing.deriveKey(material, 32);
-  const nonceHex = p.encoding.encodeHex
-    ? p.encoding.encodeHex(nonce)
-    : Array.from(nonce).map(b => b.toString(16).padStart(2, "0")).join("");
+  const nonceHex = Array.from(nonce).map(b => b.toString(16).padStart(2, "0")).join("");
 
   // Step 2: Map nonce bytes to continuous behavioral space using integer arithmetic.
   // No floating-point drift, no platform-dependent behavior.

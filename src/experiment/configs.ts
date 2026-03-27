@@ -7,7 +7,7 @@
 
 // --- Types ---
 
-export type ProviderName = "groq" | "mistral" | "openrouter" | "anthropic" | "openai";
+export type ProviderName = "groq" | "mistral" | "openrouter" | "anthropic" | "openai" | "ollama" | "google";
 
 export interface AgentConfig {
   /** Unique identifier for this genome in experiment results. */
@@ -21,7 +21,7 @@ export interface AgentConfig {
   /** System prompt — the epigenetic layer that shapes expression. */
   systemPrompt: string;
   /** Model family for family-level classification. */
-  family: "gemini" | "llama" | "gemma" | "mistral" | "deepseek" | "nvidia" | "stepfun" | "arcee" | "liquid" | "claude" | "gpt";
+  family: "gemini" | "llama" | "gemma" | "mistral" | "deepseek" | "nvidia" | "stepfun" | "arcee" | "liquid" | "claude" | "gpt" | "qwen" | "phi";
   /** Whether this is an epigenetic variant (same model, different prompt). */
   isEpigenetic: boolean;
   /** Whether this genome is a proxy attack simulation. */
@@ -208,6 +208,89 @@ export const AGENT_CONFIGS: AgentConfig[] = [
     model: "gpt-4o-mini",
     systemPrompt: DEFAULT_SYSTEM_PROMPT,
     family: "gpt",
+    isEpigenetic: false,
+    isProxy: false,
+    proxiedAgentId: null,
+  },
+
+  // --- Ollama Local (same hardware, different models — isolates model signal) ---
+  {
+    id: "ollama-llama3",
+    label: "Llama 3.1 8B (Ollama local)",
+    provider: "ollama",
+    model: "llama3.1:8b",
+    systemPrompt: DEFAULT_SYSTEM_PROMPT,
+    family: "llama",
+    isEpigenetic: false,
+    isProxy: false,
+    proxiedAgentId: null,
+  },
+  {
+    id: "ollama-gemma2",
+    label: "Gemma 2 9B (Ollama local)",
+    provider: "ollama",
+    model: "gemma2:9b",
+    systemPrompt: DEFAULT_SYSTEM_PROMPT,
+    family: "gemma",
+    isEpigenetic: false,
+    isProxy: false,
+    proxiedAgentId: null,
+  },
+  {
+    id: "ollama-qwen",
+    label: "Qwen 2.5 7B (Ollama local)",
+    provider: "ollama",
+    model: "qwen2.5:7b",
+    systemPrompt: DEFAULT_SYSTEM_PROMPT,
+    family: "qwen",
+    isEpigenetic: false,
+    isProxy: false,
+    proxiedAgentId: null,
+  },
+  {
+    id: "ollama-mistral",
+    label: "Mistral 7B (Ollama local)",
+    provider: "ollama",
+    model: "mistral:7b",
+    systemPrompt: DEFAULT_SYSTEM_PROMPT,
+    family: "mistral",
+    isEpigenetic: false,
+    isProxy: false,
+    proxiedAgentId: null,
+  },
+  {
+    id: "ollama-phi3",
+    label: "Phi-3 Mini 3.8B (Ollama local)",
+    provider: "ollama",
+    model: "phi3:mini",
+    systemPrompt: DEFAULT_SYSTEM_PROMPT,
+    family: "phi",
+    isEpigenetic: false,
+    isProxy: false,
+    proxiedAgentId: null,
+  },
+
+  // --- Google AI (Gemini free tier) ---
+  {
+    id: "gemini-flash-google",
+    label: "Gemini 2.0 Flash (Google AI)",
+    provider: "google",
+    model: "gemini-2.0-flash",
+    systemPrompt: DEFAULT_SYSTEM_PROMPT,
+    family: "gemini",
+    isEpigenetic: false,
+    isProxy: false,
+    proxiedAgentId: null,
+  },
+
+  // --- OpenRouter Free: deployment identity comparison ---
+  {
+    id: "or-llama3-8b",
+    label: "Llama 3.1 8B (OpenRouter)",
+    provider: "openrouter",
+    model: "meta-llama/llama-3.1-8b-instruct:free",
+    systemPrompt: DEFAULT_SYSTEM_PROMPT,
+    family: "llama",
     isEpigenetic: false,
     isProxy: false,
     proxiedAgentId: null,
