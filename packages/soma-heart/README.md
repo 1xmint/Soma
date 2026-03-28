@@ -64,6 +64,22 @@ const data = await heart.fetchData("market-api", "query", fetcher);
 
 The agent cannot compute without the heart. No heart, no credentials, no computation.
 
+## Real-World Usage
+
+[ClawNet](https://claw-net.org) uses `soma-heart` to provide cryptographic provenance on every x402 API call. Every outbound data fetch goes through `heart.fetchData()`, producing a birth certificate (data hash + Ed25519 signature + heartbeat chain entry). These are surfaced as `X-Soma-*` response headers — a provenance standard for the x402 ecosystem.
+
+```typescript
+// ClawNet's integration pattern (simplified)
+import { getHeart } from './core/soma';
+
+const result = await heart.fetchData('upstream-api', query, async (url, headers) => {
+  return await x402Client.fetch(url, { headers });
+});
+// result.birthCertificate is automatically attached to the response
+```
+
+See the [Production section](https://github.com/1xmint/Soma#production) in the main README for the full integration story.
+
 ## License
 
 MIT

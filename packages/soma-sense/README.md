@@ -37,6 +37,23 @@ await server.connect(transport);
 
 The sensorium runs on the observer's machine. The agent never sees it.
 
+## Inverted Verification Model
+
+The correct architecture: the agent runs the heart, the observer runs the sense. The agent does **not** verify itself — self-verification is self-attestation, not cryptographic proof.
+
+[ClawNet](https://claw-net.org) demonstrates this pattern: ClawNet runs `soma-heart` on its orchestrator. Any caller who wants to verify ClawNet's model usage connects with `soma-sense` via MCP. ClawNet makes itself verifiable — it doesn't claim to have verified itself.
+
+```
+ClawNet (runs soma-heart)          Your Agent (runs soma-sense)
+┌─────────────────────┐            ┌─────────────────────┐
+│  heart.generate()   │  Encrypted │  Temporal fingerprint│
+│  heart.fetchData()  │◄──Channel─►│  Behavioral landscape│
+│  Per-token HMACs    │  (X25519)  │  Verdict: GREEN/RED  │
+└─────────────────────┘            └─────────────────────┘
+```
+
+Verdicts from independent observers are submitted to ClawNet's public verdict API (`POST /v1/soma/verdicts`) and anchored on-chain via Merkle trees — creating a public, immutable verification history for any agent.
+
 ## License
 
 MIT

@@ -61,6 +61,28 @@ When data enters the system, the heart seals it. For hearted-to-hearted flows, b
 | HMAC overhead per token | **3.4--5.4 microseconds** |
 | Tests passing | **377** |
 
+## Production
+
+Soma is running in production on [ClawNet](https://claw-net.org) — the first AI agent orchestrator that makes itself cryptographically verifiable.
+
+**On-chain identity:** Soma is registered on Base Mainnet via [ERC-8004](https://eips.ethereum.org/EIPS/eip-8004) (agentId [37696](https://basescan.org/nft/0x8004A169FB4a3325136EB29fA0ceB6D2e539a432/37696)).
+
+**How it works in practice:** ClawNet runs `soma-heart`. Every outbound API call gets a birth certificate. Every orchestration response includes `X-Soma-*` provenance headers so any x402 client can verify data origin without parsing the response body:
+
+```
+X-Soma-Protocol: soma/1.0
+X-Soma-Data-Hash: <sha256 of response data>
+X-Soma-Signature: <ed25519 signature>
+X-Soma-Heartbeat-Index: <sequence in chain>
+X-Soma-Genome-Hash: <genome commitment hash>
+X-Soma-Public-Key: <hex ed25519 public key>
+X-Soma-Discovery: /.well-known/soma.json
+```
+
+**Verification verdicts anchored on-chain:** Observers running `soma-sense` submit verdicts to ClawNet's public API. Verdicts are Merkle-tree-anchored on Solana, creating an immutable verification history for any agent. Public trust query: `GET /v1/soma/:did/trust`.
+
+**Architectural principle:** ClawNet runs the heart. Callers run the sense. The orchestrator does not verify itself — that would be self-attestation, not cryptographic verification. The observer must always be a separate party.
+
 ## Quick Start
 
 ```bash
@@ -177,9 +199,10 @@ MIT
 ## Citation
 
 ```bibtex
-@article{fair2025soma,
+@article{fair2026soma,
   title={Soma: Identity as Execution in Autonomous Agent Systems},
   author={Fair, Joshua},
-  year={2025}
+  year={2026},
+  doi={10.5281/zenodo.19260081}
 }
 ```
