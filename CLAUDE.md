@@ -178,7 +178,7 @@ const data = await heart.fetchData("market-api", "query", fetcher);
 Installed by the MCP server or client that interacts with the agent. This is the counterparty's organ.
 
 Contains:
-- `src/sensorium/` — 3 weighted senses, matcher, landscape, stream capture, profile evolution
+- `src/sensorium/` — 3 weighted senses, matcher, landscape, stream capture, profile evolution, receipt verification
 - `src/mcp/` — transport wrapper, session management
 - `src/core/` — shared crypto (genome, channel)
 
@@ -301,6 +301,7 @@ soma/
 │   │   ├── matcher.ts                  # The immune system — profile matching, verdicts
 │   │   ├── landscape.ts               # Behavioral landscape — multi-dimensional identity map
 │   │   ├── atlas.ts                   # Phenotype atlas — reference classification (anti-drift)
+│   │   ├── receipt-verifier.ts        # Offline ClawNet Soma Receipt verification
 │   │   └── senses/                     # Focused sensory channels
 │   │       ├── index.ts               # Combines active senses with proper weighting
 │   │       ├── temporal.ts            # Sense 1: temporal fingerprint (PRIMARY — 88.5%)

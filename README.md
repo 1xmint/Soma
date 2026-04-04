@@ -81,6 +81,17 @@ X-Soma-Discovery: /.well-known/soma.json
 
 **Verification verdicts anchored on-chain:** Observers running `soma-sense` submit verdicts to ClawNet's public API. Verdicts are Merkle-tree-anchored on Solana, creating an immutable verification history for any agent. Public trust query: `GET /v1/soma/:did/trust`.
 
+**Soma Receipt Layer:** Every paid ClawNet interaction produces a cryptographically signed Soma Receipt — an EAS (Ethereum Attestation Service) attestation on Base binding payment proof + request hash + response hash + data provenance. Receipts are verifiable on [base.easscan.org](https://base.easscan.org), via `GET /v1/soma/receipt/:id`, or offline using `soma-sense`:
+
+```typescript
+import { verifyClawNetReceipt } from "soma-sense";
+
+const result = verifyClawNetReceipt(receiptJson, {
+  publicKeyMultibase: "z6Mk...", // from /.well-known/soma.json
+});
+console.log(result.valid); // true — receipt is authentic
+```
+
 **Architectural principle:** ClawNet runs the heart. Callers run the sense. The orchestrator does not verify itself — that would be self-attestation, not cryptographic verification. The observer must always be a separate party.
 
 ## Quick Start
@@ -149,7 +160,8 @@ soma/
 │   │   │   └── logprob.ts # When API supports it
 │   │   ├── atlas.ts        # Phenotype atlas -- memoryless reference classifier
 │   │   ├── matcher.ts      # Verdict engine (GREEN/AMBER/RED/UNCANNY)
-│   │   └── landscape.ts    # Behavioral landscape -- multi-dimensional identity map
+│   │   ├── landscape.ts    # Behavioral landscape -- multi-dimensional identity map
+│   │   └── receipt-verifier.ts # Offline ClawNet Soma Receipt verification
 │   ├── mcp/                # MCP integration (transport, session, types)
 │   └── experiment/         # Experiment infrastructure + security harness
 │       └── security/
