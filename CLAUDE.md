@@ -11,7 +11,7 @@ Agent identity verification through computational phenotyping. Two packages: `so
 
 ```bash
 pnpm install         # Install dependencies
-pnpm test            # Run all 412 tests
+pnpm test            # Run all 423 tests
 pnpm build           # Compile to dist/
 ```
 
@@ -53,7 +53,7 @@ src/
 │   └── stream-capture.ts   Token stream analysis
 ├── mcp/               MCP transport wrapper, session management
 └── experiment/        Runner, providers, 8 security attacks (all detected)
-tests/                 412 tests across 32 files
+tests/                 423 tests across 33 files
 ```
 
 ## Two-Package Split (CRITICAL)
@@ -81,7 +81,7 @@ An agent verifying itself is meaningless. The observer MUST do the sensing on th
 | Cloud classification (11 agents) | **93.2%** |
 | Security attacks detected | **8/8** |
 | HMAC overhead per token | **3.4–5.4 microseconds** |
-| Tests passing | **412** |
+| Tests passing | **423** |
 
 ## Code Style
 
@@ -100,6 +100,20 @@ Heart-to-heart trust lets agents fork, delegate, and revoke:
 - `heart.serialize(password)` / `loadSomaHeart(blob, password)` — PBKDF2-SHA256 (210k iterations) + XSalsa20-Poly1305. Preserves keypair, credentials, heartbeat chain, revocations, lineage. Sessions are NOT persisted (ephemeral by design).
 
 Wildcards: `*` (universal) or `tool:*` (namespace). Capability enforcement at `callTool()` / `fetchData()` — throws when `can('tool:X')` / `can('data:Y')` is false. Root hearts (no lineage) bypass enforcement.
+
+## Agent Observability (blacksmith sub-strikes)
+
+Beyond core session/generation events, hearts record agent internal state so verifiers can see *every strike*, not just inputs/outputs:
+
+- `heart.recordReasoning(summary)` — chain-of-thought step (hashed, content private)
+- `heart.recordRetry(operation, reason, attempt)` — missed strike / re-attempt
+- `heart.recordRagLookup(queryHash, resultCount)` — context enrichment
+- `heart.recordSubtaskDispatch(subjectDid, taskHash)` — work handoff to child/delegatee
+- `heart.recordSubtaskReturn(subjectDid, resultHash)` — child returned result
+- Tool executors receive a `ToolProgressEmitter` — `emit(stage, detail?)` records a `tool_progress` heartbeat mid-execution
+- `fork()` / `delegate()` / `revoke()` auto-record `fork_created` / `delegation_issued` / `delegation_revoked` events
+
+All new events use ~1μs SHA-256 per record — free at LLM timescale. Detail strings are always hashed before being written to the chain.
 
 ## Soma Check Protocol (soma-check/1.0)
 

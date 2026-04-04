@@ -17,6 +17,7 @@ import {
 
 /** Types of events that the heart records in its hash chain. */
 export type HeartbeatEventType =
+  // Core session + generation events
   | "session_start"
   | "query_received"
   | "seed_generated"
@@ -27,7 +28,18 @@ export type HeartbeatEventType =
   | "data_fetch"
   | "data_received"
   | "response_sent"
-  | "birth_certificate";
+  | "birth_certificate"
+  // Observability — agent internal state (the blacksmith's sub-strikes)
+  | "reasoning_step"      // internal reasoning / chain-of-thought
+  | "retry"               // operation was retried
+  | "rag_lookup"          // context enriched via retrieval
+  | "tool_progress"       // sub-beat emitted during tool execution
+  // Multi-agent coordination
+  | "fork_created"        // this heart forked a child
+  | "subtask_dispatch"    // work handed off to a child/delegatee
+  | "subtask_return"      // child/delegatee returned a result
+  | "delegation_issued"   // this heart issued a delegation
+  | "delegation_revoked"; // this heart revoked a delegation
 
 /** A single heartbeat — one link in the hash chain. */
 export interface Heartbeat {

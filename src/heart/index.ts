@@ -37,6 +37,8 @@ export {
   type HeartbeatData,
   type HeartSession,
   type DataSourceConfig,
+  type ToolProgressEmitter,
+  type ToolExecutor,
 } from "./runtime.js";
 
 // ─── Lineage (parent-child hearts) ──────────────────────────────────────────

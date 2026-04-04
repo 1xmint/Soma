@@ -152,6 +152,21 @@ export interface HeartbeatResult {
   birthCertificate: BirthCertificate;
 }
 
+/**
+ * Progress emitter handed to tool executors. Each call records a
+ * `tool_progress` heartbeat, giving observers sub-beat visibility into
+ * the work a tool is doing — the blacksmith's strikes between input
+ * and output.
+ */
+export type ToolProgressEmitter = (stage: string, detail?: string) => void;
+
+/** Function signature for a tool executor. */
+export type ToolExecutor = (
+  credential: string,
+  args: Record<string, unknown>,
+  emit: ToolProgressEmitter,
+) => Promise<unknown>;
+
 /** Result of a data fetch routed through the heart. */
 export interface HeartbeatData {
   content: string;
@@ -295,6 +310,98 @@ export class HeartRuntime {
     return hasCapability(this._effectiveCaps, capability);
   }
 
+  // ─── Agent Observability (the blacksmith's sub-strikes) ─────────────────
+
+  /**
+   * Record an internal reasoning step. Agents should call this between
+   * query-received and tool-call to make chain-of-thought visible in the
+   * heartbeat chain — hashed, so the content stays private.
+   */
+  recordReasoning(summary: string, sessionId?: string): Heartbeat {
+    this.ensureAlive();
+    const chain = this.chainFor(sessionId);
+    return chain.record(
+      "reasoning_step",
+      JSON.stringify({ summaryHash: sha256(summary, this.provider) }),
+    );
+  }
+
+  /**
+   * Record a retry — any operation that was re-attempted. Makes the
+   * blacksmith's missed strikes visible.
+   */
+  recordRetry(
+    operation: string,
+    reason: string,
+    attempt: number,
+    sessionId?: string,
+  ): Heartbeat {
+    this.ensureAlive();
+    const chain = this.chainFor(sessionId);
+    return chain.record(
+      "retry",
+      JSON.stringify({ operation, reason, attempt }),
+    );
+  }
+
+  /**
+   * Record a RAG lookup — what was retrieved to augment context. The
+   * observer sees that retrieval happened and how many items were used,
+   * without the retrieved content being exposed.
+   */
+  recordRagLookup(
+    queryHash: string,
+    resultCount: number,
+    sessionId?: string,
+  ): Heartbeat {
+    this.ensureAlive();
+    const chain = this.chainFor(sessionId);
+    return chain.record(
+      "rag_lookup",
+      JSON.stringify({ queryHash, resultCount }),
+    );
+  }
+
+  /**
+   * Record that work was dispatched to a child or delegatee.
+   * Makes multi-agent handoffs visible in the heartbeat chain.
+   */
+  recordSubtaskDispatch(
+    subjectDid: string,
+    taskHash: string,
+    sessionId?: string,
+  ): Heartbeat {
+    this.ensureAlive();
+    const chain = this.chainFor(sessionId);
+    return chain.record(
+      "subtask_dispatch",
+      JSON.stringify({ subjectDid, taskHash }),
+    );
+  }
+
+  /**
+   * Record that a child or delegatee returned a result for previously
+   * dispatched work.
+   */
+  recordSubtaskReturn(
+    subjectDid: string,
+    resultHash: string,
+    sessionId?: string,
+  ): Heartbeat {
+    this.ensureAlive();
+    const chain = this.chainFor(sessionId);
+    return chain.record(
+      "subtask_return",
+      JSON.stringify({ subjectDid, resultHash }),
+    );
+  }
+
+  /** Pick the chain for a given session (global if none). */
+  private chainFor(sessionId?: string): HeartbeatChain {
+    if (!sessionId) return this.heartbeatChain;
+    return this.sessions.get(sessionId)?.heartbeatChain ?? this.heartbeatChain;
+  }
+
   // ─── Fork — spawn a child heart with signed lineage ─────────────────────
 
   /**
@@ -374,11 +481,11 @@ export class HeartRuntime {
 
     // Record the fork in the heartbeat chain
     this.heartbeatChain.record(
-      "birth_certificate",
+      "fork_created",
       JSON.stringify({
-        event: "fork",
         childDid: childGenome.did,
         lineageCertId: lineageCert.id,
+        capabilities: opts.capabilities ?? [],
       }),
     );
 
@@ -411,7 +518,7 @@ export class HeartRuntime {
       }
     }
 
-    return createDelegation({
+    const delegation = createDelegation({
       issuerDid: this.did,
       issuerPublicKey: this.genome.publicKey,
       issuerSigningKey: this.signingKeyPair.secretKey,
@@ -421,6 +528,18 @@ export class HeartRuntime {
       parentId: opts.parentId ?? null,
       provider: this.provider,
     });
+
+    this.heartbeatChain.record(
+      "delegation_issued",
+      JSON.stringify({
+        delegationId: delegation.id,
+        subjectDid: delegation.subjectDid,
+        capabilities: delegation.capabilities,
+        caveatCount: delegation.caveats.length,
+      }),
+    );
+
+    return delegation;
   }
 
   // ─── Revoke — permanently kill a credential this heart issued ──────────
@@ -450,6 +569,17 @@ export class HeartRuntime {
     });
 
     this.revocations.add(event);
+
+    this.heartbeatChain.record(
+      "delegation_revoked",
+      JSON.stringify({
+        revocationId: event.id,
+        targetId: event.targetId,
+        targetKind: event.targetKind,
+        reason: event.reason,
+      }),
+    );
+
     return event;
   }
 
@@ -680,7 +810,7 @@ export class HeartRuntime {
   async callTool(
     name: string,
     args: Record<string, unknown>,
-    toolExecutor: (credential: string, args: Record<string, unknown>) => Promise<unknown>,
+    toolExecutor: ToolExecutor | ((credential: string, args: Record<string, unknown>) => Promise<unknown>),
     sessionId?: string
   ): Promise<HeartbeatResult> {
     this.ensureAlive();
@@ -710,8 +840,22 @@ export class HeartRuntime {
       ? this.vault.retrieve(credentialKey)
       : "";
 
-    // Execute tool
-    const result = await toolExecutor(credential, args);
+    // Progress emitter — tool executors can call this to record sub-beats
+    // between input and output, giving observers visibility into the work.
+    const emit: ToolProgressEmitter = (stage: string, detail?: string) => {
+      const beat = chain.record(
+        "tool_progress",
+        JSON.stringify({
+          tool: name,
+          stage,
+          detailHash: detail ? sha256(detail, this.provider) : undefined,
+        }),
+      );
+      heartbeats.push(beat);
+    };
+
+    // Execute tool — pass emitter so the executor can log sub-beats
+    const result = await (toolExecutor as ToolExecutor)(credential, args, emit);
 
     // Record tool result
     const resultBeat = chain.record(
