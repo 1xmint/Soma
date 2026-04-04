@@ -70,6 +70,30 @@ export {
   type ReceiptVerificationResult,
 } from "./receipt-verifier.js";
 
+// ─── Soma Check (conditional payment protocol) ──────────────────────────────
+
+export {
+  SOMA_CHECK_PROTOCOL,
+  SOMA_CHECK_HEADERS,
+  buildSomaCheckResponseHeaders,
+  buildSomaCheckRequestHeaders,
+  extractIfSomaHash,
+  extractSomaHash,
+  isSomaCheckResponse,
+  SomaCheckHashStore,
+  type UnchangedResponse,
+  type CheckMetadata,
+} from "../core/soma-check.js";
+
+export {
+  createSmartFetch,
+  smartFetch,
+  hashKeyForUrl,
+  type SmartFetchConfig,
+  type SmartResponse,
+  type SomaCheckMeta,
+} from "./smart-fetch.js";
+
 // ─── Identity Helpers ───────────────────────────────────────────────────────
 
 export {

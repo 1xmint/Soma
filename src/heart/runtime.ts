@@ -192,6 +192,15 @@ export class HeartRuntime {
     return this.provider;
   }
 
+  /**
+   * Compute the content hash used in birth certificates — exposed so providers
+   * can hash their own cached content with the same scheme the heart uses.
+   * This is the hash that flows through Soma Check's `X-Soma-Hash` header.
+   */
+  hashContent(content: string): string {
+    return sha256(content, this.provider);
+  }
+
   // --- Session Management ---
 
   /**

@@ -84,3 +84,20 @@ export {
 // The vault is intentionally NOT exported. Credentials are only accessible
 // through the heart's generate/callTool/fetchData methods. Exporting the
 // vault would break the security model.
+
+// ─── Soma Check (conditional payment protocol) ──────────────────────────────
+
+export {
+  SOMA_CHECK_PROTOCOL,
+  SOMA_CHECK_HEADERS,
+  buildSomaCheckResponseHeaders,
+  buildSomaCheckRequestHeaders,
+  extractIfSomaHash,
+  extractSomaHash,
+  isSomaCheckResponse,
+  shouldRespondUnchanged,
+  buildUnchangedResponse,
+  SomaCheckHashStore,
+  type UnchangedResponse,
+  type CheckMetadata,
+} from "../core/soma-check.js";
