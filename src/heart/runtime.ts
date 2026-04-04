@@ -21,6 +21,8 @@ import {
   type SignKeyPair,
 } from "../core/crypto-provider.js";
 import {
+  commitGenome,
+  createGenome,
   type GenomeCommitment,
   sha256,
 } from "../core/genome.js";
@@ -39,6 +41,31 @@ import {
   createBirthCertificate,
   type BirthCertificate,
 } from "./birth-certificate.js";
+import {
+  createLineageCertificate,
+  effectiveCapabilities,
+  hasCapability,
+  type HeartLineage,
+  type LineageCertificate,
+} from "./lineage.js";
+import {
+  createDelegation,
+  type Caveat,
+  type Delegation,
+} from "./delegation.js";
+import {
+  createRevocation,
+  RevocationRegistry,
+  type RevocationEvent,
+  type RevocationReason,
+} from "./revocation.js";
+import {
+  loadHeartState,
+  serializeHeart,
+  signKeyPairFromJson,
+  signKeyPairToJson,
+  type HeartState,
+} from "./persistence.js";
 
 // --- Types ---
 
@@ -65,6 +92,33 @@ export interface HeartConfig {
 
   // Profile storage path
   profileStorePath?: string;
+
+  /**
+   * Lineage chain — if present, this heart was forked from a parent.
+   * effectiveCapabilities(lineage) gates what this heart can do.
+   */
+  lineage?: HeartLineage;
+
+  /** Pre-existing revocation events this heart should honor. */
+  revocations?: RevocationEvent[];
+
+  /**
+   * Pre-encrypted credentials to restore into the vault (persistence).
+   * Used by loadSomaHeart() — callers should NOT set this directly.
+   * @internal
+   */
+  restoreCredentials?: Array<{
+    name: string;
+    nonceB64: string;
+    ciphertextB64: string;
+  }>;
+
+  /**
+   * Prior heartbeat chain to continue from (persistence).
+   * Used by loadSomaHeart() — callers should NOT set this directly.
+   * @internal
+   */
+  restoreHeartbeats?: Heartbeat[];
 
   /** Crypto provider — swap algorithms without changing the protocol. */
   cryptoProvider?: CryptoProvider;
@@ -130,6 +184,9 @@ export class HeartRuntime {
   private readonly dataSources: Map<string, DataSourceConfig>;
   private readonly sessions: Map<string, HeartSession> = new Map();
   private readonly provider: CryptoProvider;
+  private readonly _lineage?: HeartLineage;
+  private readonly _effectiveCaps: string[] | null;
+  private readonly revocations: RevocationRegistry;
   private alive: boolean = true;
 
   constructor(config: HeartConfig) {
@@ -138,14 +195,28 @@ export class HeartRuntime {
     this.signingKeyPair = config.signingKeyPair;
     this.modelId = config.modelId;
     this.modelBaseUrl = config.modelBaseUrl;
-    this.heartbeatChain = new HeartbeatChain(this.provider);
+    this.heartbeatChain = config.restoreHeartbeats
+      ? HeartbeatChain.restore(config.restoreHeartbeats, this.provider)
+      : new HeartbeatChain(this.provider);
+    this._lineage = config.lineage;
+    this._effectiveCaps = config.lineage
+      ? effectiveCapabilities(config.lineage)
+      : null;
+    this.revocations = new RevocationRegistry(this.provider);
+    if (config.revocations) {
+      this.revocations.import(config.revocations);
+    }
 
     // Store all credentials in the vault — encrypted at rest
     this.vault = new CredentialVault(config.signingKeyPair.secretKey, this.provider);
-    this.vault.store("model_api_key", config.modelApiKey);
+    if (config.restoreCredentials) {
+      this.vault.importEncrypted(config.restoreCredentials);
+    } else {
+      this.vault.store("model_api_key", config.modelApiKey);
+    }
 
-    // Store tool credentials
-    if (config.toolCredentials) {
+    // Store tool credentials (skipped when restoring — already in vault)
+    if (config.toolCredentials && !config.restoreCredentials) {
       for (const [name, value] of Object.entries(config.toolCredentials)) {
         this.vault.store(`tool:${name}`, value);
       }
@@ -156,7 +227,8 @@ export class HeartRuntime {
     if (config.dataSources) {
       for (const ds of config.dataSources) {
         this.dataSources.set(ds.name, ds);
-        if (ds.headers) {
+        // On restore, credentials are already in the vault; don't overwrite.
+        if (ds.headers && !config.restoreCredentials) {
           for (const [key, value] of Object.entries(ds.headers)) {
             if (isAuthHeader(key)) {
               this.vault.store(`datasource:${ds.name}:${key}`, value);
@@ -199,6 +271,226 @@ export class HeartRuntime {
    */
   hashContent(content: string): string {
     return sha256(content, this.provider);
+  }
+
+  /** The lineage chain this heart carries (if it was forked from a parent). */
+  get lineage(): HeartLineage | undefined {
+    return this._lineage;
+  }
+
+  /**
+   * Capabilities granted to this heart by its lineage.
+   * `null` = no restrictions (root heart).
+   */
+  get capabilities(): string[] | null {
+    return this._effectiveCaps;
+  }
+
+  /**
+   * Check whether this heart is allowed to exercise a given capability
+   * under its lineage. Root hearts (no lineage) return true for everything.
+   */
+  can(capability: string): boolean {
+    if (this._effectiveCaps === null) return true;
+    return hasCapability(this._effectiveCaps, capability);
+  }
+
+  // ─── Fork — spawn a child heart with signed lineage ─────────────────────
+
+  /**
+   * Fork a child heart: generate a fresh keypair, build the child's genome,
+   * sign a lineage certificate binding the child to this heart, and return
+   * the materials needed to construct the child HeartRuntime.
+   *
+   * The caller provisions the child's credentials (model API key, tool
+   * credentials). This separation is intentional — a parent may fork many
+   * children, each with different credentials.
+   */
+  fork(opts: {
+    systemPrompt: string;
+    toolManifest: string;
+    modelProvider?: string;
+    modelId?: string;
+    modelVersion?: string;
+    runtimeId?: string;
+    capabilities?: string[];
+    ttl?: number;
+    budgetCredits?: number;
+  }): {
+    childKeyPair: SignKeyPair;
+    childGenome: GenomeCommitment;
+    lineageCertificate: LineageCertificate;
+    childLineage: HeartLineage;
+  } {
+    this.ensureAlive();
+
+    // Enforce: a forked child cannot have capabilities the parent lacks.
+    if (opts.capabilities && this._effectiveCaps !== null) {
+      for (const cap of opts.capabilities) {
+        if (!hasCapability(this._effectiveCaps, cap)) {
+          throw new Error(
+            `Cannot fork with capability "${cap}" — not granted to this heart`,
+          );
+        }
+      }
+    }
+
+    // Generate child's keypair and genome
+    const childKeyPair = this.provider.signing.generateKeyPair();
+    const childGenomeDoc = createGenome(
+      {
+        modelProvider: opts.modelProvider ?? this.genome.genome.modelProvider,
+        modelId: opts.modelId ?? this.modelId,
+        modelVersion: opts.modelVersion ?? this.genome.genome.modelVersion,
+        systemPrompt: opts.systemPrompt,
+        toolManifest: opts.toolManifest,
+        runtimeId: opts.runtimeId ?? this.genome.genome.runtimeId,
+        parentHash: this.genome.hash,
+        version: 1,
+      },
+      this.provider,
+    );
+    const childGenome = commitGenome(childGenomeDoc, childKeyPair, this.provider);
+
+    // Parent signs the lineage cert binding child identity
+    const lineageCert = createLineageCertificate({
+      parent: this.genome,
+      parentSigningKey: this.signingKeyPair.secretKey,
+      child: childGenome,
+      capabilities: opts.capabilities ?? [],
+      ttl: opts.ttl,
+      budgetCredits: opts.budgetCredits,
+      provider: this.provider,
+    });
+
+    // Compose the child's lineage chain: this heart's chain + new cert
+    const parentChain = this._lineage?.chain ?? [];
+    const rootDid = this._lineage?.rootDid ?? this.did;
+    const childLineage: HeartLineage = {
+      did: childGenome.did,
+      rootDid,
+      chain: [...parentChain, lineageCert],
+    };
+
+    // Record the fork in the heartbeat chain
+    this.heartbeatChain.record(
+      "birth_certificate",
+      JSON.stringify({
+        event: "fork",
+        childDid: childGenome.did,
+        lineageCertId: lineageCert.id,
+      }),
+    );
+
+    return { childKeyPair, childGenome, lineageCertificate: lineageCert, childLineage };
+  }
+
+  // ─── Delegate — grant attenuated capabilities to another party ──────────
+
+  /**
+   * Create a delegation — grant a subject DID the right to exercise some
+   * capabilities under caveats. The subject does NOT need to be a forked
+   * child; delegation is a separate primitive.
+   */
+  delegate(opts: {
+    subjectDid: string;
+    capabilities: string[];
+    caveats?: Caveat[];
+    parentId?: string | null;
+  }): Delegation {
+    this.ensureAlive();
+
+    // Enforce: can't delegate what we don't have.
+    if (this._effectiveCaps !== null) {
+      for (const cap of opts.capabilities) {
+        if (!hasCapability(this._effectiveCaps, cap)) {
+          throw new Error(
+            `Cannot delegate "${cap}" — not granted to this heart`,
+          );
+        }
+      }
+    }
+
+    return createDelegation({
+      issuerDid: this.did,
+      issuerPublicKey: this.genome.publicKey,
+      issuerSigningKey: this.signingKeyPair.secretKey,
+      subjectDid: opts.subjectDid,
+      capabilities: opts.capabilities,
+      caveats: opts.caveats,
+      parentId: opts.parentId ?? null,
+      provider: this.provider,
+    });
+  }
+
+  // ─── Revoke — permanently kill a credential this heart issued ──────────
+
+  /**
+   * Sign a revocation event for a credential this heart previously issued.
+   * The event is added to this heart's registry AND returned so the caller
+   * can broadcast it to other parties.
+   */
+  revoke(opts: {
+    targetId: string;
+    targetKind: "lineage" | "delegation" | "heart";
+    reason?: RevocationReason;
+    detail?: string;
+  }): RevocationEvent {
+    this.ensureAlive();
+
+    const event = createRevocation({
+      targetId: opts.targetId,
+      targetKind: opts.targetKind,
+      issuerDid: this.did,
+      issuerPublicKey: this.genome.publicKey,
+      issuerSigningKey: this.signingKeyPair.secretKey,
+      reason: opts.reason,
+      detail: opts.detail,
+      provider: this.provider,
+    });
+
+    this.revocations.add(event);
+    return event;
+  }
+
+  /** Check whether a credential ID is revoked in this heart's registry. */
+  isRevoked(targetId: string): boolean {
+    return this.revocations.isRevoked(targetId);
+  }
+
+  /** Import revocation events from an external source (e.g. a feed). */
+  addRevocations(events: RevocationEvent[]): number {
+    return this.revocations.import(events);
+  }
+
+  /** Export this heart's revocation registry contents. */
+  exportRevocations(): RevocationEvent[] {
+    return this.revocations.export();
+  }
+
+  // ─── Persistence — encrypt heart state to disk and rehydrate ───────────
+
+  /**
+   * Serialize this heart's state to an encrypted blob.
+   * Sessions are NOT serialized — they are ephemeral by design.
+   */
+  serialize(password: string): string {
+    this.ensureAlive();
+    const state: HeartState = {
+      version: 1,
+      genome: this.genome,
+      signingKey: signKeyPairToJson(this.signingKeyPair, this.provider),
+      modelId: this.modelId,
+      modelBaseUrl: this.modelBaseUrl,
+      dataSources: Array.from(this.dataSources.values()),
+      credentials: this.vault.exportEncrypted(),
+      heartbeats: [...this.heartbeatChain.getChain()],
+      revocations: this.revocations.export(),
+      lineageChain: this._lineage?.chain,
+      lineageRootDid: this._lineage?.rootDid,
+      savedAt: Date.now(),
+    };
+    return serializeHeart(state, password, { provider: this.provider });
   }
 
   // --- Session Management ---
@@ -393,6 +685,13 @@ export class HeartRuntime {
   ): Promise<HeartbeatResult> {
     this.ensureAlive();
 
+    // Lineage-based capability enforcement
+    if (!this.can(`tool:${name}`)) {
+      throw new Error(
+        `Heart lacks capability "tool:${name}" — not granted by lineage`,
+      );
+    }
+
     const chain = sessionId
       ? (this.sessions.get(sessionId)?.heartbeatChain ?? this.heartbeatChain)
       : this.heartbeatChain;
@@ -447,6 +746,13 @@ export class HeartRuntime {
     sessionId?: string
   ): Promise<HeartbeatData> {
     this.ensureAlive();
+
+    // Lineage-based capability enforcement
+    if (!this.can(`data:${sourceName}`)) {
+      throw new Error(
+        `Heart lacks capability "data:${sourceName}" — not granted by lineage`,
+      );
+    }
 
     const chain = sessionId
       ? (this.sessions.get(sessionId)?.heartbeatChain ?? this.heartbeatChain)
@@ -548,4 +854,45 @@ async function defaultFetcher(
 /** Create a heart runtime — the one-liner that gives an agent its heartbeat. */
 export function createSomaHeart(config: HeartConfig): HeartRuntime {
   return new HeartRuntime(config);
+}
+
+/**
+ * Rehydrate a heart from an encrypted blob + password.
+ * The vault's credentials are already encrypted with a key derived from the
+ * signing secret key, so they are restored directly without re-entry.
+ *
+ * Sessions are not restored — they were ephemeral by design.
+ */
+export function loadSomaHeart(
+  blob: string,
+  password: string,
+  opts?: { cryptoProvider?: CryptoProvider },
+): HeartRuntime {
+  const provider = opts?.cryptoProvider ?? getCryptoProvider();
+  const state = loadHeartState(blob, password, { provider });
+  const keyPair = signKeyPairFromJson(state.signingKey, provider);
+
+  // Reconstruct the lineage if present
+  const lineage: HeartLineage | undefined =
+    state.lineageChain && state.lineageRootDid
+      ? {
+          did: state.genome.did,
+          rootDid: state.lineageRootDid,
+          chain: state.lineageChain,
+        }
+      : undefined;
+
+  return new HeartRuntime({
+    genome: state.genome,
+    signingKeyPair: keyPair,
+    modelApiKey: "", // unused — restoreCredentials populates the vault
+    modelBaseUrl: state.modelBaseUrl,
+    modelId: state.modelId,
+    dataSources: state.dataSources,
+    lineage,
+    revocations: state.revocations,
+    restoreCredentials: state.credentials,
+    restoreHeartbeats: state.heartbeats,
+    cryptoProvider: provider,
+  });
 }

@@ -29,6 +29,7 @@
 export {
   HeartRuntime,
   createSomaHeart,
+  loadSomaHeart,
   type HeartConfig,
   type GenerationInput,
   type HeartbeatToken,
@@ -37,6 +38,55 @@ export {
   type HeartSession,
   type DataSourceConfig,
 } from "./runtime.js";
+
+// ─── Lineage (parent-child hearts) ──────────────────────────────────────────
+
+export {
+  createLineageCertificate,
+  verifyLineageCertificate,
+  verifyLineageChain,
+  effectiveCapabilities,
+  hasCapability,
+  type LineageCertificate,
+  type HeartLineage,
+  type LineageVerification,
+} from "./lineage.js";
+
+// ─── Delegation (macaroons-style capability tokens) ─────────────────────────
+
+export {
+  createDelegation,
+  attenuateDelegation,
+  verifyDelegation,
+  verifyDelegationSignature,
+  checkCaveats,
+  type Delegation,
+  type Caveat,
+  type InvocationContext,
+  type DelegationVerification,
+} from "./delegation.js";
+
+// ─── Revocation ─────────────────────────────────────────────────────────────
+
+export {
+  createRevocation,
+  verifyRevocation,
+  RevocationRegistry,
+  type RevocationEvent,
+  type RevocationReason,
+  type RevocationTarget,
+  type RevocationVerification,
+} from "./revocation.js";
+
+// ─── Persistence (encrypt heart state to disk) ──────────────────────────────
+
+export {
+  serializeHeart,
+  loadHeartState,
+  type HeartState,
+  type EncryptedBlob,
+  type SerializedCredential,
+} from "./persistence.js";
 
 // ─── Seed (cryptographic entanglement) ──────────────────────────────────────
 

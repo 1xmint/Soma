@@ -102,6 +102,20 @@ export class HeartbeatChain {
   }
 
   /**
+   * Restore a chain from previously-recorded heartbeats.
+   * The caller is responsible for verifying integrity first via HeartbeatChain.verify().
+   * Returns a fresh HeartbeatChain continuing from where the old one left off.
+   */
+  static restore(chain: Heartbeat[], provider?: CryptoProvider): HeartbeatChain {
+    const hc = new HeartbeatChain(provider);
+    if (chain.length === 0) return hc;
+    hc.chain = [...chain];
+    hc.sequence = chain.length;
+    hc.currentHash = chain[chain.length - 1].hash;
+    return hc;
+  }
+
+  /**
    * Verify chain integrity — every link must hash correctly
    * and reference the previous hash.
    */

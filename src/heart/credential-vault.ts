@@ -68,6 +68,37 @@ export class CredentialVault {
     return Array.from(this.credentials.keys());
   }
 
+  /**
+   * Export the vault's encrypted contents for persistence.
+   * The returned credentials are still encrypted with the key derived
+   * from the signing secret key — they are safe to serialize.
+   * @internal
+   */
+  exportEncrypted(): Array<{ name: string; nonceB64: string; ciphertextB64: string }> {
+    return Array.from(this.credentials.entries()).map(([name, enc]) => ({
+      name,
+      nonceB64: enc.nonce,
+      ciphertextB64: enc.ciphertext,
+    }));
+  }
+
+  /**
+   * Restore vault contents from an exported set.
+   * Assumes the vault was constructed with the same signing key that
+   * originally encrypted these credentials.
+   * @internal
+   */
+  importEncrypted(
+    entries: Array<{ name: string; nonceB64: string; ciphertextB64: string }>,
+  ): void {
+    for (const e of entries) {
+      this.credentials.set(e.name, {
+        nonce: e.nonceB64,
+        ciphertext: e.ciphertextB64,
+      });
+    }
+  }
+
   /** Securely wipe all credentials from memory. */
   destroy(): void {
     this.encryptionKey.fill(0);

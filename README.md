@@ -59,7 +59,7 @@ When data enters the system, the heart seals it. For hearted-to-hearted flows, b
 | Slow drift detection threshold | **55%** (atlas, memoryless) |
 | Seed enumeration (10K attempts) | **0 matches** |
 | HMAC overhead per token | **3.4--5.4 microseconds** |
-| Tests passing | **377** |
+| Tests passing | **412** |
 
 ## Production
 
@@ -93,6 +93,79 @@ console.log(result.valid); // true — receipt is authentic
 ```
 
 **Architectural principle:** ClawNet runs the heart. Callers run the sense. The orchestrator does not verify itself — that would be self-attestation, not cryptographic verification. The observer must always be a separate party.
+
+## Multi-Agent Primitives
+
+Soma is designed for agent-to-agent trust: one heart forks another, delegates a capability, and can revoke it later. Every primitive is a signed, auditable event.
+
+**Fork a child heart with narrowed capabilities:**
+
+```typescript
+import { createSomaHeart } from "soma-heart";
+
+const parent = createSomaHeart({ /* config */ });
+
+// Fork: parent signs a lineage cert binding child identity
+const { childKeyPair, childGenome, childLineage } = parent.fork({
+  systemPrompt: "You handle price lookups only.",
+  toolManifest: "[\"price\"]",
+  capabilities: ["tool:price"],     // narrowed
+  ttl: 15 * 60_000,                 // 15 minutes
+  budgetCredits: 1000,
+});
+
+// Child boots with the signed lineage — capability enforcement is automatic
+const child = createSomaHeart({
+  genome: childGenome,
+  signingKeyPair: childKeyPair,
+  modelApiKey: "...",
+  modelBaseUrl: "https://api.openai.com/v1",
+  modelId: "gpt-4o-mini",
+  lineage: childLineage,
+});
+
+await child.callTool("price", { symbol: "BTC" }, fn); // ✓ allowed
+await child.callTool("db", { query: "..." }, fn);     // ✗ throws
+```
+
+**Delegate a capability (macaroons-style):**
+
+```typescript
+const delegation = heart.delegate({
+  subjectDid: "did:key:zOtherAgent",
+  capabilities: ["tool:search"],
+  caveats: [
+    { kind: "expires-at", timestamp: Date.now() + 3600_000 },
+    { kind: "max-invocations", count: 100 },
+    { kind: "budget", credits: 500 },
+  ],
+});
+```
+
+**Revoke when things go wrong:**
+
+```typescript
+const event = heart.revoke({
+  targetId: delegation.id,
+  targetKind: "delegation",
+  reason: "compromised",
+});
+// Broadcast `event` to other parties; anyone can verify + honor it.
+```
+
+**Persist a heart across restarts:**
+
+```typescript
+// Shutdown
+const blob = heart.serialize("correct-horse-battery-staple");
+fs.writeFileSync("./heart.enc", blob);
+
+// Startup — same DID, same credentials, continuous heartbeat chain
+import { loadSomaHeart } from "soma-heart";
+const heart = loadSomaHeart(fs.readFileSync("./heart.enc", "utf8"), "correct-horse-battery-staple");
+```
+
+Under the hood: lineage certs are signed Ed25519 blobs with parent→child binding. Delegations carry caveats verified at invocation. Revocations are signed, broadcastable events. Persistence uses PBKDF2-SHA256 (210k iterations) + XSalsa20-Poly1305.
 
 ## Soma Check — Conditional Payment Protocol
 
@@ -196,11 +269,15 @@ soma/
 ├── src/
 │   ├── core/               # Cryptographic foundations (genome, channel, crypto-provider)
 │   ├── heart/              # The heart -- execution runtime
-│   │   ├── runtime.ts      # generate(), callTool(), fetchData()
+│   │   ├── runtime.ts      # generate(), callTool(), fetchData(), fork(), delegate(), revoke(), serialize()
 │   │   ├── seed.ts         # Dynamic seed generation (HKDF + 3D behavioral space)
 │   │   ├── heartbeat.ts    # Tamper-evident hash chain
 │   │   ├── birth-certificate.ts  # Data provenance with co-signing
-│   │   └── credential-vault.ts   # Encrypted credential storage
+│   │   ├── credential-vault.ts   # Encrypted credential storage
+│   │   ├── lineage.ts            # Parent-child heart certs
+│   │   ├── delegation.ts         # Macaroons-style capability tokens
+│   │   ├── revocation.ts         # Signed revocation events + registry
+│   │   └── persistence.ts        # Password-encrypted heart state
 │   ├── sensorium/          # The senses -- model verification
 │   │   ├── senses/
 │   │   │   ├── temporal.ts # PRIMARY: 22 features, 5x weight, 100% local accuracy
@@ -215,7 +292,7 @@ soma/
 │   └── experiment/         # Experiment infrastructure + security harness
 │       └── security/
 │           └── attacks/    # 8 attack implementations (all detected)
-├── tests/                  # 377 tests across 27 files
+├── tests/                  # 412 tests across 32 files
 ├── results/                # Experiment data
 └── soma-paper.pdf          # The paper
 ```

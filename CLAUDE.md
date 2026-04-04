@@ -11,7 +11,7 @@ Agent identity verification through computational phenotyping. Two packages: `so
 
 ```bash
 pnpm install         # Install dependencies
-pnpm test            # Run all 377 tests
+pnpm test            # Run all 412 tests
 pnpm build           # Compile to dist/
 ```
 
@@ -38,7 +38,11 @@ src/
 │   ├── seed.ts        Dynamic seed generation (HKDF + behavioral space)
 │   ├── heartbeat.ts   Tamper-evident hash chain
 │   ├── birth-certificate.ts  Data provenance with co-signing
-│   └── credential-vault.ts   Encrypted credential storage
+│   ├── credential-vault.ts   Encrypted credential storage
+│   ├── lineage.ts     Parent-child heart certs (fork)
+│   ├── delegation.ts  Macaroons-style capability tokens
+│   ├── revocation.ts  Signed revocation events + registry
+│   └── persistence.ts Encrypted heart state (password + PBKDF2)
 ├── sensorium/         Model verification (observer side)
 │   ├── senses/        3 weighted senses (temporal 5x, topology 2x, vocabulary 1x)
 │   ├── atlas.ts       Phenotype atlas — memoryless reference classifier
@@ -49,7 +53,7 @@ src/
 │   └── stream-capture.ts   Token stream analysis
 ├── mcp/               MCP transport wrapper, session management
 └── experiment/        Runner, providers, 8 security attacks (all detected)
-tests/                 377 tests across 27 files
+tests/                 412 tests across 32 files
 ```
 
 ## Two-Package Split (CRITICAL)
@@ -77,7 +81,7 @@ An agent verifying itself is meaningless. The observer MUST do the sensing on th
 | Cloud classification (11 agents) | **93.2%** |
 | Security attacks detected | **8/8** |
 | HMAC overhead per token | **3.4–5.4 microseconds** |
-| Tests passing | **377** |
+| Tests passing | **412** |
 
 ## Code Style
 
@@ -85,6 +89,17 @@ An agent verifying itself is meaningless. The observer MUST do the sensing on th
 - Biological terminology in names and comments
 - Test crypto with both valid and tampered inputs
 - Every sense: extract → test → measure → commit
+
+## Multi-Agent Primitives (soma-heart@0.2)
+
+Heart-to-heart trust lets agents fork, delegate, and revoke:
+
+- `heart.fork({ systemPrompt, toolManifest, capabilities, ttl, budgetCredits })` — spawns a child keypair + genome + signed lineage cert. Child can call `createSomaHeart({ ..., lineage })` and have its capabilities enforced.
+- `heart.delegate({ subjectDid, capabilities, caveats })` — macaroons-style grants with `expires-at`, `not-before`, `audience`, `budget`, `max-invocations`, `capabilities`, `custom` caveats. `attenuateDelegation()` lets holders narrow further (never broaden).
+- `heart.revoke({ targetId, targetKind, reason })` — signed revocation events. Registry supports import/export for feed distribution.
+- `heart.serialize(password)` / `loadSomaHeart(blob, password)` — PBKDF2-SHA256 (210k iterations) + XSalsa20-Poly1305. Preserves keypair, credentials, heartbeat chain, revocations, lineage. Sessions are NOT persisted (ephemeral by design).
+
+Wildcards: `*` (universal) or `tool:*` (namespace). Capability enforcement at `callTool()` / `fetchData()` — throws when `can('tool:X')` / `can('data:Y')` is false. Root hearts (no lineage) bypass enforcement.
 
 ## Soma Check Protocol (soma-check/1.0)
 
