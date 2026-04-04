@@ -60,6 +60,16 @@ export { SomaTransport } from "../mcp/soma-transport.js";
 export type { SomaConfig, SomaVerdict, SomaMetadata } from "../mcp/types.js";
 export type { SessionPhase } from "../mcp/types.js";
 
+// ─── Receipt Verification ──────────────────────────────────────────────────
+
+export {
+  verifyClawNetReceipt,
+  fetchAndVerifyReceipt,
+  type SomaReceipt,
+  type ReceiptVerificationOptions,
+  type ReceiptVerificationResult,
+} from "./receipt-verifier.js";
+
 // ─── Identity Helpers ───────────────────────────────────────────────────────
 
 export {
