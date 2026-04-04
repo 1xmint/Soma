@@ -94,6 +94,55 @@ console.log(result.valid); // true — receipt is authentic
 
 **Architectural principle:** ClawNet runs the heart. Callers run the sense. The orchestrator does not verify itself — that would be self-attestation, not cryptographic verification. The observer must always be a separate party.
 
+## Soma Check — Conditional Payment Protocol
+
+The first conditional payment protocol for APIs. Agents check a content hash before paying — if data hasn't changed, they pay nothing. Built on the birth-certificate `dataHash`, so the primitive that proves *provenance* also drives *change detection*. No other payment protocol (x402, ACP, AP2, L402) has this.
+
+**Spec:** [SOMA-CHECK-SPEC.md](SOMA-CHECK-SPEC.md) (v1.0)
+
+**Consumer side — drop-in fetch replacement:**
+
+```typescript
+import { createSmartFetch } from "soma-sense";
+
+const sfetch = createSmartFetch();
+
+// First call — normal paid fetch
+const r1 = await sfetch("https://api.example.com/price?symbol=BTC");
+
+// Second call — automatically sends If-Soma-Hash
+// If data unchanged, returns cached body at zero cost
+const r2 = await sfetch("https://api.example.com/price?symbol=BTC");
+if (r2.somaCheck?.unchanged) {
+  const price = r2.somaCheck.cachedBody; // 0 credits charged
+}
+```
+
+**Provider side — decide in one line:**
+
+```typescript
+import {
+  extractIfSomaHash,
+  shouldRespondUnchanged,
+  buildSomaCheckResponseHeaders,
+  buildUnchangedResponse,
+} from "soma-heart";
+
+app.post("/endpoint", (req, res) => {
+  const incomingHash = extractIfSomaHash(req.headers);
+  const currentHash = cache.getHash(req.url);
+
+  for (const [k, v] of Object.entries(buildSomaCheckResponseHeaders(currentHash))) {
+    res.setHeader(k, v);
+  }
+
+  if (shouldRespondUnchanged(incomingHash, currentHash)) {
+    return res.json(buildUnchangedResponse(currentHash, { fresh: true, age: 42 }));
+  }
+  // ...normal paid flow
+});
+```
+
 ## Quick Start
 
 ```bash

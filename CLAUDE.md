@@ -45,6 +45,7 @@ src/
 │   ├── matcher.ts     Verdict engine (GREEN/AMBER/RED/UNCANNY)
 │   ├── landscape.ts   Behavioral landscape — drift detection
 │   ├── receipt-verifier.ts  Offline ClawNet Soma Receipt verification
+│   ├── smart-fetch.ts Soma Check: drop-in fetch() with auto If-Soma-Hash
 │   └── stream-capture.ts   Token stream analysis
 ├── mcp/               MCP transport wrapper, session management
 └── experiment/        Runner, providers, 8 security attacks (all detected)
@@ -85,6 +86,15 @@ An agent verifying itself is meaningless. The observer MUST do the sensing on th
 - Test crypto with both valid and tampered inputs
 - Every sense: extract → test → measure → commit
 
+## Soma Check Protocol (soma-check/1.0)
+
+First conditional payment protocol for APIs. Reuses birth-cert `dataHash` as the change-detection key, so there's one primitive for both provenance and payment gating. Backward compatible with x402 / any payment rail.
+
+- **Spec:** `SOMA-CHECK-SPEC.md`
+- **Shared helpers:** `src/core/soma-check.ts` — headers, `SomaCheckHashStore`, provider decision helpers
+- **Consumer:** `soma-sense` exports `createSmartFetch()` — drop-in `fetch()` that auto-sends `If-Soma-Hash`
+- **Provider:** `soma-heart` exports `extractIfSomaHash()`, `shouldRespondUnchanged()`, `buildUnchangedResponse()`, plus `heart.hashContent()` for birth-cert-compatible hashing
+
 ## Detailed Docs
 
 For deeper context on specific topics:
@@ -92,3 +102,4 @@ For deeper context on specific topics:
 - `docs/security.md` — Full security rules + TEE deployment model
 - `docs/build-plan.md` — Phase 2 build plan (historical, all 9 steps)
 - `docs/roadmap.md` — Phase 3 community phenotype network, multi-agent future, open problems
+- `SOMA-CHECK-SPEC.md` — Soma Check v1.0 protocol spec
