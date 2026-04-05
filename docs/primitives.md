@@ -41,6 +41,22 @@ Detects drops/reorders/tampering within a log; `signHead()` produces a signed
 commitment to the current head for cross-operator accountability. Closes
 audit limit #2. Source: `src/heart/revocation-log.ts`.
 
+### KeyHistory — KERI-style pre-rotation
+```ts
+const { history, event } = KeyHistory.incept({
+  inceptionSecretKey, inceptionPublicKey, nextPublicKey,
+});
+history.rotate({ currentSecretKey, currentPublicKey, nextPublicKey });
+KeyHistory.verifyChain(events, expectedIdentity);
+KeyHistory.currentPublicKey(events); // resolve active key
+```
+Append-only hash-chained key history with pre-rotation: each event commits
+to `digest(nextPublicKey)`, and each rotation must present a key whose digest
+matches the prior commitment. An attacker who steals the current key cannot
+rotate to their own key — they'd need the pre-image of a hash they can't
+invert. Identity (`did:key` of inception key) stays stable across rotations.
+Closes audit limit #6. Source: `src/heart/key-rotation.ts`.
+
 ### SpendLog — cryptographic backing for budget caveats
 ```ts
 const log = new SpendLog({ delegationId, subjectSigningKey, subjectPublicKey });

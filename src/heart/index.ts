@@ -113,6 +113,16 @@ export {
   type DoubleSpendProof,
 } from "./spend-receipts.js";
 
+// ─── Key Rotation (KERI-style pre-rotation) ─────────────────────────────────
+
+export {
+  KeyHistory,
+  computeKeyDigest,
+  type RotationEvent,
+  type RotationEventType,
+  type KeyHistoryVerification,
+} from "./key-rotation.js";
+
 // ─── Persistence (encrypt heart state to disk) ──────────────────────────────
 
 export {
