@@ -23,7 +23,10 @@ import {
   getCryptoProvider,
   type CryptoProvider,
 } from '../core/crypto-provider.js';
-import { publicKeyToDid } from '../core/genome.js';
+import {
+  verifyDidBinding,
+  type DidMethodRegistry,
+} from '../core/did-method.js';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -107,6 +110,7 @@ export type RevocationVerification =
 export function verifyRevocation(
   rev: RevocationEvent,
   provider?: CryptoProvider,
+  registry?: DidMethodRegistry,
 ): RevocationVerification {
   const p = provider ?? getCryptoProvider();
   const { signature, ...payload } = rev;
@@ -118,9 +122,12 @@ export function verifyRevocation(
     return { valid: false, reason: 'invalid signature' };
   }
 
-  const expectedIssuerDid = publicKeyToDid(issuerPubKey, p);
-  if (rev.issuerDid !== expectedIssuerDid) {
-    return { valid: false, reason: 'issuerDid does not match issuerPublicKey' };
+  const binding = verifyDidBinding(rev.issuerDid, issuerPubKey, registry, p);
+  if (!binding.bound) {
+    return {
+      valid: false,
+      reason: `issuerDid does not match issuerPublicKey: ${binding.reason}`,
+    };
   }
 
   return { valid: true };

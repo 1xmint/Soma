@@ -12,7 +12,7 @@ Agent identity verification through computational phenotyping. Two packages: `so
 
 ```bash
 pnpm install         # Install dependencies
-pnpm test            # Run all 922 tests
+pnpm test            # Run all 935 tests
 pnpm build           # Compile to dist/
 ```
 
@@ -68,7 +68,7 @@ An agent verifying itself is meaningless. The observer MUST do the sensing on th
 | Security attacks detected | **8/8** |
 | HMAC overhead per token | **3.4–5.4 microseconds** |
 | Security attack harness | **15 composed attacks, 76 tests** |
-| Tests passing | **922** |
+| Tests passing | **935** |
 
 ## Code Style
 

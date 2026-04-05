@@ -72,6 +72,14 @@ export interface DidMethod {
    * uniformity — sync methods just return `Promise.resolve(doc)`.
    */
   resolve(did: string): Promise<DidDocument>;
+  /**
+   * Optional: resolve synchronously. Methods that can answer without I/O
+   * (did:key, did:pkh with a sync keyBinder) implement this. Methods that
+   * require HTTP (did:web) omit it or return null. Callers that need sync
+   * verification (most soma-heart verifiers are sync) can use this path
+   * while multi-method-aware code uses `resolve()`.
+   */
+  resolveSync?(did: string): DidDocument | null;
 }
 
 /** A DID method that can mint new identifiers from a public key. */
@@ -125,6 +133,22 @@ export class DidMethodRegistry {
     return this.forDid(did).resolve(did);
   }
 
+  /**
+   * Sync-only resolution. Returns null if no matching method is registered
+   * OR if the matching method does not support sync resolution (e.g. did:web
+   * requires HTTP). Callers must handle null by falling back to `resolve()`
+   * or rejecting the identity.
+   */
+  resolveSync(did: string): DidDocument | null {
+    try {
+      const method = this.forDid(did);
+      if (typeof method.resolveSync !== 'function') return null;
+      return method.resolveSync(did);
+    } catch {
+      return null;
+    }
+  }
+
   list(): string[] {
     return Array.from(this.methods.keys()).sort();
   }
@@ -156,19 +180,30 @@ export class DidKeyMethod implements MintableDidMethod {
     return publicKeyToDid(publicKey, this.provider);
   }
 
+  resolveSync(did: string): DidDocument | null {
+    if (!this.matches(did)) return null;
+    try {
+      const publicKey = didToPublicKey(did, this.provider);
+      return {
+        did,
+        verificationKeys: [
+          {
+            publicKey,
+            algorithmId: this.provider.signing.algorithmId,
+            purpose: 'authentication',
+            keyId: '#key-1',
+          },
+        ],
+      };
+    } catch {
+      return null;
+    }
+  }
+
   async resolve(did: string): Promise<DidDocument> {
-    const publicKey = didToPublicKey(did, this.provider);
-    return {
-      did,
-      verificationKeys: [
-        {
-          publicKey,
-          algorithmId: this.provider.signing.algorithmId,
-          purpose: 'authentication',
-          keyId: '#key-1',
-        },
-      ],
-    };
+    const doc = this.resolveSync(did);
+    if (!doc) throw new Error(`could not resolve did:key: ${did}`);
+    return doc;
   }
 }
 
@@ -322,8 +357,14 @@ export class DidPkhMethod implements DidMethod {
     return `did:pkh:${id.chainNamespace}:${id.chainReference}:${id.account}`;
   }
 
-  async resolve(did: string): Promise<DidDocument> {
-    const id = DidPkhMethod.parse(did);
+  resolveSync(did: string): DidDocument | null {
+    if (!this.matches(did)) return null;
+    let id: PkhIdentifier;
+    try {
+      id = DidPkhMethod.parse(did);
+    } catch {
+      return null;
+    }
     const keys = this.keyBinder ? this.keyBinder(id) : [];
     return {
       did,
@@ -334,6 +375,12 @@ export class DidPkhMethod implements DidMethod {
         account: id.account,
       },
     };
+  }
+
+  async resolve(did: string): Promise<DidDocument> {
+    const doc = this.resolveSync(did);
+    if (!doc) throw new Error(`could not resolve did:pkh: ${did}`);
+    return doc;
   }
 }
 
@@ -349,6 +396,82 @@ export function createDefaultDidRegistry(
   const registry = new DidMethodRegistry();
   registry.register(new DidKeyMethod(provider));
   return registry;
+}
+
+// ─── Helper: sync DID ↔ public-key binding check ───────────────────────────
+
+/**
+ * Decide whether `publicKey` is bound to `did` under the given registry.
+ *
+ * This is the workhorse binding check for every sync verifier in soma-heart
+ * (delegations, revocations, sessions, spend receipts, etc.). The caller
+ * passes in:
+ *   - the DID the credential claims
+ *   - the raw public-key bytes that actually signed the credential
+ *   - optionally a registry of trusted DID methods
+ *
+ * Behaviour:
+ *   - If a registry is supplied AND one of its methods can resolve the DID
+ *     synchronously, the check is "is `publicKey` present among the DID's
+ *     verification keys?" (byte-equality, timing-safe).
+ *   - If no registry is supplied, OR the matching method has no
+ *     `resolveSync`, the function falls back to did:key semantics:
+ *     `publicKeyToDid(publicKey) === did`. This is the pre-retrofit
+ *     default — it keeps every existing caller working unchanged.
+ *
+ * Returns `{ bound: false, reason }` to communicate why, so callers can
+ * surface a sensible verification error.
+ */
+export function verifyDidBinding(
+  did: string,
+  publicKey: Uint8Array,
+  registry?: DidMethodRegistry,
+  provider?: CryptoProvider,
+): { bound: true; via: 'did-key-fallback' | 'registry' } | { bound: false; reason: string } {
+  const p = provider ?? getCryptoProvider();
+
+  // Registry path — only if caller supplied one AND it can sync-resolve.
+  if (registry) {
+    const doc = registry.resolveSync(did);
+    if (doc) {
+      for (const vk of doc.verificationKeys) {
+        if (
+          vk.publicKey.length === publicKey.length &&
+          timingEqual(vk.publicKey, publicKey)
+        ) {
+          return { bound: true, via: 'registry' };
+        }
+      }
+      return {
+        bound: false,
+        reason: `public key not in DID document for ${did}`,
+      };
+    }
+    // Registry didn't have a sync resolver for this DID — fall through.
+  }
+
+  // Default did:key path. If the DID isn't did:key this throws; treat that
+  // as "unresolvable" rather than leaking the exception.
+  try {
+    const derivedDid = publicKeyToDid(publicKey, p);
+    if (derivedDid === did) {
+      return { bound: true, via: 'did-key-fallback' };
+    }
+    return { bound: false, reason: 'publicKeyToDid(key) !== did (did:key)' };
+  } catch (err) {
+    return {
+      bound: false,
+      reason: `no sync resolver and did:key fallback failed: ${(err as Error).message}`,
+    };
+  }
+}
+
+/** Constant-time byte comparison for key bindings. */
+function timingEqual(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
+  return diff === 0;
 }
 
 // ─── Helper: verify signature via DID resolution ────────────────────────────

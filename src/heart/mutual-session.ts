@@ -34,7 +34,11 @@ import {
   getCryptoProvider,
   type CryptoProvider,
 } from '../core/crypto-provider.js';
-import { didToPublicKey, publicKeyToDid } from '../core/genome.js';
+import { publicKeyToDid } from '../core/genome.js';
+import {
+  verifyDidBinding,
+  type DidMethodRegistry,
+} from '../core/did-method.js';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -239,6 +243,11 @@ export function verifyMutualSession(opts: {
   /** Maximum age allowed for the handshake (ms). Optional. */
   maxAgeMs?: number;
   provider?: CryptoProvider;
+  /**
+   * Optional DID method registry for non-did:key identities (did:web, did:pkh).
+   * When absent, falls back to did:key binding semantics.
+   */
+  registry?: DidMethodRegistry;
 }): SessionVerification {
   const p = opts.provider ?? getCryptoProvider();
   const now = opts.now ?? Date.now();
@@ -282,33 +291,28 @@ export function verifyMutualSession(opts: {
   } catch {
     return { valid: false, reason: 'malformed public key' };
   }
-  if (publicKeyToDid(initiatorPubBytes, p) !== opts.init.initiatorDid) {
-    return { valid: false, reason: 'initiatorDid does not match initiatorPublicKey' };
-  }
-  if (publicKeyToDid(responderPubBytes, p) !== opts.accept.responderDid) {
-    return { valid: false, reason: 'responderDid does not match responderPublicKey' };
-  }
-
-  // 6. Independently derive DID via didToPublicKey to confirm the stored DID
-  //    resolves to the same bytes (catches DID-method-level forgeries).
-  try {
-    const derivedInitiator = didToPublicKey(opts.init.initiatorDid, p);
-    if (
-      p.encoding.encodeBase64(derivedInitiator) !== opts.init.initiatorPublicKey
-    ) {
-      return { valid: false, reason: 'initiator DID/key binding mismatch' };
-    }
-    const derivedResponder = didToPublicKey(opts.accept.responderDid, p);
-    if (
-      p.encoding.encodeBase64(derivedResponder) !==
-      opts.accept.responderPublicKey
-    ) {
-      return { valid: false, reason: 'responder DID/key binding mismatch' };
-    }
-  } catch (err) {
+  const initBinding = verifyDidBinding(
+    opts.init.initiatorDid,
+    initiatorPubBytes,
+    opts.registry,
+    p,
+  );
+  if (!initBinding.bound) {
     return {
       valid: false,
-      reason: `DID resolution failed: ${(err as Error).message}`,
+      reason: `initiatorDid does not match initiatorPublicKey: ${initBinding.reason}`,
+    };
+  }
+  const respBinding = verifyDidBinding(
+    opts.accept.responderDid,
+    responderPubBytes,
+    opts.registry,
+    p,
+  );
+  if (!respBinding.bound) {
+    return {
+      valid: false,
+      reason: `responderDid does not match responderPublicKey: ${respBinding.reason}`,
     };
   }
 

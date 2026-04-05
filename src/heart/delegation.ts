@@ -25,6 +25,10 @@ import {
   type CryptoProvider,
 } from '../core/crypto-provider.js';
 import { publicKeyToDid } from '../core/genome.js';
+import {
+  verifyDidBinding,
+  type DidMethodRegistry,
+} from '../core/did-method.js';
 
 // ─── Caveat Types ───────────────────────────────────────────────────────────
 
@@ -172,6 +176,7 @@ export type DelegationVerification =
 export function verifyDelegationSignature(
   del: Delegation,
   provider?: CryptoProvider,
+  registry?: DidMethodRegistry,
 ): DelegationVerification {
   const p = provider ?? getCryptoProvider();
   const { signature, ...payload } = del;
@@ -183,9 +188,12 @@ export function verifyDelegationSignature(
     return { valid: false, reason: 'invalid signature' };
   }
 
-  const expectedIssuerDid = publicKeyToDid(issuerPubKey, p);
-  if (del.issuerDid !== expectedIssuerDid) {
-    return { valid: false, reason: 'issuerDid does not match issuerPublicKey' };
+  const binding = verifyDidBinding(del.issuerDid, issuerPubKey, registry, p);
+  if (!binding.bound) {
+    return {
+      valid: false,
+      reason: `issuerDid does not match issuerPublicKey: ${binding.reason}`,
+    };
   }
 
   return { valid: true };
@@ -274,8 +282,9 @@ export function verifyDelegation(
   del: Delegation,
   ctx: InvocationContext,
   provider?: CryptoProvider,
+  registry?: DidMethodRegistry,
 ): DelegationVerification {
-  const sigCheck = verifyDelegationSignature(del, provider);
+  const sigCheck = verifyDelegationSignature(del, provider, registry);
   if (!sigCheck.valid) return sigCheck;
 
   if (del.subjectDid !== ctx.invokerDid) {
