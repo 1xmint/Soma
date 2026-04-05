@@ -91,6 +91,15 @@ export {
   type RevocationVerification,
 } from "./revocation.js";
 
+// ─── Revocation Log (append-only, tamper-evident chain) ─────────────────────
+
+export {
+  RevocationLog,
+  type RevocationLogEntry,
+  type LogHead,
+  type LogVerification,
+} from "./revocation-log.js";
+
 // ─── Persistence (encrypt heart state to disk) ──────────────────────────────
 
 export {

@@ -81,7 +81,7 @@ An agent verifying itself is meaningless. The observer MUST do the sensing on th
 | Cloud classification (11 agents) | **93.2%** |
 | Security attacks detected | **8/8** |
 | HMAC overhead per token | **3.4–5.4 microseconds** |
-| Tests passing | **436** |
+| Tests passing | **451** |
 
 ## Code Style
 
@@ -97,6 +97,7 @@ Heart-to-heart trust lets agents fork, delegate, and revoke:
 - `heart.fork({ systemPrompt, toolManifest, capabilities, ttl, budgetCredits })` — spawns a child keypair + genome + signed lineage cert. Child can call `createSomaHeart({ ..., lineage })` and have its capabilities enforced.
 - `heart.delegate({ subjectDid, capabilities, caveats })` — macaroons-style grants with `expires-at`, `not-before`, `audience`, `budget`, `max-invocations`, `capabilities`, `custom` caveats. `attenuateDelegation()` lets holders narrow further (never broaden).
 - `heart.revoke({ targetId, targetKind, reason })` — signed revocation events. Registry supports import/export for feed distribution.
+- `RevocationLog` — append-only, hash-chained sequence of revocations. Detects drops/reorders/tampering within a log; `signHead()` produces a signed commitment to the current head for cross-operator accountability.
 - `heart.serialize(password)` / `loadSomaHeart(blob, password)` — scrypt (N=2^17, r=8, p=1, ~128MB memory-hard) + XSalsa20-Poly1305. Legacy PBKDF2 blobs still decrypt. Preserves keypair, credentials, heartbeat chain, revocations, lineage. Sessions are NOT persisted (ephemeral by design).
 - `issueChallenge()` / `proveChallenge()` / `verifyProof()` — proof-of-possession for delegations: holder signs `soma-pop:{nonce}:{delegationId}` with their key, verifier checks against `subjectDid`. Prevents stolen-token reuse.
 
