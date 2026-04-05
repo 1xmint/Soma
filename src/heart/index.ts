@@ -226,6 +226,17 @@ export {
   type MeasurementPolicy,
 } from "./remote-attestation.js";
 
+// ─── Signing Backends (HSM / hardware wallet hooks) ─────────────────────────
+
+export {
+  InProcessBackend,
+  DelegatedBackend,
+  BackendRegistry,
+  handleToDid,
+  type SigningKeyHandle,
+  type SigningBackend,
+} from "./signing-backend.js";
+
 // ─── Persistence (encrypt heart state to disk) ──────────────────────────────
 
 export {

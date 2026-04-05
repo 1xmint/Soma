@@ -266,6 +266,35 @@ custom). `MeasurementPolicy` enforces per-platform allowlists so
 arbitrary quotes don't pass. `NoopVerifier` for dev, `MockTeeVerifier`
 for tests. Source: `src/heart/remote-attestation.ts`.
 
+### Signing Backends — HSM / hardware wallet hooks
+```ts
+const inproc = new InProcessBackend();
+const handle = inproc.generateKey({ keyId: "alice-v1" });
+await inproc.sign(handle, message);
+
+const hsm = new DelegatedBackend({
+  backendId: "yubihsm",
+  sign: async (h, m) => yubihsmCli.sign(h.keyId, m),
+  handles: [{ publicKey, backendId: "yubihsm", keyId: "slot-0" }],
+});
+const registry = new BackendRegistry();
+registry.register(inproc);
+registry.register(hsm);
+await registry.sign(anyHandle, msg); // routes by handle.backendId
+```
+Pluggable where the *secret key lives*. `SigningKeyHandle` is an opaque
+reference `{publicKey, backendId, keyId}` — callers pass the handle, the
+backend signs. `InProcessBackend` holds raw Uint8Array keys (matches current
+default behavior). `DelegatedBackend` wraps an arbitrary async signer
+(YubiHSM, AWS KMS, Ledger, Apple SEP, TPM, Fireblocks) — the escape hatch
+for hardware-backed keys that never leave the device. Paranoid check:
+delegate's returned signature is verified against the advertised public key
+before being handed back. `BackendRegistry` routes by `handle.backendId` so
+call sites sign without a per-backend switch. Both paths produce standard
+Ed25519 signatures verified the same way — existing `verifyRevocation`,
+`verifyAttestation`, etc. accept them unmodified. Source:
+`src/heart/signing-backend.ts`.
+
 ## Supply-Chain Attestation
 
 ### ReleaseLog — signed, hash-chained package releases
