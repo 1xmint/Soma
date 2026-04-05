@@ -200,6 +200,17 @@ export {
   type SplitOptions,
 } from "./key-escrow.js";
 
+// ─── VRF (verifiable random function) ───────────────────────────────────────
+
+export {
+  evaluateVrf,
+  verifyVrf,
+  outputToInt,
+  combineBeacon,
+  type VrfOutput,
+  type VrfVerification,
+} from "./vrf.js";
+
 // ─── Persistence (encrypt heart state to disk) ──────────────────────────────
 
 export {

@@ -229,6 +229,21 @@ share holder can poison reconstruction, so callers should verify the
 reconstructed secret out-of-band (e.g. checking it signs correctly).
 Source: `src/heart/key-escrow.ts`.
 
+### VRF — verifiable random function
+```ts
+const vrf = evaluateVrf({ input, signingKey, publicKey });
+verifyVrf(input, vrf);                   // anyone with pk can verify
+outputToInt(outputBytes, bound);         // unbiased int in [0, bound)
+combineBeacon(vrfs);                     // aggregate into random beacon
+```
+Deterministic, unforgeable, publicly verifiable randomness. For a given
+(sk, input), output is fixed — but unpredictable without sk. Proof is a
+deterministic Ed25519 signature over a domain-separated input; output is
+SHA-256 of the proof. Use for leader election (lowest output wins), random
+beacons (combine multiple parties' outputs), or lottery/assignment. Not
+RFC 9381 — simpler construction, same security properties for this use.
+Source: `src/heart/vrf.ts`.
+
 ## Supply-Chain Attestation
 
 ### ReleaseLog — signed, hash-chained package releases
