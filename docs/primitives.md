@@ -57,6 +57,24 @@ rotate to their own key — they'd need the pre-image of a hash they can't
 invert. Identity (`did:key` of inception key) stays stable across rotations.
 Closes audit limit #6. Source: `src/heart/key-rotation.ts`.
 
+### GossipPeer — bounded revocation propagation
+```ts
+const transport = new InMemoryTransport();
+const peer = new GossipPeer({ transport, log, operatorSigningKey, operatorPublicKey });
+peer.start();
+await peer.publishRevocation(entry);
+await peer.publishHead();
+peer.isStale(60_000);               // fail-closed if no sync in window
+peer.getDivergenceReport();          // fork evidence from same authority
+```
+Pluggable pub/sub for `RevocationLog` entries + signed heads.
+`InMemoryTransport` is the reference; operators plug libp2p/NATS/Redis
+behind the same interface. Every message refreshes `lastSyncAt` —
+validators use `isStale()` to refuse credentials when the peer can't
+reach the network. Two conflicting signed heads from the same authority
+produce a `DivergenceReport` (fork proof). Closes audit limit #1.
+Source: `src/heart/gossip.ts`.
+
 ### TimeWitness / TimeSource — anchored timestamps
 ```ts
 const mono = new MonotonicTimeSource();          // refuses to go backwards

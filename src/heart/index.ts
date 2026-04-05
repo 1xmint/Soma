@@ -137,6 +137,17 @@ export {
   type QuorumVerification,
 } from "./time-oracle.js";
 
+// ─── Gossip (bounded revocation propagation) ────────────────────────────────
+
+export {
+  InMemoryTransport,
+  GossipPeer,
+  type GossipTransport,
+  type GossipMessage,
+  type GossipPeerOptions,
+  type DivergenceReport,
+} from "./gossip.js";
+
 // ─── Persistence (encrypt heart state to disk) ──────────────────────────────
 
 export {
