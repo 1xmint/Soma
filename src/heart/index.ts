@@ -237,6 +237,23 @@ export {
   type SigningBackend,
 } from "./signing-backend.js";
 
+// ─── Hybrid Signing (crypto-agility for PQ migration) ───────────────────────
+
+export {
+  AlgorithmRegistry,
+  generateHybridKeyPair,
+  hybridSign,
+  verifyHybridSignature,
+  hybridPublicKeys,
+  hybridFingerprint,
+  type AlgorithmKeyPair,
+  type HybridKeyPair,
+  type AlgorithmSignature,
+  type HybridSignature,
+  type VerificationPolicy,
+  type HybridVerification,
+} from "./hybrid-signing.js";
+
 // ─── Persistence (encrypt heart state to disk) ──────────────────────────────
 
 export {

@@ -266,6 +266,34 @@ custom). `MeasurementPolicy` enforces per-platform allowlists so
 arbitrary quotes don't pass. `NoopVerifier` for dev, `MockTeeVerifier`
 for tests. Source: `src/heart/remote-attestation.ts`.
 
+### Hybrid Signing — crypto-agility for PQ migration
+```ts
+const registry = new AlgorithmRegistry();
+registry.register(ed25519Provider);
+registry.register(mlDsaProvider);            // future: real ML-DSA
+
+const kp = generateHybridKeyPair(["ed25519", "ml-dsa-65"], registry);
+const sig = hybridSign(kp, message, registry);
+verifyHybridSignature(sig, message, registry, { type: "require-all" });
+verifyHybridSignature(sig, message, registry, {
+  type: "prefer-pq", pqAlgorithms: ["ml-dsa-65"], minPq: 1,
+});
+hybridFingerprint(hybridPublicKeys(kp));     // stable identity for the pair
+```
+Composite signature envelope for post-quantum migration. NIST's PQ
+transition means signing with BOTH classical and PQ algorithms for a
+long overlap period — this module is the on-the-wire format that makes
+that practical. Each per-algorithm signature is bound to the FULL public
+key set (algorithm IDs + base64 pks) via a canonical JSON payload, so
+cross-algorithm key substitution is detected. Verification policies:
+`require-all` (every advertised algo), `require-any` (≥1), `require-
+algorithms` (specific set), `prefer-pq` (≥N PQ algos). Unknown algorithms
+at verify time are treated as failures rather than crashes — forward-
+compat with signers that add new PQ algos later. This module ships the
+envelope and registry; actual PQ `SigningProvider` implementations are
+delivered by dedicated packages (the default registry includes only
+Ed25519). Closes audit limit #9. Source: `src/heart/hybrid-signing.ts`.
+
 ### Signing Backends — HSM / hardware wallet hooks
 ```ts
 const inproc = new InProcessBackend();
