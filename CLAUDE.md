@@ -84,3 +84,4 @@ An agent verifying itself is meaningless. The observer MUST do the sensing on th
 - `docs/roadmap.md` — Phase 3 community network, multi-agent future
 - `docs/design/` — design specs for upcoming primitives
 - `SOMA-CHECK-SPEC.md` — Soma Check v1.0 protocol spec
+- `SOMA-CAPABILITIES-SPEC.md` — Delegation/caveats protocol spec
