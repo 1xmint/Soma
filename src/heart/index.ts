@@ -177,6 +177,18 @@ export {
   type ScoreConfig,
 } from "./attestation.js";
 
+// ─── Selective Disclosure (reveal only specific claim fields) ──────────────
+
+export {
+  createDisclosableDocument,
+  verifyDisclosableDocument,
+  createDisclosureProof,
+  verifyDisclosureProof,
+  type DisclosableDocument,
+  type DisclosureProof,
+  type DisclosureVerification,
+} from "./selective-disclosure.js";
+
 // ─── Persistence (encrypt heart state to disk) ──────────────────────────────
 
 export {

@@ -193,6 +193,24 @@ trusted-issuer filtering. Deliberately passive — apps inject attestations
 from whatever source they trust (ERC-8004, off-chain claims, SBTs).
 Source: `src/heart/attestation.ts`.
 
+### Selective Disclosure — reveal only specific claim fields
+```ts
+const doc = createDisclosableDocument({
+  issuerDid, issuerPublicKey, issuerSigningKey, subjectDid,
+  claims: { name, dob, country, tier: 3, kycVerified: true },
+});
+// Subject reveals only the fields the verifier needs.
+const proof = createDisclosureProof(doc, ["tier", "kycVerified"]);
+verifyDisclosureProof(proof, { requiredFields: ["tier"] });
+```
+Per-field salted commitments + issuer signature over the root. Holder
+presents `(disclosed values + salts) + (commitment hashes for withheld
+fields)`; verifier recomputes the root and checks the signature. Hides
+withheld fields (32-byte random salts make commitments unlinkable across
+documents) while proving the issuer signed the exact claim set. Field
+name is bound into each commitment — swapping field names fails
+verification. Source: `src/heart/selective-disclosure.ts`.
+
 ## Supply-Chain Attestation
 
 ### ReleaseLog — signed, hash-chained package releases
