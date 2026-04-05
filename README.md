@@ -167,6 +167,8 @@ const heart = loadSomaHeart(fs.readFileSync("./heart.enc", "utf8"), "correct-hor
 
 Under the hood: lineage certs are signed Ed25519 blobs with parent→child binding. Delegations carry caveats verified at invocation. Revocations are signed, broadcastable events. Persistence uses PBKDF2-SHA256 (210k iterations) + XSalsa20-Poly1305.
 
+**Wire-level spec:** [SOMA-DELEGATION-SPEC.md](SOMA-DELEGATION-SPEC.md) (v0.1) formalizes how these library primitives are expressed over HTTP — `X-Soma-Delegation-*` headers, depth limits, scope narrowing, spend + branch caps, cascade revoke, intent declaration. The first standard with **spend-bounded delegation + cascade revoke + intent declaration** as first-class primitives.
+
 ## Soma Check — Conditional Payment Protocol
 
 The first conditional payment protocol for APIs. Agents check a content hash before paying — if data hasn't changed, they pay nothing. Built on the birth-certificate `dataHash`, so the primitive that proves *provenance* also drives *change detection*. No other payment protocol (x402, ACP, AP2, L402) has this.
