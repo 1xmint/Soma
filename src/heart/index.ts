@@ -148,6 +148,20 @@ export {
   type DivergenceReport,
 } from "./gossip.js";
 
+// ─── Identity Attestations (sybil resistance) ───────────────────────────────
+
+export {
+  createAttestation,
+  verifyAttestation,
+  AttestationRegistry,
+  type IdentityAttestation,
+  type AttestationType,
+  type AttestationVerification,
+  type IdentityTier,
+  type ReputationScore,
+  type ScoreConfig,
+} from "./attestation.js";
+
 // ─── Persistence (encrypt heart state to disk) ──────────────────────────────
 
 export {

@@ -153,6 +153,29 @@ verifiers can see *every strike*, not just inputs/outputs:
 All events use ~1μs SHA-256 per record — free at LLM timescale. Detail strings
 are always hashed before being written to the chain.
 
+### AttestationRegistry — sybil resistance primitives
+```ts
+const at = createAttestation({
+  subjectDid, issuerDid, issuerPublicKey, issuerSigningKey,
+  attestationType: "kyc-verified", weight: 80,
+  expiresAt: Date.now() + 365 * 24 * 3600 * 1000,
+});
+const reg = new AttestationRegistry();
+reg.add(at);
+reg.getTier(subjectDid);   // "anonymous" | "attested" | "staked" | "verified"
+reg.getScore(subjectDid);  // 0-100 with freshness decay + type multipliers
+reg.revoke(at.id);
+```
+Signed claims by issuers about subjects — raw material for apps to build
+sybil defense on top of free-to-mint `did:key` identities. Attestation types
+carry different weight multipliers (peer-vouched=0.5, kyc-verified=2.5,
+stake-bonded=2.0, etc.). Scoring applies freshness decay (half-life 180 days
+by default), normalized + capped at 100. `getTier()` maps attestation
+presence to a qualitative tier. Registry supports revocation, expiry, and
+trusted-issuer filtering. Deliberately passive — apps inject attestations
+from whatever source they trust (ERC-8004, off-chain claims, SBTs).
+Source: `src/heart/attestation.ts`.
+
 ## Supply-Chain Attestation
 
 ### ReleaseLog — signed, hash-chained package releases
