@@ -266,6 +266,27 @@ custom). `MeasurementPolicy` enforces per-platform allowlists so
 arbitrary quotes don't pass. `NoopVerifier` for dev, `MockTeeVerifier`
 for tests. Source: `src/heart/remote-attestation.ts`.
 
+### DID Method Flexibility — pluggable identifier schemes
+```ts
+const registry = createDefaultDidRegistry();  // pre-registered did:key
+registry.register(new DidWebMethod(fetcher));
+registry.register(new DidPkhMethod(keyBinder));
+const doc = await registry.resolve("did:web:example.com");
+await verifySignatureViaDid(did, message, signature, registry);
+```
+Soma defaults to `did:key` (identifier IS the key). This module adds a
+narrow `DidMethod` interface so operators can plug in `did:web` (domain-
+controlled keys via `.well-known/did.json`), `did:pkh` (blockchain
+accounts, CAIP-10 format), or custom in-house methods. Built-ins:
+`DidKeyMethod` (sync, self-resolving), `DidWebMethod` (pluggable HTTPS
+fetcher — tests inject stubs, prod uses real fetch), `DidPkhMethod`
+(parse/format + optional `keyBinder` callback since blockchain addresses
+aren't public keys). `DidMethodRegistry` dispatches by prefix match.
+Existing `publicKeyToDid`/`didToPublicKey` call sites keep working
+unchanged — this module is purely additive. `verifySignatureViaDid()`
+resolves a DID and tries each verification key until one matches.
+Source: `src/core/did-method.ts`.
+
 ### Hybrid Signing — crypto-agility for PQ migration
 ```ts
 const registry = new AlgorithmRegistry();
