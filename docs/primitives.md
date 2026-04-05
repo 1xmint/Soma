@@ -211,6 +211,24 @@ documents) while proving the issuer signed the exact claim set. Field
 name is bound into each commitment — swapping field names fails
 verification. Source: `src/heart/selective-disclosure.ts`.
 
+### Key Escrow — Shamir's Secret Sharing (M-of-N recovery)
+```ts
+const shares = splitSecret(signingKey, {
+  threshold: 3, totalShares: 5, secretId: "heart-alice-v1",
+});
+// Distribute shares to 5 trustees. 3 must cooperate to reconstruct.
+const recovered = reconstructSecret([shares[0], shares[2], shares[4]]);
+verifyShares(subset, expected);               // post-split sanity check
+verifyAllSubsetsReconstruct(shares, secret);  // exhaustive check
+```
+Shamir SSS over GF(256) with Rijndael's polynomial (same field as AES).
+Any K-1 shares reveal ZERO bits about the secret (information-theoretic).
+Shares carry a `secretId` so shares from different secrets can't be mixed.
+Threshold must be 2..255, totalShares ≤ 255. No integrity — a byzantine
+share holder can poison reconstruction, so callers should verify the
+reconstructed secret out-of-band (e.g. checking it signs correctly).
+Source: `src/heart/key-escrow.ts`.
+
 ## Supply-Chain Attestation
 
 ### ReleaseLog — signed, hash-chained package releases

@@ -189,6 +189,17 @@ export {
   type DisclosureVerification,
 } from "./selective-disclosure.js";
 
+// ─── Key Escrow (Shamir's Secret Sharing) ───────────────────────────────────
+
+export {
+  splitSecret,
+  reconstructSecret,
+  verifyShares,
+  verifyAllSubsetsReconstruct,
+  type SecretShare,
+  type SplitOptions,
+} from "./key-escrow.js";
+
 // ─── Persistence (encrypt heart state to disk) ──────────────────────────────
 
 export {
