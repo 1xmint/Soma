@@ -153,6 +153,25 @@ verifiers can see *every strike*, not just inputs/outputs:
 All events use ~1μs SHA-256 per record — free at LLM timescale. Detail strings
 are always hashed before being written to the chain.
 
+## Supply-Chain Attestation
+
+### ReleaseLog — signed, hash-chained package releases
+```ts
+const log = new ReleaseLog({ package: "soma-heart" });
+log.append({ version, tarballSha256, gitCommit, maintainerSigningKey, maintainerPublicKey });
+const head = log.signHead(maintainerSigningKey, maintainerPublicKey);
+verifyInstalledPackage({
+  releaseLog, packageName, version, installedTarballSha256, trustedMaintainers,
+});
+detectReleaseFork(headA, headB);
+```
+Ties each npm tarball to a signed entry: package + version + tarball
+SHA-256 + git commit + maintainer DID. Users verify installs against the
+log: mismatched hash = tampering. Trust set enforces "only accept from
+known maintainers." Two conflicting heads from the same maintainer at the
+same sequence = fork proof (npm account compromise or malicious rewrite).
+Closes audit limit #10. Source: `src/supply-chain/release-log.ts`.
+
 ## Soma Check Protocol (soma-check/1.0)
 
 First conditional payment protocol for APIs. Reuses birth-cert `dataHash` as

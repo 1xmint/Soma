@@ -12,7 +12,7 @@ Agent identity verification through computational phenotyping. Two packages: `so
 
 ```bash
 pnpm install         # Install dependencies
-pnpm test            # Run all 536 tests
+pnpm test            # Run all 567 tests
 pnpm build           # Compile to dist/
 ```
 
@@ -33,12 +33,13 @@ pnpm build           # Compile to dist/
 
 ```
 src/
-├── core/         Crypto foundations (genome, channel, crypto-provider, soma-check)
-├── heart/        Execution runtime + multi-agent primitives
-├── sensorium/    Model verification (observer side)
-├── mcp/          MCP transport wrapper, session management
-└── experiment/   Runner, providers, security attacks
-tests/            451 tests across 35 files
+├── core/          Crypto foundations (genome, channel, crypto-provider, soma-check)
+├── heart/         Execution runtime + multi-agent primitives
+├── sensorium/     Model verification (observer side)
+├── mcp/           MCP transport wrapper, session management
+├── supply-chain/  Signed release log (install-time verification)
+└── experiment/    Runner, providers, security attacks
+tests/             567 tests across 40 files
 ```
 
 ## Two-Package Split (CRITICAL)
@@ -66,7 +67,7 @@ An agent verifying itself is meaningless. The observer MUST do the sensing on th
 | Cloud classification (11 agents) | **93.2%** |
 | Security attacks detected | **8/8** |
 | HMAC overhead per token | **3.4–5.4 microseconds** |
-| Tests passing | **536** |
+| Tests passing | **567** |
 
 ## Code Style
 
