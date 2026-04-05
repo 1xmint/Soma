@@ -211,6 +211,21 @@ export {
   type VrfVerification,
 } from "./vrf.js";
 
+// ─── Remote Attestation (TEE hooks) ─────────────────────────────────────────
+
+export {
+  createAttestationDocument,
+  verifyAttestationDocument,
+  NoopVerifier,
+  MockTeeVerifier,
+  type AttestationDocument,
+  type TeePlatform,
+  type QuoteVerification,
+  type RemoteAttestationVerifier,
+  type AttestationVerification as RemoteAttestationVerification,
+  type MeasurementPolicy,
+} from "./remote-attestation.js";
+
 // ─── Persistence (encrypt heart state to disk) ──────────────────────────────
 
 export {

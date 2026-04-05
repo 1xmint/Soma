@@ -244,6 +244,28 @@ beacons (combine multiple parties' outputs), or lottery/assignment. Not
 RFC 9381 — simpler construction, same security properties for this use.
 Source: `src/heart/vrf.ts`.
 
+### Remote Attestation — TEE hooks
+```ts
+const doc = createAttestationDocument({
+  platform: "intel-sgx", quote, measurements,
+  heartDid, heartPublicKey, heartSigningKey, nonceB64,
+});
+const verifier = new IntelSgxVerifier(...);   // platform-specific
+await verifyAttestationDocument(doc, {
+  verifiers: [verifier],
+  policies: [{ platform: "intel-sgx", allow: { mrenclave: [...] } }],
+  expectedNonce,
+});
+```
+Binds a heart's identity to a TEE quote ("this key is held by code
+measurement M running on genuine hardware"). Portable envelope is signed
+by the heart over {quote, measurements, heartPublicKey, nonce, expiry}.
+Pluggable `RemoteAttestationVerifier` interface per platform
+(intel-sgx, intel-tdx, amd-sev-snp, aws-nitro, apple-sep, azure-cvm,
+custom). `MeasurementPolicy` enforces per-platform allowlists so
+arbitrary quotes don't pass. `NoopVerifier` for dev, `MockTeeVerifier`
+for tests. Source: `src/heart/remote-attestation.ts`.
+
 ## Supply-Chain Attestation
 
 ### ReleaseLog — signed, hash-chained package releases
