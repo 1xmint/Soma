@@ -123,6 +123,20 @@ export {
   type KeyHistoryVerification,
 } from "./key-rotation.js";
 
+// ─── Time Oracle (signed time witnesses + monotonic clocks) ─────────────────
+
+export {
+  SystemTimeSource,
+  MonotonicTimeSource,
+  issueTimeWitness,
+  verifyTimeWitness,
+  verifyWitnessQuorum,
+  type TimeSource,
+  type TimeWitness,
+  type WitnessVerification,
+  type QuorumVerification,
+} from "./time-oracle.js";
+
 // ─── Persistence (encrypt heart state to disk) ──────────────────────────────
 
 export {

@@ -57,6 +57,20 @@ rotate to their own key — they'd need the pre-image of a hash they can't
 invert. Identity (`did:key` of inception key) stays stable across rotations.
 Closes audit limit #6. Source: `src/heart/key-rotation.ts`.
 
+### TimeWitness / TimeSource — anchored timestamps
+```ts
+const mono = new MonotonicTimeSource();          // refuses to go backwards
+const w = issueTimeWitness({ authoritySecretKey, authorityPublicKey, nonce });
+verifyTimeWitness(w, { maxAgeMs: 60_000, expectedNonce });
+verifyWitnessQuorum(witnesses, { threshold: 2, trustedAuthorities, maxDriftMs });
+```
+`MonotonicTimeSource` guards against local clock adjustments within a
+process lifetime. `TimeWitness` is a signed statement by a trusted
+authority that "at this moment, wall time was T" — operations needing
+bounded freshness embed one (or a quorum from N independent authorities).
+Verifier checks signature + freshness window + optional nonce + drift
+across witnesses. Closes audit limit #4. Source: `src/heart/time-oracle.ts`.
+
 ### SpendLog — cryptographic backing for budget caveats
 ```ts
 const log = new SpendLog({ delegationId, subjectSigningKey, subjectPublicKey });
