@@ -237,6 +237,20 @@ export {
   type SigningBackend,
 } from "./signing-backend.js";
 
+// ─── Threshold Signing (M-of-N Ed25519 via share reconstruction) ───────────
+
+export {
+  generateThresholdKeyPair,
+  shareExistingKey,
+  thresholdSign,
+  verifyThresholdSignature,
+  SigningCeremony,
+  type ThresholdKeyPair,
+  type ThresholdSignature,
+  type GenerateThresholdKeyOpts,
+  type ShareExistingKeyOpts,
+} from "./threshold-signing.js";
+
 // ─── Hybrid Signing (crypto-agility for PQ migration) ───────────────────────
 
 export {

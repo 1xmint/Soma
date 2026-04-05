@@ -266,6 +266,36 @@ custom). `MeasurementPolicy` enforces per-platform allowlists so
 arbitrary quotes don't pass. `NoopVerifier` for dev, `MockTeeVerifier`
 for tests. Source: `src/heart/remote-attestation.ts`.
 
+### Threshold Signing — M-of-N Ed25519
+```ts
+const tk = generateThresholdKeyPair({ threshold: 3, totalShares: 5, keyId: "heart-v1" });
+// Distribute tk.shares to 5 custodians. 3 must cooperate to sign.
+const sig = thresholdSign([s1, s2, s3], message, {
+  publicKey: tk.publicKey, threshold: 3, keyId: "heart-v1",
+});
+verifyThresholdSignature(message, sig, tk.publicKey);  // standard Ed25519
+
+const ceremony = new SigningCeremony(message, { publicKey, threshold, keyId });
+ceremony.contribute(s1); ceremony.contribute(s2); ceremony.contribute(s3);
+const sig = ceremony.sign();
+```
+M-of-N Ed25519 via Shamir share reconstruction (over GF(256), reusing
+key-escrow). Signing reconstructs the secret, signs, then scrubs. The
+resulting signature is a STANDARD Ed25519 signature — any Ed25519
+verifier (incl. existing `verifyRevocation`, `verifyAttestation`)
+accepts it without modification. `SigningCeremony` coordinates async
+contributions and produces the signature once threshold is reached.
+Shares are bound to a `keyId`, preventing mix-and-match across key sets.
+
+**Trust model (read carefully):** This is NOT FROST. FROST-Ed25519 (RFC
+9591) never reconstructs the secret; each party produces a partial
+signature in the signature space. That's strictly stronger. This scheme
+DOES reconstruct briefly during signing — the signing host must be
+trusted for the ceremony window (run it in a TEE/HSM-enclosed process).
+The API surface is FROST-compatible, so a future real FROST backend can
+slot in under the same `thresholdSign` signature. Closes audit limit
+related to custody. Source: `src/heart/threshold-signing.ts`.
+
 ### DID Method Flexibility — pluggable identifier schemes
 ```ts
 const registry = createDefaultDidRegistry();  // pre-registered did:key
