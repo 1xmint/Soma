@@ -59,6 +59,29 @@ export function publicKeyToDid(publicKey: Uint8Array, provider?: CryptoProvider)
   return `did:key:z${p.encoding.encodeBase64(multicodec)}`;
 }
 
+/**
+ * Decode a did:key identifier back to its public key bytes.
+ * Strips the multicodec prefix. Throws on malformed input or wrong prefix.
+ */
+export function didToPublicKey(did: string, provider?: CryptoProvider): Uint8Array {
+  const p = provider ?? getCryptoProvider();
+  if (!did.startsWith('did:key:z')) {
+    throw new Error(`invalid did:key format: ${did}`);
+  }
+  const encoded = did.slice('did:key:z'.length);
+  const multicodec = p.encoding.decodeBase64(encoded);
+  const prefix = p.signing.multicodecPrefix;
+  if (multicodec.length < prefix.length) {
+    throw new Error(`did:key too short: ${did}`);
+  }
+  for (let i = 0; i < prefix.length; i++) {
+    if (multicodec[i] !== prefix[i]) {
+      throw new Error(`did:key multicodec prefix mismatch: ${did}`);
+    }
+  }
+  return multicodec.slice(prefix.length);
+}
+
 // --- Core Operations ---
 
 /**

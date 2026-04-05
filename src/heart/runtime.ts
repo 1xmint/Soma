@@ -603,8 +603,13 @@ export class HeartRuntime {
   /**
    * Serialize this heart's state to an encrypted blob.
    * Sessions are NOT serialized — they are ephemeral by design.
+   *
+   * Uses scrypt (memory-hard) by default. Override tuning via `scrypt`.
    */
-  serialize(password: string): string {
+  serialize(
+    password: string,
+    opts?: { scrypt?: { N?: number; r?: number; p?: number } },
+  ): string {
     this.ensureAlive();
     const state: HeartState = {
       version: 1,
@@ -620,7 +625,10 @@ export class HeartRuntime {
       lineageRootDid: this._lineage?.rootDid,
       savedAt: Date.now(),
     };
-    return serializeHeart(state, password, { provider: this.provider });
+    return serializeHeart(state, password, {
+      provider: this.provider,
+      scrypt: opts?.scrypt,
+    });
   }
 
   // --- Session Management ---

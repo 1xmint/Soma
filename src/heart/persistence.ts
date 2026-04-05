@@ -7,14 +7,19 @@
  * operator save the heart at shutdown and reload it on boot — same DID, same
  * credentials, continuous heartbeat chain.
  *
- * State is protected with a password-derived key (PBKDF2-SHA256) and the
- * crypto provider's symmetric encryption (default: XSalsa20-Poly1305).
+ * State is protected with a password-derived key and the crypto provider's
+ * symmetric encryption (default: XSalsa20-Poly1305).
  *
- * Format (JSON):
+ * Default KDF is **scrypt** (memory-hard, OWASP-recommended parameters).
+ * PBKDF2-SHA256 is kept for decrypting legacy blobs written before the
+ * migration — new writes always use scrypt. This closes audit limit #5
+ * where PBKDF2 alone was vulnerable to GPU/ASIC brute force.
+ *
+ * Format (JSON, scrypt):
  *   {
  *     v: 1,
- *     kdf: "pbkdf2-sha256",
- *     iterations: 210000,
+ *     kdf: "scrypt",
+ *     N: 131072, r: 8, p: 1,
  *     saltB64: "...",
  *     nonceB64: "...",
  *     ciphertextB64: "...",
@@ -25,7 +30,7 @@
  * heart does not resume its conversations; those must be reestablished.
  */
 
-import { pbkdf2Sync } from 'node:crypto';
+import { pbkdf2Sync, scryptSync } from 'node:crypto';
 import {
   getCryptoProvider,
   type CryptoProvider,
@@ -38,9 +43,13 @@ import type { LineageCertificate } from './lineage.js';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
-/** OWASP 2023 recommendation for PBKDF2-SHA256. */
-const DEFAULT_PBKDF2_ITERATIONS = 210_000;
-const PBKDF2_SALT_LENGTH = 16;
+/** OWASP 2023 recommendation for scrypt: N=2^17, r=8, p=1 (~128 MB memory). */
+const DEFAULT_SCRYPT_N = 131_072;
+const DEFAULT_SCRYPT_R = 8;
+const DEFAULT_SCRYPT_P = 1;
+/** scrypt memory is 128 * N * r bytes; allow double that for headroom. */
+const SCRYPT_MAXMEM = 256 * 1024 * 1024;
+const KDF_SALT_LENGTH = 16;
 const DERIVED_KEY_LENGTH = 32;
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -86,8 +95,8 @@ export interface HeartState {
   savedAt: number;
 }
 
-/** Encrypted blob format — what gets written to disk. */
-export interface EncryptedBlob {
+/** Legacy PBKDF2 blob — can still be decrypted but new writes use scrypt. */
+export interface Pbkdf2Blob {
   v: 1;
   kdf: 'pbkdf2-sha256';
   iterations: number;
@@ -97,9 +106,25 @@ export interface EncryptedBlob {
   alg: string;
 }
 
+/** scrypt blob — default format for all new writes (memory-hard, OWASP-recommended). */
+export interface ScryptBlob {
+  v: 1;
+  kdf: 'scrypt';
+  N: number;
+  r: number;
+  p: number;
+  saltB64: string;
+  nonceB64: string;
+  ciphertextB64: string;
+  alg: string;
+}
+
+/** Encrypted blob format — what gets written to disk. */
+export type EncryptedBlob = Pbkdf2Blob | ScryptBlob;
+
 // ─── Encryption ─────────────────────────────────────────────────────────────
 
-function deriveKeyFromPassword(
+function derivePbkdf2(
   password: string,
   salt: Uint8Array,
   iterations: number,
@@ -109,39 +134,68 @@ function deriveKeyFromPassword(
   );
 }
 
+function deriveScrypt(
+  password: string,
+  salt: Uint8Array,
+  N: number,
+  r: number,
+  p: number,
+): Uint8Array {
+  // 128 * N * r is scrypt's inherent memory cost; maxmem must exceed it.
+  const required = 128 * N * r * p;
+  const maxmem = Math.max(SCRYPT_MAXMEM, required * 2);
+  return new Uint8Array(
+    scryptSync(password, Buffer.from(salt), DERIVED_KEY_LENGTH, { N, r, p, maxmem }),
+  );
+}
+
+/** scrypt tuning parameters for new writes. */
+export interface ScryptParams {
+  N?: number;
+  r?: number;
+  p?: number;
+}
+
 /**
  * Encrypt a HeartState with a password.
  * Returns a JSON string safe to write to disk.
+ *
+ * New writes always use scrypt (memory-hard). To override parameters,
+ * pass `scrypt: { N, r, p }`. Defaults match OWASP 2023 recommendations.
  */
 export function serializeHeart(
   state: HeartState,
   password: string,
-  opts?: { iterations?: number; provider?: CryptoProvider },
+  opts?: { scrypt?: ScryptParams; provider?: CryptoProvider },
 ): string {
   if (!password || password.length === 0) {
     throw new Error('password required for heart serialization');
   }
-  const p = opts?.provider ?? getCryptoProvider();
-  const iterations = opts?.iterations ?? DEFAULT_PBKDF2_ITERATIONS;
+  const prov = opts?.provider ?? getCryptoProvider();
+  const N = opts?.scrypt?.N ?? DEFAULT_SCRYPT_N;
+  const r = opts?.scrypt?.r ?? DEFAULT_SCRYPT_R;
+  const p = opts?.scrypt?.p ?? DEFAULT_SCRYPT_P;
 
-  const salt = p.random.randomBytes(PBKDF2_SALT_LENGTH);
-  const key = deriveKeyFromPassword(password, salt, iterations);
-  const nonce = p.random.randomBytes(p.encryption.nonceLength);
+  const salt = prov.random.randomBytes(KDF_SALT_LENGTH);
+  const key = deriveScrypt(password, salt, N, r, p);
+  const nonce = prov.random.randomBytes(prov.encryption.nonceLength);
 
-  const plaintext = p.encoding.decodeUTF8(JSON.stringify(state));
-  const ciphertext = p.encryption.encrypt(plaintext, nonce, key);
+  const plaintext = prov.encoding.decodeUTF8(JSON.stringify(state));
+  const ciphertext = prov.encryption.encrypt(plaintext, nonce, key);
 
   // Wipe the key from memory
   key.fill(0);
 
-  const blob: EncryptedBlob = {
+  const blob: ScryptBlob = {
     v: 1,
-    kdf: 'pbkdf2-sha256',
-    iterations,
-    saltB64: p.encoding.encodeBase64(salt),
-    nonceB64: p.encoding.encodeBase64(nonce),
-    ciphertextB64: p.encoding.encodeBase64(ciphertext),
-    alg: p.encryption.algorithmId,
+    kdf: 'scrypt',
+    N,
+    r,
+    p,
+    saltB64: prov.encoding.encodeBase64(salt),
+    nonceB64: prov.encoding.encodeBase64(nonce),
+    ciphertextB64: prov.encoding.encodeBase64(ciphertext),
+    alg: prov.encryption.algorithmId,
   };
 
   return JSON.stringify(blob);
@@ -150,6 +204,8 @@ export function serializeHeart(
 /**
  * Decrypt a serialized heart blob and return the HeartState.
  * Throws on wrong password or tampered blob.
+ *
+ * Supports both scrypt (current) and PBKDF2-SHA256 (legacy) blobs.
  */
 export function loadHeartState(
   blob: string,
@@ -168,8 +224,8 @@ export function loadHeartState(
   if (parsed.v !== 1) {
     throw new Error(`unsupported heart blob version: ${parsed.v}`);
   }
-  if (parsed.kdf !== 'pbkdf2-sha256') {
-    throw new Error(`unsupported KDF: ${parsed.kdf}`);
+  if (parsed.kdf !== 'scrypt' && parsed.kdf !== 'pbkdf2-sha256') {
+    throw new Error(`unsupported KDF: ${(parsed as { kdf: string }).kdf}`);
   }
   if (parsed.alg !== p.encryption.algorithmId) {
     throw new Error(
@@ -181,7 +237,10 @@ export function loadHeartState(
   const nonce = p.encoding.decodeBase64(parsed.nonceB64);
   const ciphertext = p.encoding.decodeBase64(parsed.ciphertextB64);
 
-  const key = deriveKeyFromPassword(password, salt, parsed.iterations);
+  const key =
+    parsed.kdf === 'scrypt'
+      ? deriveScrypt(password, salt, parsed.N, parsed.r, parsed.p)
+      : derivePbkdf2(password, salt, parsed.iterations);
   const plaintext = p.encryption.decrypt(ciphertext, nonce, key);
   key.fill(0);
 

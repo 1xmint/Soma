@@ -68,6 +68,17 @@ export {
   type DelegationVerification,
 } from "./delegation.js";
 
+// ─── Proof-of-possession (prove key ownership, not bearer) ─────────────────
+
+export {
+  issueChallenge,
+  proveChallenge,
+  verifyProof,
+  type Challenge,
+  type PossessionProof,
+  type ProofVerification,
+} from "./proof-of-possession.js";
+
 // ─── Revocation ─────────────────────────────────────────────────────────────
 
 export {

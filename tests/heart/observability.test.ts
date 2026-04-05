@@ -111,7 +111,7 @@ describe("Tool progress emitter", () => {
     const result = await heart.callTool(
       "search",
       { q: "BTC" },
-      async (_cred, _args) => ({ price: 42000 }),
+      async (_cred: string, _args: Record<string, unknown>) => ({ price: 42000 }),
     );
     expect(result.result).toEqual({ price: 42000 });
     const types = result.heartbeats.map((h) => h.eventType);

@@ -77,11 +77,41 @@ describe("Caveats", () => {
     expect(check.valid).toBe(false);
   });
 
-  it("audience: requires matching invokerDid", () => {
-    const wrongAudience = "did:key:zWRONG";
-    const { subject, d } = makeDelegation([{ kind: "audience", did: wrongAudience }]);
-    const check = checkCaveats(d, { invokerDid: subject.did, capability: "tool:search" });
+  it("audience: requires matching audienceDid (not invokerDid)", () => {
+    // Audience caveat binds delegation to a specific SERVICE/resource,
+    // not to the subject. Verifier provides its own DID as ctx.audienceDid.
+    const service = "did:key:zServiceX";
+    const { subject, d } = makeDelegation([{ kind: "audience", did: service }]);
+    // Calling the correct service succeeds
+    const rightAudience = checkCaveats(d, {
+      invokerDid: subject.did,
+      audienceDid: service,
+      capability: "tool:search",
+    });
+    expect(rightAudience.valid).toBe(true);
+    // Calling a different service fails
+    const wrongAudience = checkCaveats(d, {
+      invokerDid: subject.did,
+      audienceDid: "did:key:zOTHER",
+      capability: "tool:search",
+    });
+    expect(wrongAudience.valid).toBe(false);
+    if (!wrongAudience.valid) expect(wrongAudience.reason).toContain("audience mismatch");
+  });
+
+  it("audience: fails closed when audienceDid is absent (limit #8)", () => {
+    // Prior bug: if a verifier forgot to pass audienceDid, the caveat was
+    // silently ignored via pattern-match against invokerDid. This test
+    // ensures we now fail closed when the ctx is incomplete.
+    const service = "did:key:zServiceX";
+    const { subject, d } = makeDelegation([{ kind: "audience", did: service }]);
+    const check = checkCaveats(d, {
+      invokerDid: subject.did,
+      capability: "tool:search",
+      // audienceDid intentionally missing
+    });
     expect(check.valid).toBe(false);
+    if (!check.valid) expect(check.reason).toContain("fail-closed");
   });
 
   it("budget: rejects when cumulative spend exceeds cap", () => {

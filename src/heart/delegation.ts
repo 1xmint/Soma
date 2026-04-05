@@ -65,8 +65,15 @@ export interface Delegation {
 
 /** Context at verification time — who's invoking, what they want, spend so far. */
 export interface InvocationContext {
-  /** DID invoking the delegation. */
+  /** DID invoking the delegation (the holder/subject using the token). */
   invokerDid: string;
+  /**
+   * DID of the service/resource being invoked (the VERIFIER's own identity).
+   * Required if the delegation has an `audience` caveat. If absent when the
+   * caveat is present, validation FAILS CLOSED — this closes audit limit #8
+   * where audience caveats could be silently ignored.
+   */
+  audienceDid?: string;
   /** Capability being exercised. */
   capability: string;
   /** Credits being spent on this invocation. */
@@ -216,7 +223,15 @@ export function checkCaveats(
         if (now < cav.timestamp) return { valid: false, reason: 'not yet valid' };
         break;
       case 'audience':
-        if (ctx.invokerDid !== cav.did) {
+        // Fail closed: if the caveat names an audience but the verifier
+        // didn't declare its own identity, we cannot safely accept.
+        if (ctx.audienceDid === undefined) {
+          return {
+            valid: false,
+            reason: `audience caveat present but ctx.audienceDid not provided (fail-closed)`,
+          };
+        }
+        if (ctx.audienceDid !== cav.did) {
           return { valid: false, reason: `audience mismatch: expected ${cav.did}` };
         }
         break;
