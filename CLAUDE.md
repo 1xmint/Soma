@@ -6,12 +6,13 @@ Agent identity verification through computational phenotyping. Two packages: `so
 
 1. Always stage, commit, and push after medium-to-major changes.
 2. Never assume — always verify. Check the actual code, search the web, or read docs before answering. If unsure, research first, ask second.
+3. Keep this file ≤ 100 lines. Detail goes in `docs/`.
 
 ## Quick Reference
 
 ```bash
 pnpm install         # Install dependencies
-pnpm test            # Run all 423 tests
+pnpm test            # Run all 477 tests
 pnpm build           # Compile to dist/
 ```
 
@@ -32,28 +33,12 @@ pnpm build           # Compile to dist/
 
 ```
 src/
-├── core/              Crypto foundations (genome, channel, crypto-provider)
-├── heart/             Execution runtime (generate, callTool, fetchData)
-│   ├── runtime.ts     Heart runtime — all computation passes through here
-│   ├── seed.ts        Dynamic seed generation (HKDF + behavioral space)
-│   ├── heartbeat.ts   Tamper-evident hash chain
-│   ├── birth-certificate.ts  Data provenance with co-signing
-│   ├── credential-vault.ts   Encrypted credential storage
-│   ├── lineage.ts     Parent-child heart certs (fork)
-│   ├── delegation.ts  Macaroons-style capability tokens
-│   ├── revocation.ts  Signed revocation events + registry
-│   └── persistence.ts Encrypted heart state (password + PBKDF2)
-├── sensorium/         Model verification (observer side)
-│   ├── senses/        3 weighted senses (temporal 5x, topology 2x, vocabulary 1x)
-│   ├── atlas.ts       Phenotype atlas — memoryless reference classifier
-│   ├── matcher.ts     Verdict engine (GREEN/AMBER/RED/UNCANNY)
-│   ├── landscape.ts   Behavioral landscape — drift detection
-│   ├── receipt-verifier.ts  Offline ClawNet Soma Receipt verification
-│   ├── smart-fetch.ts Soma Check: drop-in fetch() with auto If-Soma-Hash
-│   └── stream-capture.ts   Token stream analysis
-├── mcp/               MCP transport wrapper, session management
-└── experiment/        Runner, providers, 8 security attacks (all detected)
-tests/                 423 tests across 33 files
+├── core/         Crypto foundations (genome, channel, crypto-provider, soma-check)
+├── heart/        Execution runtime + multi-agent primitives
+├── sensorium/    Model verification (observer side)
+├── mcp/          MCP transport wrapper, session management
+└── experiment/   Runner, providers, security attacks
+tests/            451 tests across 35 files
 ```
 
 ## Two-Package Split (CRITICAL)
@@ -81,56 +66,20 @@ An agent verifying itself is meaningless. The observer MUST do the sensing on th
 | Cloud classification (11 agents) | **93.2%** |
 | Security attacks detected | **8/8** |
 | HMAC overhead per token | **3.4–5.4 microseconds** |
-| Tests passing | **451** |
+| Tests passing | **477** |
 
 ## Code Style
 
 - Strict TypeScript: `strict: true`, no `any`
 - Biological terminology in names and comments
 - Test crypto with both valid and tampered inputs
-- Every sense: extract → test → measure → commit
-
-## Multi-Agent Primitives (soma-heart@0.2)
-
-Heart-to-heart trust lets agents fork, delegate, and revoke:
-
-- `heart.fork({ systemPrompt, toolManifest, capabilities, ttl, budgetCredits })` — spawns a child keypair + genome + signed lineage cert. Child can call `createSomaHeart({ ..., lineage })` and have its capabilities enforced.
-- `heart.delegate({ subjectDid, capabilities, caveats })` — macaroons-style grants with `expires-at`, `not-before`, `audience`, `budget`, `max-invocations`, `capabilities`, `custom` caveats. `attenuateDelegation()` lets holders narrow further (never broaden).
-- `heart.revoke({ targetId, targetKind, reason })` — signed revocation events. Registry supports import/export for feed distribution.
-- `RevocationLog` — append-only, hash-chained sequence of revocations. Detects drops/reorders/tampering within a log; `signHead()` produces a signed commitment to the current head for cross-operator accountability.
-- `heart.serialize(password)` / `loadSomaHeart(blob, password)` — scrypt (N=2^17, r=8, p=1, ~128MB memory-hard) + XSalsa20-Poly1305. Legacy PBKDF2 blobs still decrypt. Preserves keypair, credentials, heartbeat chain, revocations, lineage. Sessions are NOT persisted (ephemeral by design).
-- `issueChallenge()` / `proveChallenge()` / `verifyProof()` — proof-of-possession for delegations: holder signs `soma-pop:{nonce}:{delegationId}` with their key, verifier checks against `subjectDid`. Prevents stolen-token reuse.
-
-Wildcards: `*` (universal) or `tool:*` (namespace). Capability enforcement at `callTool()` / `fetchData()` — throws when `can('tool:X')` / `can('data:Y')` is false. Root hearts (no lineage) bypass enforcement.
-
-## Agent Observability (blacksmith sub-strikes)
-
-Beyond core session/generation events, hearts record agent internal state so verifiers can see *every strike*, not just inputs/outputs:
-
-- `heart.recordReasoning(summary)` — chain-of-thought step (hashed, content private)
-- `heart.recordRetry(operation, reason, attempt)` — missed strike / re-attempt
-- `heart.recordRagLookup(queryHash, resultCount)` — context enrichment
-- `heart.recordSubtaskDispatch(subjectDid, taskHash)` — work handoff to child/delegatee
-- `heart.recordSubtaskReturn(subjectDid, resultHash)` — child returned result
-- Tool executors receive a `ToolProgressEmitter` — `emit(stage, detail?)` records a `tool_progress` heartbeat mid-execution
-- `fork()` / `delegate()` / `revoke()` auto-record `fork_created` / `delegation_issued` / `delegation_revoked` events
-
-All new events use ~1μs SHA-256 per record — free at LLM timescale. Detail strings are always hashed before being written to the chain.
-
-## Soma Check Protocol (soma-check/1.0)
-
-First conditional payment protocol for APIs. Reuses birth-cert `dataHash` as the change-detection key, so there's one primitive for both provenance and payment gating. Backward compatible with x402 / any payment rail.
-
-- **Spec:** `SOMA-CHECK-SPEC.md`
-- **Shared helpers:** `src/core/soma-check.ts` — headers, `SomaCheckHashStore`, provider decision helpers
-- **Consumer:** `soma-sense` exports `createSmartFetch()` — drop-in `fetch()` that auto-sends `If-Soma-Hash`
-- **Provider:** `soma-heart` exports `extractIfSomaHash()`, `shouldRespondUnchanged()`, `buildUnchangedResponse()`, plus `heart.hashContent()` for birth-cert-compatible hashing
 
 ## Detailed Docs
 
-For deeper context on specific topics:
-- `docs/philosophy.md` — The Insight, Three Layers, Generation paradigm, design decisions
+- `docs/primitives.md` — multi-agent API reference, observability, Soma Check
+- `docs/philosophy.md` — The Insight, Three Layers, Generation paradigm
 - `docs/security.md` — Full security rules + TEE deployment model
-- `docs/build-plan.md` — Phase 2 build plan (historical, all 9 steps)
-- `docs/roadmap.md` — Phase 3 community phenotype network, multi-agent future, open problems
+- `docs/build-plan.md` — Phase 2 build plan (historical)
+- `docs/roadmap.md` — Phase 3 community network, multi-agent future
+- `docs/design/` — design specs for upcoming primitives
 - `SOMA-CHECK-SPEC.md` — Soma Check v1.0 protocol spec

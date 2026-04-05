@@ -100,6 +100,19 @@ export {
   type LogVerification,
 } from "./revocation-log.js";
 
+// ─── Spend Receipts (cryptographic budget enforcement) ──────────────────────
+
+export {
+  SpendLog,
+  signSpendHead,
+  verifySpendHead,
+  detectDoubleSpend,
+  type SpendReceipt,
+  type SpendHead,
+  type SpendVerification,
+  type DoubleSpendProof,
+} from "./spend-receipts.js";
+
 // ─── Persistence (encrypt heart state to disk) ──────────────────────────────
 
 export {
