@@ -114,6 +114,23 @@ Legacy PBKDF2 blobs still decrypt. Preserves keypair, credentials, heartbeat
 chain, revocations, lineage. Sessions are NOT persisted (ephemeral by design).
 Closes audit limit #5. Source: `src/heart/persistence.ts`.
 
+### Mutual session PoP — two-party authenticated handshake
+```ts
+const init = initiateSession({ initiatorDid, initiatorPublicKey, purpose, ttlMs });
+const accept = acceptSession({ init, responderDid, responderPublicKey, responderSigningKey });
+const confirm = confirmSession({ init, accept, initiatorSigningKey }); // verifies B first
+const result = verifyMutualSession({ init, accept, confirm, maxAgeMs });
+// result.bindings.transcriptHash — stable session id both parties bind to
+```
+Single-sided PoP leaves the verifier anonymous — a MITM verifier could
+phish credentials. Mutual session PoP is a 3-message handshake where BOTH
+parties sign the same canonical transcript. After verify, each side has
+proof the counterparty holds the key for their advertised DID, plus a
+shared `transcriptHash` to bind into downstream operations (receipts,
+heartbeats, subtask dispatch). Includes freshness (TTL + maxAgeMs),
+DID/key binding checks, and rejects stolen signatures via transcript
+binding. Source: `src/heart/mutual-session.ts`.
+
 ### Proof-of-possession — prove key ownership, not bearer
 ```ts
 const challenge = issueChallenge(delegation);

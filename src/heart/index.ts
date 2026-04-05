@@ -79,6 +79,21 @@ export {
   type ProofVerification,
 } from "./proof-of-possession.js";
 
+// ─── Mutual session PoP (two-party authenticated handshake) ─────────────────
+
+export {
+  initiateSession,
+  acceptSession,
+  confirmSession,
+  verifyMutualSession,
+  computeTranscriptHash,
+  type SessionInit,
+  type SessionAccept,
+  type SessionConfirm,
+  type SessionBindings,
+  type SessionVerification,
+} from "./mutual-session.js";
+
 // ─── Revocation ─────────────────────────────────────────────────────────────
 
 export {
