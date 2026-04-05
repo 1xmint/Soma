@@ -78,6 +78,7 @@ An agent verifying itself is meaningless. The observer MUST do the sensing on th
 ## Detailed Docs
 
 - `docs/primitives.md` — multi-agent API reference, observability, Soma Check
+- `docs/limits.md` — honest limits, trust assumptions, out-of-scope items
 - `docs/philosophy.md` — The Insight, Three Layers, Generation paradigm
 - `docs/security.md` — Full security rules + TEE deployment model
 - `docs/build-plan.md` — Phase 2 build plan (historical)
