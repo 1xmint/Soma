@@ -12,7 +12,7 @@
 import nacl from "tweetnacl";
 import naclUtil from "tweetnacl-util";
 const { encodeBase64, decodeBase64, encodeUTF8, decodeUTF8 } = naclUtil;
-import { createHash, createHmac, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, hkdfSync, timingSafeEqual } from "node:crypto";
 
 // ─── Algorithm-agnostic key pair types ───────────────────────────────────────
 
@@ -69,8 +69,19 @@ export interface HashingProvider {
   readonly algorithmId: string;
   /** Hash a string, return hex digest. */
   hash(data: string): string;
-  /** Derive a key of the given byte length from input bytes. */
-  deriveKey(input: Uint8Array, length: number): Uint8Array;
+  /**
+   * HKDF key derivation (RFC 5869).
+   *
+   * `info` is REQUIRED and must be a domain-specific label unique to the
+   * calling context (e.g. "soma-vault/v1", "soma-seed-nonce/v1"). Two
+   * derivations with the same `ikm` but different `info` MUST produce
+   * independent keys. This is the protection against cross-context key
+   * reuse — omitting or reusing `info` defeats the entire purpose.
+   *
+   * `salt` is optional; when omitted, HKDF uses a zero-filled hash block
+   * per RFC 5869 §2.2.
+   */
+  deriveKey(ikm: Uint8Array, length: number, info: string, salt?: Uint8Array): Uint8Array;
 }
 
 /** Binary ↔ string encoding. */
@@ -167,9 +178,18 @@ const sha256Hashing: HashingProvider = {
     return createHash("sha256").update(data).digest("hex");
   },
 
-  deriveKey(input: Uint8Array, length: number): Uint8Array {
-    const digest = createHash("sha256").update(input).digest();
-    return new Uint8Array(digest.buffer, digest.byteOffset, length);
+  deriveKey(ikm: Uint8Array, length: number, info: string, salt?: Uint8Array): Uint8Array {
+    if (!info || info.length === 0) {
+      throw new Error("deriveKey: info is required and must be non-empty (domain separation)");
+    }
+    if (length <= 0 || length > 8160) {
+      // RFC 5869 §2.3: HKDF-Expand output ≤ 255 * HashLen (32 for SHA-256)
+      throw new Error(`deriveKey: length must be in 1..8160, got ${length}`);
+    }
+    const effectiveSalt = salt ?? new Uint8Array(32);
+    const infoBytes = new TextEncoder().encode(info);
+    const out = hkdfSync("sha256", ikm, effectiveSalt, infoBytes, length);
+    return new Uint8Array(out);
   },
 };
 
