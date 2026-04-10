@@ -325,6 +325,56 @@ export {
 // through the heart's generate/callTool/fetchData methods. Exporting the
 // vault would break the security model.
 
+// ─── Factor Registry (auth factors bound to DIDs, soma-capabilities/1.1) ────
+
+export {
+  FactorRegistry,
+  WELL_KNOWN_FACTOR_TYPES,
+  type FactorType,
+  type RegisteredFactor,
+} from './factor-registry.js';
+
+// ─── Step-Up (live human approval for high-risk delegations) ───────────────
+
+export {
+  StepUpService,
+  FactorVerifierRegistry,
+  verifyChallengeSignature,
+  verifyStepUpAttestation,
+  computeActionDigest,
+  type StepUpChallenge,
+  type StepUpAttestation,
+  type FactorAssertion,
+  type FactorAssertionVerifier,
+  type FactorVerificationResult,
+  type StepUpVerification,
+} from './stepup.js';
+
+// ─── Step-Up Oracles (pluggable delivery channels) ─────────────────────────
+
+export {
+  BaseStepUpOracle,
+  CliPromptOracle,
+  OracleChain,
+  type StepUpOracle,
+  type DeliveryResult,
+  type AssertionCallback,
+} from './stepup-oracle.js';
+
+// ─── Tier Ladder (deployment-configurable factor → tier policy) ────────────
+
+export {
+  checkPredicate,
+  evaluateLadder,
+  evaluateLadderDetailed,
+  DEFAULT_LADDER,
+  PARANOID_LADDER,
+  type TierPredicate,
+  type TierRule,
+  type TierLadder,
+  type TierEvalInput,
+} from './tier-ladder.js';
+
 // ─── Soma Check (conditional payment protocol) ──────────────────────────────
 
 export {

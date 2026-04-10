@@ -40,7 +40,46 @@ export type Caveat =
   | { kind: 'budget'; credits: number }
   | { kind: 'max-invocations'; count: number }
   | { kind: 'capabilities'; allow: string[] }
-  | { kind: 'custom'; key: string; value: string };
+  | { kind: 'custom'; key: string; value: string }
+  // ─── soma-capabilities/1.1 additions ───
+  /**
+   * Invocation requires a fresh StepUpAttestation that matches the
+   * invoker, achieves at least `minTier`, and is no older than
+   * `maxAgeMs` (if set) at check time. Verifiers that do not understand
+   * this caveat kind fail closed (the `default:` arm rejects).
+   */
+  | {
+      kind: 'requires-stepup';
+      minTier: number;
+      /** Optional freshness bound in milliseconds. Omit for no bound. */
+      maxAgeMs?: number;
+    }
+  /**
+   * Invocation is only valid for one of the listed hosts. Hosts are
+   * exact string matches; use multiple entries for multiple hosts. No
+   * glob or regex — keep the matching surface small.
+   */
+  | { kind: 'host-allowlist'; hosts: string[] }
+  /**
+   * Invocation is only valid when the command argv matches one of the
+   * listed patterns. Patterns are either exact argv arrays or a prefix
+   * spec `{ prefix: string[] }` that matches if the invoked argv starts
+   * with the listed prefix elements. Shell interpolation is NEVER
+   * applied — matching is over literal argv.
+   */
+  | {
+      kind: 'command-allowlist';
+      patterns: Array<{ exact: string[] } | { prefix: string[] }>;
+    }
+  /**
+   * Invocation must occur within one of the listed time windows. Each
+   * window is `{ startHour, endHour }` in UTC (0-23). A window that
+   * wraps midnight is expressed as `startHour > endHour`.
+   */
+  | {
+      kind: 'time-window';
+      windows: Array<{ startHourUtc: number; endHourUtc: number }>;
+    };
 
 // ─── Delegation Type ────────────────────────────────────────────────────────
 
@@ -88,6 +127,32 @@ export interface InvocationContext {
   invocationCount?: number;
   /** Current time (defaults to Date.now()). */
   now?: number;
+
+  // ─── soma-capabilities/1.1 additions ───
+
+  /**
+   * Host being targeted by the invocation. Required if the delegation
+   * has a `host-allowlist` caveat — absence fails closed.
+   */
+  host?: string;
+  /**
+   * Command argv being invoked, as a literal array. Required if the
+   * delegation has a `command-allowlist` caveat — absence fails closed.
+   */
+  commandArgv?: string[];
+  /**
+   * A pre-verified step-up attestation. Presence is required if the
+   * delegation has a `requires-stepup` caveat. The verifier MUST have
+   * already verified the attestation's signature and action-digest
+   * binding BEFORE placing it here — this caveat check only compares
+   * tier and age. See `verifyStepUpAttestation` in `stepup.ts`.
+   */
+  stepUpAttestation?: {
+    subjectDid: string;
+    tierAchieved: number;
+    /** Unix ms when the heart accepted and counter-signed the attestation. */
+    acceptedAt: number;
+  };
 }
 
 // ─── Creation ───────────────────────────────────────────────────────────────
@@ -269,6 +334,88 @@ export function checkCaveats(
       case 'custom':
         // Custom caveats are opaque — caller must handle
         break;
+
+      // ─── soma-capabilities/1.1 ───
+
+      case 'requires-stepup': {
+        const att = ctx.stepUpAttestation;
+        if (att === undefined) {
+          return {
+            valid: false,
+            reason: 'requires-stepup caveat present but no stepUpAttestation in ctx (fail-closed)',
+          };
+        }
+        if (att.subjectDid !== ctx.invokerDid) {
+          return { valid: false, reason: 'stepUp attestation subject does not match invoker' };
+        }
+        if (att.tierAchieved < cav.minTier) {
+          return {
+            valid: false,
+            reason: `stepUp tier ${att.tierAchieved} below required ${cav.minTier}`,
+          };
+        }
+        if (cav.maxAgeMs !== undefined && now - att.acceptedAt > cav.maxAgeMs) {
+          return { valid: false, reason: 'stepUp attestation too old' };
+        }
+        break;
+      }
+
+      case 'host-allowlist': {
+        if (ctx.host === undefined) {
+          return {
+            valid: false,
+            reason: 'host-allowlist caveat present but ctx.host not provided (fail-closed)',
+          };
+        }
+        if (!cav.hosts.includes(ctx.host)) {
+          return { valid: false, reason: `host ${ctx.host} not in allowlist` };
+        }
+        break;
+      }
+
+      case 'command-allowlist': {
+        const argv = ctx.commandArgv;
+        if (argv === undefined) {
+          return {
+            valid: false,
+            reason: 'command-allowlist caveat present but ctx.commandArgv not provided (fail-closed)',
+          };
+        }
+        const matches = cav.patterns.some((pattern) => {
+          if ('exact' in pattern) {
+            if (pattern.exact.length !== argv.length) return false;
+            return pattern.exact.every((v, i) => v === argv[i]);
+          }
+          if (pattern.prefix.length > argv.length) return false;
+          return pattern.prefix.every((v, i) => v === argv[i]);
+        });
+        if (!matches) {
+          return { valid: false, reason: `command ${JSON.stringify(argv)} does not match any allowed pattern` };
+        }
+        break;
+      }
+
+      case 'time-window': {
+        const hourUtc = new Date(now).getUTCHours();
+        const inWindow = cav.windows.some((w) => {
+          if (w.startHourUtc <= w.endHourUtc) {
+            return hourUtc >= w.startHourUtc && hourUtc < w.endHourUtc;
+          }
+          // Wraps midnight (e.g. 22..06).
+          return hourUtc >= w.startHourUtc || hourUtc < w.endHourUtc;
+        });
+        if (!inWindow) {
+          return { valid: false, reason: `current hour ${hourUtc}Z not in any allowed time window` };
+        }
+        break;
+      }
+
+      default: {
+        // Exhaustiveness + fail-closed on unknown caveat kinds.
+        const _exhaustive: never = cav;
+        void _exhaustive;
+        return { valid: false, reason: `unknown caveat kind (fail-closed)` };
+      }
     }
   }
 
