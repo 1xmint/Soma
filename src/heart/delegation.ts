@@ -19,7 +19,9 @@
  *   C tries to use X → chain verified: signed by A → B → C, all caveats hold
  */
 
-import { canonicalJson } from '../core/canonicalize.js';
+import { domainSigningInput } from '../core/canonicalize.js';
+
+const DELEGATION_DOMAIN = 'soma/delegation/v1';
 import {
   getCryptoProvider,
   type CryptoProvider,
@@ -182,7 +184,7 @@ export function createDelegation(opts: {
     issuerPublicKey: opts.issuerPublicKey,
   };
 
-  const signingInput = new TextEncoder().encode(canonicalJson(payload));
+  const signingInput = domainSigningInput(DELEGATION_DOMAIN, payload);
   const signature = p.signing.sign(signingInput, opts.issuerSigningKey);
 
   return {
@@ -245,7 +247,7 @@ export function verifyDelegationSignature(
 ): DelegationVerification {
   const p = provider ?? getCryptoProvider();
   const { signature, ...payload } = del;
-  const signingInput = new TextEncoder().encode(canonicalJson(payload));
+  const signingInput = domainSigningInput(DELEGATION_DOMAIN, payload);
   const sigBytes = p.encoding.decodeBase64(signature);
   const issuerPubKey = p.encoding.decodeBase64(del.issuerPublicKey);
 

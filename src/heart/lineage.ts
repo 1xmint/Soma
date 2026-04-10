@@ -16,7 +16,9 @@
  * down. No lineage, no multi-agent trust.
  */
 
-import { canonicalJson } from '../core/canonicalize.js';
+import { domainSigningInput } from '../core/canonicalize.js';
+
+const LINEAGE_DOMAIN = 'soma/lineage/v1';
 import {
   getCryptoProvider,
   type CryptoProvider,
@@ -100,7 +102,7 @@ export function createLineageCertificate(opts: {
     parentPublicKey: opts.parent.publicKey,
   };
 
-  const signingInput = new TextEncoder().encode(canonicalJson(payload));
+  const signingInput = domainSigningInput(LINEAGE_DOMAIN, payload);
   const signature = p.signing.sign(signingInput, opts.parentSigningKey);
 
   return {
@@ -127,7 +129,7 @@ export function verifyLineageCertificate(
 
   // Reconstruct signing payload (everything except signature itself)
   const { signature, ...payload } = cert;
-  const signingInput = new TextEncoder().encode(canonicalJson(payload));
+  const signingInput = domainSigningInput(LINEAGE_DOMAIN, payload);
   const sigBytes = p.encoding.decodeBase64(signature);
   const parentPubKey = p.encoding.decodeBase64(cert.parentPublicKey);
 

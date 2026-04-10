@@ -18,7 +18,9 @@
  * If you want temporary disablement, use short TTLs instead.
  */
 
-import { canonicalJson } from '../core/canonicalize.js';
+import { domainSigningInput } from '../core/canonicalize.js';
+
+const REVOCATION_DOMAIN = 'soma/revocation/v1';
 import {
   getCryptoProvider,
   type CryptoProvider,
@@ -92,7 +94,7 @@ export function createRevocation(opts: {
     issuerPublicKey: opts.issuerPublicKey,
   };
 
-  const signingInput = new TextEncoder().encode(canonicalJson(payload));
+  const signingInput = domainSigningInput(REVOCATION_DOMAIN, payload);
   const signature = p.signing.sign(signingInput, opts.issuerSigningKey);
 
   return {
@@ -114,7 +116,7 @@ export function verifyRevocation(
 ): RevocationVerification {
   const p = provider ?? getCryptoProvider();
   const { signature, ...payload } = rev;
-  const signingInput = new TextEncoder().encode(canonicalJson(payload));
+  const signingInput = domainSigningInput(REVOCATION_DOMAIN, payload);
   const sigBytes = p.encoding.decodeBase64(signature);
   const issuerPubKey = p.encoding.decodeBase64(rev.issuerPublicKey);
 
