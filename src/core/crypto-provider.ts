@@ -12,17 +12,7 @@
 import nacl from "tweetnacl";
 import naclUtil from "tweetnacl-util";
 const { encodeBase64, decodeBase64, encodeUTF8, decodeUTF8 } = naclUtil;
-import {
-  createHash,
-  createHmac,
-  hkdfSync,
-  timingSafeEqual,
-  sign as cryptoSign,
-  verify as cryptoVerify,
-  createPrivateKey,
-  createPublicKey,
-  generateKeyPairSync,
-} from "node:crypto";
+import { createHash, createHmac, hkdfSync, timingSafeEqual } from "node:crypto";
 
 // ─── Algorithm-agnostic key pair types ───────────────────────────────────────
 
