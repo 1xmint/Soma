@@ -37,8 +37,10 @@ pnpm test
 ## Environment And Secrets
 
 - Keep provider keys in local `.env` files only.
-- Use [.env.example](C:\Users\Josh\Desktop\GitHub\Soma.env.example) as the public template.
+- Use [.env.example](C:\Users\Josh\Desktop\GitHub\Soma\.env.example) as the public template.
 - Never commit real provider credentials.
+- Keep experiment logs, package tarballs, and local secret variants out of git.
+- Treat this repo as a package/research workspace, not a long-lived VPS service.
 
 ## Related Docs
 
@@ -46,3 +48,4 @@ pnpm test
 - [docs/limits.md](C:\Users\Josh\Desktop\GitHub\Soma\docs\limits.md)
 - [docs/security.md](C:\Users\Josh\Desktop\GitHub\Soma\docs\security.md)
 - [docs/roadmap.md](C:\Users\Josh\Desktop\GitHub\Soma\docs\roadmap.md)
+- [docs/ops-security.md](C:\Users\Josh\Desktop\GitHub\Soma\docs\ops-security.md)
