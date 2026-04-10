@@ -529,6 +529,11 @@ export class HeartRuntime {
       provider: this.provider,
     });
 
+    // Record the legitimate issuer for this target so that any later
+    // revocation must come from us — closes the "fresh-key forged
+    // revocation" hole (see revocation.ts authority check).
+    this.revocations.registerAuthority(delegation.id, this.did);
+
     this.heartbeatChain.record(
       "delegation_issued",
       JSON.stringify({
@@ -568,7 +573,8 @@ export class HeartRuntime {
       provider: this.provider,
     });
 
-    this.revocations.add(event);
+    // Self-revocation: the heart is the authority over its own issuances.
+    this.revocations.add(event, this.did);
 
     this.heartbeatChain.record(
       "delegation_revoked",
