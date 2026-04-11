@@ -128,15 +128,41 @@ export {
   type DoubleSpendProof,
 } from "./spend-receipts.js";
 
-// ─── Key Rotation (KERI-style pre-rotation) ─────────────────────────────────
+// ─── Credential Rotation (generic controller — user-facing rotation API) ───
+//
+// `CredentialRotationController` encodes the twelve invariants from the
+// credential-rotation architecture spec and is the only user-facing rotation
+// API. `KeyHistory` in `./key-rotation.js` is retained as an internal KERI
+// log primitive consumed by the future ed25519-identity backend, and is
+// intentionally NOT re-exported here (sealed per §14 D5 revision).
 
 export {
-  KeyHistory,
-  computeKeyDigest,
+  CredentialRotationController,
+  MockCredentialBackend,
+  DEFAULT_POLICY,
+  DEFAULT_TTL_POLICY,
+  POLICY_FLOORS,
+  computeManifestCommitment,
+  BackendNotAllowlisted,
+  ChallengePeriodActive,
+  InvariantViolation,
+  NotYetEffective,
+  PreRotationMismatch,
+  RateLimitExceeded,
+  SuiteDowngradeRejected,
+  VerifyBeforeRevokeFailed,
+  type AlgorithmSuite,
+  type Clock,
+  type ControllerOptions,
+  type ControllerPolicy,
+  type Credential,
+  type CredentialBackend,
+  type CredentialClass,
+  type CredentialManifest,
   type RotationEvent,
-  type RotationEventType,
-  type KeyHistoryVerification,
-} from "./key-rotation.js";
+  type RotationEventStatus,
+  type TtlPolicy,
+} from "./credential-rotation/index.js";
 
 // ─── Time Oracle (signed time witnesses + monotonic clocks) ─────────────────
 
