@@ -39,7 +39,10 @@ export type HeartbeatEventType =
   | "subtask_dispatch"    // work handed off to a child/delegatee
   | "subtask_return"      // child/delegatee returned a result
   | "delegation_issued"   // this heart issued a delegation
-  | "delegation_revoked"; // this heart revoked a delegation
+  | "delegation_revoked"  // this heart revoked a delegation
+  // Human consent ceremony (see human-delegation.ts)
+  | "consent_required"    // heart asked a human authenticator to approve a session
+  | "consent_granted";    // human authenticator returned a signed HumanDelegation
 
 /** A single heartbeat — one link in the hash chain. */
 export interface Heartbeat {
