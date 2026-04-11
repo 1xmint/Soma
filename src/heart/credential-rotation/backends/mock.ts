@@ -5,9 +5,15 @@
  * secret material in a per-backend Map, and pre-generates the *next* keypair
  * at each mint so pre-rotation (invariant 9) is always one step ahead.
  *
+ * Rotation is transactional via the stage/commit/abort protocol: a staged
+ * credential is materialised in the store so the controller can collect
+ * its first proof-of-possession, but `abortStagedRotation` removes it and
+ * zeroises its secret bytes, so a rejected rotation never leaves the
+ * backend in a forward-advanced state.
+ *
  * Not suitable for production — secrets live in plain process memory. The
- * real `ed25519-identity` backend (follow-up commit) will wrap `KeyHistory`
- * and store secrets in the heart's signing backend.
+ * production `Ed25519IdentityBackend` (`./ed25519-identity.ts`) wraps a
+ * KeyHistory log and follows the same stage/commit/abort discipline.
  */
 
 import {
@@ -16,22 +22,40 @@ import {
   type SignKeyPair,
 } from '../../../core/crypto-provider.js';
 import { computeManifestCommitment } from '../controller.js';
-import type {
-  AlgorithmSuite,
-  Credential,
-  CredentialBackend,
-  CredentialClass,
+import {
+  StagedRotationConflict,
+  type AlgorithmSuite,
+  type Credential,
+  type CredentialBackend,
+  type CredentialClass,
 } from '../types.js';
 
 interface StoredCredential {
   credential: Credential;
   keyPair: SignKeyPair;
-  /** Pre-generated next keypair, revealed on rotation. */
-  next: {
-    keyPair: SignKeyPair;
-    ttlMs: number;
-  };
   revoked: boolean;
+}
+
+interface MockIdentity {
+  identityId: string;
+  /** Live (committed) credential id. */
+  currentCredentialId: string;
+  /** Pre-generated next keypair — committed digest matches this. */
+  nextKeyPair: SignKeyPair;
+  /** TTL inherited from inception, reused on rotation. */
+  ttlMs: number;
+  /**
+   * If a rotation has been staged but not yet committed, the credentialId
+   * of the staged credential and the next-next keypair we generated for
+   * it. `commitStagedRotation` promotes these; `abortStagedRotation` rolls
+   * them back.
+   */
+  staged:
+    | {
+        credentialId: string;
+        nextNextKeyPair: SignKeyPair;
+      }
+    | null;
 }
 
 export class MockCredentialBackend implements CredentialBackend {
@@ -40,6 +64,7 @@ export class MockCredentialBackend implements CredentialBackend {
   readonly class: CredentialClass;
   private readonly provider: CryptoProvider;
   private readonly store = new Map<string, StoredCredential>();
+  private readonly identities = new Map<string, MockIdentity>();
   private counter = 0;
 
   constructor(opts: {
@@ -57,36 +82,27 @@ export class MockCredentialBackend implements CredentialBackend {
     issuedAt: number;
     ttlMs: number;
   }): Promise<Credential> {
+    if (this.identities.has(args.identityId)) {
+      throw new Error(
+        `mock backend: identity ${args.identityId} already inceptioned`,
+      );
+    }
     const keyPair = this.provider.signing.generateKeyPair();
     const nextKeyPair = this.provider.signing.generateKeyPair();
-    const nextManifestCommitment = computeManifestCommitment(
-      {
-        backendId: this.backendId,
-        algorithmSuite: this.algorithmSuite,
-        publicKey: nextKeyPair.publicKey,
-      },
-      this.provider,
-    );
-
-    this.counter += 1;
-    const credentialId = `${this.backendId}:${args.identityId}:${this.counter}`;
-    const credential: Credential = {
-      credentialId,
+    const credential = this.mintEntry({
       identityId: args.identityId,
-      backendId: this.backendId,
-      algorithmSuite: this.algorithmSuite,
-      class: this.class,
-      publicKey: keyPair.publicKey,
-      issuedAt: args.issuedAt,
-      expiresAt: args.issuedAt + args.ttlMs,
-      nextManifestCommitment,
-    };
-
-    this.store.set(credentialId, {
-      credential,
       keyPair,
-      next: { keyPair: nextKeyPair, ttlMs: args.ttlMs },
-      revoked: false,
+      nextPublicKey: nextKeyPair.publicKey,
+      issuedAt: args.issuedAt,
+      ttlMs: args.ttlMs,
+    });
+
+    this.identities.set(args.identityId, {
+      identityId: args.identityId,
+      currentCredentialId: credential.credentialId,
+      nextKeyPair,
+      ttlMs: args.ttlMs,
+      staged: null,
     });
     return credential;
   }
@@ -121,55 +137,117 @@ export class MockCredentialBackend implements CredentialBackend {
     return this.provider.signing.verify(message, signature, manifest.publicKey);
   }
 
-  async revealNextCredential(oldCredentialId: string): Promise<Credential> {
-    const stored = this.requireLive(oldCredentialId);
-    const { keyPair } = stored.next;
-    // Pre-generate the credential-after-next so we stay one step ahead.
+  async stageNextCredential(args: {
+    identityId: string;
+    oldCredentialId: string;
+    issuedAt: number;
+  }): Promise<Credential> {
+    const ident = this.requireIdentity(args.identityId);
+    if (ident.staged) {
+      throw new StagedRotationConflict(args.identityId);
+    }
+    if (ident.currentCredentialId !== args.oldCredentialId) {
+      throw new Error(
+        `mock backend: oldCredentialId ${args.oldCredentialId} does not match current ${ident.currentCredentialId}`,
+      );
+    }
+    const promotedKeyPair = ident.nextKeyPair;
     const nextNextKeyPair = this.provider.signing.generateKeyPair();
-    const nextManifestCommitment = computeManifestCommitment(
-      {
-        backendId: this.backendId,
-        algorithmSuite: this.algorithmSuite,
-        publicKey: nextNextKeyPair.publicKey,
-      },
-      this.provider,
-    );
-
-    this.counter += 1;
-    const credentialId = `${this.backendId}:${stored.credential.identityId}:${this.counter}`;
-    const now = Date.now();
-    const credential: Credential = {
-      credentialId,
-      identityId: stored.credential.identityId,
-      backendId: this.backendId,
-      algorithmSuite: this.algorithmSuite,
-      class: this.class,
-      publicKey: keyPair.publicKey,
-      issuedAt: now,
-      expiresAt: now + stored.next.ttlMs,
-      nextManifestCommitment,
-    };
-
-    this.store.set(credentialId, {
-      credential,
-      keyPair,
-      next: { keyPair: nextNextKeyPair, ttlMs: stored.next.ttlMs },
-      revoked: false,
+    const credential = this.mintEntry({
+      identityId: args.identityId,
+      keyPair: promotedKeyPair,
+      nextPublicKey: nextNextKeyPair.publicKey,
+      issuedAt: args.issuedAt,
+      ttlMs: ident.ttlMs,
     });
+    ident.staged = {
+      credentialId: credential.credentialId,
+      nextNextKeyPair,
+    };
     return credential;
+  }
+
+  async commitStagedRotation(identityId: string): Promise<void> {
+    const ident = this.requireIdentity(identityId);
+    if (!ident.staged) {
+      throw new Error(`mock backend: no staged rotation for ${identityId}`);
+    }
+    ident.currentCredentialId = ident.staged.credentialId;
+    ident.nextKeyPair = ident.staged.nextNextKeyPair;
+    ident.staged = null;
+  }
+
+  async abortStagedRotation(identityId: string): Promise<void> {
+    const ident = this.identities.get(identityId);
+    if (!ident || !ident.staged) return;
+    // Drop the staged credential entry. We do NOT zero its secretKey here —
+    // that keypair is the same bytes as `ident.nextKeyPair` (the
+    // pre-committed next key), and the old credential's manifest commitment
+    // is still bound to that public key, so a retry must still be able to
+    // sign with it.
+    this.store.delete(ident.staged.credentialId);
+    // The next-next keypair was freshly generated for this stage and is
+    // not referenced by any live credential — safe to zeroise.
+    ident.staged.nextNextKeyPair.secretKey.fill(0);
+    ident.staged = null;
   }
 
   async revokeCredential(credentialId: string): Promise<void> {
     const stored = this.store.get(credentialId);
-    if (stored) stored.revoked = true;
+    if (!stored) return;
+    stored.revoked = true;
+    stored.keyPair.secretKey.fill(0);
   }
 
   // ─── Test-only hooks ─────────────────────────────────────────────────────
 
-  /** Force a mismatching "next" key so pre-rotation validation fires. */
+  /**
+   * @internal — test-only. Replaces the pre-committed next keypair so the
+   * next `stageNextCredential` call returns a credential whose manifest
+   * does NOT match the prior commitment, exercising the L1 check.
+   */
   sabotagePreRotation(credentialId: string): void {
     const stored = this.requireLive(credentialId);
-    stored.next.keyPair = this.provider.signing.generateKeyPair();
+    const ident = this.requireIdentity(stored.credential.identityId);
+    ident.nextKeyPair = this.provider.signing.generateKeyPair();
+  }
+
+  // ─── Internals ───────────────────────────────────────────────────────────
+
+  private mintEntry(args: {
+    identityId: string;
+    keyPair: SignKeyPair;
+    nextPublicKey: Uint8Array;
+    issuedAt: number;
+    ttlMs: number;
+  }): Credential {
+    const nextManifestCommitment = computeManifestCommitment(
+      {
+        backendId: this.backendId,
+        algorithmSuite: this.algorithmSuite,
+        publicKey: args.nextPublicKey,
+      },
+      this.provider,
+    );
+    this.counter += 1;
+    const credentialId = `${this.backendId}:${args.identityId}:${this.counter}`;
+    const credential: Credential = {
+      credentialId,
+      identityId: args.identityId,
+      backendId: this.backendId,
+      algorithmSuite: this.algorithmSuite,
+      class: this.class,
+      publicKey: args.keyPair.publicKey,
+      issuedAt: args.issuedAt,
+      expiresAt: args.issuedAt + args.ttlMs,
+      nextManifestCommitment,
+    };
+    this.store.set(credentialId, {
+      credential,
+      keyPair: args.keyPair,
+      revoked: false,
+    });
+    return credential;
   }
 
   private requireLive(credentialId: string): StoredCredential {
@@ -177,5 +255,11 @@ export class MockCredentialBackend implements CredentialBackend {
     if (!stored) throw new Error(`unknown credential: ${credentialId}`);
     if (stored.revoked) throw new Error(`credential revoked: ${credentialId}`);
     return stored;
+  }
+
+  private requireIdentity(identityId: string): MockIdentity {
+    const ident = this.identities.get(identityId);
+    if (!ident) throw new Error(`unknown identity: ${identityId}`);
+    return ident;
   }
 }
