@@ -39,12 +39,18 @@
 import type { CeremonyTier } from './human-delegation.js';
 
 /** Canonical action classes understood by the default policy. */
-export type ActionClass = 'read' | 'write' | 'spend' | 'deploy' | 'admin' | string; // custom classes flow through the map
+export type ActionClass =
+  | 'read'
+  | 'write'
+  | 'spend'
+  | 'deploy'
+  | 'admin'
+  | string; // custom classes flow through the map
 
 /** Mapping from action class to required tier. */
 export type PolicyMap = Record<string, CeremonyTier>;
 
-export const DEFAULT_CEREMONY_POLICY: PolicyMap = {
+export const DEFAULT_POLICY: PolicyMap = {
   read: 'L0',
   write: 'L1',
   spend: 'L2',
@@ -54,7 +60,7 @@ export const DEFAULT_CEREMONY_POLICY: PolicyMap = {
 
 export interface PolicyOverrides {
   /**
-   * Replacement or extension map merged over `DEFAULT_CEREMONY_POLICY`. Unknown
+   * Replacement or extension map merged over `DEFAULT_POLICY`. Unknown
    * classes that aren't in the merged map default to `unknownClassTier`.
    */
   overrides?: PolicyMap;
@@ -82,10 +88,13 @@ function tierRank(t: CeremonyTier): number {
  * same inputs → same output, no closures over mutable state.
  */
 export function createCeremonyPolicy(opts?: PolicyOverrides) {
-  const merged: PolicyMap = { ...DEFAULT_CEREMONY_POLICY, ...(opts?.overrides ?? {}) };
+  const merged: PolicyMap = { ...DEFAULT_POLICY, ...(opts?.overrides ?? {}) };
   const unknownTier: CeremonyTier = opts?.unknownClassTier ?? 'L2';
 
-  return function decide(actionClass: ActionClass, attestedTier: CeremonyTier): PolicyDecision {
+  return function decide(
+    actionClass: ActionClass,
+    attestedTier: CeremonyTier,
+  ): PolicyDecision {
     const required = merged[actionClass] ?? unknownTier;
     const ok = tierRank(attestedTier) >= tierRank(required);
     if (ok) {
