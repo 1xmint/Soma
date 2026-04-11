@@ -12,7 +12,17 @@
 import nacl from "tweetnacl";
 import naclUtil from "tweetnacl-util";
 const { encodeBase64, decodeBase64, encodeUTF8, decodeUTF8 } = naclUtil;
-import { createHash, createHmac, hkdfSync, timingSafeEqual } from "node:crypto";
+import {
+  createHash,
+  createHmac,
+  hkdfSync,
+  timingSafeEqual,
+  sign as cryptoSign,
+  verify as cryptoVerify,
+  createPrivateKey,
+  createPublicKey,
+  generateKeyPairSync,
+} from "node:crypto";
 
 // ─── Algorithm-agnostic key pair types ───────────────────────────────────────
 
@@ -127,21 +137,66 @@ export interface CryptoProvider {
 
 // ─── Default NaCl / SHA-256 provider ─────────────────────────────────────────
 
-const naclSigning: SigningProvider = {
+// Ed25519 via node:crypto native. We keep the tweetnacl wire format for keys
+// (32-byte raw public key, 64-byte secret key = seed || publicKey) so existing
+// stored keys and signatures remain interoperable. Internally we wrap the
+// 32-byte seed / public key in the fixed PKCS8 / SPKI prefixes Node expects.
+//
+// Why: tweetnacl is pure JS and its verify path is not constant-time in the
+// same way as libsodium/OpenSSL. Node Ed25519 sits on OpenSSL and is the
+// sanctioned primitive for production signing.
+const PKCS8_ED25519_PREFIX = Buffer.from("302e020100300506032b657004220420", "hex");
+const SPKI_ED25519_PREFIX = Buffer.from("302a300506032b6570032100", "hex");
+
+function seedToPkcs8(seed: Uint8Array): Buffer {
+  return Buffer.concat([PKCS8_ED25519_PREFIX, Buffer.from(seed)]);
+}
+function pubkeyToSpki(pub: Uint8Array): Buffer {
+  return Buffer.concat([SPKI_ED25519_PREFIX, Buffer.from(pub)]);
+}
+
+const ed25519Signing: SigningProvider = {
   algorithmId: "ed25519",
   multicodecPrefix: new Uint8Array([0xed, 0x01]),
 
   generateKeyPair(): SignKeyPair {
-    const kp = nacl.sign.keyPair();
-    return { publicKey: kp.publicKey, secretKey: kp.secretKey };
+    const { publicKey, privateKey } = generateKeyPairSync("ed25519");
+    const spki = publicKey.export({ format: "der", type: "spki" });
+    const pubRaw = new Uint8Array(spki.subarray(spki.length - 32));
+    const pkcs8 = privateKey.export({ format: "der", type: "pkcs8" });
+    const seed = pkcs8.subarray(pkcs8.length - 32);
+    const secretKey = new Uint8Array(64);
+    secretKey.set(seed, 0);
+    secretKey.set(pubRaw, 32);
+    return { publicKey: pubRaw, secretKey };
   },
 
   sign(message: Uint8Array, secretKey: Uint8Array): Uint8Array {
-    return nacl.sign.detached(message, secretKey);
+    if (secretKey.length !== 64 && secretKey.length !== 32) {
+      throw new Error(`ed25519 sign: secretKey must be 32 or 64 bytes, got ${secretKey.length}`);
+    }
+    const seed = secretKey.length === 64 ? secretKey.subarray(0, 32) : secretKey;
+    const keyObj = createPrivateKey({
+      key: seedToPkcs8(seed),
+      format: "der",
+      type: "pkcs8",
+    });
+    const sig = cryptoSign(null, Buffer.from(message), keyObj);
+    return new Uint8Array(sig);
   },
 
   verify(message: Uint8Array, signature: Uint8Array, publicKey: Uint8Array): boolean {
-    return nacl.sign.detached.verify(message, signature, publicKey);
+    if (publicKey.length !== 32 || signature.length !== 64) return false;
+    try {
+      const keyObj = createPublicKey({
+        key: pubkeyToSpki(publicKey),
+        format: "der",
+        type: "spki",
+      });
+      return cryptoVerify(null, Buffer.from(message), keyObj, Buffer.from(signature));
+    } catch {
+      return false;
+    }
   },
 };
 
@@ -232,7 +287,7 @@ const naclRandom: RandomProvider = {
 
 /** The default provider: Ed25519 + X25519 + XSalsa20-Poly1305 + SHA-256 + HMAC-SHA256. */
 export const DEFAULT_PROVIDER: CryptoProvider = {
-  signing: naclSigning,
+  signing: ed25519Signing,
   keyExchange: naclKeyExchange,
   encryption: naclEncryption,
   hashing: sha256Hashing,
