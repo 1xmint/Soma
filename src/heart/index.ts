@@ -99,37 +99,6 @@ export {
   type InvokeResult,
 } from './human-session.js';
 
-// ─── Human Delegation (session-scoped human→agent consent) ─────────────────
-
-export {
-  createHumanDelegation,
-  verifyHumanDelegation,
-  computeChallengeHash,
-  type HumanDelegation,
-  type HumanAttestation,
-  type AttestationVerifier,
-  type CeremonyTier,
-  type HumanDelegationVerification,
-} from "./human-delegation.js";
-
-export {
-  createCeremonyPolicy,
-  DEFAULT_POLICY,
-  type ActionClass,
-  type PolicyMap,
-  type PolicyOverrides,
-  type PolicyDecision,
-  type CeremonyPolicy,
-} from "./ceremony-policy.js";
-
-export {
-  HumanSessionRegistry,
-  type HumanSession,
-  type SessionStatus,
-  type InvokeRequest,
-  type InvokeResult,
-} from "./human-session.js";
-
 // ─── Proof-of-possession (prove key ownership, not bearer) ─────────────────
 
 export {
@@ -229,7 +198,7 @@ export {
   type RotationEvent,
   type RotationEventStatus,
   type TtlPolicy,
-} from "./credential-rotation/index.js";
+} from './credential-rotation/index.js';
 
 // ─── Time Oracle (signed time witnesses + monotonic clocks) ─────────────────
 
