@@ -169,6 +169,7 @@ export {
 
 export {
   CredentialRotationController,
+  Ed25519IdentityBackend,
   MockCredentialBackend,
   DEFAULT_POLICY,
   DEFAULT_TTL_POLICY,
