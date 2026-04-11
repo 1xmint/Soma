@@ -9,7 +9,6 @@
 export {
   CredentialRotationController,
   computeManifestCommitment,
-  verifyRotationChain,
   type Clock,
   type ControllerOptions,
 } from './controller.js';
@@ -20,13 +19,10 @@ export {
   POLICY_FLOORS,
   BackendNotAllowlisted,
   ChallengePeriodActive,
-  CredentialExpired,
-  DuplicateBackend,
   InvariantViolation,
   NotYetEffective,
   PreRotationMismatch,
   RateLimitExceeded,
-  StagedRotationConflict,
   SuiteDowngradeRejected,
   VerifyBeforeRevokeFailed,
   type AlgorithmSuite,
@@ -40,28 +36,4 @@ export {
   type TtlPolicy,
 } from './types.js';
 
-export {
-  MockCredentialBackend,
-  type MockBackendSnapshot,
-  type MockIdentitySnapshot,
-  type MockStoredCredentialSnapshot,
-} from './backends/mock.js';
-export {
-  Ed25519IdentityBackend,
-  type Ed25519IdentityBackendSnapshot,
-  type Ed25519IdentityPlumbingSnapshot,
-  type Ed25519StoredSecretSnapshot,
-} from './backends/ed25519-identity.js';
-
-export {
-  SNAPSHOT_VERSION,
-  credentialToWire,
-  credentialFromWire,
-  rotationEventToWire,
-  rotationEventFromWire,
-  type AcceptedCredentialSnapshot,
-  type ControllerSnapshot,
-  type CredentialWire,
-  type IdentityStateSnapshot,
-  type RotationEventWire,
-} from './snapshot.js';
+export { MockCredentialBackend } from './backends/mock.js';

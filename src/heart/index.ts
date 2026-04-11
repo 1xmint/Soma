@@ -169,22 +169,17 @@ export {
 
 export {
   CredentialRotationController,
-  Ed25519IdentityBackend,
   MockCredentialBackend,
   DEFAULT_POLICY,
   DEFAULT_TTL_POLICY,
   POLICY_FLOORS,
   computeManifestCommitment,
-  verifyRotationChain,
   BackendNotAllowlisted,
   ChallengePeriodActive,
-  CredentialExpired,
-  DuplicateBackend,
   InvariantViolation,
   NotYetEffective,
   PreRotationMismatch,
   RateLimitExceeded,
-  StagedRotationConflict,
   SuiteDowngradeRejected,
   VerifyBeforeRevokeFailed,
   type AlgorithmSuite,
@@ -198,7 +193,7 @@ export {
   type RotationEvent,
   type RotationEventStatus,
   type TtlPolicy,
-} from './credential-rotation/index.js';
+} from "./credential-rotation/index.js";
 
 // ─── Time Oracle (signed time witnesses + monotonic clocks) ─────────────────
 
