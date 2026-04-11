@@ -39,6 +39,15 @@ import {
 } from '../../core/crypto-provider.js';
 
 import {
+  credentialFromWire,
+  credentialToWire,
+  rotationEventFromWire,
+  rotationEventToWire,
+  SNAPSHOT_VERSION,
+  type ControllerSnapshot,
+  type IdentityStateSnapshot,
+} from './snapshot.js';
+import {
   BackendNotAllowlisted,
   ChallengePeriodActive,
   CredentialExpired,
@@ -687,6 +696,120 @@ export class CredentialRotationController {
 
   getRatchetAnchor(identityId: string): string {
     return this.requireIdentity(identityId).ratchetAnchor;
+  }
+
+  // ─── Persistence ──────────────────────────────────────────────────────────
+
+  /**
+   * Serialize the controller's full state to a JSON-safe snapshot. Does
+   * NOT include backend state — each backend has its own snapshot method.
+   * The caller is responsible for bundling the controller snapshot with
+   * each registered backend's snapshot and encrypting the whole thing
+   * before writing to durable storage.
+   *
+   * The snapshot preserves everything required to keep producing
+   * L1/L2/L3-correct events: event chain, current credential pointer,
+   * ratchet anchor, accepted-pool grace windows, rate-limit bucket, and
+   * any active challenge period.
+   */
+  snapshot(): ControllerSnapshot {
+    const identities: IdentityStateSnapshot[] = [];
+    for (const state of this.identities.values()) {
+      identities.push({
+        identityId: state.identityId,
+        backendId: state.backendId,
+        events: state.events.map(e => rotationEventToWire(e, this.provider)),
+        currentCredentialId: state.current?.credentialId ?? null,
+        accepted: Array.from(state.accepted.entries()).map(
+          ([credentialId, entry]) => ({
+            credentialId,
+            credential: credentialToWire(entry.credential, this.provider),
+            graceUntil: entry.graceUntil,
+          }),
+        ),
+        ratchetAnchor: state.ratchetAnchor,
+        rotationTimestamps: [...state.rotationTimestamps],
+        challengePeriodUnlockAt: state.challengePeriodUnlockAt,
+      });
+    }
+    return {
+      version: SNAPSHOT_VERSION,
+      policy: this.policyInner,
+      identities,
+    };
+  }
+
+  /**
+   * Rebuild a controller from a snapshot. The caller must first restore
+   * every backend referenced by the snapshot and pass them in — the
+   * controller registers them under the restored policy, then rebuilds
+   * its identity map. Fails if any referenced backend is missing from
+   * the provided set, if a backend is not in the allowlist, or if the
+   * snapshot version is unsupported.
+   */
+  static restore(
+    snapshot: ControllerSnapshot,
+    opts: {
+      backends: readonly CredentialBackend[];
+      provider?: CryptoProvider;
+      clock?: Clock;
+    },
+  ): CredentialRotationController {
+    if (snapshot.version !== SNAPSHOT_VERSION) {
+      throw new Error(
+        `CredentialRotationController: unsupported snapshot version ${snapshot.version}`,
+      );
+    }
+    const controller = new CredentialRotationController({
+      policy: snapshot.policy,
+      provider: opts.provider,
+      clock: opts.clock,
+    });
+    for (const backend of opts.backends) {
+      controller.registerBackend(backend);
+    }
+    for (const ident of snapshot.identities) {
+      if (!controller.backends.has(ident.backendId)) {
+        throw new Error(
+          `CredentialRotationController.restore: identity ${ident.identityId} references unknown backend ${ident.backendId}`,
+        );
+      }
+      const events = ident.events.map(e =>
+        rotationEventFromWire(e, controller.provider),
+      );
+      const current =
+        ident.currentCredentialId === null
+          ? null
+          : events.find(
+              e => e.newCredential.credentialId === ident.currentCredentialId,
+            )?.newCredential ?? null;
+      if (ident.currentCredentialId && !current) {
+        throw new Error(
+          `CredentialRotationController.restore: current credential ${ident.currentCredentialId} not found in event chain for identity ${ident.identityId}`,
+        );
+      }
+      const accepted = new Map<
+        string,
+        { credential: Credential; graceUntil: number }
+      >();
+      for (const entry of ident.accepted) {
+        accepted.set(entry.credentialId, {
+          credential: credentialFromWire(entry.credential, controller.provider),
+          graceUntil: entry.graceUntil,
+        });
+      }
+      controller.identities.set(ident.identityId, {
+        identityId: ident.identityId,
+        backendId: ident.backendId,
+        events,
+        current,
+        accepted,
+        ratchetAnchor: ident.ratchetAnchor,
+        rotationTimestamps: [...ident.rotationTimestamps],
+        challengePeriodUnlockAt: ident.challengePeriodUnlockAt,
+      });
+    }
+    return controller;
   }
 
   // ─── Internals ────────────────────────────────────────────────────────────

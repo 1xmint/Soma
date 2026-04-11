@@ -23,12 +23,46 @@ import {
 } from '../../../core/crypto-provider.js';
 import { computeManifestCommitment } from '../controller.js';
 import {
+  credentialFromWire,
+  credentialToWire,
+  type CredentialWire,
+} from '../snapshot.js';
+import {
   StagedRotationConflict,
   type AlgorithmSuite,
   type Credential,
   type CredentialBackend,
   type CredentialClass,
 } from '../types.js';
+
+// ─── Snapshot types ─────────────────────────────────────────────────────────
+
+export interface MockStoredCredentialSnapshot {
+  readonly credential: CredentialWire;
+  /** base64-encoded secret key bytes. */
+  readonly secretKey: string;
+  readonly revoked: boolean;
+}
+
+export interface MockIdentitySnapshot {
+  readonly identityId: string;
+  readonly currentCredentialId: string;
+  /** base64-encoded next keypair secret bytes. */
+  readonly nextSecretKey: string;
+  /** base64-encoded next keypair public bytes. */
+  readonly nextPublicKey: string;
+  readonly ttlMs: number;
+}
+
+export interface MockBackendSnapshot {
+  readonly version: 1;
+  readonly backendId: string;
+  readonly class: CredentialClass;
+  readonly algorithmSuite: AlgorithmSuite;
+  readonly counter: number;
+  readonly credentials: MockStoredCredentialSnapshot[];
+  readonly identities: MockIdentitySnapshot[];
+}
 
 interface StoredCredential {
   credential: Credential;
@@ -213,6 +247,103 @@ export class MockCredentialBackend implements CredentialBackend {
     }
     ident.nextKeyPair.secretKey.fill(0);
     this.identities.delete(identityId);
+  }
+
+  // ─── Persistence ─────────────────────────────────────────────────────────
+
+  /**
+   * Serialize the backend's full state. Refuses to run if any identity is
+   * mid-stage: restoring a staged rotation reliably is complicated and
+   * never needed in practice (operators commit or abort before snapshotting).
+   *
+   * Secret keys are base64'd into the returned object. Callers are
+   * responsible for encrypting the snapshot before writing it to durable
+   * storage — nothing about this format is safe to leak.
+   */
+  snapshot(): MockBackendSnapshot {
+    for (const [identityId, ident] of this.identities) {
+      if (ident.staged) {
+        throw new Error(
+          `mock backend: cannot snapshot while identity ${identityId} has a staged rotation; commit or abort first`,
+        );
+      }
+    }
+    const credentials: MockStoredCredentialSnapshot[] = [];
+    for (const [, stored] of this.store) {
+      credentials.push({
+        credential: credentialToWire(stored.credential, this.provider),
+        secretKey: this.provider.encoding.encodeBase64(stored.keyPair.secretKey),
+        revoked: stored.revoked,
+      });
+    }
+    const identities: MockIdentitySnapshot[] = [];
+    for (const [, ident] of this.identities) {
+      identities.push({
+        identityId: ident.identityId,
+        currentCredentialId: ident.currentCredentialId,
+        nextSecretKey: this.provider.encoding.encodeBase64(
+          ident.nextKeyPair.secretKey,
+        ),
+        nextPublicKey: this.provider.encoding.encodeBase64(
+          ident.nextKeyPair.publicKey,
+        ),
+        ttlMs: ident.ttlMs,
+      });
+    }
+    return {
+      version: 1,
+      backendId: this.backendId,
+      class: this.class,
+      algorithmSuite: this.algorithmSuite,
+      counter: this.counter,
+      credentials,
+      identities,
+    };
+  }
+
+  /**
+   * Rebuild a MockCredentialBackend from a snapshot. Restores the
+   * credential store (including revoked ones, so verify-before-revoke
+   * still matches), the per-identity next keypair, and the counter so
+   * new credential ids don't collide with old ones.
+   */
+  static restore(
+    snapshot: MockBackendSnapshot,
+    opts: { provider?: CryptoProvider } = {},
+  ): MockCredentialBackend {
+    if (snapshot.version !== 1) {
+      throw new Error(
+        `mock backend: unsupported snapshot version ${snapshot.version}`,
+      );
+    }
+    const backend = new MockCredentialBackend({
+      backendId: snapshot.backendId,
+      class: snapshot.class,
+      provider: opts.provider,
+    });
+    backend.counter = snapshot.counter;
+    for (const entry of snapshot.credentials) {
+      const credential = credentialFromWire(entry.credential, backend.provider);
+      const secretKey = backend.provider.encoding.decodeBase64(entry.secretKey);
+      backend.store.set(credential.credentialId, {
+        credential,
+        keyPair: { secretKey, publicKey: credential.publicKey },
+        revoked: entry.revoked,
+      });
+    }
+    for (const ident of snapshot.identities) {
+      backend.identities.set(ident.identityId, {
+        identityId: ident.identityId,
+        currentCredentialId: ident.currentCredentialId,
+        nextKeyPair: {
+          secretKey: backend.provider.encoding.decodeBase64(ident.nextSecretKey),
+          publicKey: backend.provider.encoding.decodeBase64(ident.nextPublicKey),
+        },
+        ttlMs: ident.ttlMs,
+        staged: null,
+      });
+    }
+    return backend;
   }
 
   // ─── Test-only hooks ─────────────────────────────────────────────────────

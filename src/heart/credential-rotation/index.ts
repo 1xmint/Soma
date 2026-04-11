@@ -40,5 +40,28 @@ export {
   type TtlPolicy,
 } from './types.js';
 
-export { MockCredentialBackend } from './backends/mock.js';
-export { Ed25519IdentityBackend } from './backends/ed25519-identity.js';
+export {
+  MockCredentialBackend,
+  type MockBackendSnapshot,
+  type MockIdentitySnapshot,
+  type MockStoredCredentialSnapshot,
+} from './backends/mock.js';
+export {
+  Ed25519IdentityBackend,
+  type Ed25519IdentityBackendSnapshot,
+  type Ed25519IdentityPlumbingSnapshot,
+  type Ed25519StoredSecretSnapshot,
+} from './backends/ed25519-identity.js';
+
+export {
+  SNAPSHOT_VERSION,
+  credentialToWire,
+  credentialFromWire,
+  rotationEventToWire,
+  rotationEventFromWire,
+  type AcceptedCredentialSnapshot,
+  type ControllerSnapshot,
+  type CredentialWire,
+  type IdentityStateSnapshot,
+  type RotationEventWire,
+} from './snapshot.js';
