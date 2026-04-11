@@ -199,6 +199,22 @@ export class MockCredentialBackend implements CredentialBackend {
     stored.keyPair.secretKey.fill(0);
   }
 
+  async discardIdentity(identityId: string): Promise<void> {
+    const ident = this.identities.get(identityId);
+    if (!ident) return;
+    if (ident.staged) {
+      await this.abortStagedRotation(identityId);
+    }
+    for (const [credId, stored] of this.store) {
+      if (stored.credential.identityId === identityId) {
+        stored.keyPair.secretKey.fill(0);
+        this.store.delete(credId);
+      }
+    }
+    ident.nextKeyPair.secretKey.fill(0);
+    this.identities.delete(identityId);
+  }
+
   // ─── Test-only hooks ─────────────────────────────────────────────────────
 
   /**

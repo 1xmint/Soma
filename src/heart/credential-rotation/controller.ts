@@ -335,50 +335,65 @@ export class CredentialRotationController {
       ttlMs,
     });
 
-    const genesisHash = genesisEventHash(
-      args.identityId,
-      args.backendId,
-      this.provider,
-    );
-    const newRatchet = deriveRatchetAnchor(
-      genesisRatchetAnchor(args.identityId, this.provider),
-      credential.publicKey,
-      this.provider,
-    );
+    // From here forward the backend has durable state for this identity.
+    // Any throw must discard it before propagating — otherwise a retry
+    // wedges at the backend's "already inceptioned" check.
+    let event: RotationEvent;
+    let newRatchet: string;
+    try {
+      const genesisHash = genesisEventHash(
+        args.identityId,
+        args.backendId,
+        this.provider,
+      );
+      newRatchet = deriveRatchetAnchor(
+        genesisRatchetAnchor(args.identityId, this.provider),
+        credential.publicKey,
+        this.provider,
+      );
 
-    // Inception: no old key to sign under, so we record the new key's PoP
-    // over the event body as the authorising signature.
-    const preEventNoPop = {
-      identityId: args.identityId,
-      backendId: args.backendId,
-      sequence: 0,
-      previousEventHash: genesisHash,
-      oldCredentialId: null,
-      newCredential: credential,
-      ratchetAnchor: newRatchet,
-      timestamp: now,
-      nonce: this.provider.encoding.encodeBase64(
-        this.provider.random.randomBytes(12),
-      ),
-      oldKeySignature: '',
-      newKeyProofOfPossession: '',
-    };
-    const popBytes = await backend.signWithCredential(
-      credential.credentialId,
-      eventSigningInput('inception-pop', preEventNoPop, this.provider),
-    );
-    const newKeyProofOfPossession = this.provider.encoding.encodeBase64(popBytes);
+      // Inception: no old key to sign under, so we record the new key's PoP
+      // over the event body as the authorising signature.
+      const preEventNoPop = {
+        identityId: args.identityId,
+        backendId: args.backendId,
+        sequence: 0,
+        previousEventHash: genesisHash,
+        oldCredentialId: null,
+        newCredential: credential,
+        ratchetAnchor: newRatchet,
+        timestamp: now,
+        nonce: this.provider.encoding.encodeBase64(
+          this.provider.random.randomBytes(12),
+        ),
+        oldKeySignature: '',
+        newKeyProofOfPossession: '',
+      };
+      const popBytes = await backend.signWithCredential(
+        credential.credentialId,
+        eventSigningInput('inception-pop', preEventNoPop, this.provider),
+      );
+      const newKeyProofOfPossession =
+        this.provider.encoding.encodeBase64(popBytes);
 
-    const hashedEvent = { ...preEventNoPop, newKeyProofOfPossession };
-    const hash = computeEventHash(hashedEvent, this.provider);
+      const hashedEvent = { ...preEventNoPop, newKeyProofOfPossession };
+      const hash = computeEventHash(hashedEvent, this.provider);
 
-    const event: RotationEvent = {
-      ...hashedEvent,
-      hash,
-      status: 'pending',
-      pulseTreeRoot: null,
-      externalWitnessCount: 0,
-    };
+      event = {
+        ...hashedEvent,
+        hash,
+        status: 'pending',
+        pulseTreeRoot: null,
+        externalWitnessCount: 0,
+      };
+    } catch (err) {
+      try {
+        await backend.discardIdentity(args.identityId);
+      } catch {
+        /* swallow: original error is what the caller needs */
+      }
+      throw err;
+    }
 
     this.identities.set(args.identityId, {
       identityId: args.identityId,
@@ -425,6 +440,7 @@ export class CredentialRotationController {
       throw new ChallengePeriodActive(state.challengePeriodUnlockAt);
     }
     this.enforceRateLimit(state, now);
+    this.pruneAcceptedPool(state, now);
 
     const oldCredential = state.current;
     const newCredential = await backend.stageNextCredential({
@@ -531,6 +547,8 @@ export class CredentialRotationController {
    * Advances the event from `pending` to `anchored`.
    */
   anchorEvent(identityId: string, eventHash: string, pulseTreeRoot: string): void {
+    if (!eventHash) throw new Error('anchorEvent: eventHash required');
+    if (!pulseTreeRoot) throw new Error('anchorEvent: pulseTreeRoot required');
     const event = this.findEvent(identityId, eventHash);
     if (event.status !== 'pending') {
       throw new Error(`cannot anchor event in status ${event.status}`);
@@ -547,6 +565,7 @@ export class CredentialRotationController {
    * multi-witness policies can use it.
    */
   witnessEvent(identityId: string, eventHash: string): void {
+    if (!eventHash) throw new Error('witnessEvent: eventHash required');
     const state = this.requireIdentity(identityId);
     const event = this.findEvent(identityId, eventHash);
     if (event.status === 'effective') {
@@ -689,6 +708,19 @@ export class CredentialRotationController {
     const event = state.events.find(e => e.hash === eventHash);
     if (!event) throw new Error(`unknown event: ${eventHash}`);
     return event;
+  }
+
+  /**
+   * Drop any accepted-pool entries whose grace period has fully elapsed.
+   * `verify()` already does this inline, but a long-lived rotating
+   * identity with no verify traffic would accumulate entries between
+   * verifies — calling this from rotate() caps the live set at roughly
+   * the number of in-flight rotations.
+   */
+  private pruneAcceptedPool(state: IdentityState, now: number): void {
+    for (const [id, entry] of state.accepted) {
+      if (entry.graceUntil < now) state.accepted.delete(id);
+    }
   }
 
   /**
