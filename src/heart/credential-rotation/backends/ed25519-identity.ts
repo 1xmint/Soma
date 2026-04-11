@@ -37,8 +37,17 @@ import {
   type CryptoProvider,
   type SignKeyPair,
 } from '../../../core/crypto-provider.js';
-import { KeyHistory, type RotationEvent as KeriRotationEvent } from '../../key-rotation.js';
+import {
+  KeyHistory,
+  type KeyHistorySnapshot,
+  type RotationEvent as KeriRotationEvent,
+} from '../../key-rotation.js';
 import { computeManifestCommitment } from '../controller.js';
+import {
+  credentialFromWire,
+  credentialToWire,
+  type CredentialWire,
+} from '../snapshot.js';
 import {
   StagedRotationConflict,
   type AlgorithmSuite,
@@ -46,6 +55,35 @@ import {
   type CredentialBackend,
   type CredentialClass,
 } from '../types.js';
+
+// ─── Snapshot types ─────────────────────────────────────────────────────────
+
+export interface Ed25519StoredSecretSnapshot {
+  readonly credentialId: string;
+  readonly identityId: string;
+  readonly secretKey: string;
+  readonly publicKey: string;
+  readonly expiresAt: number;
+  readonly revoked: boolean;
+  readonly credential: CredentialWire;
+}
+
+export interface Ed25519IdentityPlumbingSnapshot {
+  readonly identityId: string;
+  readonly history: KeyHistorySnapshot;
+  readonly pendingNextSecretKey: string;
+  readonly pendingNextPublicKey: string;
+  readonly currentCredentialId: string;
+  readonly ttlMs: number;
+}
+
+export interface Ed25519IdentityBackendSnapshot {
+  readonly version: 1;
+  readonly backendId: string;
+  readonly counter: number;
+  readonly secrets: Ed25519StoredSecretSnapshot[];
+  readonly plumbing: Ed25519IdentityPlumbingSnapshot[];
+}
 
 // ─── Per-credential secret material (private to the backend) ────────────────
 
@@ -55,6 +93,8 @@ interface StoredSecret {
   keyPair: SignKeyPair;
   expiresAt: number;
   revoked: boolean;
+  /** Full credential entry — retained so snapshots can round-trip losslessly. */
+  credential: Credential;
 }
 
 // ─── Per-identity rotation plumbing ────────────────────────────────────────
@@ -275,6 +315,111 @@ export class Ed25519IdentityBackend implements CredentialBackend {
     this.plumbing.delete(identityId);
   }
 
+  // ─── Persistence ─────────────────────────────────────────────────────────
+
+  /**
+   * Serialize the backend's full state. Refuses mid-stage identities:
+   * operators must commit or abort before snapshotting. Secret keys are
+   * base64'd and the caller is responsible for encrypting the snapshot
+   * before writing it to durable storage.
+   */
+  snapshot(): Ed25519IdentityBackendSnapshot {
+    for (const [identityId, plumb] of this.plumbing) {
+      if (plumb.staged) {
+        throw new Error(
+          `ed25519-identity backend: cannot snapshot while identity ${identityId} has a staged rotation; commit or abort first`,
+        );
+      }
+    }
+    const secrets: Ed25519StoredSecretSnapshot[] = [];
+    for (const [, stored] of this.secrets) {
+      secrets.push({
+        credentialId: stored.credentialId,
+        identityId: stored.identityId,
+        secretKey: this.provider.encoding.encodeBase64(stored.keyPair.secretKey),
+        publicKey: this.provider.encoding.encodeBase64(stored.keyPair.publicKey),
+        expiresAt: stored.expiresAt,
+        revoked: stored.revoked,
+        credential: credentialToWire(stored.credential, this.provider),
+      });
+    }
+    const plumbing: Ed25519IdentityPlumbingSnapshot[] = [];
+    for (const [identityId, plumb] of this.plumbing) {
+      plumbing.push({
+        identityId,
+        history: plumb.history.snapshot(),
+        pendingNextSecretKey: this.provider.encoding.encodeBase64(
+          plumb.pendingNext.secretKey,
+        ),
+        pendingNextPublicKey: this.provider.encoding.encodeBase64(
+          plumb.pendingNext.publicKey,
+        ),
+        currentCredentialId: plumb.currentCredentialId,
+        ttlMs: plumb.ttlMs,
+      });
+    }
+    return {
+      version: 1,
+      backendId: this.backendId,
+      counter: this.counter,
+      secrets,
+      plumbing,
+    };
+  }
+
+  /**
+   * Rebuild an Ed25519IdentityBackend from a snapshot. Restores the
+   * per-credential secret map, per-identity KeyHistory chain, and
+   * pre-committed next keypair so future rotations still satisfy L1.
+   */
+  static restore(
+    snapshot: Ed25519IdentityBackendSnapshot,
+    opts: { provider?: CryptoProvider } = {},
+  ): Ed25519IdentityBackend {
+    if (snapshot.version !== 1) {
+      throw new Error(
+        `ed25519-identity backend: unsupported snapshot version ${snapshot.version}`,
+      );
+    }
+    const backend = new Ed25519IdentityBackend({
+      backendId: snapshot.backendId,
+      provider: opts.provider,
+    });
+    backend.counter = snapshot.counter;
+    for (const entry of snapshot.secrets) {
+      const credential = credentialFromWire(entry.credential, backend.provider);
+      backend.secrets.set(entry.credentialId, {
+        credentialId: entry.credentialId,
+        identityId: entry.identityId,
+        keyPair: {
+          secretKey: backend.provider.encoding.decodeBase64(entry.secretKey),
+          publicKey: backend.provider.encoding.decodeBase64(entry.publicKey),
+        },
+        expiresAt: entry.expiresAt,
+        revoked: entry.revoked,
+        credential,
+      });
+    }
+    for (const entry of snapshot.plumbing) {
+      const history = KeyHistory.restore(entry.history, backend.provider);
+      backend.plumbing.set(entry.identityId, {
+        history,
+        pendingNext: {
+          secretKey: backend.provider.encoding.decodeBase64(
+            entry.pendingNextSecretKey,
+          ),
+          publicKey: backend.provider.encoding.decodeBase64(
+            entry.pendingNextPublicKey,
+          ),
+        },
+        currentCredentialId: entry.currentCredentialId,
+        ttlMs: entry.ttlMs,
+        staged: null,
+      });
+    }
+    return backend;
+  }
+
   // ─── Public-chain introspection (for anchoring / gossip / verifiers) ─────
 
   /**
@@ -329,6 +474,7 @@ export class Ed25519IdentityBackend implements CredentialBackend {
       keyPair: args.keyPair,
       expiresAt: credential.expiresAt,
       revoked: false,
+      credential,
     });
     return credential;
   }
