@@ -253,6 +253,20 @@ describe("CryptoProvider", () => {
       const shared2 = DEFAULT_PROVIDER.keyExchange.deriveSharedKey(kp1.publicKey, kp2.secretKey);
       expect(shared1).toEqual(shared2);
     });
+
+    it("rejects wrong-length remote public key", () => {
+      const kp = DEFAULT_PROVIDER.keyExchange.generateKeyPair();
+      expect(() =>
+        DEFAULT_PROVIDER.keyExchange.deriveSharedKey(new Uint8Array(16), kp.secretKey)
+      ).toThrow(/32 bytes/);
+    });
+
+    it("rejects all-zero remote public key (low-order point)", () => {
+      const kp = DEFAULT_PROVIDER.keyExchange.generateKeyPair();
+      expect(() =>
+        DEFAULT_PROVIDER.keyExchange.deriveSharedKey(new Uint8Array(32), kp.secretKey)
+      ).toThrow(/low-order point/);
+    });
   });
 
   describe("HKDF deriveKey", () => {

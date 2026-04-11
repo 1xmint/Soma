@@ -186,13 +186,27 @@ const ed25519Signing: SigningProvider = {
   },
 
   verify(message: Uint8Array, signature: Uint8Array, publicKey: Uint8Array): boolean {
+    // Length guards come first. We also reject the all-zero public key —
+    // the identity element makes signatures trivially forgeable if an agent
+    // is ever registered with it. The DID encoding would make this visible
+    // upstream, but defence in depth is cheap here.
     if (publicKey.length !== 32 || signature.length !== 64) return false;
+    let allZero = true;
+    for (let i = 0; i < 32; i++) {
+      if (publicKey[i] !== 0) { allZero = false; break; }
+    }
+    if (allZero) return false;
     try {
       const keyObj = createPublicKey({
         key: pubkeyToSpki(publicKey),
         format: "der",
         type: "spki",
       });
+      // Strict S<L verification: node:crypto delegates to OpenSSL, which
+      // enforces the RFC 8032 §5.1.7 canonical-signature rule (signature
+      // scalar must be reduced mod L) from OpenSSL 1.1.1 onwards. Any
+      // non-canonical / malleable signature is rejected here without
+      // needing a separate scalar check.
       return cryptoVerify(null, Buffer.from(message), keyObj, Buffer.from(signature));
     } catch {
       return false;
@@ -208,8 +222,44 @@ const naclKeyExchange: KeyExchangeProvider = {
     return { publicKey: kp.publicKey, secretKey: kp.secretKey };
   },
 
+  /**
+   * X25519 ECDH with defensive low-order-point checks.
+   *
+   * RFC 7748 §6.1 warns that X25519 inputs drawn from the eight low-order
+   * points on Curve25519 collapse the shared secret to zero regardless of
+   * the local secret. A peer who supplies such a public key can force a
+   * predictable session key. `nacl.box.before` does not filter them.
+   *
+   * Defense in depth:
+   *   1. Reject wrong-length remote keys.
+   *   2. Reject the all-zero remote key (the most trivial low-order point).
+   *   3. Compute the shared secret, then reject it if it is all-zero —
+   *      this catches the remaining seven low-order points at the cost of
+   *      the scalar-mult we already had to perform.
+   */
   deriveSharedKey(remotePublicKey: Uint8Array, localSecretKey: Uint8Array): Uint8Array {
-    return nacl.box.before(remotePublicKey, localSecretKey);
+    if (remotePublicKey.length !== 32) {
+      throw new Error(`x25519 deriveSharedKey: remote public key must be 32 bytes, got ${remotePublicKey.length}`);
+    }
+    if (localSecretKey.length !== 32) {
+      throw new Error(`x25519 deriveSharedKey: local secret key must be 32 bytes, got ${localSecretKey.length}`);
+    }
+    let allZero = true;
+    for (let i = 0; i < 32; i++) {
+      if (remotePublicKey[i] !== 0) { allZero = false; break; }
+    }
+    if (allZero) {
+      throw new Error("x25519 deriveSharedKey: remote public key is all-zero (low-order point rejected)");
+    }
+    const shared = nacl.box.before(remotePublicKey, localSecretKey);
+    let sharedZero = true;
+    for (let i = 0; i < shared.length; i++) {
+      if (shared[i] !== 0) { sharedZero = false; break; }
+    }
+    if (sharedZero) {
+      throw new Error("x25519 deriveSharedKey: derived shared secret is zero (low-order point rejected)");
+    }
+    return shared;
   },
 };
 

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { getCryptoProvider, type SignKeyPair } from "../../src/core/crypto-provider.js";
 import {
   HeartRuntime,
@@ -152,6 +152,90 @@ describe("HeartRuntime", () => {
       const encrypted = session.channel!.encrypt("test message");
       expect(encrypted.ciphertext).toBeTruthy();
       expect(encrypted.nonce).toBeTruthy();
+    });
+  });
+
+  describe("session TTL cap", () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2026-01-01T00:00:00Z"));
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("rejects construction with non-positive sessionTtlMs", () => {
+      expect(() =>
+        createSomaHeart(makeHeartConfig({ sessionTtlMs: 0 })),
+      ).toThrow(/sessionTtlMs/);
+      expect(() =>
+        createSomaHeart(makeHeartConfig({ sessionTtlMs: -1 })),
+      ).toThrow(/sessionTtlMs/);
+    });
+
+    it("getSession returns the session inside the TTL window", () => {
+      const heart = createSomaHeart(makeHeartConfig({ sessionTtlMs: 60_000 }));
+      const remoteKeyPair = crypto.signing.generateKeyPair();
+      const remoteGenome = makeGenomeCommitment(remoteKeyPair);
+      const session = heart.createSession(remoteGenome.did, remoteGenome);
+
+      vi.advanceTimersByTime(30_000);
+      expect(heart.getSession(session.sessionId)).toBe(session);
+    });
+
+    it("getSession returns undefined after the TTL elapses", () => {
+      const heart = createSomaHeart(makeHeartConfig({ sessionTtlMs: 60_000 }));
+      const remoteKeyPair = crypto.signing.generateKeyPair();
+      const remoteGenome = makeGenomeCommitment(remoteKeyPair);
+      const session = heart.createSession(remoteGenome.did, remoteGenome);
+
+      vi.advanceTimersByTime(60_001);
+      expect(heart.getSession(session.sessionId)).toBeUndefined();
+    });
+
+    it("getHandshakePayload throws for expired sessions", () => {
+      const heart = createSomaHeart(makeHeartConfig({ sessionTtlMs: 60_000 }));
+      const remoteKeyPair = crypto.signing.generateKeyPair();
+      const remoteGenome = makeGenomeCommitment(remoteKeyPair);
+      const session = heart.createSession(remoteGenome.did, remoteGenome);
+
+      vi.advanceTimersByTime(60_001);
+      expect(() => heart.getHandshakePayload(session.sessionId)).toThrow(
+        /Session not found/,
+      );
+    });
+
+    it("completeHandshake throws for expired sessions", () => {
+      const heart = createSomaHeart(makeHeartConfig({ sessionTtlMs: 60_000 }));
+      const remoteKeyPair = crypto.signing.generateKeyPair();
+      const remoteGenome = makeGenomeCommitment(remoteKeyPair);
+      const session = heart.createSession(remoteGenome.did, remoteGenome);
+
+      const remoteEphemeral = generateEphemeralKeyPair();
+      const remoteHandshake = createHandshakePayload(remoteGenome, remoteEphemeral);
+
+      vi.advanceTimersByTime(60_001);
+      expect(() =>
+        heart.completeHandshake(session.sessionId, remoteHandshake),
+      ).toThrow(/Session not found/);
+    });
+
+    it("createSession purges expired sessions opportunistically", () => {
+      const heart = createSomaHeart(makeHeartConfig({ sessionTtlMs: 60_000 }));
+      const remoteKeyPair1 = crypto.signing.generateKeyPair();
+      const remoteGenome1 = makeGenomeCommitment(remoteKeyPair1);
+      const stale = heart.createSession(remoteGenome1.did, remoteGenome1);
+
+      vi.advanceTimersByTime(60_001);
+
+      // Create a second session — should evict the stale entry.
+      const remoteKeyPair2 = crypto.signing.generateKeyPair();
+      const remoteGenome2 = makeGenomeCommitment(remoteKeyPair2);
+      heart.createSession(remoteGenome2.did, remoteGenome2);
+
+      // The stale session is no longer retrievable, so the Map shed it.
+      expect(heart.getSession(stale.sessionId)).toBeUndefined();
     });
   });
 

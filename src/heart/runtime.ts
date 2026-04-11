@@ -69,6 +69,18 @@ import {
 
 // --- Types ---
 
+/**
+ * Default maximum age of a session, in ms. Sessions older than this are
+ * purged from the sessions Map and treated as not-found on any read.
+ *
+ * Without a cap, the sessions Map grows unbounded — every createSession call
+ * allocates a HeartbeatChain + ephemeral keypair that persist until destroy().
+ * A long-lived heart handling many short sessions would leak memory and
+ * accumulate revoked-but-not-cleaned session keys. One hour is long enough
+ * for ordinary streaming interactions and short enough to bound growth.
+ */
+export const DEFAULT_SESSION_TTL_MS = 60 * 60 * 1000;
+
 export interface DataSourceConfig {
   name: string;
   url: string;
@@ -122,6 +134,13 @@ export interface HeartConfig {
 
   /** Crypto provider — swap algorithms without changing the protocol. */
   cryptoProvider?: CryptoProvider;
+
+  /**
+   * Maximum age of a session in milliseconds. Defaults to
+   * `DEFAULT_SESSION_TTL_MS` (1 hour). Sessions older than this are purged
+   * and treated as not-found on any read — caps unbounded Map growth.
+   */
+  sessionTtlMs?: number;
 }
 
 export interface GenerationInput {
@@ -198,6 +217,7 @@ export class HeartRuntime {
   private readonly modelBaseUrl: string;
   private readonly dataSources: Map<string, DataSourceConfig>;
   private readonly sessions: Map<string, HeartSession> = new Map();
+  private readonly sessionTtlMs: number;
   private readonly provider: CryptoProvider;
   private readonly _lineage?: HeartLineage;
   private readonly _effectiveCaps: string[] | null;
@@ -210,6 +230,10 @@ export class HeartRuntime {
     this.signingKeyPair = config.signingKeyPair;
     this.modelId = config.modelId;
     this.modelBaseUrl = config.modelBaseUrl;
+    this.sessionTtlMs = config.sessionTtlMs ?? DEFAULT_SESSION_TTL_MS;
+    if (this.sessionTtlMs <= 0) {
+      throw new Error("sessionTtlMs must be > 0");
+    }
     this.heartbeatChain = config.restoreHeartbeats
       ? HeartbeatChain.restore(config.restoreHeartbeats, this.provider)
       : new HeartbeatChain(this.provider);
@@ -399,7 +423,7 @@ export class HeartRuntime {
   /** Pick the chain for a given session (global if none). */
   private chainFor(sessionId?: string): HeartbeatChain {
     if (!sessionId) return this.heartbeatChain;
-    return this.sessions.get(sessionId)?.heartbeatChain ?? this.heartbeatChain;
+    return this.activeSession(sessionId)?.heartbeatChain ?? this.heartbeatChain;
   }
 
   // ─── Fork — spawn a child heart with signed lineage ─────────────────────
@@ -646,6 +670,10 @@ export class HeartRuntime {
   createSession(remoteDid: string, remoteGenome: GenomeCommitment): HeartSession {
     this.ensureAlive();
 
+    // Opportunistic cleanup: purge any sessions that have outlived the TTL.
+    // This keeps the Map bounded even when no reader touches the stale entries.
+    this.purgeExpiredSessions();
+
     const ephemeralKeyPair = generateEphemeralKeyPair(this.provider);
     const sessionId = sha256(`${this.did}|${remoteDid}|${Date.now()}|${Math.random()}`, this.provider);
 
@@ -678,7 +706,7 @@ export class HeartRuntime {
   /** Get the handshake payload for a session. */
   getHandshakePayload(sessionId: string): HandshakePayload {
     this.ensureAlive();
-    const session = this.sessions.get(sessionId);
+    const session = this.activeSession(sessionId);
     if (!session) throw new Error(`Session not found: ${sessionId}`);
     return createHandshakePayload(this.genome, session.ephemeralKeyPair, this.provider);
   }
@@ -689,7 +717,7 @@ export class HeartRuntime {
    */
   completeHandshake(sessionId: string, remoteHandshake: HandshakePayload): void {
     this.ensureAlive();
-    const session = this.sessions.get(sessionId);
+    const session = this.activeSession(sessionId);
     if (!session) throw new Error(`Session not found: ${sessionId}`);
 
     const localHandshake = createHandshakePayload(this.genome, session.ephemeralKeyPair, this.provider);
@@ -703,9 +731,49 @@ export class HeartRuntime {
     session.sessionKey = channel.sessionKey;
   }
 
-  /** Get a session by ID. */
+  /**
+   * Get a session by ID. Returns undefined if the session has expired
+   * past `sessionTtlMs` — expired sessions are purged on access so the
+   * caller sees them as not-found.
+   */
   getSession(sessionId: string): HeartSession | undefined {
-    return this.sessions.get(sessionId);
+    return this.activeSession(sessionId);
+  }
+
+  /**
+   * Internal session accessor. Purges the session if expired and returns
+   * undefined in that case, otherwise returns the live session. All internal
+   * session reads go through this so no code path observes a stale session.
+   */
+  private activeSession(sessionId: string): HeartSession | undefined {
+    const session = this.sessions.get(sessionId);
+    if (!session) return undefined;
+    if (this.isSessionExpired(session)) {
+      this.sessions.delete(sessionId);
+      return undefined;
+    }
+    return session;
+  }
+
+  /** True if the session has outlived `sessionTtlMs`. */
+  private isSessionExpired(session: HeartSession): boolean {
+    return Date.now() - session.createdAt > this.sessionTtlMs;
+  }
+
+  /**
+   * Purge every expired session from the Map. Called opportunistically
+   * from createSession so repeated creation can't leak memory even when
+   * no reader ever touches the stale sessions.
+   */
+  private purgeExpiredSessions(): number {
+    let purged = 0;
+    for (const [id, session] of this.sessions) {
+      if (this.isSessionExpired(session)) {
+        this.sessions.delete(id);
+        purged++;
+      }
+    }
+    return purged;
   }
 
   // --- The ONLY Way to Generate ---
@@ -716,7 +784,7 @@ export class HeartRuntime {
   ): AsyncGenerator<HeartbeatToken> {
     this.ensureAlive();
 
-    const session = sessionId ? this.sessions.get(sessionId) : undefined;
+    const session = sessionId ? this.activeSession(sessionId) : undefined;
     const chain = session?.heartbeatChain ?? this.heartbeatChain;
 
     // Step 1: Record query received
@@ -837,7 +905,7 @@ export class HeartRuntime {
     }
 
     const chain = sessionId
-      ? (this.sessions.get(sessionId)?.heartbeatChain ?? this.heartbeatChain)
+      ? (this.activeSession(sessionId)?.heartbeatChain ?? this.heartbeatChain)
       : this.heartbeatChain;
     const heartbeats: Heartbeat[] = [];
 
@@ -913,7 +981,7 @@ export class HeartRuntime {
     }
 
     const chain = sessionId
-      ? (this.sessions.get(sessionId)?.heartbeatChain ?? this.heartbeatChain)
+      ? (this.activeSession(sessionId)?.heartbeatChain ?? this.heartbeatChain)
       : this.heartbeatChain;
     const heartbeats: Heartbeat[] = [];
 
