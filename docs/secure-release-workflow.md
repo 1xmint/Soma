@@ -11,15 +11,6 @@ Soma is the open-source upstream. The clean professional model here is:
 - no long-lived npm automation tokens
 - public npm releases with provenance
 
-## Current State
-
-The `npm-release` environment and trusted-publisher path are in place for
-the single unified package:
-
-- `soma-heart` (includes the former `soma-sense` as subpath exports since 0.3.0)
-
-So the main remaining work is release discipline and downstream adoption order, not basic publishing setup.
-
 ## Why Soma Is Different
 
 ClawNet and Pulse are private production applications.
