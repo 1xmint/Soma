@@ -259,6 +259,22 @@ export class Ed25519IdentityBackend implements CredentialBackend {
     stored.keyPair.secretKey.fill(0);
   }
 
+  async discardIdentity(identityId: string): Promise<void> {
+    const plumb = this.plumbing.get(identityId);
+    if (!plumb) return;
+    if (plumb.staged) {
+      await this.abortStagedRotation(identityId);
+    }
+    for (const [credId, stored] of this.secrets) {
+      if (stored.identityId === identityId) {
+        stored.keyPair.secretKey.fill(0);
+        this.secrets.delete(credId);
+      }
+    }
+    plumb.pendingNext.secretKey.fill(0);
+    this.plumbing.delete(identityId);
+  }
+
   // ─── Public-chain introspection (for anchoring / gossip / verifiers) ─────
 
   /**

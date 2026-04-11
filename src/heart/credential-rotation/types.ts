@@ -243,6 +243,15 @@ export interface CredentialBackend {
    * only after verify-before-revoke has succeeded (invariant 12).
    */
   revokeCredential(credentialId: string): Promise<void>;
+
+  /**
+   * Discard all backend state for an identity. The controller calls this
+   * only when an inception rolls back mid-flight (e.g. the backend issued
+   * a credential but a subsequent signing step failed). Must be idempotent
+   * and safe to call on an unknown identity. Implementations should
+   * zeroise any secret material they were holding for the identity.
+   */
+  discardIdentity(identityId: string): Promise<void>;
 }
 
 // ─── Policy ─────────────────────────────────────────────────────────────────
