@@ -564,6 +564,39 @@ describe("CredentialRotationController — backend isolation (invariant 7)", () 
   });
 });
 
+describe("CredentialRotationController — one rotation in-flight per identity", () => {
+  it("refuses a second rotate() while the prior rotation is still pending anchor", async () => {
+    const { controller } = makeController();
+    await inceptAndEffect(controller, "alice");
+    await controller.rotate("alice");
+    // Tip is now pending (anchor + witness not yet called).
+    await expect(controller.rotate("alice")).rejects.toBeInstanceOf(
+      NotYetEffective,
+    );
+  });
+
+  it("refuses a second rotate() while the prior rotation is anchored but not witnessed", async () => {
+    const { controller } = makeController();
+    await inceptAndEffect(controller, "alice");
+    const { event } = await controller.rotate("alice");
+    controller.anchorEvent("alice", event.hash, "pulse-root-2");
+    // Still anchored, not witnessed.
+    await expect(controller.rotate("alice")).rejects.toBeInstanceOf(
+      NotYetEffective,
+    );
+  });
+
+  it("allows the second rotate() once the prior one is witnessed", async () => {
+    const { controller } = makeController();
+    await inceptAndEffect(controller, "alice");
+    const r1 = await controller.rotate("alice");
+    controller.anchorEvent("alice", r1.event.hash, "pulse-root-2");
+    controller.witnessEvent("alice", r1.event.hash);
+    const r2 = await controller.rotate("alice");
+    expect(r2.event.sequence).toBe(2);
+  });
+});
+
 describe("CredentialRotationController — persistence (snapshot / restore)", () => {
   it("roundtrips an inceptioned identity and keeps signing after restore", async () => {
     const { controller, backend, clockRef } = makeController();
