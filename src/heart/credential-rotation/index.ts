@@ -37,3 +37,4 @@ export {
 } from './types.js';
 
 export { MockCredentialBackend } from './backends/mock.js';
+export { Ed25519IdentityBackend } from './backends/ed25519-identity.js';
