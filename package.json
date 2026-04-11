@@ -8,6 +8,11 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc -p tsconfig.build.json",
+    "build:packages": "node scripts/build-packages.mjs",
+    "pack:heart": "npm pack ./packages/soma-heart",
+    "pack:sense": "npm pack ./packages/soma-sense",
     "test": "vitest run",
     "test:watch": "vitest",
     "experiment": "tsx src/experiment/runner.ts",
@@ -23,7 +28,8 @@
     "bench": "tsx bench/index.ts",
     "generate-synthetic": "tsx src/experiment/generate-synthetic.ts",
     "experiment:agents": "tsx src/experiment/agents/run-agent-experiment.ts",
-    "test:heart-live": "tsx src/experiment/heart-live-test.ts"
+    "test:heart-live": "tsx src/experiment/heart-live-test.ts",
+    "ci": "npm run lint && npm run format:check && npm run typecheck && npm run test && npm run build:packages"
   },
   "engines": {
     "node": ">=18"

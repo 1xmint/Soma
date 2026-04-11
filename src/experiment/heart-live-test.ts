@@ -8,49 +8,37 @@
  * Run: pnpm run test:heart-live
  */
 
-import "dotenv/config";
-import {
-  HeartRuntime,
-  type HeartbeatToken,
-} from "../heart/runtime.js";
-import {
-  createGenome,
-  commitGenome,
-} from "../core/genome.js";
-import {
-  generateEphemeralKeyPair,
-  createHandshakePayload,
-} from "../core/channel.js";
-import { HeartbeatChain } from "../heart/heartbeat.js";
-import { deriveHmacKey, verifyTokenHmac } from "../heart/seed.js";
-import {
-  verifyBirthCertificate,
-  verifyDataIntegrity,
-} from "../heart/birth-certificate.js";
-import { getCryptoProvider } from "../core/crypto-provider.js";
+import 'dotenv/config';
+import { HeartRuntime, type HeartbeatToken } from '../heart/runtime.js';
+import { createGenome, commitGenome } from '../core/genome.js';
+import { generateEphemeralKeyPair, createHandshakePayload } from '../core/channel.js';
+import { HeartbeatChain } from '../heart/heartbeat.js';
+import { deriveHmacKey, verifyTokenHmac } from '../heart/seed.js';
+import { verifyBirthCertificate, verifyDataIntegrity } from '../heart/birth-certificate.js';
+import { getCryptoProvider } from '../core/crypto-provider.js';
 
 // ─── Config ─────────────────────────────────────────────────────────────────
 
-const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY ?? "";
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY ?? '';
 if (!ANTHROPIC_API_KEY) {
-  console.error("ERROR: ANTHROPIC_API_KEY not set in environment or .env file");
+  console.error('ERROR: ANTHROPIC_API_KEY not set in environment or .env file');
   process.exit(1);
 }
 
-const MODEL_ID = "claude-haiku-4-5-20251001";
-const MODEL_BASE_URL = "https://api.anthropic.com/v1";
+const MODEL_ID = 'claude-haiku-4-5-20251001';
+const MODEL_BASE_URL = 'https://api.anthropic.com/v1';
 
 const PROMPTS = [
-  "What is 2 + 2?",
-  "Explain DNS in one sentence.",
-  "Name three prime numbers.",
-  "What color is the sky?",
-  "Write a haiku about code.",
-  "What is the capital of France?",
-  "Explain what an API is.",
-  "List two programming languages.",
-  "What does HTTP stand for?",
-  "What is the speed of light?",
+  'What is 2 + 2?',
+  'Explain DNS in one sentence.',
+  'Name three prime numbers.',
+  'What color is the sky?',
+  'Write a haiku about code.',
+  'What is the capital of France?',
+  'Explain what an API is.',
+  'List two programming languages.',
+  'What does HTTP stand for?',
+  'What is the speed of light?',
 ];
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -60,11 +48,11 @@ const crypto = getCryptoProvider();
 function createIdentity(label: string) {
   const keyPair = crypto.signing.generateKeyPair();
   const genome = createGenome({
-    modelProvider: "anthropic",
+    modelProvider: 'anthropic',
     modelId: MODEL_ID,
-    modelVersion: "1.0",
+    modelVersion: '1.0',
     systemPrompt: `You are ${label}`,
-    toolManifest: "{}",
+    toolManifest: '{}',
     runtimeId: `live-test-${label}`,
   });
   const commitment = commitGenome(genome, keyPair);
@@ -74,26 +62,26 @@ function createIdentity(label: string) {
 async function collectGeneration(
   heart: HeartRuntime,
   prompt: string,
-  sessionId?: string
+  sessionId?: string,
 ): Promise<{ text: string; tokens: HeartbeatToken[]; heartbeats: HeartbeatToken[] }> {
   const allTokens: HeartbeatToken[] = [];
   const allHeartbeats: HeartbeatToken[] = [];
-  let text = "";
+  let text = '';
 
   const stream = heart.generate(
     {
       messages: [
-        { role: "system", content: "You are a helpful assistant. Be brief." },
-        { role: "user", content: prompt },
+        { role: 'system', content: 'You are a helpful assistant. Be brief.' },
+        { role: 'user', content: prompt },
       ],
       maxTokens: 100,
     },
-    sessionId
+    sessionId,
   );
 
   for await (const item of stream) {
-    if (item.type === "token") {
-      text += item.token ?? "";
+    if (item.type === 'token') {
+      text += item.token ?? '';
       allTokens.push(item);
     } else {
       allHeartbeats.push(item);
@@ -108,27 +96,27 @@ function line(msg: string) {
 }
 
 function header(msg: string) {
-  console.log(`\n${"─".repeat(60)}`);
+  console.log(`\n${'─'.repeat(60)}`);
   console.log(`  ${msg}`);
-  console.log(`${"─".repeat(60)}`);
+  console.log(`${'─'.repeat(60)}`);
 }
 
 function result(label: string, pass: boolean, detail?: string) {
-  const icon = pass ? "PASS" : "FAIL";
-  const suffix = detail ? ` (${detail})` : "";
+  const icon = pass ? 'PASS' : 'FAIL';
+  const suffix = detail ? ` (${detail})` : '';
   console.log(`  [${icon}] ${label}${suffix}`);
 }
 
 // ─── Main ───────────────────────────────────────────────────────────────────
 
 async function main() {
-  console.log("╔══════════════════════════════════════════════════════════╗");
-  console.log("║          SOMA HEART LIVE INTEGRATION TEST              ║");
-  console.log("╠══════════════════════════════════════════════════════════╣");
+  console.log('╔══════════════════════════════════════════════════════════╗');
+  console.log('║          SOMA HEART LIVE INTEGRATION TEST              ║');
+  console.log('╠══════════════════════════════════════════════════════════╣');
   console.log(`║  Model:    ${MODEL_ID}`);
   console.log(`║  Prompts:  ${PROMPTS.length}`);
   console.log(`║  Time:     ${new Date().toISOString()}`);
-  console.log("╚══════════════════════════════════════════════════════════╝");
+  console.log('╚══════════════════════════════════════════════════════════╝');
 
   const results = {
     heartbeatChainValid: false,
@@ -147,10 +135,10 @@ async function main() {
 
   // ── Step 1: Create two hearted parties and establish a session ───────────
 
-  header("Step 1: Create hearted parties + DID handshake");
+  header('Step 1: Create hearted parties + DID handshake');
 
-  const server = createIdentity("server");
-  const client = createIdentity("client");
+  const server = createIdentity('server');
+  const client = createIdentity('client');
 
   line(`Server DID: ${server.commitment.did.slice(0, 40)}...`);
   line(`Client DID: ${client.commitment.did.slice(0, 40)}...`);
@@ -161,10 +149,8 @@ async function main() {
     modelApiKey: ANTHROPIC_API_KEY,
     modelBaseUrl: MODEL_BASE_URL,
     modelId: MODEL_ID,
-    toolCredentials: { "mock-db": "mock-credential-12345" },
-    dataSources: [
-      { name: "mock-api", url: "https://example.com/api" },
-    ],
+    toolCredentials: { 'mock-db': 'mock-credential-12345' },
+    dataSources: [{ name: 'mock-api', url: 'https://example.com/api' }],
   });
 
   // Create session and complete handshake
@@ -173,25 +159,27 @@ async function main() {
 
   // Client side: generate ephemeral key pair and create handshake
   const clientEphemeral = generateEphemeralKeyPair();
-  const clientHandshake = createHandshakePayload(
-    client.commitment,
-    clientEphemeral
-  );
+  const clientHandshake = createHandshakePayload(client.commitment, clientEphemeral);
 
   heart.completeHandshake(session.sessionId, clientHandshake);
   const liveSession = heart.getSession(session.sessionId)!;
 
-  result("Heart created", heart.isAlive);
-  result("Session established", !!liveSession.channel);
-  result("Session key available", !!liveSession.sessionKey);
+  result('Heart created', heart.isAlive);
+  result('Session established', !!liveSession.channel);
+  result('Session key available', !!liveSession.sessionKey);
   line(`Session ID: ${session.sessionId.slice(0, 24)}...`);
 
   // ── Step 2: Generate 10 responses through the heart ─────────────────────
 
-  header("Step 2: Generate 10 responses through the heart");
+  header('Step 2: Generate 10 responses through the heart');
 
   const baselineWordCounts: number[] = [];
-  const generations: Array<{ prompt: string; text: string; tokens: HeartbeatToken[]; heartbeats: HeartbeatToken[] }> = [];
+  const generations: Array<{
+    prompt: string;
+    text: string;
+    tokens: HeartbeatToken[];
+    heartbeats: HeartbeatToken[];
+  }> = [];
 
   for (let i = 0; i < PROMPTS.length; i++) {
     const prompt = PROMPTS[i];
@@ -205,8 +193,10 @@ async function main() {
       const wordCount = gen.text.split(/\s+/).filter((w) => w.length > 0).length;
       baselineWordCounts.push(wordCount);
 
-      line(`    Response: ${gen.text.slice(0, 80).replace(/\n/g, " ")}...`);
-      line(`    Words: ${wordCount}, Tokens: ${gen.tokens.length}, Heartbeats: ${gen.heartbeats.length}`);
+      line(`    Response: ${gen.text.slice(0, 80).replace(/\n/g, ' ')}...`);
+      line(
+        `    Words: ${wordCount}, Tokens: ${gen.tokens.length}, Heartbeats: ${gen.heartbeats.length}`,
+      );
 
       // Verify heartbeat chain after each generation
       const chainSnapshot = liveSession.heartbeatChain.getChain();
@@ -220,14 +210,14 @@ async function main() {
   }
 
   result(
-    "Generations completed",
+    'Generations completed',
     results.generationsCompleted === PROMPTS.length,
-    `${results.generationsCompleted}/${PROMPTS.length}`
+    `${results.generationsCompleted}/${PROMPTS.length}`,
   );
 
   // ── Step 3: Verify heartbeat chain ──────────────────────────────────────
 
-  header("Step 3: Verify heartbeat chain integrity");
+  header('Step 3: Verify heartbeat chain integrity');
 
   const fullChain = [...liveSession.heartbeatChain.getChain()];
   results.heartbeatChainValid = HeartbeatChain.verify(fullChain);
@@ -243,21 +233,21 @@ async function main() {
     line(`  ${type}: ${count}`);
   }
 
-  result("Heartbeat chain valid", results.heartbeatChainValid);
+  result('Heartbeat chain valid', results.heartbeatChainValid);
   result(
-    "Chain has expected events",
-    (eventCounts.get("query_received") ?? 0) >= PROMPTS.length,
-    `query_received: ${eventCounts.get("query_received") ?? 0}`
+    'Chain has expected events',
+    (eventCounts.get('query_received') ?? 0) >= PROMPTS.length,
+    `query_received: ${eventCounts.get('query_received') ?? 0}`,
   );
   result(
-    "Seeds were generated",
-    (eventCounts.get("seed_generated") ?? 0) >= PROMPTS.length,
-    `seed_generated: ${eventCounts.get("seed_generated") ?? 0}`
+    'Seeds were generated',
+    (eventCounts.get('seed_generated') ?? 0) >= PROMPTS.length,
+    `seed_generated: ${eventCounts.get('seed_generated') ?? 0}`,
   );
 
   // ── Step 4: Verify token-level HMAC authentication ──────────────────────
 
-  header("Step 4: Verify token-level HMAC authentication");
+  header('Step 4: Verify token-level HMAC authentication');
 
   // Derive the HMAC key from the session key (receiver side)
   const hmacKey = deriveHmacKey(liveSession.sessionKey!);
@@ -265,26 +255,22 @@ async function main() {
 
   results.seedTotal = generations.length;
   for (const gen of generations) {
-    const seedBeat = gen.heartbeats.find((h) => h.heartbeat?.eventType === "seed_generated");
+    const seedBeat = gen.heartbeats.find((h) => h.heartbeat?.eventType === 'seed_generated');
     if (!seedBeat?.heartbeat) continue;
 
     // Verify every token's HMAC
-    const tokenItems = gen.tokens.filter((t: HeartbeatToken) => t.type === "token" && t.hmac);
+    const tokenItems = gen.tokens.filter((t: HeartbeatToken) => t.type === 'token' && t.hmac);
     let allValid = true;
     for (const tok of tokenItems) {
       results.hmacTokensTotal++;
-      const valid = verifyTokenHmac(
-        hmacKey,
-        tok.token!,
-        tok.sequence!,
-        hmacInteraction,
-        tok.hmac!
-      );
+      const valid = verifyTokenHmac(hmacKey, tok.token!, tok.sequence!, hmacInteraction, tok.hmac!);
       if (valid) {
         results.hmacTokensVerified++;
       } else {
         allValid = false;
-        line(`    HMAC FAIL: token="${tok.token}" seq=${tok.sequence} interaction=${hmacInteraction}`);
+        line(
+          `    HMAC FAIL: token="${tok.token}" seq=${tok.sequence} interaction=${hmacInteraction}`,
+        );
       }
     }
 
@@ -297,62 +283,64 @@ async function main() {
 
   results.hmacAllValid = results.hmacTokensVerified === results.hmacTokensTotal;
 
-  const seedPassRate = results.seedTotal > 0
-    ? (results.seedVerifications / results.seedTotal * 100).toFixed(1)
-    : "0";
+  const seedPassRate =
+    results.seedTotal > 0
+      ? ((results.seedVerifications / results.seedTotal) * 100).toFixed(1)
+      : '0';
 
   result(
-    "Token HMACs verified",
+    'Token HMACs verified',
     results.hmacAllValid,
-    `${results.hmacTokensVerified}/${results.hmacTokensTotal} tokens`
+    `${results.hmacTokensVerified}/${results.hmacTokensTotal} tokens`,
   );
   result(
-    "All generations HMAC-authenticated",
+    'All generations HMAC-authenticated',
     results.seedVerifications === results.seedTotal,
-    `${results.seedVerifications}/${results.seedTotal} (${seedPassRate}%)`
+    `${results.seedVerifications}/${results.seedTotal} (${seedPassRate}%)`,
   );
 
   // ── Step 5: Tool call with mock tool ────────────────────────────────────
 
-  header("Step 5: Tool call through the heart");
+  header('Step 5: Tool call through the heart');
 
   try {
     const toolResult = await heart.callTool(
-      "mock-db",
-      { query: "SELECT * FROM users LIMIT 1" },
-      async (credential, args) => {
+      'mock-db',
+      { query: 'SELECT * FROM users LIMIT 1' },
+      async (credential: string, args: Record<string, unknown>) => {
         // Mock tool executor — verifies it receives the credential
-        if (credential !== "mock-credential-12345") {
-          throw new Error("Wrong credential passed to tool");
+        if (credential !== 'mock-credential-12345') {
+          throw new Error('Wrong credential passed to tool');
         }
-        return { rows: [{ id: 1, name: "Alice" }], query: args.query };
+        return { rows: [{ id: 1, name: 'Alice' }], query: args.query };
       },
-      session.sessionId
+      session.sessionId,
     );
 
     // Verify birth certificate
-    const certValid = verifyBirthCertificate(
-      toolResult.birthCertificate,
-      server.keyPair.publicKey
-    );
+    const certValid = verifyBirthCertificate(toolResult.birthCertificate, server.keyPair.publicKey);
     const dataValid = verifyDataIntegrity(
       JSON.stringify(toolResult.result),
-      toolResult.birthCertificate
+      toolResult.birthCertificate,
     );
 
     results.toolCallPassed = certValid && dataValid;
     results.birthCertsTotal++;
     if (certValid) results.birthCertsValid++;
 
-    result("Tool credential forwarded", true);
-    result("Tool birth certificate valid", certValid);
-    result("Tool data integrity valid", dataValid);
-    result("Tool heartbeats logged", toolResult.heartbeats.length === 3, `${toolResult.heartbeats.length} heartbeats`);
+    result('Tool credential forwarded', true);
+    result('Tool birth certificate valid', certValid);
+    result('Tool data integrity valid', dataValid);
+    result(
+      'Tool heartbeats logged',
+      toolResult.heartbeats.length === 3,
+      `${toolResult.heartbeats.length} heartbeats`,
+    );
 
     // Verify chain still valid after tool call
     const chainAfterTool = [...liveSession.heartbeatChain.getChain()];
     const chainStillValid = HeartbeatChain.verify(chainAfterTool);
-    result("Chain still valid after tool call", chainStillValid, `${chainAfterTool.length} total`);
+    result('Chain still valid after tool call', chainStillValid, `${chainAfterTool.length} total`);
   } catch (err) {
     line(`  ERROR: ${(err as Error).message}`);
     results.toolCallPassed = false;
@@ -360,41 +348,42 @@ async function main() {
 
   // ── Step 6: Fetch data with mock fetcher ────────────────────────────────
 
-  header("Step 6: Data fetch through the heart");
+  header('Step 6: Data fetch through the heart');
 
   try {
     const fetchResult = await heart.fetchData(
-      "mock-api",
-      "latest-prices",
+      'mock-api',
+      'latest-prices',
       async (_url, _headers, query) => {
         // Mock fetcher
         return JSON.stringify({ prices: [100, 200, 300], query });
       },
-      session.sessionId
+      session.sessionId,
     );
 
     // Verify birth certificate
     const certValid = verifyBirthCertificate(
       fetchResult.birthCertificate,
-      server.keyPair.publicKey
+      server.keyPair.publicKey,
     );
-    const dataValid = verifyDataIntegrity(
-      fetchResult.content,
-      fetchResult.birthCertificate
-    );
+    const dataValid = verifyDataIntegrity(fetchResult.content, fetchResult.birthCertificate);
 
     results.fetchDataPassed = certValid && dataValid;
     results.birthCertsTotal++;
     if (certValid) results.birthCertsValid++;
 
-    result("Fetch birth certificate valid", certValid);
-    result("Fetch data integrity valid", dataValid);
-    result("Fetch heartbeats logged", fetchResult.heartbeats.length === 3, `${fetchResult.heartbeats.length} heartbeats`);
+    result('Fetch birth certificate valid', certValid);
+    result('Fetch data integrity valid', dataValid);
+    result(
+      'Fetch heartbeats logged',
+      fetchResult.heartbeats.length === 3,
+      `${fetchResult.heartbeats.length} heartbeats`,
+    );
 
     // Verify chain still valid
     const chainAfterFetch = [...liveSession.heartbeatChain.getChain()];
     const chainStillValid = HeartbeatChain.verify(chainAfterFetch);
-    result("Chain still valid after fetch", chainStillValid, `${chainAfterFetch.length} total`);
+    result('Chain still valid after fetch', chainStillValid, `${chainAfterFetch.length} total`);
   } catch (err) {
     line(`  ERROR: ${(err as Error).message}`);
     results.fetchDataPassed = false;
@@ -402,44 +391,46 @@ async function main() {
 
   // ── Step 7: Destroy the heart ───────────────────────────────────────────
 
-  header("Step 7: Destroy the heart");
+  header('Step 7: Destroy the heart');
 
   heart.destroy();
-  result("Heart destroyed", !heart.isAlive);
+  result('Heart destroyed', !heart.isAlive);
 
   let destroyedGenerate = false;
   try {
     const stream = heart.generate({
-      messages: [{ role: "user", content: "Hello" }],
+      messages: [{ role: 'user', content: 'Hello' }],
     });
     // Must consume the generator to trigger the error
-    for await (const _ of stream) { /* should not reach here */ }
+    for await (const _ of stream) {
+      /* should not reach here */
+    }
   } catch (err) {
-    destroyedGenerate = (err as Error).message.includes("destroyed");
+    destroyedGenerate = (err as Error).message.includes('destroyed');
   }
-  result("generate() throws after destroy", destroyedGenerate);
+  result('generate() throws after destroy', destroyedGenerate);
 
   let destroyedTool = false;
   try {
-    await heart.callTool("mock-db", {}, async () => null);
+    await heart.callTool('mock-db', {}, async () => null);
   } catch (err) {
-    destroyedTool = (err as Error).message.includes("destroyed");
+    destroyedTool = (err as Error).message.includes('destroyed');
   }
-  result("callTool() throws after destroy", destroyedTool);
+  result('callTool() throws after destroy', destroyedTool);
 
   let destroyedFetch = false;
   try {
-    await heart.fetchData("mock-api", "test");
+    await heart.fetchData('mock-api', 'test');
   } catch (err) {
-    destroyedFetch = (err as Error).message.includes("destroyed");
+    destroyedFetch = (err as Error).message.includes('destroyed');
   }
-  result("fetchData() throws after destroy", destroyedFetch);
+  result('fetchData() throws after destroy', destroyedFetch);
 
   results.destroyConfirmed = destroyedGenerate && destroyedTool && destroyedFetch;
 
   // ── Final Report ────────────────────────────────────────────────────────
 
-  header("FINAL REPORT");
+  header('FINAL REPORT');
 
   const allPassed =
     results.heartbeatChainValid &&
@@ -451,38 +442,42 @@ async function main() {
     results.toolCallPassed &&
     results.fetchDataPassed;
 
-  console.log("");
-  result("Heartbeat chain valid", results.heartbeatChainValid);
+  console.log('');
+  result('Heartbeat chain valid', results.heartbeatChainValid);
   result(
-    "Token HMACs verified",
+    'Token HMACs verified',
     results.hmacAllValid,
-    `${results.hmacTokensVerified}/${results.hmacTokensTotal} tokens`
+    `${results.hmacTokensVerified}/${results.hmacTokensTotal} tokens`,
   );
   result(
-    "All generations HMAC-authenticated",
+    'All generations HMAC-authenticated',
     results.seedVerifications === results.seedTotal,
-    `${results.seedVerifications}/${results.seedTotal}`
+    `${results.seedVerifications}/${results.seedTotal}`,
   );
   result(
-    "Birth certificates valid",
+    'Birth certificates valid',
     results.birthCertsValid === results.birthCertsTotal,
-    `${results.birthCertsValid}/${results.birthCertsTotal}`
+    `${results.birthCertsValid}/${results.birthCertsTotal}`,
   );
-  result("Destroy confirmed", results.destroyConfirmed);
-  result(`Generations completed`, results.generationsCompleted === PROMPTS.length, `${results.generationsCompleted}/${PROMPTS.length}`);
-  result("Tool call passed", results.toolCallPassed);
-  result("Fetch data passed", results.fetchDataPassed);
+  result('Destroy confirmed', results.destroyConfirmed);
+  result(
+    `Generations completed`,
+    results.generationsCompleted === PROMPTS.length,
+    `${results.generationsCompleted}/${PROMPTS.length}`,
+  );
+  result('Tool call passed', results.toolCallPassed);
+  result('Fetch data passed', results.fetchDataPassed);
 
-  console.log("");
-  console.log(`  ${"═".repeat(50)}`);
-  console.log(`  OVERALL: ${allPassed ? "ALL PASSED" : "SOME FAILURES"}`);
-  console.log(`  ${"═".repeat(50)}`);
-  console.log("");
+  console.log('');
+  console.log(`  ${'═'.repeat(50)}`);
+  console.log(`  OVERALL: ${allPassed ? 'ALL PASSED' : 'SOME FAILURES'}`);
+  console.log(`  ${'═'.repeat(50)}`);
+  console.log('');
 
   process.exit(allPassed ? 0 : 1);
 }
 
 main().catch((err) => {
-  console.error("Fatal error:", err);
+  console.error('Fatal error:', err);
   process.exit(1);
 });

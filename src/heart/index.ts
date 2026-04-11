@@ -39,7 +39,7 @@ export {
   type DataSourceConfig,
   type ToolProgressEmitter,
   type ToolExecutor,
-} from "./runtime.js";
+} from './runtime.js';
 
 // ─── Lineage (parent-child hearts) ──────────────────────────────────────────
 
@@ -52,7 +52,7 @@ export {
   type LineageCertificate,
   type HeartLineage,
   type LineageVerification,
-} from "./lineage.js";
+} from './lineage.js';
 
 // ─── Delegation (macaroons-style capability tokens) ─────────────────────────
 
@@ -66,7 +66,7 @@ export {
   type Caveat,
   type InvocationContext,
   type DelegationVerification,
-} from "./delegation.js";
+} from './delegation.js';
 
 // ─── Human Delegation (session-scoped human→agent consent) ─────────────────
 
@@ -79,17 +79,17 @@ export {
   type AttestationVerifier,
   type CeremonyTier,
   type HumanDelegationVerification,
-} from "./human-delegation.js";
+} from './human-delegation.js';
 
 export {
   createCeremonyPolicy,
-  DEFAULT_POLICY,
+  DEFAULT_CEREMONY_POLICY,
   type ActionClass,
   type PolicyMap,
   type PolicyOverrides,
   type PolicyDecision,
   type CeremonyPolicy,
-} from "./ceremony-policy.js";
+} from './ceremony-policy.js';
 
 export {
   HumanSessionRegistry,
@@ -97,7 +97,7 @@ export {
   type SessionStatus,
   type InvokeRequest,
   type InvokeResult,
-} from "./human-session.js";
+} from './human-session.js';
 
 // ─── Proof-of-possession (prove key ownership, not bearer) ─────────────────
 
@@ -108,7 +108,7 @@ export {
   type Challenge,
   type PossessionProof,
   type ProofVerification,
-} from "./proof-of-possession.js";
+} from './proof-of-possession.js';
 
 // ─── Mutual session PoP (two-party authenticated handshake) ─────────────────
 
@@ -123,7 +123,7 @@ export {
   type SessionConfirm,
   type SessionBindings,
   type SessionVerification,
-} from "./mutual-session.js";
+} from './mutual-session.js';
 
 // ─── Revocation ─────────────────────────────────────────────────────────────
 
@@ -135,7 +135,7 @@ export {
   type RevocationReason,
   type RevocationTarget,
   type RevocationVerification,
-} from "./revocation.js";
+} from './revocation.js';
 
 // ─── Revocation Log (append-only, tamper-evident chain) ─────────────────────
 
@@ -144,7 +144,7 @@ export {
   type RevocationLogEntry,
   type LogHead,
   type LogVerification,
-} from "./revocation-log.js";
+} from './revocation-log.js';
 
 // ─── Spend Receipts (cryptographic budget enforcement) ──────────────────────
 
@@ -157,7 +157,7 @@ export {
   type SpendHead,
   type SpendVerification,
   type DoubleSpendProof,
-} from "./spend-receipts.js";
+} from './spend-receipts.js';
 
 // ─── Credential Rotation (generic controller — user-facing rotation API) ───
 //
@@ -198,7 +198,7 @@ export {
   type RotationEvent,
   type RotationEventStatus,
   type TtlPolicy,
-} from "./credential-rotation/index.js";
+} from './credential-rotation/index.js';
 
 // ─── Time Oracle (signed time witnesses + monotonic clocks) ─────────────────
 
@@ -212,7 +212,7 @@ export {
   type TimeWitness,
   type WitnessVerification,
   type QuorumVerification,
-} from "./time-oracle.js";
+} from './time-oracle.js';
 
 // ─── Gossip (bounded revocation propagation) ────────────────────────────────
 
@@ -223,7 +223,7 @@ export {
   type GossipMessage,
   type GossipPeerOptions,
   type DivergenceReport,
-} from "./gossip.js";
+} from './gossip.js';
 
 // ─── Identity Attestations (sybil resistance) ───────────────────────────────
 
@@ -237,7 +237,7 @@ export {
   type IdentityTier,
   type ReputationScore,
   type ScoreConfig,
-} from "./attestation.js";
+} from './attestation.js';
 
 // ─── Selective Disclosure (reveal only specific claim fields) ──────────────
 
@@ -249,7 +249,7 @@ export {
   type DisclosableDocument,
   type DisclosureProof,
   type DisclosureVerification,
-} from "./selective-disclosure.js";
+} from './selective-disclosure.js';
 
 // ─── Key Escrow (Shamir's Secret Sharing) ───────────────────────────────────
 
@@ -260,7 +260,7 @@ export {
   verifyAllSubsetsReconstruct,
   type SecretShare,
   type SplitOptions,
-} from "./key-escrow.js";
+} from './key-escrow.js';
 
 // ─── VRF (verifiable random function) ───────────────────────────────────────
 
@@ -271,7 +271,7 @@ export {
   combineBeacon,
   type VrfOutput,
   type VrfVerification,
-} from "./vrf.js";
+} from './vrf.js';
 
 // ─── Remote Attestation (TEE hooks) ─────────────────────────────────────────
 
@@ -286,7 +286,7 @@ export {
   type RemoteAttestationVerifier,
   type AttestationVerification as RemoteAttestationVerification,
   type MeasurementPolicy,
-} from "./remote-attestation.js";
+} from './remote-attestation.js';
 
 // ─── Signing Backends (HSM / hardware wallet hooks) ─────────────────────────
 
@@ -297,7 +297,7 @@ export {
   handleToDid,
   type SigningKeyHandle,
   type SigningBackend,
-} from "./signing-backend.js";
+} from './signing-backend.js';
 
 // ─── Threshold Signing (M-of-N Ed25519 via share reconstruction) ───────────
 
@@ -311,7 +311,7 @@ export {
   type ThresholdSignature,
   type GenerateThresholdKeyOpts,
   type ShareExistingKeyOpts,
-} from "./threshold-signing.js";
+} from './threshold-signing.js';
 
 // ─── Hybrid Signing (crypto-agility for PQ migration) ───────────────────────
 
@@ -328,7 +328,7 @@ export {
   type HybridSignature,
   type VerificationPolicy,
   type HybridVerification,
-} from "./hybrid-signing.js";
+} from './hybrid-signing.js';
 
 // ─── Persistence (encrypt heart state to disk) ──────────────────────────────
 
@@ -338,7 +338,7 @@ export {
   type HeartState,
   type EncryptedBlob,
   type SerializedCredential,
-} from "./persistence.js";
+} from './persistence.js';
 
 // ─── Seed (cryptographic entanglement) ──────────────────────────────────────
 
@@ -353,15 +353,11 @@ export {
   type SeedConfig,
   type BehavioralParams,
   type BehavioralRegion,
-} from "./seed.js";
+} from './seed.js';
 
 // ─── Heartbeat (tamper-evident hash chain) ──────────────────────────────────
 
-export {
-  HeartbeatChain,
-  type Heartbeat,
-  type HeartbeatEventType,
-} from "./heartbeat.js";
+export { HeartbeatChain, type Heartbeat, type HeartbeatEventType } from './heartbeat.js';
 
 // ─── Birth Certificates (data provenance) ───────────────────────────────────
 
@@ -380,7 +376,7 @@ export {
   type DataSourceType,
   type DataProvenance,
   type TrustTier,
-} from "./birth-certificate.js";
+} from './birth-certificate.js';
 
 // ─── Credential Vault (internal — not for direct use) ───────────────────────
 // The vault is intentionally NOT exported. Credentials are only accessible
@@ -452,4 +448,4 @@ export {
   SomaCheckHashStore,
   type UnchangedResponse,
   type CheckMetadata,
-} from "../core/soma-check.js";
+} from '../core/soma-check.js';
