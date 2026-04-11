@@ -9,6 +9,7 @@
 export {
   CredentialRotationController,
   computeManifestCommitment,
+  verifyRotationChain,
   type Clock,
   type ControllerOptions,
 } from './controller.js';
@@ -19,10 +20,13 @@ export {
   POLICY_FLOORS,
   BackendNotAllowlisted,
   ChallengePeriodActive,
+  CredentialExpired,
+  DuplicateBackend,
   InvariantViolation,
   NotYetEffective,
   PreRotationMismatch,
   RateLimitExceeded,
+  StagedRotationConflict,
   SuiteDowngradeRejected,
   VerifyBeforeRevokeFailed,
   type AlgorithmSuite,

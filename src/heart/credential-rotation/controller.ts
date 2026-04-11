@@ -22,9 +22,17 @@
  * credentials in an `accepted` pool until either all subscribed verifiers
  * ack propagation of the rotation event or a grace TTL elapses. Fails
  * closed on verify failure.
+ *
+ * Rotation is transactional. The controller calls
+ * `backend.stageNextCredential` first, verifies the manifest commitment and
+ * suite allowlist, signs the event under the old key, collects the new
+ * key's first PoP, and only then calls `backend.commitStagedRotation`. Any
+ * failure in that window triggers `backend.abortStagedRotation`, so the
+ * backend's durable state never advances unless the controller's view
+ * advances with it.
  */
 
-import { canonicalJson } from '../../core/canonicalize.js';
+import { canonicalJson, domainSigningInput } from '../../core/canonicalize.js';
 import {
   getCryptoProvider,
   type CryptoProvider,
@@ -33,14 +41,15 @@ import {
 import {
   BackendNotAllowlisted,
   ChallengePeriodActive,
+  CredentialExpired,
   DEFAULT_POLICY,
+  DuplicateBackend,
   NotYetEffective,
   POLICY_FLOORS,
   PreRotationMismatch,
   RateLimitExceeded,
   SuiteDowngradeRejected,
   VerifyBeforeRevokeFailed,
-  type AlgorithmSuite,
   type ControllerPolicy,
   type Credential,
   type CredentialBackend,
@@ -63,6 +72,40 @@ export function computeManifestCommitment(
   return provider.hashing.hash(input);
 }
 
+/**
+ * Normalize a credential for canonical JSON: its publicKey field is a
+ * Uint8Array, which `canonicalJson` would walk into as a generic object.
+ * We base64-encode the bytes so the signed bytes and the hashed bytes are
+ * deterministic and portable across runtimes.
+ */
+function toWireCredential(
+  credential: Credential,
+  provider: CryptoProvider,
+): Omit<Credential, 'publicKey'> & { publicKey: string } {
+  return {
+    ...credential,
+    publicKey: provider.encoding.encodeBase64(credential.publicKey),
+  };
+}
+
+/**
+ * Normalize the shape of a pre-event (before we know its final
+ * signatures/hash) so it is safe to canonicalize. The only non-JSON field
+ * is `newCredential.publicKey`.
+ */
+function toWirePreEvent(
+  preEvent: Omit<
+    RotationEvent,
+    'hash' | 'status' | 'pulseTreeRoot' | 'externalWitnessCount'
+  >,
+  provider: CryptoProvider,
+): Record<string, unknown> {
+  return {
+    ...preEvent,
+    newCredential: toWireCredential(preEvent.newCredential, provider),
+  };
+}
+
 /** Compute the content-addressed hash of a rotation event. */
 function computeEventHash(
   event: Omit<
@@ -71,15 +114,24 @@ function computeEventHash(
   >,
   provider: CryptoProvider,
 ): string {
-  // Normalize the credential for hashing (publicKey is bytes).
-  const normalized = {
-    ...event,
-    newCredential: {
-      ...event.newCredential,
-      publicKey: provider.encoding.encodeBase64(event.newCredential.publicKey),
-    },
-  };
-  return provider.hashing.hash(`soma-rotation-event:${canonicalJson(normalized)}`);
+  return provider.hashing.hash(
+    `soma-rotation-event:${canonicalJson(toWirePreEvent(event, provider))}`,
+  );
+}
+
+/** Build the signing input for a rotation-event role with domain separation. */
+function eventSigningInput(
+  role: 'inception-pop' | 'rotation-sign' | 'rotation-pop',
+  preEvent: Omit<
+    RotationEvent,
+    'hash' | 'status' | 'pulseTreeRoot' | 'externalWitnessCount'
+  >,
+  provider: CryptoProvider,
+): Uint8Array {
+  return domainSigningInput(
+    `soma/credential-rotation/${role}/v1`,
+    toWirePreEvent(preEvent, provider),
+  );
 }
 
 /** Compute the next ratchet anchor from the previous anchor + new public key. */
@@ -98,6 +150,84 @@ function genesisRatchetAnchor(
   provider: CryptoProvider,
 ): string {
   return provider.hashing.hash(`soma-ratchet-genesis:${identityId}`);
+}
+
+/** Genesis previous-event hash — deterministic per (identity, backend). */
+function genesisEventHash(
+  identityId: string,
+  backendId: string,
+  provider: CryptoProvider,
+): string {
+  return provider.hashing.hash(
+    `soma-rotation-genesis:${identityId}:${backendId}`,
+  );
+}
+
+/**
+ * Standalone verification of a rotation-event chain. Recomputes every
+ * event hash, checks `previousEventHash` linkage, verifies ratchet-anchor
+ * derivation, and enforces monotonic sequence numbers. Does NOT check
+ * backend signatures — that requires live backend access and is done by
+ * the controller during rotate(). Useful for verifiers replaying a chain
+ * published to a pulse tree.
+ *
+ * Returns `{ valid: true }` on success or `{ valid: false, reason }` on
+ * the first failure.
+ */
+export function verifyRotationChain(
+  events: readonly RotationEvent[],
+  provider: CryptoProvider = getCryptoProvider(),
+): { valid: true } | { valid: false, reason: string } {
+  if (events.length === 0) {
+    return { valid: false, reason: 'empty chain' };
+  }
+  let expectedRatchet = genesisRatchetAnchor(
+    events[0]!.identityId,
+    provider,
+  );
+  let expectedPrev = genesisEventHash(
+    events[0]!.identityId,
+    events[0]!.backendId,
+    provider,
+  );
+  for (let i = 0; i < events.length; i++) {
+    const e = events[i]!;
+    if (e.sequence !== i) {
+      return { valid: false, reason: `sequence ${e.sequence} at index ${i}` };
+    }
+    if (e.previousEventHash !== expectedPrev) {
+      return { valid: false, reason: `previousEventHash mismatch at seq ${i}` };
+    }
+    expectedRatchet = deriveRatchetAnchor(
+      expectedRatchet,
+      e.newCredential.publicKey,
+      provider,
+    );
+    if (e.ratchetAnchor !== expectedRatchet) {
+      return { valid: false, reason: `ratchetAnchor mismatch at seq ${i}` };
+    }
+    const recomputedHash = computeEventHash(
+      {
+        identityId: e.identityId,
+        backendId: e.backendId,
+        sequence: e.sequence,
+        previousEventHash: e.previousEventHash,
+        oldCredentialId: e.oldCredentialId,
+        newCredential: e.newCredential,
+        ratchetAnchor: e.ratchetAnchor,
+        timestamp: e.timestamp,
+        nonce: e.nonce,
+        oldKeySignature: e.oldKeySignature,
+        newKeyProofOfPossession: e.newKeyProofOfPossession,
+      },
+      provider,
+    );
+    if (recomputedHash !== e.hash) {
+      return { valid: false, reason: `event hash mismatch at seq ${i}` };
+    }
+    expectedPrev = e.hash;
+  }
+  return { valid: true };
 }
 
 // ─── Internal per-identity state ────────────────────────────────────────────
@@ -138,7 +268,7 @@ export class CredentialRotationController {
   private readonly clock: Clock;
   private readonly backends = new Map<string, CredentialBackend>();
   private readonly identities = new Map<string, IdentityState>();
-  private policyInner: ControllerPolicy;
+  private readonly policyInner: ControllerPolicy;
 
   constructor(opts: ControllerOptions = {}) {
     this.provider = opts.provider ?? getCryptoProvider();
@@ -160,8 +290,10 @@ export class CredentialRotationController {
 
   /**
    * Register a backend. Fails if the backend id is not in the allowlist
-   * (invariant 6) or if its suite is not in the suite allowlist (invariant 1
-   * downgrade protection).
+   * (invariant 6), if its suite is not in the suite allowlist (invariant 1
+   * downgrade protection), or if a backend with the same id is already
+   * registered (invariant 7 — isolation; duplicate registration would let
+   * the second backend observe the first's credentials).
    */
   registerBackend(backend: CredentialBackend): void {
     if (!this.policyInner.backendAllowlist.includes(backend.backendId)) {
@@ -169,6 +301,9 @@ export class CredentialRotationController {
     }
     if (!this.policyInner.suiteAllowlist.includes(backend.algorithmSuite)) {
       throw new SuiteDowngradeRejected(backend.algorithmSuite);
+    }
+    if (this.backends.has(backend.backendId)) {
+      throw new DuplicateBackend(backend.backendId);
     }
     this.backends.set(backend.backendId, backend);
   }
@@ -185,6 +320,8 @@ export class CredentialRotationController {
     identityId: string;
     backendId: string;
   }): Promise<{ event: RotationEvent; credential: Credential }> {
+    if (!args.identityId) throw new Error('identityId required');
+    if (!args.backendId) throw new Error('backendId required');
     const backend = this.requireBackend(args.backendId);
     if (this.identities.has(args.identityId)) {
       throw new Error(`identity already inceptioned: ${args.identityId}`);
@@ -198,8 +335,10 @@ export class CredentialRotationController {
       ttlMs,
     });
 
-    const genesisHash = this.provider.hashing.hash(
-      `soma-rotation-genesis:${args.identityId}:${args.backendId}`,
+    const genesisHash = genesisEventHash(
+      args.identityId,
+      args.backendId,
+      this.provider,
     );
     const newRatchet = deriveRatchetAnchor(
       genesisRatchetAnchor(args.identityId, this.provider),
@@ -209,7 +348,7 @@ export class CredentialRotationController {
 
     // Inception: no old key to sign under, so we record the new key's PoP
     // over the event body as the authorising signature.
-    const preEvent = {
+    const preEventNoPop = {
       identityId: args.identityId,
       backendId: args.backendId,
       sequence: 0,
@@ -218,17 +357,19 @@ export class CredentialRotationController {
       newCredential: credential,
       ratchetAnchor: newRatchet,
       timestamp: now,
-      nonce: this.provider.encoding.encodeBase64(this.provider.random.randomBytes(12)),
+      nonce: this.provider.encoding.encodeBase64(
+        this.provider.random.randomBytes(12),
+      ),
       oldKeySignature: '',
       newKeyProofOfPossession: '',
     };
     const popBytes = await backend.signWithCredential(
       credential.credentialId,
-      new TextEncoder().encode(canonicalJson({ ...preEvent, role: 'inception-pop' })),
+      eventSigningInput('inception-pop', preEventNoPop, this.provider),
     );
     const newKeyProofOfPossession = this.provider.encoding.encodeBase64(popBytes);
 
-    const hashedEvent = { ...preEvent, newKeyProofOfPossession };
+    const hashedEvent = { ...preEventNoPop, newKeyProofOfPossession };
     const hash = computeEventHash(hashedEvent, this.provider);
 
     const event: RotationEvent = {
@@ -246,19 +387,26 @@ export class CredentialRotationController {
       current: null, // NOT primary yet — must be anchored + witnessed first (L3)
       accepted: new Map(),
       ratchetAnchor: newRatchet,
-      rotationTimestamps: [now],
+      // D3: inception does NOT consume the rotation budget — the rate limit
+      // is about constraining rotation churn, and every identity has exactly
+      // one inception.
+      rotationTimestamps: [],
       challengePeriodUnlockAt: null,
     });
 
     return { event, credential };
   }
 
-  // ─── Rotation ─────────────────────────────────────────────────────────────
+  // ─── Rotation (transactional) ─────────────────────────────────────────────
 
   /**
-   * Rotate to a new credential. The old credential signs the rotation
-   * event (L2); the new credential's manifest must match the pre-rotation
-   * commitment stored on the old credential (invariant 9, L1).
+   * Rotate to a new credential. Transactional:
+   *   1. Stage the next credential (backend reveals its pre-committed pub).
+   *   2. Verify manifest commitment (L1), suite allowlist (invariant 1),
+   *      sign event body with old key (L2), collect new key PoP (L2).
+   *   3. Commit the stage in the backend.
+   * Any failure between (1) and (3) triggers an abort in the backend so
+   * its durable state never diverges from the controller's.
    *
    * Rate-limited (D3). Fails if a challenge period is active (D2).
    */
@@ -279,85 +427,101 @@ export class CredentialRotationController {
     this.enforceRateLimit(state, now);
 
     const oldCredential = state.current;
-    const newCredential = await backend.revealNextCredential(oldCredential.credentialId);
-
-    // L1 — verify the new credential's full manifest matches the prior commitment.
-    const newManifest: CredentialManifest = {
-      backendId: newCredential.backendId,
-      algorithmSuite: newCredential.algorithmSuite,
-      publicKey: newCredential.publicKey,
-    };
-    const rederived = computeManifestCommitment(newManifest, this.provider);
-    if (rederived !== oldCredential.nextManifestCommitment) {
-      throw new PreRotationMismatch();
-    }
-    // Suite downgrade protection (invariant 1).
-    if (!this.policyInner.suiteAllowlist.includes(newCredential.algorithmSuite)) {
-      throw new SuiteDowngradeRejected(newCredential.algorithmSuite);
-    }
-
-    const prior = state.events[state.events.length - 1]!;
-    const newRatchet = deriveRatchetAnchor(
-      state.ratchetAnchor,
-      newCredential.publicKey,
-      this.provider,
-    );
-
-    const preEvent = {
+    const newCredential = await backend.stageNextCredential({
       identityId,
-      backendId: state.backendId,
-      sequence: prior.sequence + 1,
-      previousEventHash: prior.hash,
       oldCredentialId: oldCredential.credentialId,
-      newCredential,
-      ratchetAnchor: newRatchet,
-      timestamp: now,
-      nonce: this.provider.encoding.encodeBase64(this.provider.random.randomBytes(12)),
-      oldKeySignature: '',
-      newKeyProofOfPossession: '',
-    };
-
-    // L2 — old key signs the rotation event body.
-    const signingInput = new TextEncoder().encode(
-      canonicalJson({ ...preEvent, role: 'rotation-sign' }),
-    );
-    const oldSigBytes = await backend.signWithCredential(
-      oldCredential.credentialId,
-      signingInput,
-    );
-    const oldKeySignature = this.provider.encoding.encodeBase64(oldSigBytes);
-
-    // L2 — new key provides its first PoP over the event + old signature.
-    const popInput = new TextEncoder().encode(
-      canonicalJson({ ...preEvent, oldKeySignature, role: 'rotation-pop' }),
-    );
-    const popBytes = await backend.signWithCredential(
-      newCredential.credentialId,
-      popInput,
-    );
-    const newKeyProofOfPossession = this.provider.encoding.encodeBase64(popBytes);
-
-    const hashedEvent = { ...preEvent, oldKeySignature, newKeyProofOfPossession };
-    const hash = computeEventHash(hashedEvent, this.provider);
-
-    const event: RotationEvent = {
-      ...hashedEvent,
-      hash,
-      status: 'pending',
-      pulseTreeRoot: null,
-      externalWitnessCount: 0,
-    };
-
-    state.events.push(event);
-    state.rotationTimestamps.push(now);
-    // Old credential stays in `accepted` until verify-before-revoke clears it (invariant 12).
-    state.accepted.set(oldCredential.credentialId, {
-      credential: oldCredential,
-      graceUntil: now + this.policyInner.challengePeriodMs,
+      issuedAt: now,
     });
-    state.ratchetAnchor = newRatchet;
 
-    return { event, credential: newCredential };
+    try {
+      // L1 — verify the new credential's full manifest matches the prior commitment.
+      const newManifest: CredentialManifest = {
+        backendId: newCredential.backendId,
+        algorithmSuite: newCredential.algorithmSuite,
+        publicKey: newCredential.publicKey,
+      };
+      const rederived = computeManifestCommitment(newManifest, this.provider);
+      if (rederived !== oldCredential.nextManifestCommitment) {
+        throw new PreRotationMismatch();
+      }
+      // Suite downgrade protection (invariant 1).
+      if (!this.policyInner.suiteAllowlist.includes(newCredential.algorithmSuite)) {
+        throw new SuiteDowngradeRejected(newCredential.algorithmSuite);
+      }
+
+      const prior = state.events[state.events.length - 1]!;
+      const newRatchet = deriveRatchetAnchor(
+        state.ratchetAnchor,
+        newCredential.publicKey,
+        this.provider,
+      );
+
+      const preEventNoSigs = {
+        identityId,
+        backendId: state.backendId,
+        sequence: prior.sequence + 1,
+        previousEventHash: prior.hash,
+        oldCredentialId: oldCredential.credentialId,
+        newCredential,
+        ratchetAnchor: newRatchet,
+        timestamp: now,
+        nonce: this.provider.encoding.encodeBase64(
+          this.provider.random.randomBytes(12),
+        ),
+        oldKeySignature: '',
+        newKeyProofOfPossession: '',
+      };
+
+      // L2 — old key signs the rotation event body.
+      const oldSigBytes = await backend.signWithCredential(
+        oldCredential.credentialId,
+        eventSigningInput('rotation-sign', preEventNoSigs, this.provider),
+      );
+      const oldKeySignature = this.provider.encoding.encodeBase64(oldSigBytes);
+
+      // L2 — new key provides its first PoP over the event + old signature.
+      const preEventWithOldSig = { ...preEventNoSigs, oldKeySignature };
+      const popBytes = await backend.signWithCredential(
+        newCredential.credentialId,
+        eventSigningInput('rotation-pop', preEventWithOldSig, this.provider),
+      );
+      const newKeyProofOfPossession = this.provider.encoding.encodeBase64(popBytes);
+
+      const hashedEvent = {
+        ...preEventWithOldSig,
+        newKeyProofOfPossession,
+      };
+      const hash = computeEventHash(hashedEvent, this.provider);
+
+      const event: RotationEvent = {
+        ...hashedEvent,
+        hash,
+        status: 'pending',
+        pulseTreeRoot: null,
+        externalWitnessCount: 0,
+      };
+
+      await backend.commitStagedRotation(identityId);
+
+      state.events.push(event);
+      state.rotationTimestamps.push(now);
+      // Old credential stays in `accepted` until verify-before-revoke clears it (invariant 12).
+      state.accepted.set(oldCredential.credentialId, {
+        credential: oldCredential,
+        graceUntil: now + this.policyInner.challengePeriodMs,
+      });
+      state.ratchetAnchor = newRatchet;
+
+      return { event, credential: newCredential };
+    } catch (err) {
+      // Best-effort abort — we prioritise the original error.
+      try {
+        await backend.abortStagedRotation(identityId);
+      } catch {
+        /* swallow: original error is what the caller needs */
+      }
+      throw err;
+    }
   }
 
   // ─── Event lifecycle (L3) ─────────────────────────────────────────────────
@@ -377,29 +541,30 @@ export class CredentialRotationController {
 
   /**
    * L3.c — record an external witness cosignature on the anchoring root.
-   * The first witness moves `anchored` to `witnessed`, and installs the new
-   * credential as current (the event becomes `effective`).
+   * The first witness moves `anchored` directly to `effective` and installs
+   * the new credential as current. Additional witness calls are no-ops for
+   * the MVP single-witness quorum; the counter still increments so future
+   * multi-witness policies can use it.
    */
   witnessEvent(identityId: string, eventHash: string): void {
     const state = this.requireIdentity(identityId);
     const event = this.findEvent(identityId, eventHash);
-    if (event.status !== 'anchored' && event.status !== 'witnessed') {
+    if (event.status === 'effective') {
+      event.externalWitnessCount += 1;
+      return;
+    }
+    if (event.status !== 'anchored') {
       throw new Error(`cannot witness event in status ${event.status}`);
     }
     event.externalWitnessCount += 1;
-    if (event.status === 'anchored') {
-      event.status = 'witnessed';
-      // Become effective: install new credential as current.
-      const priorCurrent = state.current;
-      state.current = event.newCredential;
-      event.status = 'effective';
-      // Mark prior effective event as revoked (logical state, not removal).
-      if (priorCurrent) {
-        const priorEvent = state.events.find(
-          e => e.newCredential.credentialId === priorCurrent.credentialId,
-        );
-        if (priorEvent && priorEvent !== event) priorEvent.status = 'revoked';
-      }
+    const priorCurrent = state.current;
+    state.current = event.newCredential;
+    event.status = 'effective';
+    if (priorCurrent) {
+      const priorEvent = state.events.find(
+        e => e.newCredential.credentialId === priorCurrent.credentialId,
+      );
+      if (priorEvent && priorEvent !== event) priorEvent.status = 'revoked';
     }
   }
 
@@ -407,13 +572,22 @@ export class CredentialRotationController {
 
   /**
    * Sign a message with the current credential. Fails if no effective
-   * credential exists yet (L3).
+   * credential exists yet (L3) or the current credential has expired
+   * (invariant 2 — expired credentials must rotate, never sign).
    */
   async sign(identityId: string, message: Uint8Array): Promise<Uint8Array> {
     const state = this.requireIdentity(identityId);
     if (!state.current) {
       const latest = state.events[state.events.length - 1]!;
       throw new NotYetEffective(latest.status);
+    }
+    const now = this.clock();
+    if (state.current.expiresAt <= now) {
+      throw new CredentialExpired(
+        state.current.credentialId,
+        state.current.expiresAt,
+        now,
+      );
     }
     const backend = this.requireBackend(state.backendId);
     return backend.signWithCredential(state.current.credentialId, message);
@@ -541,6 +715,15 @@ export class CredentialRotationController {
       throw new Error(
         `maxRotationsPerHour below floor: ${policy.maxRotationsPerHour} < ${POLICY_FLOORS.maxRotationsPerHour}`,
       );
+    }
+    if (policy.rotationBurst < 0) {
+      throw new Error(`rotationBurst must be >= 0: ${policy.rotationBurst}`);
+    }
+    if (policy.backendAllowlist.length === 0) {
+      throw new Error('backendAllowlist must contain at least one entry');
+    }
+    if (policy.suiteAllowlist.length === 0) {
+      throw new Error('suiteAllowlist must contain at least one entry');
     }
     // Class TTL floor checks.
     for (const cls of ['A', 'B', 'C'] as const) {

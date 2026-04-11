@@ -14,11 +14,22 @@
  *   - Invariant 7 (backend isolation): the backend exposes no cross-backend
  *     state. Callers who want the public chain call `getKeyHistoryEvents`.
  *
- * Secret-key handling in Node is best-effort; `zeroize` overwrites the
- * Uint8Array when the backend revokes a credential. Node's GC and V8's
- * copy-during-compaction mean this is not a hard guarantee, but it removes
- * secrets from long-lived references and shortens the exfiltration window
- * on heap dumps.
+ * Rotation is transactional via the stage/commit/abort protocol:
+ *   - `stageNextCredential` allocates a staged credential entry and a new
+ *     "next-next" keypair, but does NOT call `KeyHistory.rotate` yet.
+ *   - `commitStagedRotation` advances the KeyHistory chain and promotes
+ *     the staged credential to current. This is the only place where
+ *     durable chain state mutates.
+ *   - `abortStagedRotation` drops the staged credential entry and zeroes
+ *     the freshly-generated next-next secret. The pre-committed `pendingNext`
+ *     keypair is NOT zeroised — the old credential's manifest commitment
+ *     is still bound to it, so a retried rotation must still be able to
+ *     sign with it.
+ *
+ * Secret-key handling in Node is best-effort; `revokeCredential` overwrites
+ * the Uint8Array. V8's GC and copy-during-compaction mean this is not a
+ * hard guarantee, but it removes secrets from long-lived references and
+ * shortens the exfiltration window on heap dumps.
  */
 
 import {
@@ -28,11 +39,12 @@ import {
 } from '../../../core/crypto-provider.js';
 import { KeyHistory, type RotationEvent as KeriRotationEvent } from '../../key-rotation.js';
 import { computeManifestCommitment } from '../controller.js';
-import type {
-  AlgorithmSuite,
-  Credential,
-  CredentialBackend,
-  CredentialClass,
+import {
+  StagedRotationConflict,
+  type AlgorithmSuite,
+  type Credential,
+  type CredentialBackend,
+  type CredentialClass,
 } from '../types.js';
 
 // ─── Per-credential secret material (private to the backend) ────────────────
@@ -51,14 +63,27 @@ interface IdentityPlumbing {
   history: KeyHistory;
   /**
    * The keypair that the *current* rotation event pre-committed to as the
-   * next key. Retained until the next rotation consumes it, at which point
-   * it becomes the new current and a fresh `pendingNext` is generated.
+   * next key. On stage, this becomes the new current on commit. Until
+   * committed, it must NOT be zeroised — the old credential's manifest
+   * commitment is bound to its public key, and the backend must be able
+   * to sign with it on a retry.
    */
   pendingNext: SignKeyPair;
   /** Live credential id for the current top of the chain. */
   currentCredentialId: string;
   /** TTL inherited from inception, reused on rotation. */
   ttlMs: number;
+  /**
+   * If a rotation is staged but not yet committed, the metadata we need
+   * to either promote it (commit) or roll it back (abort).
+   */
+  staged:
+    | {
+        credentialId: string;
+        /** New "next-next" keypair — freshly generated, safe to zeroise on abort. */
+        newNextKeyPair: SignKeyPair;
+      }
+    | null;
 }
 
 // ─── Backend ────────────────────────────────────────────────────────────────
@@ -72,7 +97,11 @@ export class Ed25519IdentityBackend implements CredentialBackend {
   private readonly plumbing = new Map<string, IdentityPlumbing>();
   private counter = 0;
 
-  constructor(opts: { backendId: string; provider?: CryptoProvider } = { backendId: 'ed25519-identity' }) {
+  constructor(
+    opts: { backendId: string; provider?: CryptoProvider } = {
+      backendId: 'ed25519-identity',
+    },
+  ) {
     this.backendId = opts.backendId;
     this.provider = opts.provider ?? getCryptoProvider();
   }
@@ -110,44 +139,82 @@ export class Ed25519IdentityBackend implements CredentialBackend {
       pendingNext: nextKeyPair,
       currentCredentialId: credential.credentialId,
       ttlMs: args.ttlMs,
+      staged: null,
     });
 
     return credential;
   }
 
-  async revealNextCredential(oldCredentialId: string): Promise<Credential> {
-    const oldSecret = this.requireLive(oldCredentialId);
-    const plumb = this.plumbing.get(oldSecret.identityId);
-    if (!plumb) {
+  async stageNextCredential(args: {
+    identityId: string;
+    oldCredentialId: string;
+    issuedAt: number;
+  }): Promise<Credential> {
+    const plumb = this.requirePlumbing(args.identityId);
+    if (plumb.staged) {
+      throw new StagedRotationConflict(args.identityId);
+    }
+    if (plumb.currentCredentialId !== args.oldCredentialId) {
       throw new Error(
-        `ed25519-identity backend: missing plumbing for ${oldSecret.identityId}`,
+        `ed25519-identity backend: oldCredentialId ${args.oldCredentialId} does not match current ${plumb.currentCredentialId}`,
       );
     }
-    // Promote the pre-committed next key to "current"; generate the new next.
+    // The promoted keypair is the pre-committed next from the live chain.
     const promotedKeyPair = plumb.pendingNext;
+    // Fresh next-next for the chain after we commit.
     const newNextKeyPair = this.provider.signing.generateKeyPair();
 
-    // Append the rotation event to the KeyHistory. This is the second layer
-    // of pre-rotation enforcement — KeyHistory throws if the promoted public
-    // key does not match the digest committed in the prior event.
-    plumb.history.rotate({
-      currentSecretKey: promotedKeyPair.secretKey,
-      currentPublicKey: promotedKeyPair.publicKey,
-      nextPublicKey: newNextKeyPair.publicKey,
-    });
-
-    const now = Date.now();
     const credential = this.mintCredentialEntry({
-      identityId: oldSecret.identityId,
+      identityId: args.identityId,
       keyPair: promotedKeyPair,
-      issuedAt: now,
+      issuedAt: args.issuedAt,
       ttlMs: plumb.ttlMs,
       nextPublicKey: newNextKeyPair.publicKey,
     });
 
-    plumb.pendingNext = newNextKeyPair;
-    plumb.currentCredentialId = credential.credentialId;
+    plumb.staged = {
+      credentialId: credential.credentialId,
+      newNextKeyPair,
+    };
     return credential;
+  }
+
+  async commitStagedRotation(identityId: string): Promise<void> {
+    const plumb = this.requirePlumbing(identityId);
+    const staged = plumb.staged;
+    if (!staged) {
+      throw new Error(
+        `ed25519-identity backend: no staged rotation for ${identityId}`,
+      );
+    }
+    // This is the only place the KeyHistory chain advances. If it throws
+    // (e.g. KeyHistory's independent pre-rotation digest check fails), the
+    // catch in the controller will call abortStagedRotation and we stay
+    // consistent.
+    plumb.history.rotate({
+      currentSecretKey: plumb.pendingNext.secretKey,
+      currentPublicKey: plumb.pendingNext.publicKey,
+      nextPublicKey: staged.newNextKeyPair.publicKey,
+    });
+
+    plumb.pendingNext = staged.newNextKeyPair;
+    plumb.currentCredentialId = staged.credentialId;
+    plumb.staged = null;
+  }
+
+  async abortStagedRotation(identityId: string): Promise<void> {
+    const plumb = this.plumbing.get(identityId);
+    if (!plumb || !plumb.staged) return;
+    const staged = plumb.staged;
+    // Drop the staged credential entry. Do NOT zeroise its secretKey —
+    // that buffer is `plumb.pendingNext.secretKey`, which is still bound
+    // to the prior credential's manifest commitment and must remain
+    // signable for a retried rotation.
+    this.secrets.delete(staged.credentialId);
+    // The next-next keypair was freshly generated for this stage and no
+    // live credential references it — safe to zeroise.
+    staged.newNextKeyPair.secretKey.fill(0);
+    plumb.staged = null;
   }
 
   async signWithCredential(
@@ -184,7 +251,11 @@ export class Ed25519IdentityBackend implements CredentialBackend {
     const stored = this.secrets.get(credentialId);
     if (!stored) return;
     stored.revoked = true;
-    // Best-effort zeroize of secret-key bytes. See file header for caveats.
+    // Best-effort zeroise of secret-key bytes. See file header for caveats.
+    // This is safe on a committed credential because, by the time a caller
+    // reaches revoke, a successful rotation has already moved `pendingNext`
+    // to the NEW keypair — the bytes we're zeroing are not shared with
+    // any live credential.
     stored.keyPair.secretKey.fill(0);
   }
 
@@ -251,5 +322,11 @@ export class Ed25519IdentityBackend implements CredentialBackend {
     if (!stored) throw new Error(`unknown credential: ${credentialId}`);
     if (stored.revoked) throw new Error(`credential revoked: ${credentialId}`);
     return stored;
+  }
+
+  private requirePlumbing(identityId: string): IdentityPlumbing {
+    const plumb = this.plumbing.get(identityId);
+    if (!plumb) throw new Error(`unknown identity: ${identityId}`);
+    return plumb;
   }
 }
