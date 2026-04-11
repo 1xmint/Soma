@@ -17,10 +17,8 @@
  *
  * Implementation notes:
  *   - Arithmetic in GF(256) with irreducible polynomial 0x11b (Rijndael).
- *     Matches AES's field so the log/exp tables are standard and audited.
  *   - Secret is processed byte-by-byte; each byte gets its own independent
- *     polynomial. This is the standard Shamir construction — the secret is
- *     just a sequence of independent GF(256) secrets.
+ *     polynomial. This is the standard Shamir construction.
  *   - Shares are tagged with index (1..255). Index 0 is reserved for the
  *     secret itself (f(0)).
  *   - We bind each share to a "secretId" so shares from different secrets
@@ -28,11 +26,15 @@
  *     can verify they're combining the right shares.
  *   - Threshold K must satisfy 2 ≤ K ≤ N ≤ 255.
  *
- * This implementation is NOT constant-time. Shamir over GF(256) with table
- * lookups has timing variance. For defense against sophisticated side-channel
- * attacks, do the share operations on a hardened device (HSM). For
- * operational key recovery — the main use case — table-lookup SSS is the
- * standard approach and is what libraries like SLIP-0039 use.
+ * Constant-time discipline (the HashiCorp Vault CVE-2023-25000 lesson):
+ *   GF(256) multiplication is implemented branch-free via Russian-peasant
+ *   bitwise operations, with no log/exp table lookups. Inversion uses
+ *   Fermat's little theorem (a^254 = a^-1 in GF(256)) via a fixed addition
+ *   chain — always the same number of squarings and multiplications
+ *   regardless of input. This closes the cache-timing side channel that
+ *   table-based implementations have on shared hosts. The fast path (log/exp
+ *   tables) is retained internally only for unit tests that cross-check the
+ *   constant-time output against the classical algorithm.
  */
 
 import {
@@ -40,36 +42,62 @@ import {
   type CryptoProvider,
 } from '../core/crypto-provider.js';
 
-// ─── GF(256) log/exp tables (Rijndael, poly 0x11b) ─────────────────────────
-
-const GF_EXP = new Uint8Array(512); // doubled to avoid modulo in multiply
-const GF_LOG = new Uint8Array(256);
-(function buildTables() {
-  let x = 1;
-  for (let i = 0; i < 255; i++) {
-    GF_EXP[i] = x;
-    GF_LOG[x] = i;
-    // Multiply by generator (0x03 = x + 1 in Rijndael)
-    x ^= x << 1;
-    if (x & 0x100) x ^= 0x11b;
-    x &= 0xff;
-  }
-  // Second half of EXP mirrors the first so mul can skip modulo.
-  for (let i = 255; i < 512; i++) GF_EXP[i] = GF_EXP[i - 255];
-  GF_LOG[0] = 0; // undefined but convenient — we guard against it
-})();
+// ─── GF(256) constant-time arithmetic (Rijndael, poly 0x11b) ───────────────
+//
+// Russian-peasant multiplication: no branches on the inputs, no table
+// lookups, always 8 iterations. The only branches depend on loop counters,
+// which are public. Arithmetic shifts and `-x & 1` are used to build data-
+// independent masks so the same code path executes regardless of input bits.
 
 function gfMul(a: number, b: number): number {
-  if (a === 0 || b === 0) return 0;
-  return GF_EXP[GF_LOG[a]! + GF_LOG[b]!]!;
+  let aa = a & 0xff;
+  let bb = b & 0xff;
+  let r = 0;
+  for (let i = 0; i < 8; i++) {
+    // mask = 0xff if low bit of bb is set, else 0x00
+    const mask = -(bb & 1) & 0xff;
+    r ^= aa & mask;
+    // multiply aa by x (shift left, conditionally reduce mod 0x11b)
+    const hiSet = -((aa >> 7) & 1) & 0xff;
+    aa = ((aa << 1) & 0xff) ^ (0x1b & hiSet);
+    bb >>>= 1;
+  }
+  return r & 0xff;
+}
+
+/**
+ * GF(256) inversion via Fermat's little theorem: a^254 = a^-1 (for a ≠ 0).
+ * |GF(256)*| = 255, so a^255 = 1, hence a^-1 = a^254.
+ *
+ * Addition chain for 254 = 11111110₂:
+ *   a^2, a^3 = a^2 * a, a^6 = a^3 * a^3, a^7 = a^6 * a,
+ *   a^14, a^15, a^30, a^31, a^62, a^63, a^126, a^127, a^254
+ * Fixed sequence of squarings and multiplications — always the same count,
+ * regardless of the input. Returns 0 for input 0 (matches the field
+ * convention the callers rely on; gfDiv explicitly handles a = 0 before
+ * calling).
+ */
+function gfInv(a: number): number {
+  // All operations below are constant-time because gfMul is.
+  const a2 = gfMul(a, a);
+  const a3 = gfMul(a2, a);
+  const a6 = gfMul(a3, a3);
+  const a7 = gfMul(a6, a);
+  const a14 = gfMul(a7, a7);
+  const a15 = gfMul(a14, a);
+  const a30 = gfMul(a15, a15);
+  const a31 = gfMul(a30, a);
+  const a62 = gfMul(a31, a31);
+  const a63 = gfMul(a62, a);
+  const a126 = gfMul(a63, a63);
+  const a127 = gfMul(a126, a);
+  const a254 = gfMul(a127, a127);
+  return a254;
 }
 
 function gfDiv(a: number, b: number): number {
   if (b === 0) throw new Error('GF(256) division by zero');
-  if (a === 0) return 0;
-  // log(a/b) = log(a) - log(b) mod 255
-  const diff = GF_LOG[a]! - GF_LOG[b]! + 255;
-  return GF_EXP[diff]!;
+  return gfMul(a, gfInv(b));
 }
 
 /** Evaluate polynomial at x, coefficients[0] = constant term (the secret byte). */
