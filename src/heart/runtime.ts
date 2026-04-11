@@ -217,7 +217,7 @@ export class HeartRuntime {
     this._effectiveCaps = config.lineage
       ? effectiveCapabilities(config.lineage)
       : null;
-    this.revocations = new RevocationRegistry(this.provider);
+    this.revocations = new RevocationRegistry({ provider: this.provider });
     if (config.revocations) {
       this.revocations.import(config.revocations);
     }
