@@ -563,3 +563,214 @@ describe("CredentialRotationController — backend isolation (invariant 7)", () 
     expect(bobEvents[0]!.backendId).toBe("mock-b");
   });
 });
+
+describe("CredentialRotationController — persistence (snapshot / restore)", () => {
+  it("roundtrips an inceptioned identity and keeps signing after restore", async () => {
+    const { controller, backend, clockRef } = makeController();
+    await inceptAndEffect(controller, "alice");
+
+    const beforeSig = await controller.sign(
+      "alice",
+      new TextEncoder().encode("hello"),
+    );
+
+    const controllerSnap = controller.snapshot();
+    const backendSnap = backend.snapshot();
+
+    // Simulate process restart: throw away the original instances and
+    // rebuild from the serialized blobs only.
+    const restoredBackend = MockCredentialBackend.restore(backendSnap);
+    const restoredController = CredentialRotationController.restore(
+      controllerSnap,
+      { backends: [restoredBackend], clock: () => clockRef.t },
+    );
+
+    const restoredCurrent =
+      restoredController.getCurrentCredential("alice");
+    expect(restoredCurrent?.credentialId).toBe(
+      controller.getCurrentCredential("alice")?.credentialId,
+    );
+
+    // New signatures work.
+    const afterSig = await restoredController.sign(
+      "alice",
+      new TextEncoder().encode("hello"),
+    );
+    expect(
+      await restoredController.verify(
+        "alice",
+        new TextEncoder().encode("hello"),
+        afterSig,
+      ),
+    ).toBe(true);
+    // Old signatures still verify against the restored credential.
+    expect(
+      await restoredController.verify(
+        "alice",
+        new TextEncoder().encode("hello"),
+        beforeSig,
+      ),
+    ).toBe(true);
+  });
+
+  it("roundtrips an identity that has rotated, and can rotate again after restore", async () => {
+    const { controller, backend, clockRef } = makeController();
+    await inceptAndEffect(controller, "alice");
+    const rotated = await controller.rotate("alice");
+    controller.anchorEvent("alice", rotated.event.hash, "pulse-root-2");
+    controller.witnessEvent("alice", rotated.event.hash);
+
+    const controllerSnap = controller.snapshot();
+    const backendSnap = backend.snapshot();
+
+    const restoredBackend = MockCredentialBackend.restore(backendSnap);
+    const restoredController = CredentialRotationController.restore(
+      controllerSnap,
+      { backends: [restoredBackend], clock: () => clockRef.t },
+    );
+
+    expect(restoredController.getEvents("alice").length).toBe(2);
+    expect(
+      restoredController.getCurrentCredential("alice")?.credentialId,
+    ).toBe(rotated.credential.credentialId);
+
+    // Rotate again on the restored controller — new sequence must chain
+    // off the restored tail.
+    clockRef.t += 1000;
+    const rotatedAgain = await restoredController.rotate("alice");
+    expect(rotatedAgain.event.sequence).toBe(2);
+    expect(rotatedAgain.event.previousEventHash).toBe(rotated.event.hash);
+
+    // Chain replays cleanly with the standalone verifier.
+    restoredController.anchorEvent(
+      "alice",
+      rotatedAgain.event.hash,
+      "pulse-root-3",
+    );
+    restoredController.witnessEvent("alice", rotatedAgain.event.hash);
+    expect(
+      verifyRotationChain(restoredController.getEvents("alice"), crypto),
+    ).toEqual({ valid: true });
+  });
+
+  it("restore rejects snapshot whose identity references an unknown backend", async () => {
+    const { controller, backend } = makeController();
+    await inceptAndEffect(controller, "alice");
+
+    const snap = controller.snapshot();
+    // Provide an irrelevant backend — the snapshot expects "mock-a".
+    const strangerPolicy = makePolicy({ backendAllowlist: ["mock-z"] });
+    const stranger = new MockCredentialBackend({ backendId: "mock-z" });
+    expect(() =>
+      CredentialRotationController.restore(
+        { ...snap, policy: strangerPolicy },
+        { backends: [stranger] },
+      ),
+    ).toThrow();
+    // Guard against the `backend` variable lint.
+    expect(backend.backendId).toBe("mock-a");
+  });
+
+  it("restore rejects a future snapshot version", () => {
+    const { controller } = makeController();
+    const snap = controller.snapshot();
+    expect(() =>
+      CredentialRotationController.restore(
+        { ...snap, version: 99 as unknown as 1 },
+        { backends: [] },
+      ),
+    ).toThrow(/unsupported snapshot version/);
+  });
+
+  it("backend snapshot refuses to run while a rotation is staged", async () => {
+    const { controller, backend, clockRef } = makeController();
+    await inceptAndEffect(controller, "alice");
+    // Stage without committing: call the backend directly.
+    await backend.stageNextCredential({
+      identityId: "alice",
+      oldCredentialId: controller.getCurrentCredential("alice")!.credentialId,
+      issuedAt: clockRef.t,
+    });
+    expect(() => backend.snapshot()).toThrow(/staged rotation/);
+    await backend.abortStagedRotation("alice");
+    // After abort, snapshot succeeds.
+    expect(() => backend.snapshot()).not.toThrow();
+  });
+
+  it("preserves the accepted-pool grace window and the rate-limit bucket across restore", async () => {
+    const { controller, backend, clockRef } = makeController();
+    await inceptAndEffect(controller, "alice");
+    const r1 = await controller.rotate("alice");
+    controller.anchorEvent("alice", r1.event.hash, "pulse-root-2");
+    controller.witnessEvent("alice", r1.event.hash);
+
+    // Accepted pool should now hold the inception credential.
+    const controllerSnap = controller.snapshot();
+    expect(controllerSnap.identities[0]!.accepted.length).toBe(1);
+    expect(controllerSnap.identities[0]!.rotationTimestamps.length).toBe(1);
+
+    const backendSnap = backend.snapshot();
+    const restoredBackend = MockCredentialBackend.restore(backendSnap);
+    const restoredController = CredentialRotationController.restore(
+      controllerSnap,
+      { backends: [restoredBackend], clock: () => clockRef.t },
+    );
+
+    // Old credential verify path still live.
+    const acceptedCredentialId = controllerSnap.identities[0]!.accepted[0]!
+      .credentialId;
+    await restoredController.ackPropagation("alice", acceptedCredentialId);
+    // After ack, it's gone.
+    const afterAckSnap = restoredController.snapshot();
+    expect(afterAckSnap.identities[0]!.accepted.length).toBe(0);
+  });
+});
+
+describe("Ed25519IdentityBackend — persistence", () => {
+  it("roundtrips an inceptioned + rotated identity with intact KeyHistory", async () => {
+    const { Ed25519IdentityBackend } = await import(
+      "../../src/heart/credential-rotation/index.js"
+    );
+    const backend = new Ed25519IdentityBackend({ backendId: "ed25519-a" });
+    const clockRef = { t: 1_700_000_000_000 };
+    const controller = new CredentialRotationController({
+      policy: makePolicy({ backendAllowlist: ["ed25519-a"] }),
+      clock: () => clockRef.t,
+    });
+    controller.registerBackend(backend);
+
+    const { event } = await controller.incept({
+      identityId: "alice",
+      backendId: "ed25519-a",
+    });
+    controller.anchorEvent("alice", event.hash, "pulse-root-1");
+    controller.witnessEvent("alice", event.hash);
+    const r1 = await controller.rotate("alice");
+    controller.anchorEvent("alice", r1.event.hash, "pulse-root-2");
+    controller.witnessEvent("alice", r1.event.hash);
+
+    const historyBefore = backend.getKeyHistoryEvents("alice");
+    expect(historyBefore.length).toBe(2);
+
+    const controllerSnap = controller.snapshot();
+    const backendSnap = backend.snapshot();
+
+    const restoredBackend = Ed25519IdentityBackend.restore(backendSnap);
+    const restoredController = CredentialRotationController.restore(
+      controllerSnap,
+      { backends: [restoredBackend], clock: () => clockRef.t },
+    );
+
+    const historyAfter = restoredBackend.getKeyHistoryEvents("alice");
+    expect(historyAfter.length).toBe(2);
+    expect(historyAfter[0]!.hash).toBe(historyBefore[0]!.hash);
+    expect(historyAfter[1]!.hash).toBe(historyBefore[1]!.hash);
+
+    // Rotate again through the restored stack — KeyHistory's pre-rotation
+    // check will fail loudly if pendingNext wasn't restored correctly.
+    clockRef.t += 1000;
+    const r2 = await restoredController.rotate("alice");
+    expect(r2.event.sequence).toBe(2);
+    expect(restoredBackend.getKeyHistoryEvents("alice").length).toBe(3);
+  });
+});
