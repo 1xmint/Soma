@@ -13,6 +13,8 @@ import {
   verifySourceSignature,
   verifyDataIntegrity,
   verifyBirthCertificateChain,
+  birthCertificateFingerprint,
+  type BirthCertificate,
   type DataSource,
 } from "../../src/heart/birth-certificate.js";
 
@@ -417,6 +419,118 @@ describe("BirthCertificate", () => {
       const result = verifyBirthCertificateChain([cert], new Map());
       expect(result.valid).toBe(false);
       expect(result.reason).toContain("Unsigned");
+    });
+
+    it("accepts parent references that use the full-cert fingerprint", () => {
+      const heart1 = makeKeyPair();
+      const heart2 = makeKeyPair();
+      const did1 = makeDid(heart1);
+      const did2 = makeDid(heart2);
+
+      const parent = createBirthCertificate(
+        "raw",
+        { type: "sensor", identifier: "s-1", heartVerified: false },
+        did1,
+        "s1",
+        heart1,
+      );
+      const parentFp = birthCertificateFingerprint(parent);
+
+      const child = createBirthCertificate(
+        "derived",
+        { type: "agent", identifier: did1, heartVerified: true },
+        did2,
+        "s2",
+        heart2,
+        [parentFp],
+      );
+
+      const pubKeys = new Map([
+        [did1, heart1.publicKey],
+        [did2, heart2.publicKey],
+      ]);
+      const result = verifyBirthCertificateChain([parent, child], pubKeys);
+      expect(result.valid).toBe(true);
+    });
+
+    it("rejects parent references that use the legacy signature-only hash", () => {
+      const heart1 = makeKeyPair();
+      const heart2 = makeKeyPair();
+      const did1 = makeDid(heart1);
+      const did2 = makeDid(heart2);
+
+      const parent = createBirthCertificate(
+        "raw",
+        { type: "sensor", identifier: "s-1", heartVerified: false },
+        did1,
+        "s1",
+        heart1,
+      );
+      // Legacy (pre-fingerprint) reference format — sha256 of receiverSignature only.
+      const legacyRef = crypto.hashing.hash(parent.receiverSignature);
+
+      const child = createBirthCertificate(
+        "derived",
+        { type: "agent", identifier: did1, heartVerified: true },
+        did2,
+        "s2",
+        heart2,
+        [legacyRef],
+      );
+
+      const pubKeys = new Map([
+        [did1, heart1.publicKey],
+        [did2, heart2.publicKey],
+      ]);
+      const result = verifyBirthCertificateChain([parent, child], pubKeys);
+      expect(result.valid).toBe(false);
+      expect(result.reason).toContain("Missing parent");
+    });
+
+    it("detects parent-cert tampering via fingerprint binding", () => {
+      const heart1 = makeKeyPair();
+      const heart2 = makeKeyPair();
+      const did1 = makeDid(heart1);
+      const did2 = makeDid(heart2);
+
+      const parent = createBirthCertificate(
+        "raw",
+        { type: "sensor", identifier: "s-1", heartVerified: false },
+        did1,
+        "s1",
+        heart1,
+      );
+      const parentFp = birthCertificateFingerprint(parent);
+
+      const child = createBirthCertificate(
+        "derived",
+        { type: "agent", identifier: did1, heartVerified: true },
+        did2,
+        "s2",
+        heart2,
+        [parentFp],
+      );
+
+      // Tamper with a non-signed field (bornInSession). The canonical body
+      // changes, so the fingerprint no longer matches the child's reference —
+      // even though the (now-invalid) receiver signature is untouched.
+      const tamperedParent: BirthCertificate = {
+        ...parent,
+        bornInSession: "s1-tampered",
+      };
+
+      const pubKeys = new Map([
+        [did1, heart1.publicKey],
+        [did2, heart2.publicKey],
+      ]);
+      const result = verifyBirthCertificateChain([tamperedParent, child], pubKeys);
+      expect(result.valid).toBe(false);
+      // Either the parent's own receiver signature fails first, or the child's
+      // parent reference no longer resolves — both are acceptable rejections.
+      expect(
+        result.reason.includes("Invalid receiver signature") ||
+          result.reason.includes("Missing parent"),
+      ).toBe(true);
     });
   });
 });
