@@ -186,13 +186,27 @@ const ed25519Signing: SigningProvider = {
   },
 
   verify(message: Uint8Array, signature: Uint8Array, publicKey: Uint8Array): boolean {
+    // Length guards come first. We also reject the all-zero public key —
+    // the identity element makes signatures trivially forgeable if an agent
+    // is ever registered with it. The DID encoding would make this visible
+    // upstream, but defence in depth is cheap here.
     if (publicKey.length !== 32 || signature.length !== 64) return false;
+    let allZero = true;
+    for (let i = 0; i < 32; i++) {
+      if (publicKey[i] !== 0) { allZero = false; break; }
+    }
+    if (allZero) return false;
     try {
       const keyObj = createPublicKey({
         key: pubkeyToSpki(publicKey),
         format: "der",
         type: "spki",
       });
+      // Strict S<L verification: node:crypto delegates to OpenSSL, which
+      // enforces the RFC 8032 §5.1.7 canonical-signature rule (signature
+      // scalar must be reduced mod L) from OpenSSL 1.1.1 onwards. Any
+      // non-canonical / malleable signature is rejected here without
+      // needing a separate scalar check.
       return cryptoVerify(null, Buffer.from(message), keyObj, Buffer.from(signature));
     } catch {
       return false;
