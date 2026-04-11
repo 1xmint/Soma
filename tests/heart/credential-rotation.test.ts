@@ -491,6 +491,56 @@ describe("CredentialRotationController — clock injection", () => {
   });
 });
 
+describe("CredentialRotationController — inception atomicity", () => {
+  it("discards backend state when inception signing fails, so a retry succeeds", async () => {
+    const { controller, backend } = makeController();
+
+    const originalSign = backend.signWithCredential.bind(backend);
+    let shouldThrow = true;
+    (backend as unknown as { signWithCredential: typeof originalSign }).signWithCredential =
+      async (credId: string, msg: Uint8Array) => {
+        if (shouldThrow) {
+          shouldThrow = false;
+          throw new Error("simulated transient sign failure");
+        }
+        return originalSign(credId, msg);
+      };
+
+    await expect(
+      controller.incept({ identityId: "alice", backendId: "mock-a" }),
+    ).rejects.toThrow(/simulated transient/);
+
+    const retry = await controller.incept({
+      identityId: "alice",
+      backendId: "mock-a",
+    });
+    expect(retry.event.sequence).toBe(0);
+  });
+});
+
+describe("CredentialRotationController — lifecycle input validation", () => {
+  it("anchorEvent rejects empty eventHash or pulseTreeRoot", async () => {
+    const { controller } = makeController();
+    const { event } = await controller.incept({
+      identityId: "alice",
+      backendId: "mock-a",
+    });
+    expect(() => controller.anchorEvent("alice", "", "root")).toThrow(
+      /eventHash required/,
+    );
+    expect(() => controller.anchorEvent("alice", event.hash, "")).toThrow(
+      /pulseTreeRoot required/,
+    );
+  });
+
+  it("witnessEvent rejects empty eventHash", () => {
+    const { controller } = makeController();
+    expect(() => controller.witnessEvent("alice", "")).toThrow(
+      /eventHash required/,
+    );
+  });
+});
+
 describe("CredentialRotationController — backend isolation (invariant 7)", () => {
   it("two backends do not share state", async () => {
     const policy = makePolicy({ backendAllowlist: ["mock-a", "mock-b"] });
