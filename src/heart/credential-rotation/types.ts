@@ -204,54 +204,18 @@ export interface CredentialBackend {
   ): Promise<boolean>;
 
   /**
-   * Stage the next pre-committed credential without committing it. The
-   * backend reveals the public manifest of the next keypair so the
-   * controller can verify it matches the prior commitment (L1), but does
-   * NOT yet mutate any durable chain state (KeyHistory append, `current`
-   * pointer, etc). The backend MUST be prepared to `signWithCredential`
-   * against the returned credentialId so the controller can collect the
-   * new key's first proof-of-possession before committing.
-   *
-   * The staged credential is identified by `identityId` — at most one
-   * rotation may be staged per identity at a time. Callers must follow
-   * `stageNextCredential` with exactly one of `commitStagedRotation` or
-   * `abortStagedRotation` before another rotation can be staged.
+   * Return the next pre-committed credential. The backend reveals the keypair
+   * it generated during the previous `issueCredential` call. After this
+   * returns, the backend must immediately generate the credential *after*
+   * the new one, so pre-rotation continues one step ahead.
    */
-  stageNextCredential(args: {
-    identityId: string;
-    oldCredentialId: string;
-    issuedAt: number;
-  }): Promise<Credential>;
-
-  /**
-   * Commit a previously staged rotation: append to the backend's durable
-   * log (if any), advance the current credential pointer, and generate the
-   * next-next keypair so pre-rotation stays one step ahead.
-   */
-  commitStagedRotation(identityId: string): Promise<void>;
-
-  /**
-   * Abort a previously staged rotation: drop the staged credential, zero
-   * any partial secret material it held, and leave the backend in the
-   * exact state it was in before the stage call. Idempotent — aborting
-   * when no rotation is staged is a no-op.
-   */
-  abortStagedRotation(identityId: string): Promise<void>;
+  revealNextCredential(oldCredentialId: string): Promise<Credential>;
 
   /**
    * Mark a credential revoked inside the backend. The controller calls this
    * only after verify-before-revoke has succeeded (invariant 12).
    */
   revokeCredential(credentialId: string): Promise<void>;
-
-  /**
-   * Discard all backend state for an identity. The controller calls this
-   * only when an inception rolls back mid-flight (e.g. the backend issued
-   * a credential but a subsequent signing step failed). Must be idempotent
-   * and safe to call on an unknown identity. Implementations should
-   * zeroise any secret material they were holding for the identity.
-   */
-  discardIdentity(identityId: string): Promise<void>;
 }
 
 // ─── Policy ─────────────────────────────────────────────────────────────────
@@ -356,29 +320,5 @@ export class ChallengePeriodActive extends InvariantViolation {
 export class VerifyBeforeRevokeFailed extends InvariantViolation {
   constructor() {
     super(12, 'cannot revoke: propagation not acknowledged and grace TTL unelapsed');
-  }
-}
-
-export class CredentialExpired extends InvariantViolation {
-  constructor(credentialId: string, expiresAt: number, now: number) {
-    super(
-      2,
-      `credential ${credentialId} expired at ${expiresAt} (now=${now}); rotation required`,
-    );
-  }
-}
-
-export class DuplicateBackend extends InvariantViolation {
-  constructor(backendId: string) {
-    super(7, `backend already registered: ${backendId}`);
-  }
-}
-
-export class StagedRotationConflict extends InvariantViolation {
-  constructor(identityId: string) {
-    super(
-      9,
-      `identity ${identityId} already has a staged rotation; commit or abort it first`,
-    );
   }
 }
