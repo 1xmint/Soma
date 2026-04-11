@@ -445,6 +445,17 @@ export class CredentialRotationController {
     if (!state.current) {
       throw new NotYetEffective(state.events[state.events.length - 1]!.status);
     }
+    // Only one rotation in-flight per identity. The previous rotation must
+    // be fully effective (anchored + witnessed) before we can start the
+    // next one — otherwise the backend has already moved its current
+    // pointer to the new credential (commitStagedRotation) while
+    // `state.current` still points to the old one, and `stageNextCredential`
+    // would receive a stale oldCredentialId. Caller must call
+    // anchorEvent + witnessEvent before rotating again.
+    const tip = state.events[state.events.length - 1]!;
+    if (tip.status !== 'effective') {
+      throw new NotYetEffective(tip.status);
+    }
     if (state.challengePeriodUnlockAt && now < state.challengePeriodUnlockAt) {
       throw new ChallengePeriodActive(state.challengePeriodUnlockAt);
     }
