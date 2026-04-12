@@ -66,8 +66,9 @@ describe("Heart persistence", () => {
     const heart = createSomaHeart(makeConfig());
     const blob = heart.serialize("password");
     const parsed = JSON.parse(blob);
-    // Flip one byte in ciphertext
-    parsed.ciphertextB64 = parsed.ciphertextB64.replace(/./, "Z");
+    // Flip first byte in ciphertext (guaranteed to change)
+    const first = parsed.ciphertextB64[0];
+    parsed.ciphertextB64 = (first === "Z" ? "A" : "Z") + parsed.ciphertextB64.slice(1);
     const tampered = JSON.stringify(parsed);
 
     expect(() => loadSomaHeart(tampered, "password")).toThrow();
