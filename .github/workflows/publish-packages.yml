@@ -1,7 +1,11 @@
 name: Publish Packages
 
-# Soma ships as a single unified npm package: `soma-heart`.
-# (soma-sense was merged in at 0.3.0 — see CHANGELOG.md.)
+# Two publishable packages:
+#   soma-heart  — the trust machine (heart + sensorium + MCP)
+#   soma-sense  — thin re-export of soma-heart/sense for observer-only installs
+#
+# soma-heart is the source of truth. soma-sense depends on it.
+# Both are published on the same tag push.
 #
 # Two ways to ship a release:
 #
@@ -17,7 +21,7 @@ name: Publish Packages
 #
 # Both paths gate on the full CI suite (lint, format, typecheck, test,
 # build) before calling `npm publish`. Provenance attestations are
-# generated automatically because soma-heart has `publishConfig.provenance = true`;
+# generated automatically because both packages have `publishConfig.provenance = true`;
 # that requires trusted publishing to be configured on npmjs.com for
 # the package. See docs/secure-release-workflow.md.
 
@@ -94,4 +98,8 @@ jobs:
 
       - name: Publish soma-heart
         working-directory: packages/soma-heart
+        run: npm publish
+
+      - name: Publish soma-sense
+        working-directory: packages/soma-sense
         run: npm publish

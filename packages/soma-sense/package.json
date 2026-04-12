@@ -1,0 +1,35 @@
+{
+  "name": "soma-sense",
+  "version": "0.2.0",
+  "description": "Soma sensorium — observer-side verification for AI agents. Thin re-export of soma-heart/sense.",
+  "type": "module",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.js",
+      "default": "./index.js"
+    }
+  },
+  "dependencies": {
+    "soma-heart": "^0.3.0"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/1xmint/Soma.git",
+    "directory": "packages/soma-sense"
+  },
+  "keywords": [
+    "soma",
+    "ai-verification",
+    "mcp",
+    "sensorium",
+    "behavioral-fingerprinting"
+  ]
+}
