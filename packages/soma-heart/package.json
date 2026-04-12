@@ -88,8 +88,8 @@
     "node": ">=18"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": ">=1.0.0",
-    "openai": ">=4.0.0",
+    "@modelcontextprotocol/sdk": ">=1.29.0",
+    "openai": ">=6.34.0",
     "tweetnacl": "^1.0.3",
     "tweetnacl-util": "^0.15.1"
   }
