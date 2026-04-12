@@ -13,7 +13,7 @@ import { writeFile, mkdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { config } from "dotenv";
 import { ALL_PROBES } from "../probes.js";
-import { extractAllSignals, type PhenotypicSignals, type StreamingTrace } from "../signals.js";
+import { extractAllSignals, type PhenotypicSignals } from "../signals.js";
 import { runBare } from "./bare.js";
 import { runRag } from "./rag.js";
 import { runToolUse } from "./tool-use.js";

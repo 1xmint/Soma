@@ -9,7 +9,7 @@ import { existsSync } from "node:fs";
 import { config } from "dotenv";
 import { AGENT_CONFIGS, type AgentConfig } from "./configs.js";
 import { ALL_PROBES } from "./probes.js";
-import { extractAllSignals, type PhenotypicSignals, type StreamingTrace } from "./signals.js";
+import { extractAllSignals, type PhenotypicSignals } from "./signals.js";
 import { streamFromProvider, streamThroughProxy, type StreamingResponse } from "./providers.js";
 import type { ExperimentResult, ExperimentRun } from "./runner.js";
 
