@@ -17,7 +17,7 @@
 
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { extractTemporalSignals, temporalToFeatureVector, TEMPORAL_FEATURE_NAMES, type TemporalSignals } from "../sensorium/senses/temporal.js";
+import { extractTemporalSignals, temporalToFeatureVector, TEMPORAL_FEATURE_NAMES } from "../sensorium/senses/temporal.js";
 import { extractTopologySignals, topologyToFeatureVector, TOPOLOGY_FEATURE_NAMES } from "../sensorium/senses/index.js";
 import { extractVocabularySignals, vocabularyToFeatureVector, VOCABULARY_FEATURE_NAMES } from "../sensorium/senses/index.js";
 import { PhenotypeAtlas, type SenseFeatures } from "../sensorium/atlas.js";

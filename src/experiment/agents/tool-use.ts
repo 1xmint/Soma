@@ -103,7 +103,7 @@ export async function runToolUse(prompt: string): Promise<AgentResponse> {
     stream: true,
   });
 
-  let toolCalls: Array<{ id: string; name: string; arguments: string }> = [];
+  const toolCalls: Array<{ id: string; name: string; arguments: string }> = [];
   let currentToolCall: { id: string; name: string; arguments: string } | null = null;
 
   for await (const chunk of stream1) {

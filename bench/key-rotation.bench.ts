@@ -38,7 +38,7 @@ export function keyRotationBenches(): BenchResult[] {
         const k0 = crypto.signing.generateKeyPair();
         const k1 = crypto.signing.generateKeyPair();
         const k2 = crypto.signing.generateKeyPair();
-        const { history } = KeyHistory.incept({
+        KeyHistory.incept({
           inceptionSecretKey: k0.secretKey,
           inceptionPublicKey: k0.publicKey,
           nextPublicKey: k1.publicKey,

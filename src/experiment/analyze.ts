@@ -15,7 +15,7 @@
 
 import { readFile, writeFile, readdir, mkdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { signalsToFeatureVector, FEATURE_NAMES, type PhenotypicSignals } from "./signals.js";
+import { signalsToFeatureVector, FEATURE_NAMES } from "./signals.js";
 import { extractVocabularySignals } from "../sensorium/senses/index.js";
 import { AGENT_CONFIGS } from "./configs.js";
 import type { ExperimentRun, ExperimentResult } from "./runner.js";

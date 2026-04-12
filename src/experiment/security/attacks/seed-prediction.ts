@@ -12,7 +12,7 @@
  */
 
 import { getCryptoProvider } from "../../../core/crypto-provider.js";
-import { deriveSeed, verifySeedInfluence, type SeedConfig } from "../../../heart/seed.js";
+import { deriveSeed, type SeedConfig } from "../../../heart/seed.js";
 import type { AttackResult } from "../harness.js";
 
 export function runSeedPredictionAttack(): AttackResult {

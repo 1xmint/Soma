@@ -3,7 +3,7 @@ import {
   type CryptoProvider,
   type BoxKeyPair,
 } from "./crypto-provider.js";
-import { type GenomeCommitment, verifyCommitment, publicKeyToDid } from "./genome.js";
+import { type GenomeCommitment, verifyCommitment } from "./genome.js";
 
 // Re-export key pair type for consumers
 export type { BoxKeyPair };
