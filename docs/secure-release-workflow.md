@@ -5,7 +5,7 @@ Soma should not use the same production deployment workflow as ClawNet or Pulse.
 Soma is the open-source upstream. The clean professional model here is:
 
 - protected default branch
-- required CI, Dependency Review, and CodeQL before merge
+- required CI and CodeQL before merge
 - weekly Dependabot updates
 - package publishing from GitHub Actions using npm trusted publishing
 - no long-lived npm automation tokens
@@ -47,7 +47,6 @@ That means the security focus is:
 Required status checks:
 
 - `validate`
-- `dependency-review`
 - `analyze`
 
 ## npm Trusted Publishing
@@ -74,7 +73,7 @@ and leaves a visible git tag as the canonical release marker.
 
 1. Open a PR that bumps `packages/soma-heart/package.json` and adds a
    `CHANGELOG.md` entry.
-2. Wait for CI, Dependency Review, and CodeQL to pass.
+2. Wait for CI and CodeQL to pass.
 3. Review and merge to the protected default branch.
 4. From the merged `main`, tag the release with the exact format
    `soma-heart-v<version>`:

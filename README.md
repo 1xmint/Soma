@@ -235,7 +235,7 @@ pnpm test -- tests/experiment/security/harness.test.ts
 ### Heart (Agent Side)
 
 ```typescript
-import { createSomaHeart } from "soma/heart";
+import { createSomaHeart } from "soma-heart";
 
 const heart = createSomaHeart({
   genome: commitment,
@@ -254,7 +254,7 @@ const data = await heart.fetchData("market-api", "query", fetcher);
 ### Sensorium (Observer Side)
 
 ```typescript
-import { withSomaSense } from 'soma/sense';
+import { withSomaSense } from 'soma-heart/sense';
 
 const transport = withSomaSense(new StdioServerTransport(), {
   onVerdict: (sessionId, verdict) => {
