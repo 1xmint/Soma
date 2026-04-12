@@ -13,10 +13,10 @@ Soma is the open-source upstream. The clean professional model here is:
 
 ## Current State
 
-The `npm-release` environment and trusted-publisher path are in place for:
+The `npm-release` environment and trusted-publisher path are in place for
+the single unified package:
 
-- `soma-heart`
-- `soma-sense`
+- `soma-heart` (includes the former `soma-sense` as subpath exports since 0.3.0)
 
 So the main remaining work is release discipline and downstream adoption order, not basic publishing setup.
 
@@ -73,7 +73,7 @@ and leaves a visible git tag as the canonical release marker.
 
 1. Open a PR that bumps `packages/soma-heart/package.json` and adds a
    `CHANGELOG.md` entry.
-2. Wait for CI and CodeQL to pass.
+2. Wait for CI, Dependency Review, and CodeQL to pass.
 3. Review and merge to the protected default branch.
 4. From the merged `main`, tag the release with the exact format
    `soma-heart-v<version>`:
