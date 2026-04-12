@@ -5,7 +5,7 @@ Soma should not use the same production deployment workflow as ClawNet or Pulse.
 Soma is the open-source upstream. The clean professional model here is:
 
 - protected default branch
-- required CI, Dependency Review, and CodeQL before merge
+- required CI and CodeQL before merge
 - weekly Dependabot updates
 - package publishing from GitHub Actions using npm trusted publishing
 - no long-lived npm automation tokens
@@ -13,10 +13,10 @@ Soma is the open-source upstream. The clean professional model here is:
 
 ## Current State
 
-The `npm-release` environment and trusted-publisher path are in place for:
+The `npm-release` environment and trusted-publisher path are in place for
+the single unified package:
 
-- `soma-heart`
-- `soma-sense`
+- `soma-heart` (includes the former `soma-sense` as subpath exports since 0.3.0)
 
 So the main remaining work is release discipline and downstream adoption order, not basic publishing setup.
 
@@ -24,10 +24,9 @@ So the main remaining work is release discipline and downstream adoption order, 
 
 ClawNet and Pulse are private production applications.
 
-Soma is a public source repo with publishable packages:
+Soma is a public source repo with one publishable package:
 
-- `soma-heart`
-- `soma-sense`
+- `soma-heart` — unified Soma trust machine (runner + sensorium + MCP middleware). The former `soma-sense` package is deprecated; its contents are subpath exports of `soma-heart` (`./sense`, `./senses`, `./atlas`, `./mcp`, `./signals`).
 
 That means the security focus is:
 
@@ -48,7 +47,6 @@ That means the security focus is:
 Required status checks:
 
 - `validate`
-- `dependency-review`
 - `analyze`
 
 ## npm Trusted Publishing
@@ -61,9 +59,10 @@ Official docs:
 
 Recommended configuration:
 
-1. Configure `soma-heart` and `soma-sense` on npm as trusted publishers for this GitHub repo.
+1. Configure `soma-heart` on npm as a trusted publisher for this GitHub repo (workflow: `.github/workflows/publish-packages.yml`, environment: `npm-release`).
 2. In npm package settings, require two-factor authentication and disallow tokens after trusted publishing is working.
-3. Use the `Publish Packages` GitHub Actions workflow for releases.
+3. Deprecate `soma-sense` on npm once `soma-heart@0.3.0` is live: `npm deprecate soma-sense@"*" "Merged into soma-heart@>=0.3.0. Install soma-heart and import from soma-heart/sense."`
+4. Use the `Publish Packages` GitHub Actions workflow for releases.
 
 ## Release Flow
 
@@ -72,12 +71,12 @@ and leaves a visible git tag as the canonical release marker.
 
 ### Preferred: tag-push release
 
-1. Open a PR that bumps `packages/soma-heart/package.json` (or
-   `packages/soma-sense/package.json`) and adds a `CHANGELOG.md` entry.
-2. Wait for CI, Dependency Review, and CodeQL to pass.
+1. Open a PR that bumps `packages/soma-heart/package.json` and adds a
+   `CHANGELOG.md` entry.
+2. Wait for CI and CodeQL to pass.
 3. Review and merge to the protected default branch.
 4. From the merged `main`, tag the release with the exact format
-   `soma-heart-v<version>` or `soma-sense-v<version>`:
+   `soma-heart-v<version>`:
 
    ```bash
    git tag soma-heart-v0.3.0
@@ -88,7 +87,7 @@ and leaves a visible git tag as the canonical release marker.
    the full CI suite (lint, format, typecheck, test, build), then asserts
    that the tag version matches the `package.json` version, then calls
    `npm publish`. Provenance attestations are generated automatically
-   because each package has `publishConfig.provenance = true`.
+   because `soma-heart` has `publishConfig.provenance = true`.
 6. Approve the `npm-release` environment gate.
 7. Verify the new version on npm with a provenance badge attached to
    the release.
@@ -99,9 +98,8 @@ Use this only to republish a broken release or ship from a non-tag
 commit in an incident. There is no version guard on this path.
 
 1. Actions → `Publish Packages` → Run workflow.
-2. Pick the package (`soma-heart`, `soma-sense`, or `both`).
-3. Approve the `npm-release` environment.
-4. Verify the new version on npm.
+2. Approve the `npm-release` environment.
+3. Verify the new version on npm.
 
 ## Downstream Consumption
 
@@ -116,4 +114,4 @@ Recommended policy:
 
 ## Next Step After This
 
-The next maturity jump is to connect the existing Soma supply-chain log to published releases, so every `soma-heart` and `soma-sense` publish also appends a verifiable signed release entry.
+The next maturity jump is to connect the existing Soma supply-chain log to published releases, so every `soma-heart` publish also appends a verifiable signed release entry.

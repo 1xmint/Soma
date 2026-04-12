@@ -1,7 +1,7 @@
 {
   "name": "soma-heart",
   "version": "0.3.0",
-  "description": "The heart of agent identity — execution runtime with per-token HMAC, birth certificates, credential rotation, human-consent session mode, and cryptographic heartbeat chain",
+  "description": "The Soma trust machine for AI agents — one package: execution heart (HMAC, birth certs, heartbeat chain, credential rotation, human-consent session mode) + sensorium (temporal fingerprinting, behavioral landscape, phenotype atlas) + MCP middleware.",
   "type": "module",
   "main": "./dist/heart/index.js",
   "types": "./dist/heart/index.d.ts",
@@ -29,6 +29,31 @@
       "types": "./dist/core/crypto-provider.d.ts",
       "import": "./dist/core/crypto-provider.js",
       "default": "./dist/core/crypto-provider.js"
+    },
+    "./sense": {
+      "types": "./dist/sensorium/index.d.ts",
+      "import": "./dist/sensorium/index.js",
+      "default": "./dist/sensorium/index.js"
+    },
+    "./senses": {
+      "types": "./dist/sensorium/senses/index.d.ts",
+      "import": "./dist/sensorium/senses/index.js",
+      "default": "./dist/sensorium/senses/index.js"
+    },
+    "./atlas": {
+      "types": "./dist/sensorium/atlas.d.ts",
+      "import": "./dist/sensorium/atlas.js",
+      "default": "./dist/sensorium/atlas.js"
+    },
+    "./mcp": {
+      "types": "./dist/mcp/index.d.ts",
+      "import": "./dist/mcp/index.js",
+      "default": "./dist/mcp/index.js"
+    },
+    "./signals": {
+      "types": "./dist/experiment/signals.d.ts",
+      "import": "./dist/experiment/signals.js",
+      "default": "./dist/experiment/signals.js"
     }
   },
   "files": [
@@ -44,6 +69,11 @@
     "data-provenance",
     "birth-certificate",
     "heartbeat",
+    "credential-rotation",
+    "temporal-fingerprint",
+    "sensorium",
+    "phenotype",
+    "behavioral-analysis",
     "soma"
   ],
   "author": "Joshua Fair",
@@ -57,6 +87,7 @@
     "node": ">=18"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": ">=1.0.0",
     "openai": ">=4.0.0",
     "tweetnacl": "^1.0.3",
     "tweetnacl-util": "^0.15.1"
