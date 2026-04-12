@@ -14,9 +14,12 @@ Soma is the open-source upstream. The clean professional model here is:
 ## Current State
 
 The `npm-release` environment and trusted-publisher path are in place for
-the single unified package:
+both packages:
 
-- `soma-heart` (includes the former `soma-sense` as subpath exports since 0.3.0)
+- `soma-heart` — the trust machine (heart + sensorium + MCP middleware)
+- `soma-sense` — thin re-export of `soma-heart/sense` for observer-only installs
+
+Both publish on the same tag push. `soma-heart` is the source of truth; `soma-sense` depends on it.
 
 So the main remaining work is release discipline and downstream adoption order, not basic publishing setup.
 
@@ -24,9 +27,10 @@ So the main remaining work is release discipline and downstream adoption order, 
 
 ClawNet and Pulse are private production applications.
 
-Soma is a public source repo with one publishable package:
+Soma is a public source repo with two publishable packages:
 
-- `soma-heart` — unified Soma trust machine (runner + sensorium + MCP middleware). The former `soma-sense` package is deprecated; its contents are subpath exports of `soma-heart` (`./sense`, `./senses`, `./atlas`, `./mcp`, `./signals`).
+- `soma-heart` — the Soma trust machine (execution heart, sensorium, MCP middleware, credential rotation, session mode). All code lives here.
+- `soma-sense` — thin re-export of `soma-heart/sense`. Exists so consumers who only want observation can install without knowing about heart internals.
 
 That means the security focus is:
 
@@ -59,10 +63,9 @@ Official docs:
 
 Recommended configuration:
 
-1. Configure `soma-heart` on npm as a trusted publisher for this GitHub repo (workflow: `.github/workflows/publish-packages.yml`, environment: `npm-release`).
+1. Configure `soma-heart` and `soma-sense` on npm as trusted publishers for this GitHub repo (workflow: `.github/workflows/publish-packages.yml`, environment: `npm-release`).
 2. In npm package settings, require two-factor authentication and disallow tokens after trusted publishing is working.
-3. Deprecate `soma-sense` on npm once `soma-heart@0.3.0` is live: `npm deprecate soma-sense@"*" "Merged into soma-heart@>=0.3.0. Install soma-heart and import from soma-heart/sense."`
-4. Use the `Publish Packages` GitHub Actions workflow for releases.
+3. Use the `Publish Packages` GitHub Actions workflow for releases.
 
 ## Release Flow
 
@@ -75,7 +78,7 @@ and leaves a visible git tag as the canonical release marker.
    `CHANGELOG.md` entry.
 2. Wait for CI and CodeQL to pass.
 3. Review and merge to the protected default branch.
-4. From the merged `main`, tag the release with the exact format
+4. From the merged `master`, tag the release with the exact format
    `soma-heart-v<version>`:
 
    ```bash

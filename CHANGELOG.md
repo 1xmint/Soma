@@ -13,14 +13,14 @@ Entries are grouped by package and dated.
 
 ## soma-heart@0.3.0 — 2026-04-11
 
-### Package unification (breaking for `soma-sense` consumers)
+### Package restructure
 
-- **`soma-sense` merged into `soma-heart`.** Soma now ships as a single
-  unified npm package. What used to be
-  `import { withSomaSense } from 'soma-sense'` is now
-  `import { withSomaSense } from 'soma-heart/sense'`. One install, one
-  version, one changelog, one provenance attestation. The `soma-sense`
-  package on npm is deprecated with a pointer to this release.
+- **`soma-heart` is now the single source of truth.** All sensorium code
+  lives inside `soma-heart` as subpath exports. `soma-sense` remains on
+  npm as a thin re-export of `soma-heart/sense` — install it if you only
+  want observer-side verification without interacting with the heart
+  directly. Both `import { withSomaSense } from 'soma-heart/sense'` and
+  `import { withSomaSense } from 'soma-sense'` work.
 - **New subpath exports on `soma-heart`:** `./sense`, `./senses`,
   `./atlas`, `./mcp`, `./signals`. Tree-shaking keeps bundle size flat —
   import only the subpath you need and your bundler drops the rest.
