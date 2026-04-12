@@ -254,7 +254,7 @@ const data = await heart.fetchData("market-api", "query", fetcher);
 ### Sensorium (Observer Side)
 
 ```typescript
-import { withSomaSense } from 'soma/sense';
+import { withSomaSense } from 'soma-heart/sense';
 
 const transport = withSomaSense(new StdioServerTransport(), {
   onVerdict: (sessionId, verdict) => {
