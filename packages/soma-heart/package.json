@@ -80,9 +80,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/1xmint/Soma"
+    "url": "git+https://github.com/1xmint/Soma.git",
+    "directory": "packages/soma-heart"
   },
-  "homepage": "https://github.com/1xmint/Soma",
+  "homepage": "https://github.com/1xmint/Soma/tree/master/packages/soma-heart",
   "engines": {
     "node": ">=18"
   },
