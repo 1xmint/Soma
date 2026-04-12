@@ -23,8 +23,14 @@ export class CredentialVault {
 
   constructor(signingSecretKey: Uint8Array, provider?: CryptoProvider) {
     this.provider = provider ?? getCryptoProvider();
-    // Derive a 32-byte encryption key from the signing secret key.
-    this.encryptionKey = this.provider.hashing.deriveKey(signingSecretKey, 32);
+    // HKDF-derived 32-byte vault key with domain separation.
+    // The "soma-vault/v1" label isolates this key from every other
+    // derivation off the same signing key (HMAC, seed nonce, etc.).
+    this.encryptionKey = this.provider.hashing.deriveKey(
+      signingSecretKey,
+      32,
+      "soma-vault/v1",
+    );
   }
 
   /** Store a credential encrypted at rest. */

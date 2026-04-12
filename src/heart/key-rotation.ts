@@ -341,6 +341,55 @@ export class KeyHistory {
     if (events.length === 0) throw new Error('empty history');
     return events[events.length - 1].currentPublicKey;
   }
+
+  // ─── Persistence ──────────────────────────────────────────────────────────
+
+  /**
+   * Wire-safe snapshot. Events are already JSON-safe (strings + numbers),
+   * so this is a shallow copy of the chain plus the identity it was
+   * inceptioned under.
+   */
+  snapshot(): KeyHistorySnapshot {
+    return {
+      version: 1,
+      identity: this.identity,
+      events: this.events.map(e => ({ ...e })),
+    };
+  }
+
+  /**
+   * Rebuild a KeyHistory from a snapshot. Verifies the chain before
+   * returning — a corrupted snapshot fails loudly rather than restoring
+   * an identity that cannot rotate.
+   */
+  static restore(
+    snapshot: KeyHistorySnapshot,
+    provider?: CryptoProvider,
+  ): KeyHistory {
+    if (snapshot.version !== 1) {
+      throw new Error(`unsupported KeyHistory snapshot version ${snapshot.version}`);
+    }
+    const p = provider ?? getCryptoProvider();
+    const verification = KeyHistory.verifyChain(
+      snapshot.events,
+      snapshot.identity,
+      p,
+    );
+    if (!verification.valid) {
+      throw new Error(
+        `KeyHistory.restore: invalid chain — ${verification.reason}`,
+      );
+    }
+    const history = new KeyHistory(snapshot.identity, p);
+    history.events.push(...snapshot.events.map(e => ({ ...e })));
+    return history;
+  }
+}
+
+export interface KeyHistorySnapshot {
+  readonly version: 1;
+  readonly identity: string;
+  readonly events: RotationEvent[];
 }
 
 // ─── Internals ──────────────────────────────────────────────────────────────

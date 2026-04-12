@@ -1,0 +1,5 @@
+dist/
+node_modules/
+results/
+pnpm-lock.yaml
+*.pdf

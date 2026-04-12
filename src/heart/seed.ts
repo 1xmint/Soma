@@ -92,12 +92,11 @@ const BIN_WIDTH = 1.0 / BINS_PER_DIMENSION; // 0.2
 export function deriveSeed(config: SeedConfig, queryHash: string, provider?: CryptoProvider): HeartSeed {
   const p = provider ?? getCryptoProvider();
 
-  // Step 1: HKDF(session_key, interaction_counter, query_hash) -> 256-bit nonce
-  const material = new Uint8Array([
-    ...config.sessionKey,
-    ...new TextEncoder().encode(`|${config.interactionCounter}|${queryHash}`),
-  ]);
-  const nonce = p.hashing.deriveKey(material, 32);
+  // Step 1: HKDF(session_key, interaction_counter || query_hash) -> 256-bit nonce
+  // The per-call context goes into the `info` parameter so every
+  // (interaction, query) pair yields an independent nonce.
+  const info = `soma-seed-nonce/v1|${config.interactionCounter}|${queryHash}`;
+  const nonce = p.hashing.deriveKey(config.sessionKey, 32, info);
   const nonceHex = Array.from(nonce).map(b => b.toString(16).padStart(2, "0")).join("");
 
   // Step 2: Map nonce bytes to continuous behavioral space using integer arithmetic.
@@ -352,12 +351,8 @@ function measureFormality(text: string, wordCount: number, expectedRange: [numbe
  */
 export function deriveHmacKey(sessionKey: Uint8Array, provider?: CryptoProvider): Uint8Array {
   const p = provider ?? getCryptoProvider();
-  // Domain-separated key derivation: H(sessionKey || "soma:hmac")
-  const material = new Uint8Array([
-    ...sessionKey,
-    ...new TextEncoder().encode("|soma:hmac"),
-  ]);
-  return p.hashing.deriveKey(material, 32);
+  // HKDF with domain-separated info; independent from vault key and seed nonce.
+  return p.hashing.deriveKey(sessionKey, 32, "soma-token-hmac/v1");
 }
 
 /**

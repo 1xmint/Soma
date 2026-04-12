@@ -39,7 +39,10 @@ export type HeartbeatEventType =
   | "subtask_dispatch"    // work handed off to a child/delegatee
   | "subtask_return"      // child/delegatee returned a result
   | "delegation_issued"   // this heart issued a delegation
-  | "delegation_revoked"; // this heart revoked a delegation
+  | "delegation_revoked"  // this heart revoked a delegation
+  // Human consent ceremony (see human-delegation.ts)
+  | "consent_required"    // heart asked a human authenticator to approve a session
+  | "consent_granted";    // human authenticator returned a signed HumanDelegation
 
 /** A single heartbeat — one link in the hash chain. */
 export interface Heartbeat {
@@ -115,12 +118,18 @@ export class HeartbeatChain {
 
   /**
    * Restore a chain from previously-recorded heartbeats.
-   * The caller is responsible for verifying integrity first via HeartbeatChain.verify().
+   * Verifies the chain internally before accepting it — a restored heart
+   * must not silently inherit a tampered history just because the caller
+   * forgot to verify. Throws if the chain is invalid; callers that want
+   * to handle corruption gracefully can wrap in try/catch.
    * Returns a fresh HeartbeatChain continuing from where the old one left off.
    */
   static restore(chain: Heartbeat[], provider?: CryptoProvider): HeartbeatChain {
     const hc = new HeartbeatChain(provider);
     if (chain.length === 0) return hc;
+    if (!HeartbeatChain.verify(chain, provider)) {
+      throw new Error("HeartbeatChain.restore: chain failed integrity verification");
+    }
     hc.chain = [...chain];
     hc.sequence = chain.length;
     hc.currentHash = chain[chain.length - 1].hash;

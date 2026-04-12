@@ -12,7 +12,17 @@
 import nacl from "tweetnacl";
 import naclUtil from "tweetnacl-util";
 const { encodeBase64, decodeBase64, encodeUTF8, decodeUTF8 } = naclUtil;
-import { createHash, createHmac, timingSafeEqual } from "node:crypto";
+import {
+  createHash,
+  createHmac,
+  hkdfSync,
+  timingSafeEqual,
+  sign as cryptoSign,
+  verify as cryptoVerify,
+  createPrivateKey,
+  createPublicKey,
+  generateKeyPairSync,
+} from "node:crypto";
 
 // ─── Algorithm-agnostic key pair types ───────────────────────────────────────
 
@@ -69,8 +79,19 @@ export interface HashingProvider {
   readonly algorithmId: string;
   /** Hash a string, return hex digest. */
   hash(data: string): string;
-  /** Derive a key of the given byte length from input bytes. */
-  deriveKey(input: Uint8Array, length: number): Uint8Array;
+  /**
+   * HKDF key derivation (RFC 5869).
+   *
+   * `info` is REQUIRED and must be a domain-specific label unique to the
+   * calling context (e.g. "soma-vault/v1", "soma-seed-nonce/v1"). Two
+   * derivations with the same `ikm` but different `info` MUST produce
+   * independent keys. This is the protection against cross-context key
+   * reuse — omitting or reusing `info` defeats the entire purpose.
+   *
+   * `salt` is optional; when omitted, HKDF uses a zero-filled hash block
+   * per RFC 5869 §2.2.
+   */
+  deriveKey(ikm: Uint8Array, length: number, info: string, salt?: Uint8Array): Uint8Array;
 }
 
 /** Binary ↔ string encoding. */
@@ -116,21 +137,80 @@ export interface CryptoProvider {
 
 // ─── Default NaCl / SHA-256 provider ─────────────────────────────────────────
 
-const naclSigning: SigningProvider = {
+// Ed25519 via node:crypto native. We keep the tweetnacl wire format for keys
+// (32-byte raw public key, 64-byte secret key = seed || publicKey) so existing
+// stored keys and signatures remain interoperable. Internally we wrap the
+// 32-byte seed / public key in the fixed PKCS8 / SPKI prefixes Node expects.
+//
+// Why: tweetnacl is pure JS and its verify path is not constant-time in the
+// same way as libsodium/OpenSSL. Node Ed25519 sits on OpenSSL and is the
+// sanctioned primitive for production signing.
+const PKCS8_ED25519_PREFIX = Buffer.from("302e020100300506032b657004220420", "hex");
+const SPKI_ED25519_PREFIX = Buffer.from("302a300506032b6570032100", "hex");
+
+function seedToPkcs8(seed: Uint8Array): Buffer {
+  return Buffer.concat([PKCS8_ED25519_PREFIX, Buffer.from(seed)]);
+}
+function pubkeyToSpki(pub: Uint8Array): Buffer {
+  return Buffer.concat([SPKI_ED25519_PREFIX, Buffer.from(pub)]);
+}
+
+const ed25519Signing: SigningProvider = {
   algorithmId: "ed25519",
   multicodecPrefix: new Uint8Array([0xed, 0x01]),
 
   generateKeyPair(): SignKeyPair {
-    const kp = nacl.sign.keyPair();
-    return { publicKey: kp.publicKey, secretKey: kp.secretKey };
+    const { publicKey, privateKey } = generateKeyPairSync("ed25519");
+    const spki = publicKey.export({ format: "der", type: "spki" });
+    const pubRaw = new Uint8Array(spki.subarray(spki.length - 32));
+    const pkcs8 = privateKey.export({ format: "der", type: "pkcs8" });
+    const seed = pkcs8.subarray(pkcs8.length - 32);
+    const secretKey = new Uint8Array(64);
+    secretKey.set(seed, 0);
+    secretKey.set(pubRaw, 32);
+    return { publicKey: pubRaw, secretKey };
   },
 
   sign(message: Uint8Array, secretKey: Uint8Array): Uint8Array {
-    return nacl.sign.detached(message, secretKey);
+    if (secretKey.length !== 64 && secretKey.length !== 32) {
+      throw new Error(`ed25519 sign: secretKey must be 32 or 64 bytes, got ${secretKey.length}`);
+    }
+    const seed = secretKey.length === 64 ? secretKey.subarray(0, 32) : secretKey;
+    const keyObj = createPrivateKey({
+      key: seedToPkcs8(seed),
+      format: "der",
+      type: "pkcs8",
+    });
+    const sig = cryptoSign(null, Buffer.from(message), keyObj);
+    return new Uint8Array(sig);
   },
 
   verify(message: Uint8Array, signature: Uint8Array, publicKey: Uint8Array): boolean {
-    return nacl.sign.detached.verify(message, signature, publicKey);
+    // Length guards come first. We also reject the all-zero public key —
+    // the identity element makes signatures trivially forgeable if an agent
+    // is ever registered with it. The DID encoding would make this visible
+    // upstream, but defence in depth is cheap here.
+    if (publicKey.length !== 32 || signature.length !== 64) return false;
+    let allZero = true;
+    for (let i = 0; i < 32; i++) {
+      if (publicKey[i] !== 0) { allZero = false; break; }
+    }
+    if (allZero) return false;
+    try {
+      const keyObj = createPublicKey({
+        key: pubkeyToSpki(publicKey),
+        format: "der",
+        type: "spki",
+      });
+      // Strict S<L verification: node:crypto delegates to OpenSSL, which
+      // enforces the RFC 8032 §5.1.7 canonical-signature rule (signature
+      // scalar must be reduced mod L) from OpenSSL 1.1.1 onwards. Any
+      // non-canonical / malleable signature is rejected here without
+      // needing a separate scalar check.
+      return cryptoVerify(null, Buffer.from(message), keyObj, Buffer.from(signature));
+    } catch {
+      return false;
+    }
   },
 };
 
@@ -142,8 +222,44 @@ const naclKeyExchange: KeyExchangeProvider = {
     return { publicKey: kp.publicKey, secretKey: kp.secretKey };
   },
 
+  /**
+   * X25519 ECDH with defensive low-order-point checks.
+   *
+   * RFC 7748 §6.1 warns that X25519 inputs drawn from the eight low-order
+   * points on Curve25519 collapse the shared secret to zero regardless of
+   * the local secret. A peer who supplies such a public key can force a
+   * predictable session key. `nacl.box.before` does not filter them.
+   *
+   * Defense in depth:
+   *   1. Reject wrong-length remote keys.
+   *   2. Reject the all-zero remote key (the most trivial low-order point).
+   *   3. Compute the shared secret, then reject it if it is all-zero —
+   *      this catches the remaining seven low-order points at the cost of
+   *      the scalar-mult we already had to perform.
+   */
   deriveSharedKey(remotePublicKey: Uint8Array, localSecretKey: Uint8Array): Uint8Array {
-    return nacl.box.before(remotePublicKey, localSecretKey);
+    if (remotePublicKey.length !== 32) {
+      throw new Error(`x25519 deriveSharedKey: remote public key must be 32 bytes, got ${remotePublicKey.length}`);
+    }
+    if (localSecretKey.length !== 32) {
+      throw new Error(`x25519 deriveSharedKey: local secret key must be 32 bytes, got ${localSecretKey.length}`);
+    }
+    let allZero = true;
+    for (let i = 0; i < 32; i++) {
+      if (remotePublicKey[i] !== 0) { allZero = false; break; }
+    }
+    if (allZero) {
+      throw new Error("x25519 deriveSharedKey: remote public key is all-zero (low-order point rejected)");
+    }
+    const shared = nacl.box.before(remotePublicKey, localSecretKey);
+    let sharedZero = true;
+    for (let i = 0; i < shared.length; i++) {
+      if (shared[i] !== 0) { sharedZero = false; break; }
+    }
+    if (sharedZero) {
+      throw new Error("x25519 deriveSharedKey: derived shared secret is zero (low-order point rejected)");
+    }
+    return shared;
   },
 };
 
@@ -167,9 +283,18 @@ const sha256Hashing: HashingProvider = {
     return createHash("sha256").update(data).digest("hex");
   },
 
-  deriveKey(input: Uint8Array, length: number): Uint8Array {
-    const digest = createHash("sha256").update(input).digest();
-    return new Uint8Array(digest.buffer, digest.byteOffset, length);
+  deriveKey(ikm: Uint8Array, length: number, info: string, salt?: Uint8Array): Uint8Array {
+    if (!info || info.length === 0) {
+      throw new Error("deriveKey: info is required and must be non-empty (domain separation)");
+    }
+    if (length <= 0 || length > 8160) {
+      // RFC 5869 §2.3: HKDF-Expand output ≤ 255 * HashLen (32 for SHA-256)
+      throw new Error(`deriveKey: length must be in 1..8160, got ${length}`);
+    }
+    const effectiveSalt = salt ?? new Uint8Array(32);
+    const infoBytes = new TextEncoder().encode(info);
+    const out = hkdfSync("sha256", ikm, effectiveSalt, infoBytes, length);
+    return new Uint8Array(out);
   },
 };
 
@@ -212,7 +337,7 @@ const naclRandom: RandomProvider = {
 
 /** The default provider: Ed25519 + X25519 + XSalsa20-Poly1305 + SHA-256 + HMAC-SHA256. */
 export const DEFAULT_PROVIDER: CryptoProvider = {
-  signing: naclSigning,
+  signing: ed25519Signing,
   keyExchange: naclKeyExchange,
   encryption: naclEncryption,
   hashing: sha256Hashing,

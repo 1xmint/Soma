@@ -18,7 +18,9 @@
  * If you want temporary disablement, use short TTLs instead.
  */
 
-import { canonicalJson } from '../core/canonicalize.js';
+import { domainSigningInput } from '../core/canonicalize.js';
+
+const REVOCATION_DOMAIN = 'soma/revocation/v1';
 import {
   getCryptoProvider,
   type CryptoProvider,
@@ -92,7 +94,7 @@ export function createRevocation(opts: {
     issuerPublicKey: opts.issuerPublicKey,
   };
 
-  const signingInput = new TextEncoder().encode(canonicalJson(payload));
+  const signingInput = domainSigningInput(REVOCATION_DOMAIN, payload);
   const signature = p.signing.sign(signingInput, opts.issuerSigningKey);
 
   return {
@@ -114,7 +116,7 @@ export function verifyRevocation(
 ): RevocationVerification {
   const p = provider ?? getCryptoProvider();
   const { signature, ...payload } = rev;
-  const signingInput = new TextEncoder().encode(canonicalJson(payload));
+  const signingInput = domainSigningInput(REVOCATION_DOMAIN, payload);
   const sigBytes = p.encoding.decodeBase64(signature);
   const issuerPubKey = p.encoding.decodeBase64(rev.issuerPublicKey);
 
@@ -136,32 +138,94 @@ export function verifyRevocation(
 // ─── Registry ───────────────────────────────────────────────────────────────
 
 /**
+ * Resolves the DID that has legitimate authority to revoke a given target.
+ * Typically backed by the delegation/lineage store that originally issued
+ * the target. Return `undefined` if the target is unknown to the resolver;
+ * fail-closed semantics apply (unknown-authority revocations are rejected).
+ */
+export type AuthorityResolver = (
+  targetId: string,
+  targetKind: RevocationTarget,
+) => string | undefined;
+
+/**
  * In-memory registry of revocations. Subscribers feed events in, consumers
  * ask `isRevoked()` before honoring any credential. Persistence is the
  * caller's job — the registry exposes import/export for that.
+ *
+ * **Authority enforcement.** `add()` verifies that the revocation's
+ * `issuerDid` matches the expected issuer for the target. The expected
+ * issuer is supplied either as an explicit argument to `add()` or via an
+ * `authority` resolver configured at construction time. Unknown-authority
+ * revocations are rejected by default (fail-closed). This closes the
+ * "any fresh key can revoke any delegation" hole.
  */
 export class RevocationRegistry {
   private readonly byTarget = new Map<string, RevocationEvent>();
   private readonly provider: CryptoProvider;
+  private readonly authority?: AuthorityResolver;
+  private readonly internalAuthority = new Map<string, string>();
 
-  constructor(provider?: CryptoProvider) {
-    this.provider = provider ?? getCryptoProvider();
+  constructor(
+    opts: {
+      provider?: CryptoProvider;
+      /**
+       * Resolver consulted when `add()` is called without an explicit
+       * expected issuer DID. If omitted and no internal authority is
+       * registered via {@link registerAuthority}, such calls fail closed.
+       */
+      authority?: AuthorityResolver;
+    } = {},
+  ) {
+    this.provider = opts.provider ?? getCryptoProvider();
+    this.authority = opts.authority;
   }
 
   /**
-   * Add a revocation event. Returns true if accepted, false if signature
-   * invalid or already present.
-   *
-   * NOTE: this does NOT verify the issuer had authority over the target —
-   * callers must enforce that policy themselves (e.g. "the delegation's
-   * issuerDid matches the revocation's issuerDid").
+   * Register the legitimate issuer for a target. Called by the code that
+   * creates the delegation/lineage/heart credential being tracked, so that
+   * when a revocation arrives the registry can cross-check authority.
    */
-  add(event: RevocationEvent): boolean {
+  registerAuthority(targetId: string, issuerDid: string): void {
+    this.internalAuthority.set(targetId, issuerDid);
+  }
+
+  /**
+   * Add a revocation event. The revocation is accepted only if:
+   *   1. its signature verifies against the declared issuer public key
+   *   2. its `issuerDid` equals the expected authority for the target
+   *   3. the target has not already been revoked in this registry
+   *
+   * The expected issuer is resolved in this order:
+   *   - `expectedIssuerDid` argument (if provided)
+   *   - internal authority map (populated via `registerAuthority`)
+   *   - `authority` resolver supplied at construction time
+   * If none resolves a value, the revocation is rejected (fail-closed).
+   *
+   * Returns `{ accepted: true }` on success, `{ accepted: false, reason }`
+   * otherwise. The reason is a short tag suitable for logging.
+   */
+  add(
+    event: RevocationEvent,
+    expectedIssuerDid?: string,
+  ): { accepted: boolean; reason?: string } {
     const check = verifyRevocation(event, this.provider);
-    if (!check.valid) return false;
-    if (this.byTarget.has(event.targetId)) return false;
+    if (!check.valid) return { accepted: false, reason: `invalid: ${check.reason}` };
+    if (this.byTarget.has(event.targetId)) {
+      return { accepted: false, reason: "duplicate" };
+    }
+    const expected =
+      expectedIssuerDid ??
+      this.internalAuthority.get(event.targetId) ??
+      this.authority?.(event.targetId, event.targetKind);
+    if (!expected) {
+      return { accepted: false, reason: "unknown authority" };
+    }
+    if (expected !== event.issuerDid) {
+      return { accepted: false, reason: "issuer not authorized for target" };
+    }
     this.byTarget.set(event.targetId, event);
-    return true;
+    return { accepted: true };
   }
 
   /** Is this target ID revoked? */
@@ -184,11 +248,16 @@ export class RevocationRegistry {
     return Array.from(this.byTarget.values());
   }
 
-  /** Bulk import events (e.g. from a feed). Returns count accepted. */
+  /**
+   * Bulk import events (e.g. from a feed). Returns count accepted. Each
+   * event is resolved via the registry's configured authority (internal
+   * map or constructor resolver). Events whose authority is unknown are
+   * rejected.
+   */
   import(events: RevocationEvent[]): number {
     let accepted = 0;
     for (const ev of events) {
-      if (this.add(ev)) accepted++;
+      if (this.add(ev).accepted) accepted++;
     }
     return accepted;
   }
@@ -196,5 +265,6 @@ export class RevocationRegistry {
   /** Clear the registry (testing only — revocations are forever in production). */
   clear(): void {
     this.byTarget.clear();
+    this.internalAuthority.clear();
   }
 }

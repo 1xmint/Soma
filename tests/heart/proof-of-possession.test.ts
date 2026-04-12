@@ -3,6 +3,7 @@ import { getCryptoProvider } from "../../src/core/crypto-provider.js";
 import { publicKeyToDid, didToPublicKey } from "../../src/core/genome.js";
 import { createDelegation } from "../../src/heart/delegation.js";
 import {
+  DEFAULT_MAX_CHALLENGE_AGE_MS,
   issueChallenge,
   proveChallenge,
   verifyProof,
@@ -104,5 +105,68 @@ describe("Proof-of-possession (audit limit #7)", () => {
   it("didToPublicKey rejects malformed DIDs", () => {
     expect(() => didToPublicKey("did:web:example.com")).toThrow(/did:key/);
     expect(() => didToPublicKey("did:key:y123")).toThrow(/did:key/);
+  });
+
+  describe("timestamp binding + freshness", () => {
+    it("rejects a challenge that has aged past maxAgeMs", () => {
+      const subject = makeIdentity();
+      const d = makeDelegation(subject.did);
+      const challenge = issueChallenge(d);
+      const proof = proveChallenge(challenge, subject.kp.secretKey);
+
+      const future = challenge.issuedAt + 120_000;
+      const result = verifyProof(challenge, proof, d, undefined, {
+        maxAgeMs: 60_000,
+        now: future,
+      });
+      expect(result.valid).toBe(false);
+      if (!result.valid) expect(result.reason).toContain("expired");
+    });
+
+    it("rejects a challenge whose issuedAt is in the future (clock skew attack)", () => {
+      const subject = makeIdentity();
+      const d = makeDelegation(subject.did);
+      const challenge = issueChallenge(d);
+      const proof = proveChallenge(challenge, subject.kp.secretKey);
+
+      const past = challenge.issuedAt - 10_000;
+      const result = verifyProof(challenge, proof, d, undefined, { now: past });
+      expect(result.valid).toBe(false);
+      if (!result.valid) expect(result.reason).toContain("future");
+    });
+
+    it("accepts a fresh challenge inside the max-age window", () => {
+      const subject = makeIdentity();
+      const d = makeDelegation(subject.did);
+      const challenge = issueChallenge(d);
+      const proof = proveChallenge(challenge, subject.kp.secretKey);
+
+      const result = verifyProof(challenge, proof, d, undefined, {
+        now: challenge.issuedAt + 1_000,
+      });
+      expect(result.valid).toBe(true);
+    });
+
+    it("rejects a proof produced against a tampered issuedAt — timestamp is bound into the signature", () => {
+      const subject = makeIdentity();
+      const d = makeDelegation(subject.did);
+      const challenge = issueChallenge(d);
+      const proof = proveChallenge(challenge, subject.kp.secretKey);
+
+      // Attacker nudges the verifier's view of issuedAt forward by 1s to
+      // keep the tampered value inside the freshness window. The payload
+      // binds issuedAt, so the signature no longer matches the presented
+      // value and verification must fall through to "invalid signature".
+      const tampered = { ...challenge, issuedAt: challenge.issuedAt + 1_000 };
+      const result = verifyProof(tampered, proof, d, undefined, {
+        now: tampered.issuedAt + 2_000,
+      });
+      expect(result.valid).toBe(false);
+      if (!result.valid) expect(result.reason).toContain("invalid signature");
+    });
+
+    it("default maxAgeMs is DEFAULT_MAX_CHALLENGE_AGE_MS", () => {
+      expect(DEFAULT_MAX_CHALLENGE_AGE_MS).toBe(60_000);
+    });
   });
 });

@@ -6,51 +6,55 @@
  * temporal signals (extra roundtrips for tool execution).
  */
 
-import { getClient, HAIKU_MODEL, type AgentResponse } from "./base.js";
+import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
+import { getClient, HAIKU_MODEL, type AgentResponse } from './base.js';
 
 const TOOLS: Array<{
-  type: "function";
+  type: 'function';
   function: { name: string; description: string; parameters: Record<string, unknown> };
 }> = [
   {
-    type: "function",
+    type: 'function',
     function: {
-      name: "calculator",
-      description: "Evaluate a mathematical expression. Use this for any arithmetic.",
+      name: 'calculator',
+      description: 'Evaluate a mathematical expression. Use this for any arithmetic.',
       parameters: {
-        type: "object",
+        type: 'object',
         properties: {
-          expression: { type: "string", description: "Math expression to evaluate, e.g. '2 + 2 * 3'" },
+          expression: {
+            type: 'string',
+            description: "Math expression to evaluate, e.g. '2 + 2 * 3'",
+          },
         },
-        required: ["expression"],
+        required: ['expression'],
       },
     },
   },
   {
-    type: "function",
+    type: 'function',
     function: {
-      name: "string_length",
-      description: "Count the number of characters in a string.",
+      name: 'string_length',
+      description: 'Count the number of characters in a string.',
       parameters: {
-        type: "object",
+        type: 'object',
         properties: {
-          text: { type: "string", description: "The string to measure" },
+          text: { type: 'string', description: 'The string to measure' },
         },
-        required: ["text"],
+        required: ['text'],
       },
     },
   },
   {
-    type: "function",
+    type: 'function',
     function: {
-      name: "reverse_string",
-      description: "Reverse a string.",
+      name: 'reverse_string',
+      description: 'Reverse a string.',
       parameters: {
-        type: "object",
+        type: 'object',
         properties: {
-          text: { type: "string", description: "The string to reverse" },
+          text: { type: 'string', description: 'The string to reverse' },
         },
-        required: ["text"],
+        required: ['text'],
       },
     },
   },
@@ -59,20 +63,20 @@ const TOOLS: Array<{
 /** Execute a tool call locally. */
 function executeTool(name: string, args: Record<string, string>): string {
   switch (name) {
-    case "calculator":
+    case 'calculator':
       try {
         // Safe math eval using Function constructor with no globals
         const result = new Function(`"use strict"; return (${args.expression})`)();
         return String(result);
       } catch {
-        return "Error: invalid expression";
+        return 'Error: invalid expression';
       }
-    case "string_length":
+    case 'string_length':
       return String(args.text?.length ?? 0);
-    case "reverse_string":
-      return [...(args.text ?? "")].reverse().join("");
+    case 'reverse_string':
+      return [...(args.text ?? '')].reverse().join('');
     default:
-      return "Unknown tool";
+      return 'Unknown tool';
   }
 }
 
@@ -83,15 +87,18 @@ export async function runToolUse(prompt: string): Promise<AgentResponse> {
   const tokens: string[] = [];
   const tokenTimestamps: number[] = [];
 
-  const messages: Array<Record<string, unknown>> = [
-    { role: "system", content: "You are a helpful assistant with access to tools. Use them when appropriate." },
-    { role: "user", content: prompt },
+  const messages: ChatCompletionMessageParam[] = [
+    {
+      role: 'system',
+      content: 'You are a helpful assistant with access to tools. Use them when appropriate.',
+    },
+    { role: 'user', content: prompt },
   ];
 
   // First call — may include tool calls
   const stream1 = await client.chat.completions.create({
     model: HAIKU_MODEL,
-    messages: messages as Parameters<typeof client.chat.completions.create>[0]["messages"],
+    messages,
     tools: TOOLS,
     stream: true,
   });
@@ -112,7 +119,7 @@ export async function runToolUse(prompt: string): Promise<AgentResponse> {
       for (const tc of delta.tool_calls) {
         if (tc.id) {
           if (currentToolCall) toolCalls.push(currentToolCall);
-          currentToolCall = { id: tc.id, name: tc.function?.name ?? "", arguments: "" };
+          currentToolCall = { id: tc.id, name: tc.function?.name ?? '', arguments: '' };
         }
         if (tc.function?.arguments && currentToolCall) {
           currentToolCall.arguments += tc.function.arguments;
@@ -126,11 +133,11 @@ export async function runToolUse(prompt: string): Promise<AgentResponse> {
   if (toolCalls.length > 0) {
     // Add assistant message with tool calls
     messages.push({
-      role: "assistant",
-      content: tokens.join("") || null,
+      role: 'assistant',
+      content: tokens.join('') || null,
       tool_calls: toolCalls.map((tc) => ({
         id: tc.id,
-        type: "function",
+        type: 'function',
         function: { name: tc.name, arguments: tc.arguments },
       })),
     });
@@ -138,15 +145,19 @@ export async function runToolUse(prompt: string): Promise<AgentResponse> {
     // Add tool results
     for (const tc of toolCalls) {
       let args: Record<string, string> = {};
-      try { args = JSON.parse(tc.arguments); } catch { /* empty */ }
+      try {
+        args = JSON.parse(tc.arguments);
+      } catch {
+        /* empty */
+      }
       const result = executeTool(tc.name, args);
-      messages.push({ role: "tool", tool_call_id: tc.id, content: result });
+      messages.push({ role: 'tool', tool_call_id: tc.id, content: result });
     }
 
     // Follow-up call with tool results
     const stream2 = await client.chat.completions.create({
       model: HAIKU_MODEL,
-      messages: messages as Parameters<typeof client.chat.completions.create>[0]["messages"],
+      messages,
       tools: TOOLS,
       stream: true,
     });
@@ -164,7 +175,7 @@ export async function runToolUse(prompt: string): Promise<AgentResponse> {
 
   const endTime = performance.now();
   return {
-    text: tokens.join(""),
+    text: tokens.join(''),
     trace: { tokenTimestamps, tokens, startTime, firstTokenTime, endTime },
   };
 }

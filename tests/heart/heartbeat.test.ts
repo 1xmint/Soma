@@ -148,4 +148,46 @@ describe("HeartbeatChain", () => {
       expect(HeartbeatChain.verify(reordered)).toBe(false);
     });
   });
+
+  describe("restore()", () => {
+    it("restores a valid chain", () => {
+      const original = new HeartbeatChain();
+      original.record("session_start", "a");
+      original.record("query_received", "b");
+      original.record("response_sent", "c");
+
+      const restored = HeartbeatChain.restore([...original.getChain()]);
+      expect(restored.length).toBe(3);
+      expect(restored.getChain()[2].hash).toBe(original.getChain()[2].hash);
+    });
+
+    it("throws on a tampered chain — restore must not silently inherit corruption", () => {
+      const original = new HeartbeatChain();
+      original.record("session_start", "a");
+      original.record("query_received", "b");
+
+      const tampered = [...original.getChain()];
+      tampered[1] = { ...tampered[1], hash: "tampered-hash" };
+
+      expect(() => HeartbeatChain.restore(tampered))
+        .toThrow(/chain failed integrity verification/);
+    });
+
+    it("throws on broken linkage", () => {
+      const original = new HeartbeatChain();
+      original.record("session_start", "a");
+      original.record("query_received", "b");
+
+      const broken = [...original.getChain()];
+      broken[1] = { ...broken[1], previousHash: "wrong-previous" };
+
+      expect(() => HeartbeatChain.restore(broken))
+        .toThrow(/chain failed integrity verification/);
+    });
+
+    it("accepts an empty chain without throwing", () => {
+      expect(() => HeartbeatChain.restore([])).not.toThrow();
+      expect(HeartbeatChain.restore([]).length).toBe(0);
+    });
+  });
 });

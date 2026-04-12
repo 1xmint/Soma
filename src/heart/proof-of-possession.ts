@@ -71,14 +71,27 @@ export function issueChallenge(
   };
 }
 
-/** The exact bytes that get signed — kept in one place for test parity. */
-function proofPayload(nonceB64: string, delegationId: string): Uint8Array {
-  return new TextEncoder().encode(`soma-pop:${nonceB64}:${delegationId}`);
+/**
+ * Default maximum age of a challenge, in ms. Challenges older than this are
+ * rejected as stale — an attacker who captures an old proof cannot replay
+ * it beyond this window even if nonce tracking is missing or delayed.
+ */
+export const DEFAULT_MAX_CHALLENGE_AGE_MS = 60_000;
+
+/**
+ * The exact bytes that get signed — kept in one place for test parity.
+ * `issuedAt` is bound into the payload so a captured proof cannot be
+ * replayed against a newer challenge that happens to share the same
+ * (nonce, delegationId) pair. Without this, the nonce alone does not
+ * commit the holder to the challenge's freshness.
+ */
+function proofPayload(nonceB64: string, delegationId: string, issuedAt: number): Uint8Array {
+  return new TextEncoder().encode(`soma-pop:${nonceB64}:${delegationId}:${issuedAt}`);
 }
 
 /**
- * Holder responds to a challenge by signing (nonce || delegationId) with
- * the subject's private key. Caller must pass the key matching subjectDid.
+ * Holder responds to a challenge by signing (nonce || delegationId || issuedAt)
+ * with the subject's private key. Caller must pass the key matching subjectDid.
  */
 export function proveChallenge(
   challenge: Challenge,
@@ -86,7 +99,7 @@ export function proveChallenge(
   provider?: CryptoProvider,
 ): PossessionProof {
   const p = provider ?? getCryptoProvider();
-  const payload = proofPayload(challenge.nonceB64, challenge.delegationId);
+  const payload = proofPayload(challenge.nonceB64, challenge.delegationId, challenge.issuedAt);
   const signature = p.signing.sign(payload, subjectSigningKey);
   return {
     nonceB64: challenge.nonceB64,
@@ -98,17 +111,23 @@ export function proveChallenge(
 /**
  * Verifier checks a proof against the delegation's subjectDid.
  * Returns { valid: true } only if the signature was produced by the key
- * belonging to delegation.subjectDid.
+ * belonging to delegation.subjectDid AND the challenge is still fresh.
  *
  * The caller is responsible for tracking nonces and rejecting replays.
+ * This function additionally rejects challenges older than `maxAgeMs`
+ * (default `DEFAULT_MAX_CHALLENGE_AGE_MS`) so that even if nonce tracking
+ * is absent or delayed, captured proofs have a hard expiration.
  */
 export function verifyProof(
   challenge: Challenge,
   proof: PossessionProof,
   delegation: Pick<Delegation, 'id' | 'subjectDid'>,
   provider?: CryptoProvider,
+  options?: { maxAgeMs?: number; now?: number },
 ): ProofVerification {
   const p = provider ?? getCryptoProvider();
+  const maxAgeMs = options?.maxAgeMs ?? DEFAULT_MAX_CHALLENGE_AGE_MS;
+  const now = options?.now ?? Date.now();
 
   if (proof.delegationId !== delegation.id) {
     return { valid: false, reason: 'proof delegationId mismatch' };
@@ -118,6 +137,13 @@ export function verifyProof(
   }
   if (proof.nonceB64 !== challenge.nonceB64) {
     return { valid: false, reason: 'nonce mismatch' };
+  }
+  const age = now - challenge.issuedAt;
+  if (age < 0) {
+    return { valid: false, reason: 'challenge issuedAt is in the future' };
+  }
+  if (age > maxAgeMs) {
+    return { valid: false, reason: `challenge expired (age ${age}ms > maxAgeMs ${maxAgeMs}ms)` };
   }
 
   let subjectPubKey: Uint8Array;
@@ -130,7 +156,7 @@ export function verifyProof(
     };
   }
 
-  const payload = proofPayload(challenge.nonceB64, challenge.delegationId);
+  const payload = proofPayload(challenge.nonceB64, challenge.delegationId, challenge.issuedAt);
   const sigBytes = p.encoding.decodeBase64(proof.signatureB64);
 
   if (!p.signing.verify(payload, sigBytes, subjectPubKey)) {

@@ -15,6 +15,28 @@ export function canonicalJson(value: unknown): string {
   return JSON.stringify(canonicalize(value));
 }
 
+/**
+ * Produce signing bytes with a domain tag prepended to the canonical JSON.
+ *
+ * Every Soma signing primitive that calls this uses a unique domain string
+ * (e.g. `soma/delegation/v1`, `soma/revocation/v1`, `soma/lineage/v1`). The
+ * domain is part of the signed bytes, so a signature made over one credential
+ * type cannot be reinterpreted as a signature over another even if the
+ * payload shapes happen to overlap. This is defense-in-depth against
+ * cross-protocol signature replay.
+ *
+ * Format: `${domain}\n${canonicalJson(payload)}` as UTF-8 bytes. The newline
+ * separator is safe because canonical JSON never contains unescaped newlines
+ * at the top level, so parsing is unambiguous if a verifier ever needs to
+ * reconstruct the boundary.
+ */
+export function domainSigningInput(domain: string, payload: unknown): Uint8Array {
+  if (!domain || domain.length === 0) {
+    throw new Error('domainSigningInput: domain must be a non-empty string');
+  }
+  return new TextEncoder().encode(`${domain}\n${canonicalJson(payload)}`);
+}
+
 function canonicalize(value: unknown): unknown {
   if (value === null || typeof value !== 'object') return value;
   if (Array.isArray(value)) return value.map(canonicalize);

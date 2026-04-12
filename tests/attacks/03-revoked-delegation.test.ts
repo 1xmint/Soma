@@ -57,9 +57,11 @@ describe("Attack #3: presenting a revoked delegation", () => {
       reason: "compromised",
     });
 
-    // Verifier's registry accepts the event and now knows the target is dead.
+    // The verifier records Alice as the legitimate authority over this
+    // delegation ID (she issued it) and then accepts her revocation.
     const registry = new RevocationRegistry();
-    expect(registry.add(revocation)).toBe(true);
+    registry.registerAuthority(delegation.id, alice.did);
+    expect(registry.add(revocation).accepted).toBe(true);
     expect(registry.isRevoked(delegation.id)).toBe(true);
 
     // A full verification pipeline MUST consult the registry. We emulate that
@@ -69,11 +71,10 @@ describe("Attack #3: presenting a revoked delegation", () => {
       capability: "api:pay",
     });
     expect(sigCheck.valid).toBe(true);
-    // Application-level policy:
     expect(registry.isRevoked(delegation.id)).toBe(true);
   });
 
-  it("a third party cannot produce a valid revocation for someone else's delegation", () => {
+  it("a third party cannot revoke someone else's delegation (authority enforced at registry layer)", () => {
     const alice = makeIdentity();
     const bob = makeIdentity();
     const eve = makeIdentity();
@@ -86,9 +87,8 @@ describe("Attack #3: presenting a revoked delegation", () => {
       capabilities: ["api:pay"],
     });
 
-    // Eve forges a revocation for Alice's delegation, signing with HER OWN
-    // key. The signature is technically valid (it's Eve's sig over Eve's
-    // claim) but Eve's DID doesn't match the delegation's issuer.
+    // Eve forges a revocation for Alice's delegation, signing with her
+    // own fresh key. The signature is valid, but Eve is not authorized.
     const eveRevocation = createRevocation({
       targetId: delegation.id,
       targetKind: "delegation",
@@ -98,17 +98,44 @@ describe("Attack #3: presenting a revoked delegation", () => {
       reason: "abuse",
     });
 
-    // The registry verifies the signature but does NOT enforce authority.
-    // That's the application's job — we enforce it here.
+    // Registry knows Alice is the legitimate issuer of this delegation.
     const registry = new RevocationRegistry();
-    expect(registry.add(eveRevocation)).toBe(true); // signature is real
+    registry.registerAuthority(delegation.id, alice.did);
 
-    // Application policy: only trust revocations signed by the DELEGATION's
-    // own issuer DID. Eve's revocation must be ignored.
-    const stored = registry.get(delegation.id);
-    expect(stored).toBeDefined();
-    const authorityOk = stored!.issuerDid === delegation.issuerDid;
-    expect(authorityOk).toBe(false);
+    // The registry now enforces authority — Eve's forged revocation is
+    // rejected at the registry layer, not left for the caller to catch.
+    const result = registry.add(eveRevocation);
+    expect(result.accepted).toBe(false);
+    expect(result.reason).toMatch(/issuer not authorized/);
+    expect(registry.isRevoked(delegation.id)).toBe(false);
+  });
+
+  it("rejects revocations for targets with no registered authority (fail-closed)", () => {
+    const alice = makeIdentity();
+    const bob = makeIdentity();
+
+    const delegation = createDelegation({
+      issuerDid: alice.did,
+      issuerPublicKey: alice.publicKey,
+      issuerSigningKey: alice.signingKey,
+      subjectDid: bob.did,
+      capabilities: ["api:pay"],
+    });
+
+    const revocation = createRevocation({
+      targetId: delegation.id,
+      targetKind: "delegation",
+      issuerDid: alice.did,
+      issuerPublicKey: alice.publicKey,
+      issuerSigningKey: alice.signingKey,
+      reason: "rotated",
+    });
+
+    // Registry has no authority record for this delegation — fail-closed.
+    const registry = new RevocationRegistry();
+    const result = registry.add(revocation);
+    expect(result.accepted).toBe(false);
+    expect(result.reason).toMatch(/unknown authority/);
   });
 
   it("registry rejects a tampered revocation event", () => {
@@ -135,7 +162,10 @@ describe("Attack #3: presenting a revoked delegation", () => {
     // Eve flips the reason to "unknown" to hide the severity.
     const tampered = { ...legit, reason: "unknown" as const };
     const registry = new RevocationRegistry();
-    expect(registry.add(tampered)).toBe(false); // signature no longer matches
+    registry.registerAuthority(delegation.id, alice.did);
+    const result = registry.add(tampered);
+    expect(result.accepted).toBe(false); // signature no longer matches
+    expect(result.reason).toMatch(/invalid/);
     expect(registry.isRevoked(delegation.id)).toBe(false);
   });
 });

@@ -222,6 +222,46 @@ export function createUnsignedBirthCertificate(
   };
 }
 
+// ─── Content-addressed fingerprint ───────────────────────────────────────────
+
+/**
+ * Content-addressed fingerprint of a birth certificate — hashes the full
+ * canonicalized body plus both signatures. This is the canonical parent
+ * reference format used in `parentCertificates[]`.
+ *
+ * Why the full cert, not just the signature: a child cert that only
+ * commits to its parent's signature string is weakly bound. An attacker
+ * cannot forge a valid parent with a matching signature (Ed25519 binds
+ * signature to body), but an offline verifier inspecting a child cert
+ * alone cannot tell which parent body the child intended. Hashing the
+ * full cert makes the parent reference a true content address: exactly
+ * one cert can satisfy it, the child's intent is unambiguous, and
+ * tampering with any field of the parent invalidates the link.
+ *
+ * Never sign this hash. It exists only for chain-walking and parent
+ * resolution. Signatures are always over `canonicalizeCertContent`.
+ */
+export function birthCertificateFingerprint(
+  cert: BirthCertificate,
+  provider?: CryptoProvider,
+): string {
+  const p = provider ?? getCryptoProvider();
+  const body = canonicalizeCertContent({
+    dataHash: cert.dataHash,
+    source: cert.source,
+    bornAt: cert.bornAt,
+    bornThrough: cert.bornThrough,
+    bornInSession: cert.bornInSession,
+    parentCertificates: cert.parentCertificates,
+    trustTier: cert.trustTier,
+  });
+  // Newline separators are not ambiguous because canonicalizeCertContent
+  // emits compact JSON with no literal newlines, and base64 signatures
+  // never contain newlines.
+  const payload = `${body}\n${cert.receiverSignature}\n${cert.sourceSignature ?? ''}`;
+  return sha256(payload, p);
+}
+
 // ─── Verification ────────────────────────────────────────────────────────────
 
 /**
@@ -327,11 +367,16 @@ export function verifyBirthCertificateChain(
       }
     }
 
-    // Verify parent references exist in earlier chain entries
+    // Verify parent references exist in earlier chain entries.
+    // Parents are referenced by their content-addressed fingerprint, which
+    // commits to the full canonicalized body plus both signatures. Binding
+    // only to the receiver signature string would let any cert sharing that
+    // signature satisfy the reference — fingerprinting the whole cert makes
+    // the child's intent unambiguous.
     for (const parentHash of cert.parentCertificates) {
       const parentExists = chain
         .slice(0, i)
-        .some(c => sha256(c.receiverSignature, p) === parentHash);
+        .some(c => birthCertificateFingerprint(c, p) === parentHash);
       if (!parentExists) {
         return {
           valid: false,

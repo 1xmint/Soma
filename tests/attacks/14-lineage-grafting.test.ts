@@ -22,32 +22,32 @@
  *   lineage · parent-child chain walk · DID/key binding
  */
 
-import { describe, it, expect } from "vitest";
-import { getCryptoProvider } from "../../src/core/crypto-provider.js";
-import { createGenome, commitGenome } from "../../src/core/genome.js";
+import { describe, it, expect } from 'vitest';
+import { getCryptoProvider } from '../../src/core/crypto-provider.js';
+import { createGenome, commitGenome } from '../../src/core/genome.js';
 import {
   createLineageCertificate,
   verifyLineageCertificate,
   verifyLineageChain,
   type HeartLineage,
-} from "../../src/heart/lineage.js";
+} from '../../src/heart/lineage.js';
 
 const crypto = getCryptoProvider();
 
 function makeCommitment() {
   const kp = crypto.signing.generateKeyPair();
   const genome = createGenome({
-    modelProvider: "test",
-    modelId: "t",
-    modelVersion: "1",
-    systemPrompt: "p",
-    toolManifest: "[]",
-    runtimeId: "r",
+    modelProvider: 'test',
+    modelId: 't',
+    modelVersion: '1',
+    systemPrompt: 'p',
+    toolManifest: '[]',
+    runtimeId: 'r',
   });
   return { kp, commitment: commitGenome(genome, kp) };
 }
 
-describe("Attack #14: lineage certificate grafting", () => {
+describe('Attack #14: lineage certificate grafting', () => {
   it("cert signed by wrong key but claiming R's parentDid fails", () => {
     const R = makeCommitment();
     const E = makeCommitment();
@@ -71,7 +71,7 @@ describe("Attack #14: lineage certificate grafting", () => {
     expect(result.valid).toBe(false);
   });
 
-  it("swapping childDid after signing breaks the signature", () => {
+  it('swapping childDid after signing breaks the signature', () => {
     const R = makeCommitment();
     const A = makeCommitment();
     const E = makeCommitment();
@@ -86,7 +86,7 @@ describe("Attack #14: lineage certificate grafting", () => {
     expect(verifyLineageCertificate(tampered).valid).toBe(false);
   });
 
-  it("grafting a forged link into the middle of a valid chain fails chain walk", () => {
+  it('grafting a forged link into the middle of a valid chain fails chain walk', () => {
     const R = makeCommitment();
     const A = makeCommitment();
     const E = makeCommitment();
@@ -112,7 +112,7 @@ describe("Attack #14: lineage certificate grafting", () => {
     expect(result.valid).toBe(false);
   });
 
-  it("chain with broken parent→previous-child linkage fails", () => {
+  it('chain with broken parent→previous-child linkage fails', () => {
     const R = makeCommitment();
     const A = makeCommitment();
     const B = makeCommitment();
@@ -139,10 +139,10 @@ describe("Attack #14: lineage certificate grafting", () => {
     };
     const result = verifyLineageChain(lineage);
     expect(result.valid).toBe(false);
-    expect(result.reason).toMatch(/previous child/);
+    if (!result.valid) expect(result.reason).toMatch(/previous child/);
   });
 
-  it("legitimate two-link chain verifies", () => {
+  it('legitimate two-link chain verifies', () => {
     const R = makeCommitment();
     const A = makeCommitment();
     const B = makeCommitment();
@@ -165,7 +165,7 @@ describe("Attack #14: lineage certificate grafting", () => {
     expect(verifyLineageChain(lineage).valid).toBe(true);
   });
 
-  it("expired cert fails verification", async () => {
+  it('expired cert fails verification', async () => {
     const R = makeCommitment();
     const A = makeCommitment();
     const expired = createLineageCertificate({
@@ -177,6 +177,6 @@ describe("Attack #14: lineage certificate grafting", () => {
     await new Promise((resolve) => setTimeout(resolve, 5));
     const result = verifyLineageCertificate(expired);
     expect(result.valid).toBe(false);
-    expect(result.reason).toMatch(/expired/);
+    if (!result.valid) expect(result.reason).toMatch(/expired/);
   });
 });

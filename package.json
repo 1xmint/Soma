@@ -4,6 +4,15 @@
   "description": "Agent identity verification through computational phenotyping",
   "type": "module",
   "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc -p tsconfig.build.json",
+    "build:packages": "node scripts/build-packages.mjs",
+    "pack:heart": "npm pack ./packages/soma-heart",
+    "pack:sense": "npm pack ./packages/soma-sense",
     "test": "vitest run",
     "test:watch": "vitest",
     "experiment": "tsx src/experiment/runner.ts",
@@ -19,7 +28,8 @@
     "bench": "tsx bench/index.ts",
     "generate-synthetic": "tsx src/experiment/generate-synthetic.ts",
     "experiment:agents": "tsx src/experiment/agents/run-agent-experiment.ts",
-    "test:heart-live": "tsx src/experiment/heart-live-test.ts"
+    "test:heart-live": "tsx src/experiment/heart-live-test.ts",
+    "ci": "npm run lint && npm run format:check && npm run typecheck && npm run test && npm run build:packages"
   },
   "engines": {
     "node": ">=18"
@@ -33,8 +43,13 @@
     "tweetnacl-util": "^0.15.1"
   },
   "devDependencies": {
+    "@eslint/js": "^9.0.0",
     "@types/node": "^25.5.0",
+    "eslint": "^9.0.0",
+    "globals": "^15.0.0",
+    "prettier": "^3.0.0",
     "tsx": "^4.21.0",
+    "typescript-eslint": "^8.0.0",
     "typescript": "^6.0.2",
     "vitest": "^4.1.1"
   }

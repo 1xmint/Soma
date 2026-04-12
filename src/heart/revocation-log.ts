@@ -29,6 +29,7 @@ import {
 import { publicKeyToDid } from '../core/genome.js';
 import {
   verifyRevocation,
+  type AuthorityResolver,
   type RevocationEvent,
 } from './revocation.js';
 
@@ -68,28 +69,79 @@ const GENESIS_INPUT = 'soma-revocation-log:genesis';
 
 // ─── Log ────────────────────────────────────────────────────────────────────
 
-/** Append-only, hash-chained revocation log. */
+/**
+ * Append-only, hash-chained revocation log.
+ *
+ * **Threat model.** The log is a relay / audit layer. It verifies that each
+ * appended revocation is *cryptographically valid* (signature, DID binding,
+ * no duplicates) but does not by default enforce *authority* — that is, it
+ * does not check "was this signer entitled to revoke this target?". Authority
+ * is enforced at the {@link RevocationRegistry} layer, which is what actually
+ * gates verification decisions. This split exists because gossip peers relay
+ * events for delegations whose original issuer they may not know locally.
+ *
+ * Callers that do want authority enforcement at the log layer (e.g. the
+ * operator's own private log, where authority is always the operator) can
+ * pass an `authority` resolver at construction or use
+ * {@link registerAuthority}. When authority information is present for a
+ * target, the log enforces it; when absent, the log relays without checking.
+ */
 export class RevocationLog {
   private readonly entries: RevocationLogEntry[] = [];
   private readonly seenTargets = new Set<string>();
   private readonly provider: CryptoProvider;
+  private readonly authority?: AuthorityResolver;
+  private readonly internalAuthority = new Map<string, string>();
   /** Genesis hash (depends on active hash algorithm). */
   readonly genesisHash: string;
 
-  constructor(provider?: CryptoProvider) {
-    this.provider = provider ?? getCryptoProvider();
+  constructor(
+    opts: {
+      provider?: CryptoProvider;
+      /**
+       * Optional authority resolver. When provided (or when authorities
+       * are added via {@link registerAuthority}), {@link append} enforces
+       * authority for targets with known authority records. Targets with
+       * no known authority still append (relay semantics).
+       */
+      authority?: AuthorityResolver;
+    } = {},
+  ) {
+    this.provider = opts.provider ?? getCryptoProvider();
+    this.authority = opts.authority;
     this.genesisHash = this.provider.hashing.hash(GENESIS_INPUT);
   }
 
   /**
-   * Append a revocation to the log. Returns the new entry, or throws if:
+   * Register the legitimate issuer for a target so that later appends for
+   * that target are authority-checked. Targets with no registered authority
+   * still relay unchecked.
+   */
+  registerAuthority(targetId: string, issuerDid: string): void {
+    this.internalAuthority.set(targetId, issuerDid);
+  }
+
+  /**
+   * Append a revocation to the log. Throws if:
    *   - the revocation signature is invalid
+   *   - the target has a known authority and the revocation's issuerDid
+   *     does not match it
    *   - the same target was already revoked in this log
    */
   append(revocation: RevocationEvent): RevocationLogEntry {
     const sigCheck = verifyRevocation(revocation, this.provider);
     if (!sigCheck.valid) {
       throw new Error(`cannot append: ${sigCheck.reason}`);
+    }
+    // Authority enforcement is opt-in per target. If we know the authority
+    // for this target, enforce it; otherwise relay (registry layer enforces).
+    const expected =
+      this.internalAuthority.get(revocation.targetId) ??
+      this.authority?.(revocation.targetId, revocation.targetKind);
+    if (expected && expected !== revocation.issuerDid) {
+      throw new Error(
+        `cannot append: ${revocation.issuerDid} is not authorized to revoke ${revocation.targetId}`,
+      );
     }
     if (this.seenTargets.has(revocation.targetId)) {
       throw new Error(`cannot append: target ${revocation.targetId} already revoked`);
