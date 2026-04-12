@@ -87,7 +87,7 @@ and leaves a visible git tag as the canonical release marker.
    ```
 
 5. The `Publish Packages` workflow triggers on the tag push. It re-runs
-   the full CI suite (lint, format, typecheck, test, build), then asserts
+   the release suite (lint, typecheck, test, build), then asserts
    that the tag version matches the `package.json` version, then calls
    `npm publish`. Provenance attestations are generated automatically
    because `soma-heart` has `publishConfig.provenance = true`.
