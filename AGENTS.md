@@ -9,6 +9,13 @@ Agent identity verification through computational phenotyping. Two publishable p
    Merge to `master`, then push a tag `soma-heart-v<version>` to trigger `Publish Packages` for both `soma-heart` and `soma-sense`.
 3. Never assume - always verify. Check actual code, docs, and runtime behavior before answering.
 
+## Merge Conventions
+
+- Default to `Squash and merge`.
+- Use `Merge commit` only when preserving branch history is intentionally valuable.
+- If a PR is ready but still waiting on checks, prefer asking whether to enable auto-merge.
+- Be collaborative: when a PR looks merge-ready, explicitly prompt the user before merging instead of assuming.
+
 ## Quick Reference
 
 ```bash
