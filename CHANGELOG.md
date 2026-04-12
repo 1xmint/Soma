@@ -13,6 +13,23 @@ Entries are grouped by package and dated.
 
 ## soma-heart@0.3.0 — 2026-04-11
 
+### Package unification (breaking for `soma-sense` consumers)
+
+- **`soma-sense` merged into `soma-heart`.** Soma now ships as a single
+  unified npm package. What used to be
+  `import { withSomaSense } from 'soma-sense'` is now
+  `import { withSomaSense } from 'soma-heart/sense'`. One install, one
+  version, one changelog, one provenance attestation. The `soma-sense`
+  package on npm is deprecated with a pointer to this release.
+- **New subpath exports on `soma-heart`:** `./sense`, `./senses`,
+  `./atlas`, `./mcp`, `./signals`. Tree-shaking keeps bundle size flat —
+  import only the subpath you need and your bundler drops the rest.
+- **New runtime dependency:** `@modelcontextprotocol/sdk >=1.0.0` (pulled
+  in from the merged sensorium/MCP middleware).
+- **Ship artifact cleanup:** the prior two-package build duplicated
+  `dist/heart/` and `dist/core/` inside the `soma-sense` tarball. The
+  unified build emits one `dist/` with zero duplication.
+
 ### Added
 
 - **Credential rotation primitive** (`soma-heart/credential-rotation`) — 12-invariant controller with KERI pre-rotation, L1/L2/L3 layered verification, pluggable backends, challenge-period gating, and Ed25519 identity backend. Exported as a subpath.
@@ -32,7 +49,7 @@ Entries are grouped by package and dated.
 ### Package metadata
 
 - SemVer: pre-1.0 — minor bumps may include breaking changes until the API surface stabilizes at `1.0.0`.
-- Exports: `.`, `./core`, `./credential-rotation`, `./crypto-provider`.
+- Exports: `.`, `./core`, `./credential-rotation`, `./crypto-provider`, `./sense`, `./senses`, `./atlas`, `./mcp`, `./signals`.
 
 ---
 
@@ -46,8 +63,10 @@ crypto-provider subpaths added in a point release.
 
 ---
 
-## soma-sense@0.1.0 — prior
+## soma-sense@0.1.0 — deprecated
 
 Initial pre-release. Temporal fingerprinting, behavioral landscape, and
 phenotype atlas primitives for phenotypic verification of agent identity.
-Subject to substantial API churn before `1.0.0`.
+**Superseded by `soma-heart@0.3.0`** — install `soma-heart` and import
+from `soma-heart/sense` instead. The `soma-sense` package will receive
+no further releases.

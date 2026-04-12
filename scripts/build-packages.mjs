@@ -2,6 +2,15 @@ import { cpSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
 
+// Soma ships as a single unified npm package: `soma-heart`.
+//
+// As of 0.3.0 the former `soma-sense` package is folded in as subpath
+// exports (`soma-heart/sense`, `soma-heart/senses`, `soma-heart/atlas`,
+// `soma-heart/mcp`, `soma-heart/signals`). One install, one version,
+// no cross-package version matrix, no duplicated `dist/heart/` ship.
+//
+// See docs/secure-release-workflow.md and CHANGELOG.md.
+
 const repoRoot = process.cwd();
 
 function countJsFiles(dir) {
@@ -26,31 +35,31 @@ function copy(src, dest) {
 console.log('Building TypeScript...');
 execSync('npx tsc -p tsconfig.build.json', { stdio: 'inherit', cwd: repoRoot });
 
-console.log('Assembling soma-heart...');
+console.log('Assembling soma-heart (unified)...');
 const heartDist = path.join(repoRoot, 'packages', 'soma-heart', 'dist');
 resetDir(heartDist);
+
+// Core trust machine
 copy(path.join(repoRoot, 'dist', 'heart'), path.join(heartDist, 'heart'));
 copy(path.join(repoRoot, 'dist', 'core'), path.join(heartDist, 'core'));
 
-console.log('Assembling soma-sense...');
-const senseDist = path.join(repoRoot, 'packages', 'soma-sense', 'dist');
-resetDir(senseDist);
-copy(path.join(repoRoot, 'dist', 'sensorium'), path.join(senseDist, 'sensorium'));
-copy(path.join(repoRoot, 'dist', 'mcp'), path.join(senseDist, 'mcp'));
-copy(path.join(repoRoot, 'dist', 'core'), path.join(senseDist, 'core'));
-copy(path.join(repoRoot, 'dist', 'heart'), path.join(senseDist, 'heart'));
-mkdirSync(path.join(senseDist, 'experiment'), { recursive: true });
+// Sensorium + MCP middleware (previously soma-sense)
+copy(path.join(repoRoot, 'dist', 'sensorium'), path.join(heartDist, 'sensorium'));
+copy(path.join(repoRoot, 'dist', 'mcp'), path.join(heartDist, 'mcp'));
+
+// Shared signal primitives used by sensorium
+mkdirSync(path.join(heartDist, 'experiment'), { recursive: true });
 copy(
   path.join(repoRoot, 'dist', 'experiment', 'signals.js'),
-  path.join(senseDist, 'experiment', 'signals.js'),
+  path.join(heartDist, 'experiment', 'signals.js'),
 );
 copy(
   path.join(repoRoot, 'dist', 'experiment', 'signals.d.ts'),
-  path.join(senseDist, 'experiment', 'signals.d.ts'),
+  path.join(heartDist, 'experiment', 'signals.d.ts'),
 );
 for (const ext of ['js.map', 'd.ts.map']) {
   const src = path.join(repoRoot, 'dist', 'experiment', `signals.${ext}`);
-  const dest = path.join(senseDist, 'experiment', `signals.${ext}`);
+  const dest = path.join(heartDist, 'experiment', `signals.${ext}`);
   try {
     copy(src, dest);
   } catch {
@@ -61,8 +70,6 @@ for (const ext of ['js.map', 'd.ts.map']) {
 console.log('');
 console.log('Package contents:');
 console.log(`  soma-heart: ${countJsFiles(heartDist)} JS files`);
-console.log(`  soma-sense: ${countJsFiles(senseDist)} JS files`);
 console.log('');
 console.log('Ready to publish:');
 console.log('  cd packages/soma-heart && npm publish');
-console.log('  cd packages/soma-sense && npm publish');

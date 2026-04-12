@@ -45,6 +45,3 @@ jobs:
 
       - name: Pack soma-heart
         run: npm pack ./packages/soma-heart
-
-      - name: Pack soma-sense
-        run: npm pack ./packages/soma-sense

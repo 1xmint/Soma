@@ -8,7 +8,7 @@ updates:
     groups:
       soma-root:
         patterns:
-          - "*"
+          - '*'
 
   - package-ecosystem: npm
     directory: /packages/soma-heart
@@ -18,17 +18,7 @@ updates:
     groups:
       soma-heart:
         patterns:
-          - "*"
-
-  - package-ecosystem: npm
-    directory: /packages/soma-sense
-    schedule:
-      interval: weekly
-    open-pull-requests-limit: 10
-    groups:
-      soma-sense:
-        patterns:
-          - "*"
+          - '*'
 
   - package-ecosystem: github-actions
     directory: /

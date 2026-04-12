@@ -1,22 +1,23 @@
 name: Publish Packages
 
+# Soma ships as a single unified npm package: `soma-heart`.
+# (soma-sense was merged in at 0.3.0 — see CHANGELOG.md.)
+#
 # Two ways to ship a release:
 #
 # 1. Tag-triggered (preferred, automated):
-#    Push a tag of the form `soma-heart-v0.3.0` or `soma-sense-v0.1.1`.
-#    The workflow picks up which package to publish from the tag prefix
-#    and refuses to run if the tag version doesn't match the
-#    `package.json` version — this catches "forgot to bump" mistakes
-#    before anything hits npm.
+#    Push a tag of the form `soma-heart-v0.3.0`. The workflow refuses to
+#    run if the tag version doesn't match the `packages/soma-heart/package.json`
+#    version — this catches "forgot to bump" mistakes before anything hits npm.
 #
 # 2. Manual dispatch (fallback):
-#    Run "Publish Packages" from the Actions tab and pick a package.
-#    No version check — you're on your own. Used for republishing a
-#    broken tag or publishing from a non-tag commit in a pinch.
+#    Run "Publish Packages" from the Actions tab. No version check —
+#    you're on your own. Used for republishing a broken tag or
+#    publishing from a non-tag commit in a pinch.
 #
 # Both paths gate on the full CI suite (lint, format, typecheck, test,
 # build) before calling `npm publish`. Provenance attestations are
-# generated automatically because each package has `publishConfig.provenance = true`;
+# generated automatically because soma-heart has `publishConfig.provenance = true`;
 # that requires trusted publishing to be configured on npmjs.com for
 # the package. See docs/secure-release-workflow.md.
 
@@ -24,17 +25,7 @@ on:
   push:
     tags:
       - 'soma-heart-v*'
-      - 'soma-sense-v*'
   workflow_dispatch:
-    inputs:
-      package:
-        description: Package to publish (manual fallback — prefer tag-push)
-        required: true
-        type: choice
-        options:
-          - soma-heart
-          - soma-sense
-          - both
 
 permissions:
   contents: read
@@ -49,13 +40,13 @@ jobs:
     runs-on: ubuntu-latest
     environment: npm-release
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
 
       - uses: pnpm/action-setup@v4
         with:
           version: 10
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: pnpm
@@ -79,30 +70,6 @@ jobs:
       - name: Build packages
         run: pnpm run build:packages
 
-      # ─── Resolve which package(s) this run targets ────────────────────────
-      #
-      # Tag push → parse the tag prefix. Manual dispatch → use the input.
-      - name: Resolve target package
-        id: target
-        shell: bash
-        run: |
-          if [[ "${{ github.event_name }}" == "push" ]]; then
-            tag="${GITHUB_REF#refs/tags/}"
-            if [[ "$tag" == soma-heart-v* ]]; then
-              echo "package=soma-heart" >> "$GITHUB_OUTPUT"
-              echo "tag_version=${tag#soma-heart-v}" >> "$GITHUB_OUTPUT"
-            elif [[ "$tag" == soma-sense-v* ]]; then
-              echo "package=soma-sense" >> "$GITHUB_OUTPUT"
-              echo "tag_version=${tag#soma-sense-v}" >> "$GITHUB_OUTPUT"
-            else
-              echo "Unknown tag format: $tag" >&2
-              exit 1
-            fi
-          else
-            echo "package=${{ inputs.package }}" >> "$GITHUB_OUTPUT"
-            echo "tag_version=" >> "$GITHUB_OUTPUT"
-          fi
-
       # ─── Version guard ────────────────────────────────────────────────────
       #
       # On tag push, assert the tag version matches the package.json
@@ -112,21 +79,19 @@ jobs:
         if: github.event_name == 'push'
         shell: bash
         run: |
-          pkg="${{ steps.target.outputs.package }}"
-          tag_v="${{ steps.target.outputs.tag_version }}"
-          pkg_v=$(node -p "require('./packages/$pkg/package.json').version")
+          tag="${GITHUB_REF#refs/tags/}"
+          if [[ "$tag" != soma-heart-v* ]]; then
+            echo "Unknown tag format: $tag" >&2
+            exit 1
+          fi
+          tag_v="${tag#soma-heart-v}"
+          pkg_v=$(node -p "require('./packages/soma-heart/package.json').version")
           if [[ "$tag_v" != "$pkg_v" ]]; then
-            echo "Tag version ($tag_v) does not match $pkg package.json version ($pkg_v)." >&2
+            echo "Tag version ($tag_v) does not match package.json version ($pkg_v)." >&2
             echo "Bump package.json and retag before publishing." >&2
             exit 1
           fi
 
       - name: Publish soma-heart
-        if: steps.target.outputs.package == 'soma-heart' || steps.target.outputs.package == 'both'
         working-directory: packages/soma-heart
-        run: npm publish
-
-      - name: Publish soma-sense
-        if: steps.target.outputs.package == 'soma-sense' || steps.target.outputs.package == 'both'
-        working-directory: packages/soma-sense
         run: npm publish

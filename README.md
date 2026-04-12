@@ -3,7 +3,6 @@
 [![Cryptographic Agent Identity](https://img.shields.io/badge/agent_identity-cryptographic_execution_proof-8b5cf6)](https://github.com/1xmint/Soma)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19260081.svg)](https://doi.org/10.5281/zenodo.19260081)
 [![npm: soma-heart](https://img.shields.io/npm/v/soma-heart?label=soma-heart&color=238636)](https://www.npmjs.com/package/soma-heart)
-[![npm: soma-sense](https://img.shields.io/npm/v/soma-sense?label=soma-sense&color=238636)](https://www.npmjs.com/package/soma-sense)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 **Every existing agent identity system has a gap: the agent computes, and then separately, a credential proves who computed. Soma eliminates that gap by making identity inseparable from computation.**
@@ -50,16 +49,16 @@ When data enters the system, the heart seals it. For hearted-to-hearted flows, b
 
 ## Results
 
-| Metric | Result |
-|---|---|
-| Local classification (5 models, same GPU) | **100.0%** |
-| Cloud classification (11 agents, 4 providers) | **93.2%** |
-| Deployment identity (same model, different infra) | **100.0%** |
-| Security attacks detected | **8/8** |
-| Slow drift detection threshold | **55%** (atlas, memoryless) |
-| Seed enumeration (10K attempts) | **0 matches** |
-| HMAC overhead per token | **3.4--5.4 microseconds** |
-| Tests passing | **412** |
+| Metric                                            | Result                      |
+| ------------------------------------------------- | --------------------------- |
+| Local classification (5 models, same GPU)         | **100.0%**                  |
+| Cloud classification (11 agents, 4 providers)     | **93.2%**                   |
+| Deployment identity (same model, different infra) | **100.0%**                  |
+| Security attacks detected                         | **8/8**                     |
+| Slow drift detection threshold                    | **55%** (atlas, memoryless) |
+| Seed enumeration (10K attempts)                   | **0 matches**               |
+| HMAC overhead per token                           | **3.4--5.4 microseconds**   |
+| Tests passing                                     | **412**                     |
 
 ## Production
 
@@ -79,15 +78,15 @@ X-Soma-Public-Key: <hex ed25519 public key>
 X-Soma-Discovery: /.well-known/soma.json
 ```
 
-**Verification verdicts anchored on-chain:** Observers running `soma-sense` submit verdicts to ClawNet's public API. Verdicts are Merkle-tree-anchored on Solana, creating an immutable verification history for any agent. Public trust query: `GET /v1/soma/:did/trust`.
+**Verification verdicts anchored on-chain:** Observers running `soma-heart/sense` submit verdicts to ClawNet's public API. Verdicts are Merkle-tree-anchored on Solana, creating an immutable verification history for any agent. Public trust query: `GET /v1/soma/:did/trust`.
 
-**Soma Receipt Layer:** Every paid ClawNet interaction produces a cryptographically signed Soma Receipt — an EAS (Ethereum Attestation Service) attestation on Base binding payment proof + request hash + response hash + data provenance. Receipts are verifiable on [base.easscan.org](https://base.easscan.org), via `GET /v1/soma/receipt/:id`, or offline using `soma-sense`:
+**Soma Receipt Layer:** Every paid ClawNet interaction produces a cryptographically signed Soma Receipt — an EAS (Ethereum Attestation Service) attestation on Base binding payment proof + request hash + response hash + data provenance. Receipts are verifiable on [base.easscan.org](https://base.easscan.org), via `GET /v1/soma/receipt/:id`, or offline using `soma-heart/sense`:
 
 ```typescript
-import { verifyClawNetReceipt } from "soma-sense";
+import { verifyClawNetReceipt } from 'soma-heart/sense';
 
 const result = verifyClawNetReceipt(receiptJson, {
-  publicKeyMultibase: "z6Mk...", // from /.well-known/soma.json
+  publicKeyMultibase: 'z6Mk...', // from /.well-known/soma.json
 });
 console.log(result.valid); // true — receipt is authentic
 ```
@@ -101,16 +100,18 @@ Soma is designed for agent-to-agent trust: one heart forks another, delegates a 
 **Fork a child heart with narrowed capabilities:**
 
 ```typescript
-import { createSomaHeart } from "soma-heart";
+import { createSomaHeart } from 'soma-heart';
 
-const parent = createSomaHeart({ /* config */ });
+const parent = createSomaHeart({
+  /* config */
+});
 
 // Fork: parent signs a lineage cert binding child identity
 const { childKeyPair, childGenome, childLineage } = parent.fork({
-  systemPrompt: "You handle price lookups only.",
-  toolManifest: "[\"price\"]",
-  capabilities: ["tool:price"],     // narrowed
-  ttl: 15 * 60_000,                 // 15 minutes
+  systemPrompt: 'You handle price lookups only.',
+  toolManifest: '["price"]',
+  capabilities: ['tool:price'], // narrowed
+  ttl: 15 * 60_000, // 15 minutes
   budgetCredits: 1000,
 });
 
@@ -118,26 +119,26 @@ const { childKeyPair, childGenome, childLineage } = parent.fork({
 const child = createSomaHeart({
   genome: childGenome,
   signingKeyPair: childKeyPair,
-  modelApiKey: "...",
-  modelBaseUrl: "https://api.openai.com/v1",
-  modelId: "gpt-4o-mini",
+  modelApiKey: '...',
+  modelBaseUrl: 'https://api.openai.com/v1',
+  modelId: 'gpt-4o-mini',
   lineage: childLineage,
 });
 
-await child.callTool("price", { symbol: "BTC" }, fn); // ✓ allowed
-await child.callTool("db", { query: "..." }, fn);     // ✗ throws
+await child.callTool('price', { symbol: 'BTC' }, fn); // ✓ allowed
+await child.callTool('db', { query: '...' }, fn); // ✗ throws
 ```
 
 **Delegate a capability (macaroons-style):**
 
 ```typescript
 const delegation = heart.delegate({
-  subjectDid: "did:key:zOtherAgent",
-  capabilities: ["tool:search"],
+  subjectDid: 'did:key:zOtherAgent',
+  capabilities: ['tool:search'],
   caveats: [
-    { kind: "expires-at", timestamp: Date.now() + 3600_000 },
-    { kind: "max-invocations", count: 100 },
-    { kind: "budget", credits: 500 },
+    { kind: 'expires-at', timestamp: Date.now() + 3600_000 },
+    { kind: 'max-invocations', count: 100 },
+    { kind: 'budget', credits: 500 },
   ],
 });
 ```
@@ -147,8 +148,8 @@ const delegation = heart.delegate({
 ```typescript
 const event = heart.revoke({
   targetId: delegation.id,
-  targetKind: "delegation",
-  reason: "compromised",
+  targetKind: 'delegation',
+  reason: 'compromised',
 });
 // Broadcast `event` to other parties; anyone can verify + honor it.
 ```
@@ -157,12 +158,12 @@ const event = heart.revoke({
 
 ```typescript
 // Shutdown
-const blob = heart.serialize("correct-horse-battery-staple");
-fs.writeFileSync("./heart.enc", blob);
+const blob = heart.serialize('correct-horse-battery-staple');
+fs.writeFileSync('./heart.enc', blob);
 
 // Startup — same DID, same credentials, continuous heartbeat chain
-import { loadSomaHeart } from "soma-heart";
-const heart = loadSomaHeart(fs.readFileSync("./heart.enc", "utf8"), "correct-horse-battery-staple");
+import { loadSomaHeart } from 'soma-heart';
+const heart = loadSomaHeart(fs.readFileSync('./heart.enc', 'utf8'), 'correct-horse-battery-staple');
 ```
 
 Under the hood: lineage certs are signed Ed25519 blobs with parent→child binding. Delegations carry caveats verified at invocation. Revocations are signed, broadcastable events. Persistence uses PBKDF2-SHA256 (210k iterations) + XSalsa20-Poly1305.
@@ -171,23 +172,23 @@ Under the hood: lineage certs are signed Ed25519 blobs with parent→child bindi
 
 ## Soma Check — Conditional Payment Protocol
 
-The first conditional payment protocol for APIs. Agents check a content hash before paying — if data hasn't changed, they pay nothing. Built on the birth-certificate `dataHash`, so the primitive that proves *provenance* also drives *change detection*. No other payment protocol (x402, ACP, AP2, L402) has this.
+The first conditional payment protocol for APIs. Agents check a content hash before paying — if data hasn't changed, they pay nothing. Built on the birth-certificate `dataHash`, so the primitive that proves _provenance_ also drives _change detection_. No other payment protocol (x402, ACP, AP2, L402) has this.
 
 **Spec:** [SOMA-CHECK-SPEC.md](SOMA-CHECK-SPEC.md) (v1.0)
 
 **Consumer side — drop-in fetch replacement:**
 
 ```typescript
-import { createSmartFetch } from "soma-sense";
+import { createSmartFetch } from 'soma-heart/sense';
 
 const sfetch = createSmartFetch();
 
 // First call — normal paid fetch
-const r1 = await sfetch("https://api.example.com/price?symbol=BTC");
+const r1 = await sfetch('https://api.example.com/price?symbol=BTC');
 
 // Second call — automatically sends If-Soma-Hash
 // If data unchanged, returns cached body at zero cost
-const r2 = await sfetch("https://api.example.com/price?symbol=BTC");
+const r2 = await sfetch('https://api.example.com/price?symbol=BTC');
 if (r2.somaCheck?.unchanged) {
   const price = r2.somaCheck.cachedBody; // 0 credits charged
 }
@@ -201,9 +202,9 @@ import {
   shouldRespondUnchanged,
   buildSomaCheckResponseHeaders,
   buildUnchangedResponse,
-} from "soma-heart";
+} from 'soma-heart';
 
-app.post("/endpoint", (req, res) => {
+app.post('/endpoint', (req, res) => {
   const incomingHash = extractIfSomaHash(req.headers);
   const currentHash = cache.getHash(req.url);
 
@@ -253,11 +254,11 @@ const data = await heart.fetchData("market-api", "query", fetcher);
 ### Sensorium (Observer Side)
 
 ```typescript
-import { withSomaSense } from "soma/sense";
+import { withSomaSense } from 'soma/sense';
 
 const transport = withSomaSense(new StdioServerTransport(), {
   onVerdict: (sessionId, verdict) => {
-    if (verdict.status === "RED") denyAccess(sessionId);
+    if (verdict.status === 'RED') denyAccess(sessionId);
   },
 });
 
@@ -303,16 +304,16 @@ soma/
 
 8 implemented attacks, all detected:
 
-| # | Attack | Method | Detection |
-|---|---|---|---|
-| 1 | Impersonation | Claim Claude, run GPT | Phenotype mismatch |
-| 2 | Replay | Record and replay tokens | Wrong HMAC counter |
-| 3 | Signal Injection | Cheap model + fake delays | Entropic fingerprint |
-| 4 | Timing Manipulation | Proxy with timing changes | Chunk boundary disruption |
-| 5 | Composite Agent | Different models per task | Cross-category instability |
-| 6 | Seed Prediction | Enumerate seed space | 0/10K exact matches |
-| 7 | Slow Drift | Gradual model substitution | Atlas catches at 55% |
-| 8 | Mutation Abuse | 10 rapid mutations | 10/10 fail consistency |
+| #   | Attack              | Method                     | Detection                  |
+| --- | ------------------- | -------------------------- | -------------------------- |
+| 1   | Impersonation       | Claim Claude, run GPT      | Phenotype mismatch         |
+| 2   | Replay              | Record and replay tokens   | Wrong HMAC counter         |
+| 3   | Signal Injection    | Cheap model + fake delays  | Entropic fingerprint       |
+| 4   | Timing Manipulation | Proxy with timing changes  | Chunk boundary disruption  |
+| 5   | Composite Agent     | Different models per task  | Cross-category instability |
+| 6   | Seed Prediction     | Enumerate seed space       | 0/10K exact matches        |
+| 7   | Slow Drift          | Gradual model substitution | Atlas catches at 55%       |
+| 8   | Mutation Abuse      | 10 rapid mutations         | 10/10 fail consistency     |
 
 3 additional attacks architecturally prevented: birth certificate forgery (co-signing), model distillation (conditional timing surface + HMAC), channel downgrade (DID authentication required).
 
