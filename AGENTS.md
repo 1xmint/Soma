@@ -9,11 +9,18 @@ Agent identity verification through computational phenotyping. Two publishable p
    Merge to `master`, then push a tag `soma-heart-v<version>` to trigger `Publish Packages` for both `soma-heart` and `soma-sense`.
 3. Never assume - always verify. Check actual code, docs, and runtime behavior before answering.
 
+## Push And Release Discipline
+
+- Treat GitHub as the source of truth. Normal code pushes should go to the GitHub remote and land through PRs.
+- Before pushing from a local clone or worktree, verify `origin` points at the canonical GitHub repo for Soma and not a stale fork or temporary transfer target.
+- Do not bypass the release workflow with local `npm publish` or ad hoc publish steps unless the user explicitly asks for emergency recovery.
+- Before starting work, re-check the actual current branch with Git instead of trusting a stale session header or UI summary.
+
 ## Merge Conventions
 
 - Default to `Squash and merge`.
 - Use `Merge commit` only when preserving branch history is intentionally valuable.
-- If a PR is ready but still waiting on checks, prefer asking whether to enable auto-merge.
+- This public repo can safely use auto-merge when checks are pending and the PR is otherwise ready. Prefer asking whether to enable auto-merge instead of waiting around for manual merge timing.
 - Be collaborative: when a PR looks merge-ready, explicitly prompt the user before merging instead of assuming.
 
 ## Quick Reference
