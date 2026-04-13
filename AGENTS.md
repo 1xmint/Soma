@@ -26,6 +26,14 @@ Heuristic:
 - normative protocol decisions belong in ADRs and specs
 - shipped truth belongs in canonical docs and package/spec surfaces
 
+Idea triage rule:
+
+- do not turn brainstorms into implementation issues until they have a clear owner, stage, confidence, and next action
+- Soma should only accept ideas that change or clarify protocol semantics, package surfaces, specs, security model, or reference implementation behavior
+- ClawNet first-consumer integration ideas belong in `claw-net`; Pulse product ideas belong in `pulse`
+- label Soma issues/PRs with `claw-net-project` only when they are part of a real cross-repo initiative that should appear in the `Soma + ClawNet + Pulse` project
+- if an idea changes identity semantics, credential rotation semantics, delegation, verification, security posture, or public package API, require a proposal and likely an ADR/spec update before implementation
+
 ## Repo Truth Rules
 
 - Treat GitHub as the source of truth. Normal code pushes should go to the GitHub remote and land through PRs.
