@@ -1,4 +1,9 @@
+Status: proposed
+
 # Revocation Gossip — design spec (audit limit #1)
+
+Status: proposed
+
 
 **Status:** design. Implementation deferred.
 **Closes:** audit limit #1 (revocation race — an attacker can use a stolen

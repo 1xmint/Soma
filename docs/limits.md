@@ -1,5 +1,8 @@
 # Soma — Honest Limits
 
+Status: canonical
+
+
 This doc is the inverse of `primitives.md`. It's what Soma **does not** do, what we require the operator to believe, and what still needs to be built.
 
 Read this before deploying. If your threat model collides with anything here, choose a different tool.

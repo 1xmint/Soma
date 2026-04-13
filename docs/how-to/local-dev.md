@@ -1,5 +1,8 @@
 # Soma Development Workflow
 
+Status: canonical
+
+
 This document keeps the important project context in repo-owned documentation that works well with any editor or coding assistant.
 
 ## Overview
@@ -44,8 +47,8 @@ pnpm test
 
 ## Related Docs
 
-- [docs/primitives.md](C:\Users\Josh\Desktop\GitHub\Soma\docs\primitives.md)
+- [docs/reference/primitives.md](C:\Users\Josh\Desktop\GitHub\Soma\docs\reference\primitives.md)
 - [docs/limits.md](C:\Users\Josh\Desktop\GitHub\Soma\docs\limits.md)
-- [docs/security.md](C:\Users\Josh\Desktop\GitHub\Soma\docs\security.md)
-- [docs/roadmap.md](C:\Users\Josh\Desktop\GitHub\Soma\docs\roadmap.md)
-- [docs/ops-security.md](C:\Users\Josh\Desktop\GitHub\Soma\docs\ops-security.md)
+- [docs/explanation/security-model.md](C:\Users\Josh\Desktop\GitHub\Soma\docs\explanation\security-model.md)
+- [docs/proposals/roadmap.md](C:\Users\Josh\Desktop\GitHub\Soma\docs\proposals\roadmap.md)
+- [docs/operations/ops-security.md](C:\Users\Josh\Desktop\GitHub\Soma\docs\operations\ops-security.md)

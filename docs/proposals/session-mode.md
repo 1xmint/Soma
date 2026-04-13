@@ -1,4 +1,9 @@
+Status: proposed
+
 # Session Mode — Human Consent Ceremony
+
+Status: proposed
+
 
 **Status:** design — PR-A + PR-B shipped (primitives), PR-B.5 runtime
 integration pending.

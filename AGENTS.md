@@ -1,6 +1,6 @@
 # Soma - AGENTS.md
 
-Agent identity verification through computational phenotyping. Two publishable packages: `soma-heart` (source of truth) and `soma-sense` (thin re-export of `soma-heart/sense`).
+Agent identity verification protocol and reference implementation through computational phenotyping. Two publishable packages: `soma-heart` (source of truth) and `soma-sense` (thin re-export of `soma-heart/sense`).
 
 ## Workflow Rules
 
@@ -9,9 +9,33 @@ Agent identity verification through computational phenotyping. Two publishable p
    Merge to `master`, then push a tag `soma-heart-v<version>` to trigger `Publish Packages` for both `soma-heart` and `soma-sense`.
 3. Never assume - always verify. Check actual code, docs, and runtime behavior before answering.
 
-## Push And Release Discipline
+## Tighter Build Loop
+
+Use this repo flow for important work:
+
+1. Discovery in Discussions, internal proposal notes, or issue drafts
+2. Proposal in `docs/proposals/`
+3. Boundary check against downstream repos
+4. ADR if protocol ownership, semantics, package surfaces, or security posture changes
+5. Parent issue -> sub-issues -> small PR slices
+6. Release/readiness review before merge and tag
+
+Heuristic:
+
+- brainstorming belongs in proposal/discussion space first
+- normative protocol decisions belong in ADRs and specs
+- shipped truth belongs in canonical docs and package/spec surfaces
+
+## Repo Truth Rules
 
 - Treat GitHub as the source of truth. Normal code pushes should go to the GitHub remote and land through PRs.
+- `docs/` is the canonical repo-truth layer.
+- Soma is the protocol home for identity, delegation, verification semantics, and security model.
+- Downstream repos should document integration, not redefine Soma semantics.
+- If protocol behavior changes, update specs or package reference docs, not just implementation notes.
+
+## Push And Release Discipline
+
 - Before pushing from a local clone or worktree, verify `origin` points at the canonical GitHub repo for Soma and not a stale fork or temporary transfer target.
 - Do not bypass the release workflow with local `npm publish` or ad hoc publish steps unless the user explicitly asks for emergency recovery.
 - Before starting work, re-check the actual current branch with Git instead of trusting a stale session header or UI summary.
@@ -31,9 +55,9 @@ pnpm test
 pnpm build
 ```
 
-**Branch:** `master`  
-**Release tag:** `soma-heart-v<version>`  
-**Trusted publishing:** GitHub Actions `Publish Packages` + `npm-release` environment  
+**Branch:** `master`
+**Release tag:** `soma-heart-v<version>`
+**Trusted publishing:** GitHub Actions `Publish Packages` + `npm-release` environment
 **Build-script approval:** `pnpm-workspace.yaml` controls allowed dependency builds (`esbuild`)
 
 ## Two-Package Split (CRITICAL)
@@ -55,9 +79,17 @@ An agent verifying itself is meaningless. The observer must do the sensing on th
 
 ## Detailed Docs
 
-- `docs/secure-release-workflow.md`
-- `docs/primitives.md`
+- `docs/overview.md`
+- `docs/architecture/context.md`
+- `docs/reference/packages.md`
+- `docs/reference/spec-index.md`
+- `docs/reference/primitives.md`
+- `docs/explanation/vision.md`
+- `docs/explanation/security-model.md`
 - `docs/limits.md`
-- `docs/philosophy.md`
-- `docs/security.md`
-- `docs/roadmap.md`
+- `docs/operations/release.md`
+- `docs/decisions/`
+- `docs/proposals/PROPOSAL-TEMPLATE.md`
+- `SOMA-CHECK-SPEC.md`
+- `SOMA-DELEGATION-SPEC.md`
+- `SOMA-CAPABILITIES-SPEC.md`

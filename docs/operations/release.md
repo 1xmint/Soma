@@ -1,5 +1,8 @@
 # Soma Secure Release Workflow
 
+Status: canonical
+
+
 Soma should not use the same production deployment workflow as ClawNet or Pulse.
 
 Soma is the open-source upstream. The clean professional model here is:

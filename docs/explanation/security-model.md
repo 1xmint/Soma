@@ -1,5 +1,8 @@
 # Soma Security Model
 
+Status: canonical
+
+
 ## Security Model — Non-Negotiable Rules
 
 These rules are the immune system. If you're writing code that violates any of them, STOP and redesign.

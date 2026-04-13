@@ -1,4 +1,9 @@
+Status: proposed
+
 # Soma Roadmap
+
+Status: proposed
+
 
 ## Phase 3: Community Phenotype Network (Build After Clean Experiment)
 

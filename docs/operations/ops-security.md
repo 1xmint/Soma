@@ -1,5 +1,8 @@
 # Soma Ops And Secret Hygiene
 
+Status: canonical
+
+
 Soma is primarily a package, experiment, and verification workspace rather than a long-lived VPS service. The operational goal here is to keep credentials, generated artifacts, and research output from leaking into git or getting mixed into releaseable package code.
 
 ## What To Keep Out Of Git
