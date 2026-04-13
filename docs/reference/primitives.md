@@ -1,5 +1,8 @@
 # Soma Primitives Reference
 
+Status: canonical
+
+
 Detailed reference for the primitives exposed by `soma-heart`. Each section
 names the public API, explains what it does, and links to the source file.
 

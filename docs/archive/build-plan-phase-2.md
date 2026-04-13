@@ -1,4 +1,10 @@
+Status: archived
+See instead: docs/proposals/roadmap.md
+
 # Soma Build Plan — Phase 2
+
+Status: archived
+
 
 ### Step 1: The Heart Runtime
 

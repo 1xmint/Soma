@@ -1,5 +1,8 @@
 # Soma Philosophy
 
+Status: canonical
+
+
 ## The Insight
 
 In biology, identity is not a credential attached to an organism. Identity IS the organism. DNA doesn't describe a living thing — DNA, when run through cellular machinery, BECOMES the living thing. There is no gap between the identity and the thing. They are one physical process.

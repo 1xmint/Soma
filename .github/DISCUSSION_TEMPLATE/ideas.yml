@@ -1,0 +1,32 @@
+title: "[Idea] "
+labels:
+  - idea
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What protocol or package problem are we trying to solve?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Broad idea
+      description: Explain the idea in plain language before writing protocol semantics.
+    validations:
+      required: true
+  - type: textarea
+    id: surface
+    attributes:
+      label: Affected surface
+      description: Specs, package APIs, security model, downstream integrations, or release model.
+  - type: textarea
+    id: first_consumer
+    attributes:
+      label: First consumer
+      description: Which downstream user or system consumes this first?
+  - type: textarea
+    id: open_questions
+    attributes:
+      label: Open questions
