@@ -1,0 +1,34 @@
+name: Add To ClawNet Project
+
+on:
+  workflow_dispatch:
+  issues:
+    types:
+      - opened
+      - reopened
+      - transferred
+      - labeled
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - labeled
+
+permissions:
+  contents: read
+
+jobs:
+  add-to-project:
+    name: Add selected issue or PR to ClawNet project
+    runs-on: ubuntu-latest
+    env:
+      ADD_TO_PROJECT_PAT: ${{ secrets.ADD_TO_PROJECT_PAT }}
+    steps:
+      - name: Add selected Soma work to Soma + ClawNet + Pulse project
+        if: ${{ env.ADD_TO_PROJECT_PAT != '' && (github.event_name == 'issues' || github.event_name == 'pull_request') }}
+        uses: actions/add-to-project@244f685bbc3b7adfa8466e08b698b5577571133e # v1.0.2
+        with:
+          project-url: https://github.com/orgs/claw-net/projects/1
+          github-token: ${{ env.ADD_TO_PROJECT_PAT }}
+          labeled: claw-net-project
+          label-operator: OR
