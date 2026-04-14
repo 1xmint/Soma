@@ -93,11 +93,27 @@ v0.1, or does it leak too much implicit trust across rotation events?
 The alternative is cascade re-issuance on every parent rotation,
 trading availability for a tighter blast radius.
 
+**Scope warning — this is not a one-line spec edit.** The current
+`SOMA-DELEGATION-SPEC.md` is **key-bound**, not identity-bound:
+`parent_id` is documented as a "Cryptographic link to the issuing
+key" (§Concepts), and `issued_by_sig` is the parent's signature under
+its *current signing key* at issue time (protocol example). Accepting
+D2 commits Slice C to a **verification-model redesign**, not just a
+text edit to line 307: delegation verification must resolve `parent_id`
+to the parent's stable `identityId` and validate historic
+`issued_by_sig` values in a way that survives parent rotation. Possible
+mechanisms (all out of scope for this ADR, to be picked in Slice C)
+include retaining an archive of superseded parent public keys,
+cascade re-signing children on rotation, or redesigning the signature
+scheme to key off identity rather than credential. Reviewers should
+weigh D2 with that scope cost in mind, not as a trivial clarification.
+
 **Resolution path.** This ADR records the *intended interaction*. It
 does NOT close `SOMA-DELEGATION-SPEC.md` Open Question 6. That spec
 update is a separate PR (Slice C) which codifies whichever answer this
-ADR accepts into normative delegation-spec text. ADR acceptance alone
-does not close OQ6; the delegation-spec PR does.
+ADR accepts into normative delegation-spec text and carries the
+verification-model redesign that D2 implies. ADR acceptance alone does
+not close OQ6; the delegation-spec PR does.
 
 ### D3. Rollback semantics on mid-rotation failure
 
@@ -145,13 +161,13 @@ D3 and D5.
 `rotate()` is a general recovery mechanism. `rotate()` can only serve
 as a recovery path under narrow, explicit conditions: the attacker
 holds the current signing key but not the pre-committed next key
-(invariant 10, `types.ts` line ~55), the operator retains control of
-the backend and controller execution path, and rotation execution is
-not itself blocked or corrupted. Scenarios outside those bounds — next
-key also compromised, backend unreachable, controller state
-inconsistent, operator unsure which keys are compromised — are exactly
-what break-glass exists to address, and are explicitly out of v0.1
-scope.
+(invariants 9–10 and L1, `types.ts` lines 18–19 and 24), the operator
+retains control of the backend and controller execution path, and
+rotation execution is not itself blocked or corrupted. Scenarios
+outside those bounds — next key also compromised, backend unreachable,
+controller state inconsistent, operator unsure which keys are
+compromised — are exactly what break-glass exists to address, and are
+explicitly out of v0.1 scope.
 
 **Resolution path.** Pick (a) deferral with rationale recorded here, or
 (b) name a follow-up ADR with scope and owner and carry the deferral
@@ -163,8 +179,9 @@ through that pointer.
 freeze requires M-of-N quorum"), currently declared in `types.ts`
 line 13, is dropped from the v0.1 normative set. The controller's
 existing single-witness behaviour (`witnessEvent` at `controller.ts`
-line 584) is proposed as intended-for-v0.1 rather than a placeholder
-pending M-of-N.
+line 587, flagged as "MVP single-witness quorum" at line 584) is
+proposed as intended-for-v0.1 rather than a placeholder pending
+M-of-N.
 
 **Assurance bound — stated plainly.** In the first-consumer
 configuration, the rotating identity and the witness are not
@@ -226,8 +243,11 @@ pattern; the proposal is to follow it.
 - `credential-rotation/` is the named canonical substrate. Any future
   decision to unify or replace it requires a superseding ADR.
 - ClawNet's first-consumer implementation stays paused until this ADR
-  is accepted, `SOMA-ROTATION-SPEC.md` is ratified, and Slice D code
-  reconciliation lands. These correspond to Gates 2, 3, and 4 below.
+  is accepted, `SOMA-ROTATION-SPEC.md` is ratified, Slice D code
+  reconciliation lands, and `SOMA-DELEGATION-SPEC.md` Open Question 6
+  is closed by Slice C. These correspond to Gates 2, 3, 4, and 5
+  below, all of which must clear before Gate 6 (package surface) and
+  Gate 7 (claw-net unlock).
 - Invariant 4 stops being declared-but-unimplemented once Slice D
   lands. Its exact disposition depends on D5.
 - `SOMA-DELEGATION-SPEC.md` Open Question 6 is unblocked for update by
@@ -264,14 +284,19 @@ and does not imply future acceptance.
   strings removed. Invariant 4 disposition applied per D5. Not
   draftable without Gate 2 authorization.
 - **Gate 5 — `SOMA-DELEGATION-SPEC.md` Open Question 6 closed.**
-  Separate PR (Slice C), parallelizable with Gate 4. Not draftable
-  without Gate 2 authorization.
+  Separate PR (Slice C), parallelizable with Gate 4 but required
+  before Gate 6. Not draftable without Gate 2 authorization. Rationale:
+  D2 is part of the ADR and the current delegation spec is key-bound;
+  if identity-binding is accepted as the intended rotation/delegation
+  model, the delegation-spec update is semantic closure, not optional
+  housekeeping. Package surface and first-consumer unlock must not
+  claim stable rotation semantics while OQ6 remains open.
 - **Gate 6 — `soma-heart` package surface stabilised.** Conditional
   (Slice E). Version bump if public API changed; no bump if only
-  semantics were documented. Not draftable without Gates 3 and 4.
+  semantics were documented. Not draftable without Gates 3, 4, and 5.
 - **Gate 7 — claw-net implementation unlock.** Separate ADR in
   `claw-net/docs/decisions/`. Out of scope for Soma. Not draftable
-  without Gate 6.
+  without Gate 6 (which transitively requires Gates 3, 4, and 5).
 
 ## Evidence Ledger
 
@@ -283,9 +308,9 @@ and does not imply future acceptance.
 | upstream dependencies | `soma-heart` v0.3.0 `./credential-rotation` export surface; `SOMA-DELEGATION-SPEC.md`; `docs/explanation/security-model.md` |
 | downstream dependencies | `claw-net/src/core/api-key-rotation.ts`; inert `ClawNetApiKeyBackend`; any future claw-net rotation consumer |
 | missing evidence | no normative `§13c`/`§14` architecture doc; no rollback-on-failure test; no M-of-N implementation or test (intentional if D5 defers); no byte-layout test vectors for `sha256(publicKey \|\| algorithmSuite \|\| backendId)`; no delegation-rotation interaction test |
-| blocks current work | yes — claw-net first-consumer implementation unlock is gated on this ADR plus `SOMA-ROTATION-SPEC.md` |
+| blocks current work | yes — claw-net first-consumer implementation unlock is gated on this ADR, `SOMA-ROTATION-SPEC.md`, Slice D code reconciliation, and `SOMA-DELEGATION-SPEC.md` OQ6 closure (Gates 2–5), plus Gate 6 package surface stabilisation |
 | next gate | Gate 2 — ADR acceptance |
-| terminal condition | every decision row has a reviewer-approved disposition; ADR merged with `Status: accepted`; `SOMA-ROTATION-SPEC.md` ratified; Slice D merged; `soma-heart` version bump landed if public API changed |
+| terminal condition | every decision row has a reviewer-approved disposition; ADR merged with `Status: accepted`; `SOMA-ROTATION-SPEC.md` ratified; Slice C delegation-spec OQ6 closure merged; Slice D code reconciliation merged; `soma-heart` version bump landed if public API changed |
 
 ### Part 2 — Decision rows
 
