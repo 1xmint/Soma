@@ -282,7 +282,7 @@ revision that this rotation ADR blocks on.
 
 | Aspect | Code evidence | Proposed status |
 |---|---|---|
-| Invariant 4 ("Panic freeze requires M-of-N quorum") is described in a code comment | `types.ts` line 13 | **Not ratified.** The code does not implement M-of-N. `controller.ts` line 584 is single-witness. |
+| Invariant 4 ("Panic freeze requires M-of-N quorum") is described in a code comment | `types.ts` line 13 | **O** — code does not implement M-of-N; `controller.ts` line 584 is single-witness. Must not be ratified as-is. |
 | `witnessEvent` counts additional witnesses but does not gate state transitions on a threshold | `controller.ts` line 584-608 | **O** — the ADR must either implement M-of-N or drop invariant 4 from the normative contract |
 
 **The ADR must not ratify invariant 4 as-is.** Doing so would declare
@@ -311,8 +311,8 @@ overconstrains consumers. A provider with different operational
 realities — say, a hardware-wallet custody model with a 15-minute
 floor that would be unsafe at Soma's default — should be able to
 raise its own floors while still being a conforming implementation.
-A provider should not be able to lower floors below what the spec
-sets as the absolute minimum.
+We propose the spec set floors as absolute minimums consumers cannot
+lower.
 
 The ADR needs to say whether the class model itself is normative
 (i.e. there must be exactly three classes with these letters) or
