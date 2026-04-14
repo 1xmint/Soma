@@ -211,8 +211,8 @@ A conforming implementation MUST pass test vectors covering:
    a multiple of 3 MUST produce padded base64 in the commitment
    input.
 
-Test vectors live under `tests/credential-rotation/vectors/` and are
-a Slice D acceptance criterion (see §15).
+Test vectors live under `tests/heart/credential-rotation/vectors/`
+and are a Slice D acceptance criterion (see §15).
 
 ### 3.4 Verification on Rotate
 
@@ -777,40 +777,68 @@ Slice D code contract (landing under the §15 Gate 4 reconciliation)
 assumes the rotation controller has retained every credential the
 chain has ever made `effective`.
 
-### 13.2 Blocking Dependency (Normative)
+### 13.2 Normative Dependency (Normative)
 
 `SOMA-ROTATION-SPEC.md` v0.1 does NOT define delegation verification
-under parent rotation. A conforming implementation relying on
-delegation semantics MUST treat `SOMA-DELEGATION-SPEC.md` Open
-Question 6 as **unresolved** until Slice C / Gate 5 closes it. Until
-then:
+under parent rotation. Normative delegation-under-rotation semantics
+live in `SOMA-DELEGATION-SPEC.md` §Rotation Interaction, which
+closed Open Question 6 as of Slice C / Gate 5 by adopting
+identity-binding with Mechanism 1 (historical archive). See that
+section's *Conforming verifier rule* and *Slice D code contract* for
+the authoritative rules.
 
-- Delegation under a rotating parent MUST be treated as out of the
-  v0.1 rotation contract.
-- First-consumer integration MUST NOT ship delegation-under-rotation
-  as a supported path until `SOMA-DELEGATION-SPEC.md` is updated.
+Requirements on implementations of this spec:
+
 - The rotation controller MUST NOT attempt to reason about
   delegation children during rotation; delegation verification is
-  owned by the delegation subsystem.
+  owned by the delegation subsystem, which consumes the
+  historical-credential lookup this subsystem exposes as a Gate 4 /
+  Slice D deliverable (see §15 and §14 invariant 13).
+- First-consumer integration MUST NOT ship delegation-under-rotation
+  as a supported path until that historical-credential lookup lands.
+  This is the residual operational precondition on Gate 7
+  (first-consumer unlock) per ADR-0004's Readiness Horizon;
+  `SOMA-DELEGATION-SPEC.md` §Rotation Interaction states the same
+  rule from the delegation side.
+- The residual illustrative-wire / reference-SQL alignment item
+  called out under `SOMA-DELEGATION-SPEC.md` §Rotation Interaction's
+  *What this section does NOT resolve* is a docs/code hygiene
+  follow-up, not a blocker for this spec. While it is pending, the
+  normative *Wire-schema dependency* text in that section is
+  authoritative.
 
-### 13.3 Why This Spec Does Not Solve It
+### 13.3 Why This Spec Does Not Define Verification
 
 Three mutually-incompatible candidate mechanisms for identity-bound
-delegation verification exist, and picking one is Slice C's job:
+delegation verification existed when this spec was first drafted,
+and picking one was Slice C's job rather than this document's:
 
 1. Retaining an archive of superseded parent public keys so historic
-   `issued_by_sig` values still verify after rotation.
+   `issued_by_sig` values still verify after rotation. **(Adopted by
+   `SOMA-DELEGATION-SPEC.md` §Rotation Interaction as of Slice C /
+   Gate 5.)**
 2. Cascade re-signing children on each parent rotation (rejected as
    the default in ADR-0004 D2 on availability grounds, but still a
-   candidate for specific classes).
+   candidate for specific classes; Mechanism 2 MAY be re-added later
+   as a policy-level option without superseding Mechanism 1).
 3. Redesigning the signature scheme to key off identity rather than
    credential (e.g. identity-based signatures, BLS aggregation, or
    threshold schemes).
 
-Each has different security, performance, and availability
-properties. Attempting to pick one here would either contradict the
-delegation spec or pre-empt Slice C. v0.1 therefore scopes itself to
-rotation semantics and leaves delegation verification to Slice C.
+Mechanism 1 was selected because the historical state it needs
+already exists in this subsystem: every controller snapshot already
+carries the complete rotation event chain (§10.2, §4.7), and every
+event's `newCredential` contains the public key that was
+authoritative at that event. The Gate 4 / Slice D historical-
+credential lookup (§15) exposes that existing state to the
+delegation verifier without new persistence, new cryptography, or a
+new signing scheme.
+
+This spec still scopes itself to rotation semantics. The normative
+text of delegation-under-rotation verification lives in
+`SOMA-DELEGATION-SPEC.md` §Rotation Interaction; the only contract
+this spec owes the delegation subsystem is the historical-credential
+lookup called out in §15.
 
 ## 14. v0.1 Invariants (Normative Set)
 
@@ -877,9 +905,9 @@ PR that:
    "MVP single-witness quorum" at line 584) as
    single-witness-by-design for v0.1, pointing at §7.
 5. Lands the rollback acceptance test described in §5.4 under
-   `tests/credential-rotation/`.
+   `tests/heart/credential-rotation/`.
 6. Lands the commitment test vectors described in §3.3 under
-   `tests/credential-rotation/vectors/`.
+   `tests/heart/credential-rotation/vectors/`.
 7. Lands backend registration / policy-validation code that rejects
    any `backendId` containing a delimiter byte used by the
    commitment encoding — at minimum `|` (U+007C), `:` (U+003A),
