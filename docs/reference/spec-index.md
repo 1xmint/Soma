@@ -12,6 +12,8 @@ This file is the entry point for Soma's normative specifications.
   - Scoped, bounded, auditable authority transfer
 - `SOMA-CAPABILITIES-SPEC.md`
   - Capability structure, caveats, attenuation, and verification
+- `SOMA-ROTATION-SPEC.md`
+  - Credential rotation lifecycle, pre-rotation commitment, rollback invariant, and v0.1 single-witness assurance bound (see ADR-0004)
 
 ## Supporting Reference
 
