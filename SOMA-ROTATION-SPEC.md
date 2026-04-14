@@ -322,6 +322,37 @@ derivation is how v0.1 provides post-compromise security (invariant
 cannot derive the successor credential without also capturing the
 controller's ratchet state at `t`.
 
+### 4.7 Event Chain Retention (Normative)
+
+An identity's rotation event chain is append-only and MUST NOT be
+pruned, compacted, or truncated for the lifetime of the identity. A
+conforming controller MUST retain every event from genesis through
+the current tip, such that every credential the chain has ever made
+`effective` — including revoked predecessors — remains recoverable
+by walking the chain.
+
+This applies to the runtime controller state, not only to serialised
+snapshots. A controller that discarded historic events from
+in-memory state but still serialised a complete chain into
+`ControllerSnapshot` would violate this invariant: the §10.2
+snapshot-completeness requirement is a consequence of runtime
+retention, not a substitute for it.
+
+Rationale: identity-bound delegation verification, as defined in
+`SOMA-DELEGATION-SPEC.md` §Rotation Interaction, requires a
+historical-credential lookup against the rotation subsystem. Slice D
+(Gate 4, §15) lands the code contract that exposes that lookup; it
+assumes the rotation controller has every credential the chain has
+ever bound. Pruning the chain would silently break identity-bound
+verification of delegations issued under earlier credentials.
+
+Retention is a structural controller constraint, not a runtime
+detectable operation: no single `sign`, `rotate`, or `commit` call
+raises an error when pruning occurs. A controller that implements
+pruning is structurally non-conforming, and the historical-credential
+tests required by §15 are the reference assertion that this
+invariant holds.
+
 ## 5. Staged Rotation and Rollback
 
 ### 5.1 Stage / Commit / Abort
@@ -736,6 +767,11 @@ issue time). Converting that spec to identity-binding is a
 **verification-model redesign**, not a one-line edit, and is out of
 scope for this document.
 
+Identity-bound verification in turn depends on the event chain
+retention invariant (§4.7): the historical-credential lookup Slice D
+exposes (§15) assumes the rotation controller has retained every
+credential the chain has ever made `effective`.
+
 ### 13.2 Blocking Dependency (Normative)
 
 `SOMA-ROTATION-SPEC.md` v0.1 does NOT define delegation verification
@@ -802,9 +838,18 @@ numbered to align with existing `InvariantViolation` codes (§11).
 11. **No legacy path.** No coexistence with static auth; rotation
     is the only credential-management path.
 12. **Verify before revoke.** See §6.
+13. **Event chain retention.** An identity's rotation event chain is
+    append-only and MUST NOT be pruned or compacted for the lifetime
+    of the identity; every credential the chain has ever made
+    `effective` MUST remain recoverable by walking the chain. See
+    §4.7.
 
 Invariant 4 is removed, not renumbered: existing
 `InvariantViolation` codes stay stable, and the gap is normative.
+Invariant 13 is a structural retention constraint (§4.7) and has no
+corresponding runtime `InvariantViolation` code; it is enforced at
+the controller-design level and asserted by Slice D's
+historical-credential tests (§15).
 
 ## 15. Code Reconciliation Readiness (Slice D Gate)
 
