@@ -149,7 +149,13 @@ soma-manifest:<backendId>|<algorithmSuite>|<base64(publicKey)>
 Where:
 
 - `<backendId>` is the opaque backend id, as declared by the backend
-  at registration time. It MUST NOT contain `|` or U+0000.
+  at registration time. It MUST NOT contain any byte that acts as a
+  delimiter in this encoding — specifically the ASCII `|` (U+007C)
+  and `:` (U+003A) separator bytes — and MUST NOT contain the NUL
+  byte (U+0000). Backend registration and policy validation MUST
+  reject any `backendId` carrying a prohibited byte before that
+  backend is admitted to the `backendAllowlist`, so no malformed id
+  can reach the commitment encoder (see §15).
 - `<algorithmSuite>` is one of the `AlgorithmSuite` values listed in
   §2.4, transmitted verbatim.
 - `<base64(publicKey)>` is the standard base64 (RFC 4648, with
@@ -312,11 +318,13 @@ MUST raise `StagedRotationConflict`.
 
 ### 5.2 Rollback Invariant (Normative)
 
-**Invariant (rollback).** If any step between `stageNextCredential`
-and `commitStagedRotation` throws, the controller state and the
-backend state MUST both revert to the pre-stage state. No partial
-rotation MAY be observable in either layer after the throw has
-propagated to the caller.
+**Invariant (rollback, pre-durable-commit).** If any step between
+`stageNextCredential` and the point at which
+`commitStagedRotation` makes the new credential **externally
+durable** throws, the controller state and the backend state MUST
+both revert to the pre-stage state. No partial rotation MAY be
+observable in either layer after the throw has propagated to the
+caller.
 
 This applies to every step the controller performs between staging
 and committing, including but not limited to:
@@ -328,11 +336,14 @@ and committing, including but not limited to:
 - new-key proof-of-possession signing;
 - event hashing.
 
-A conforming controller MUST call `backend.abortStagedRotation` on
-the affected identity when any of the above throws. The original
-error MUST be preserved for the caller; errors from
-`abortStagedRotation` MAY be suppressed by the controller provided
-the abort was attempted.
+Each of these substeps executes **before** the controller hands
+control to `commitStagedRotation`, so no external observer has yet
+seen a new `current` pointer, a new event-chain entry, or a new
+ratchet anchor. A conforming controller MUST call
+`backend.abortStagedRotation` on the affected identity when any of
+the above throws. The original error MUST be preserved for the
+caller; errors from `abortStagedRotation` MAY be suppressed by the
+controller provided the abort was attempted.
 
 Neither the event chain nor `state.current` may be mutated on a
 throw path. A rollback leaves the identity with:
@@ -342,6 +353,33 @@ throw path. A rollback leaves the identity with:
 - its backend holding only the pre-stage secret material;
 - its rate-limit bucket unchanged (the failed attempt does NOT
   consume a rotation slot — see §8.2).
+
+**Commit-call failures are in scope for Slice D, not deferred.**
+Once the controller calls `commitStagedRotation`, the recovery
+shape on a thrown commit depends on the backend's atomicity and
+abort semantics, which differ across durable-log implementations.
+v0.1 does not prescribe a single normative recovery shape for a
+commit-call failure, but it also does NOT silently defer the
+question to an unnamed future ADR. Slice D (§15) MUST do one of:
+
+1. Land a test that asserts a specific recovery shape for a failure
+   thrown by `commitStagedRotation` on the reference backend — for
+   example, that the backend commit is atomic so a thrown commit
+   leaves the identity in the pre-stage state and the rotation is
+   retriable, with the same observable properties as the pre-commit
+   rollback above; OR
+2. Explicitly constrain, in the Slice D PR, the set of failure
+   modes the reference backend is permitted to produce from
+   `commitStagedRotation` (e.g. "the reference backend's commit is
+   infallible after staging succeeds; any error is an
+   implementation bug") and document that constraint alongside the
+   code.
+
+Slice D MUST NOT ship a commit-call failure path whose recovery
+shape is neither tested nor explicitly constrained. Any divergence
+between the reference backend's observable commit-call behaviour
+and this spec is a spec bug per §15, to be fixed by a follow-up
+spec PR rather than by drifting the code.
 
 ### 5.3 Implementation Flexibility
 
@@ -499,33 +537,48 @@ Only `rotate()` is rate-limited; `incept` and adoption paths are not.
 The following elements of the policy model are **normative
 mechanism**:
 
-- Exactly three credential classes (`A | B | C`) exist.
+- Exactly three credential classes (`A | B | C`) exist. Adding or
+  removing classes beyond `A | B | C` requires a superseding ADR.
 - Each class carries a per-class TTL policy (`defaultMs`, `floorMs`).
-- Policy floors are enforceable per-class; operators cannot override
-  a TTL below its class floor.
-- The controller carries a flat floor for `challengePeriodMs` and
-  `maxRotationsPerHour` that applies regardless of class.
+  The per-class `floorMs` field is **operator-configured** at policy
+  construction time. A conforming controller MUST enforce
+  `defaultMs >= floorMs` within each class. v0.1 does NOT define an
+  absolute protocol-wide minimum for per-class `floorMs` itself —
+  raising any per-class floor to an absolute protocol floor is a
+  future-ADR concern (see §16).
+- The controller carries two **protocol-wide floors** on
+  `challengePeriodMs` and `maxRotationsPerHour` that apply
+  regardless of class. See §9.2.
 - The policy carries a `backendAllowlist` (invariant 6) and a
   `suiteAllowlist` (invariant 1).
 
-Adding or removing classes beyond `A | B | C` requires a superseding
-ADR.
-
 ### 9.2 Normative Floors
 
-The following floors are **absolute minimums**. Consumers MAY raise
-them; consumers MUST NOT lower them.
+v0.1 normatively defines exactly two **absolute protocol-wide floors**.
+Consumers MAY raise them; consumers MUST NOT lower them. A conforming
+controller MUST reject a `ControllerPolicy` whose values are below
+either of these floors.
 
 | Floor | Value |
 |---|---|
 | `POLICY_FLOORS.challengePeriodMs` | 15 minutes |
 | `POLICY_FLOORS.maxRotationsPerHour` | 2 |
-| `DEFAULT_TTL_POLICY.A.floorMs` | 60 seconds |
-| `DEFAULT_TTL_POLICY.B.floorMs` | 5 minutes |
-| `DEFAULT_TTL_POLICY.C.floorMs` | 60 minutes |
 
-A conforming controller MUST reject a `ControllerPolicy` whose values
-are below any of these floors.
+These are the only fields carried by the `POLICY_FLOORS` constant in
+`src/heart/credential-rotation/types.ts`, and they are the only floors
+the controller rejects below-threshold values for in `validatePolicy`
+(`src/heart/credential-rotation/controller.ts`).
+
+**Per-class TTL floors are not protocol-wide floors in v0.1.** The
+reference policy ships `DEFAULT_TTL_POLICY.A.floorMs` = 60s,
+`DEFAULT_TTL_POLICY.B.floorMs` = 5min, and
+`DEFAULT_TTL_POLICY.C.floorMs` = 60min. These are the values the
+reference policy ships with — they are shipped defaults, not absolute
+protocol floors. An operator constructing a `ControllerPolicy` MAY
+declare different per-class `floorMs` values; the controller enforces
+only the relative `defaultMs >= floorMs` rule within each class
+(§9.1). Operator-declared class floors are not checked against an
+absolute minimum by v0.1.
 
 ### 9.3 Non-Normative Defaults
 
@@ -745,6 +798,23 @@ PR that:
    `tests/credential-rotation/`.
 6. Lands the commitment test vectors described in §3.3 under
    `tests/credential-rotation/vectors/`.
+7. Lands backend registration / policy-validation code that rejects
+   any `backendId` containing a delimiter byte used by the
+   commitment encoding — at minimum `|` (U+007C), `:` (U+003A),
+   and U+0000 — per §3.2. The rejection MUST happen before the
+   backend is admitted to the `backendAllowlist`, and MUST raise a
+   clear, typed error so a malformed id can never reach the
+   commitment encoder. Slice D MUST land a test that exercises this
+   rejection path.
+8. For `commitStagedRotation` failure handling (per §5.2), does one
+   of: (a) lands a test asserting a specific recovery shape on the
+   reference backend when `commitStagedRotation` throws (same
+   observable pre-stage state as §5.2's pre-commit rollback,
+   retriable), or (b) documents in the Slice D PR an explicit
+   constraint on the set of failure modes the reference backend is
+   permitted to produce from `commitStagedRotation`, alongside the
+   code that enforces the constraint. v0.1 does not permit silently
+   deferring commit-call failure handling.
 
 Slice D is code-only. It MUST NOT revise this spec; any divergence
 between Slice D and this spec is a spec bug that MUST be fixed by a
@@ -770,6 +840,14 @@ follow-up spec PR, not by drifting the code away from the spec.
 6. **Snapshot migration.** v0.1 is version 1. Future versions MUST
    define an explicit migration path; v0.1 does not pre-commit to a
    migration shape.
+7. **Per-class TTL floor elevation.** Whether any per-class
+   `DEFAULT_TTL_POLICY.*.floorMs` is ever raised to a protocol-wide
+   absolute floor (rejected by the controller, parallel to
+   `POLICY_FLOORS.challengePeriodMs` and
+   `POLICY_FLOORS.maxRotationsPerHour`) is a future-ADR concern.
+   v0.1 treats per-class `floorMs` as operator-configured per §9.1
+   and enforces only the relative `defaultMs >= floorMs` rule within
+   each class.
 
 ## 17. Links
 
