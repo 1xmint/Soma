@@ -40,7 +40,7 @@ A secondary credential issued by a parent credential, bound to one or more const
 | `branch_spend_cap_usd` | Per-immediate-child ceiling |
 | `intent` | Signed declaration of purpose + data domain |
 | `ttl` | Wall-clock expiry |
-| `parent_id` | Stable identity anchor of the issuing parent. Under v0.1 identity-binding (see `Rotation Interaction`), this resolves to the parent's stable `identityId`, not to a specific credential. |
+| `parent_id` | Reference to the immediately-preceding link in a delegation chain. For a root delegation (`depth = 0`), this points at the root issuer's credential, whose authority is anchored in a stable `identityId` under ADR-0004 D2 (see `Rotation Interaction`). For a nested delegation (`depth ≥ 1`), this is the parent delegation's `key_id`, used for cascade-revoke traversal (see `Cascade Revoke`); nested `parent_id` values are delegation-chain pointers, not identity anchors. |
 
 ### Cascade
 
@@ -186,25 +186,28 @@ Intent is advisory — providers enforce their own policy. But intent is signed,
 
 ## Rotation Interaction
 
-Delegation verification under parent credential rotation is normatively defined in this section. Before this section was added, Open Question 6 treated the interaction as undefined; this section closes it, supersedes any earlier "key-bound parent" reading of `parent_id`, and is the Soma#24 / Gate 5 (Slice C) closure required by ADR-0004 D2.
+Delegation verification under **root issuer credential rotation** is normatively defined in this section. Before this section was added, Open Question 6 treated the interaction as undefined; this section closes it, supersedes any earlier "current-key-bound root issuer" reading of a root delegation's issuer reference, and is the Soma#24 / Gate 5 (Slice C) closure required by ADR-0004 D2.
 
-Per ADR-0004's Readiness Horizon, Gate 5 (this section) MUST precede Gate 6 (`soma-heart` package surface) and Gate 7 (first-consumer implementation unlock). Merging this section satisfies `SOMA-ROTATION-SPEC.md` §13.2's "until `SOMA-DELEGATION-SPEC.md` is updated" condition for the normative text; the residual operational precondition — a working historical-credential lookup — is tracked below under *Slice D code contract* and remains a Gate 4 / Slice D readiness item, not a Gate 5 blocker.
+**Scope.** This section applies to **root delegations** — a `depth = 0` delegation whose `parent_id` points at the root issuer's rotating credential. Nested delegations (`depth ≥ 1`) are out of scope here: they are signed by their parent delegation's subject key, and delegation subject keys do not rotate in v0.1 (see *What this section does NOT resolve* below). Cascade-revoke semantics (`parent_id` as delegation-chain pointer for nested links, BFS traversal over `delegated_keys.parent_key`) are unchanged by this section.
 
-### Identity binding (normative)
+Per ADR-0004's Readiness Horizon, Gate 5 (this section) MUST precede Gate 6 (`soma-heart` package surface) and Gate 7 (first-consumer implementation unlock). Merging this section satisfies `SOMA-ROTATION-SPEC.md` §13.2's "until `SOMA-DELEGATION-SPEC.md` is updated" condition for the normative text; the residual operational precondition — a working historical-credential lookup plus the wire-schema alignment described below — remains a Gate 4 / Slice D readiness item and a separate docs-hygiene follow-up respectively, not Gate 5 blockers.
 
-A delegation binds to the parent's **stable identity anchor**, not to the specific credential that produced `issued_by_sig`. Concretely:
+### Root-issuer identity binding (normative)
 
-- `parent_id` is an identity reference, not a credential reference. Under Soma's broader model, an identity (`SOMA-ROTATION-SPEC.md` §2.1) persists across credential rotations; the credential currently bound to that identity MAY change over time, but the identity anchor MUST NOT.
-- `issued_by_sig` was produced at `issued_at` by the parent's **then-effective** credential. After a parent rotation, that credential is no longer current, but the signature math still verifies against the credential's public key as it existed at issue time.
-- Existing delegation keys therefore remain valid without re-issuance across a parent rotation, provided the parent's identity anchor is unchanged and the delegation itself is still within its own lifetime constraints (`ttl`, `expires_at`, `revoked`, spend caps).
+A **root delegation** binds to the root issuer's **stable identity anchor**, not to the specific credential that produced `issued_by_sig`. Concretely:
 
-This matches ADR-0004 D2 verbatim: delegations bind to identity, not credentials.
+- For a root delegation, the issuer reference (carried on the wire by the field(s) described under *Wire-schema dependency* below, and by the `parent_id` field of the root link as a legacy shorthand) resolves to a stable `identityId` (`SOMA-ROTATION-SPEC.md` §2.1). An identity persists across credential rotations; the credential currently bound to that identity MAY change over time, but the identity anchor MUST NOT.
+- A root delegation's `issued_by_sig` was produced at `issued_at` by the root issuer's **then-effective** credential. After a root-issuer rotation, that credential is no longer current, but the signature math still verifies against the credential's public key as it existed at issue time.
+- Existing root delegations therefore remain valid without re-issuance across a root-issuer rotation, provided the root issuer's identity anchor is unchanged and the delegation is still within its own lifetime constraints (`ttl`, `expires_at`, `revoked`, spend caps). Nested descendants inherit this property transitively: their validity chain walks back to a root delegation that remains valid.
+- Cascade revoke (§Cascade Revoke) is unaffected. `parent_id` continues to function as the delegation-chain parent pointer for BFS traversal over `delegated_keys.parent_key`; revoking a delegation still revokes only its own subtree, not every other delegation under the same root identity.
+
+This matches ADR-0004 D2 for the root link of a delegation chain: root delegations bind to identity, not credentials. Nested delegations continue to bind to their parent delegation key as before.
 
 ### Why this required a verification-model amendment
 
-The v0.1 spec historically described `parent_id` as a "cryptographic link to the issuing key" and `issued_by_sig` as a signature under the parent's current signing key. Taken literally, that reading breaks under rotation: after a parent rotation, "the parent's current signing key" is a different key than the one that produced `issued_by_sig`, and a naive verifier would reject the delegation even though the identity that authorised it is unchanged.
+The v0.1 spec historically described `parent_id` as a "cryptographic link to the issuing key" and a root delegation's `issued_by_sig` as a signature under the root issuer's current signing key. Taken literally, that reading breaks under rotation of the root issuer's credential: after such a rotation, "the root issuer's current signing key" is a different key than the one that produced the original `issued_by_sig`, and a naive verifier would reject a still-valid root delegation even though the identity that authorised it is unchanged.
 
-A conforming verifier therefore cannot resolve the signing key by reading "whatever is current for `parent_id` right now." It MUST resolve the credential that was effective when the delegation was issued, and verify against that credential's public key.
+A conforming verifier therefore cannot resolve the signing key of a root delegation by reading "whatever credential is current for the root issuer right now." It MUST resolve the credential that was effective when the root delegation was issued, and verify against that credential's public key. This rule applies only to the root link of a delegation chain; nested-delegation verification (against the parent delegation's non-rotating subject key) is unchanged.
 
 ### v0.1 verification mechanism (normative)
 
@@ -218,17 +221,28 @@ ADR-0004 D2 and `SOMA-ROTATION-SPEC.md` §13.3 enumerated three candidate mechan
 
 Mechanism 1 is the minimal v0.1 pick for a concrete reason: the historical archive it requires already exists in the rotation subsystem. `SOMA-ROTATION-SPEC.md` §10.2 requires every controller snapshot to carry the complete rotation event chain, and every rotation event (`RotationEvent` in `src/heart/credential-rotation/types.ts`) carries the `newCredential` that became effective at that event, including its `publicKey`. The full history of an identity's effective credentials is therefore already recoverable by walking the event chain. Mechanism 1 re-uses state the rotation spec already requires; no additional persistence, no new cryptography, and no new signing scheme are needed.
 
+### Wire-schema dependency (normative)
+
+The Conforming Verifier Rule below keys its historical-credential lookup on a tuple of `(identityId, issuer_credential_id)` or `(identityId, issuer_public_key)`. Neither `issuer_credential_id` nor `issuer_public_key` is a field carried today by §Protocol · Delegation Key Structure or by the reference SQL schema (§Storage schema) of this spec. A spec-conforming **root delegation** MUST therefore additionally carry one of:
+
+- `issuer_credential_id` — a reference resolvable to a `RotationEvent.newCredential` under the root issuer's `identityId` in the rotation subsystem; or
+- `issuer_public_key` — the root issuer's then-effective credential public key, base64-encoded, paired with the algorithm suite recorded on that credential.
+
+The in-code Soma delegation primitive at `src/heart/delegation.ts` already carries `issuerPublicKey` (and its matching `signature`) per delegation, which satisfies the `issuer_public_key` option and is sufficient for Mechanism 1 today. Aligning the wire format at §Protocol · Delegation Key Structure and the reference SQL schema at §Storage schema with the in-code primitive — by adding the chosen field to the wire JSON and a matching column to `delegated_keys` — is the pre-existing docs-hygiene tech debt called out under *What this section does NOT resolve* below. Until that alignment lands, the Conforming Verifier Rule is implementable against the in-code primitive but NOT against a minimal spec-conforming wire message; a spec-only implementer MUST treat delegation-under-rotation as unshippable until the wire follow-up merges. This is a docs/code hygiene follow-up, not a Gate 5 blocker: OQ6 semantic closure (the choice of identity-binding + Mechanism 1) is independent of the field names used to carry the issuer reference.
+
 ### Conforming verifier rule (normative)
 
-A conforming delegation verifier MUST, before accepting any `issued_by_sig`:
+A conforming delegation verifier MUST, before accepting the `issued_by_sig` of a **root delegation** (the `depth = 0` link at the base of a delegation chain):
 
-1. Resolve `parent_id` to the parent's stable `identityId` anchor.
-2. Consult the rotation subsystem's read-only historical-credential lookup (see *Slice D code contract* below) to locate the credential that produced `issued_by_sig`. The lookup key is the pair `(identityId, credentialId)` when the delegation carries an explicit credential reference, or `(identityId, publicKey)` when the delegation carries the issuing credential's public key. The verifier MUST NOT assume that the parent's *current* credential is the one that signed.
+1. Resolve the root delegation's issuer reference to the root issuer's stable `identityId` anchor.
+2. Consult the rotation subsystem's read-only historical-credential lookup (see *Slice D code contract* below) to locate the credential that produced `issued_by_sig`. The lookup key is the pair `(identityId, issuer_credential_id)` when the root delegation carries `issuer_credential_id`, or `(identityId, issuer_public_key)` when it carries `issuer_public_key` (see *Wire-schema dependency* above for field semantics). The verifier MUST NOT assume that the root issuer's *current* credential is the one that signed.
 3. Confirm that the returned credential was `effective` at `issued_at`. A credential that was staged-but-not-yet-effective at `issued_at`, or that was already revoked before `issued_at`, MUST NOT satisfy this check.
 4. Verify `issued_by_sig` against the returned credential's public key using the algorithm suite recorded on that credential (`AlgorithmSuite`, `SOMA-ROTATION-SPEC.md` §2.4).
-5. Reject the delegation if any step fails: unknown identity, no matching historical credential, credential not effective at `issued_at`, or signature verification failure.
+5. Reject the root delegation if any step fails: unknown identity, no matching historical credential, credential not effective at `issued_at`, or signature verification failure.
 
-Verifiers MUST fail closed on any rotation-subsystem lookup error. A verifier that cannot consult the rotation subsystem at all MUST NOT accept delegations across parent rotation; such a verifier MAY only accept delegations whose `issued_by_sig` matches the parent's *current* credential, and MUST treat that narrower behaviour as a strict subset of this section's rules, not as a replacement for them.
+This rule applies only to the root link. Verification of a nested delegation's `issued_by_sig` is against the parent delegation's subject key (recorded when that parent delegation was issued) and does not consult the rotation subsystem, because delegation subject keys do not rotate in v0.1.
+
+Verifiers MUST fail closed on any rotation-subsystem lookup error for a root delegation. A verifier that cannot consult the rotation subsystem at all MUST NOT accept root delegations across root-issuer rotation; such a verifier MAY only accept root delegations whose `issued_by_sig` matches the root issuer's *current* credential, and MUST treat that narrower behaviour as a strict subset of this section's rules, not as a replacement for them.
 
 ### Slice D code contract (normative)
 
@@ -368,7 +382,7 @@ CREATE INDEX idx_delegated_parent ON delegated_keys(parent_key);
 3. **Spend cap roll-up visibility:** should children see their parent's remaining cap, or only their own? Leaning own-only (least privilege).
 4. **Cascade revoke performance:** at depth > 10 with fan-out > 100, recursive revoke may be slow. Consider lazy mark-and-sweep.
 5. **Cross-platform delegation:** if Key A is issued by Soma issuer X and Key B is issued by Soma issuer Y, how do providers verify the chain? Requires cross-issuer trust registry.
-6. **Key rotation (CLOSED — Gate 5 / Slice C):** resolved by the `Rotation Interaction` section above. Delegations bind to the parent's stable `identityId`, not to a specific credential; existing delegation keys remain valid across a parent rotation without re-issuance. v0.1 adopts the historical-archive verification mechanism (ADR-0004 D2, Mechanism 1), which depends on a Slice D / Gate 4 historical-credential lookup contract defined in that section.
+6. **Key rotation (CLOSED — Gate 5 / Slice C):** resolved by the `Rotation Interaction` section above. A root delegation binds to the root issuer's stable `identityId`, not to a specific credential; existing root delegations remain valid across a root-issuer rotation without re-issuance, and nested descendants inherit validity transitively. v0.1 adopts the historical-archive verification mechanism (ADR-0004 D2, Mechanism 1), which depends on a Slice D / Gate 4 historical-credential lookup contract and a separate wire-schema alignment follow-up (to carry an explicit `issuer_credential_id` or `issuer_public_key` on root delegations); both are documented in that section.
 
 ## Roadmap
 
