@@ -61,7 +61,7 @@ A signed statement at key creation: "this delegation exists to perform task T wi
 ```json
 {
   "key_id": "dlg_8f2a...",
-  "parent_id": "dlg_3c1e... | root_xyz",
+  "parent_id": "dlg_3c1e...",
   "depth": 2,
   "max_depth": 3,
   "scope": {
@@ -83,6 +83,8 @@ A signed statement at key creation: "this delegation exists to perform task T wi
   "revoked": false
 }
 ```
+
+The example above is a **nested delegation** (`depth = 2`); its `parent_id` points at the parent delegation's `key_id`. A **root delegation** (`depth = 0`) has `parent_id` pointing at the root issuer's credential reference and, per `Rotation Interaction` → *Wire-schema dependency*, MUST additionally carry either `issuer_credential_id` or `issuer_public_key` so that the Conforming Verifier Rule can resolve the credential that was effective at `issued_at`. Those fields are not shown in the illustrative JSON above; updating the illustration is tracked under *What this section does NOT resolve* in `Rotation Interaction`.
 
 ### Request Headers
 
@@ -258,9 +260,9 @@ Until this lookup lands, no first-consumer integration MAY ship delegation-under
 
 ### What this section does NOT resolve
 
-- **Delegation wire-schema alignment.** The existing `parent_id`, `issued_by_sig`, and storage-schema fields in this spec predate ADR-0004 and do not carry an explicit issuer-public-key column in the reference SQL schema. Aligning the wire schema and the storage schema with the macaroon-style primitive in `src/heart/delegation.ts` (which embeds `issuerPublicKey` and `signature` directly on each delegation) is pre-existing tech debt and is out of scope for OQ6 closure. A separate docs-hygiene PR may formalise the alignment; that work is NOT a Slice C deliverable and NOT a Gate 5 blocker.
+- **Illustrative wire/SQL update for the normative issuer reference.** The issuer-reference field itself (`issuer_credential_id` or `issuer_public_key`) is normatively required on root delegations by *Wire-schema dependency* above; that requirement is in scope for OQ6 closure and lands with this section. What is NOT in scope for this PR is updating the *illustrative* Delegation Key Structure JSON in §Protocol and the reference SQL in §Storage schema to show the new field alongside the existing `parent_id`, `issued_by_sig`, and `delegated_keys` columns, and aligning those illustrative shapes with the macaroon-style primitive in `src/heart/delegation.ts` (which already embeds `issuerPublicKey` and `signature` directly on each delegation). That alignment is pre-existing docs/code hygiene and may land in a separate follow-up PR; it is NOT a Slice C deliverable and NOT a Gate 5 blocker. Until it lands, the normative requirement in *Wire-schema dependency* is authoritative and supersedes any omission in the illustrative examples.
 - **Cross-issuer delegation.** Delegations that cross issuing authorities are still tracked under Open Question 5 (cross-platform delegation). Identity-binding within a single issuer is resolved by this section; cross-issuer resolution depends on the cross-issuer trust registry, which is out of v0.1 scope.
-- **Delegation-key rotation.** This section closes OQ6 for the case where a *parent credential* rotates. It does not address rotation of a delegation key itself. Delegation keys in v0.1 are expected to expire or be revoked, not rotated; rotating a delegation key is a superseding-ADR concern.
+- **Delegation-key rotation.** This section closes OQ6 for the case where a *root issuer credential* rotates. It does not address rotation of a delegation key itself. Delegation keys in v0.1 are expected to expire or be revoked, not rotated; rotating a delegation key is a superseding-ADR concern.
 
 ## Examples
 
