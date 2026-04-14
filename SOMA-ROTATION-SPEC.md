@@ -162,6 +162,37 @@ Where:
   padding) encoding of the raw public key bytes as the backend
   exposes them.
 
+The three `<backendId>` byte restrictions are not interchangeable and
+have distinct rationales:
+
+- **`|` (U+007C) — collision-critical.** `|` is the field separator
+  between `<backendId>`, `<algorithmSuite>`, and `<base64(publicKey)>`
+  in the v0.1 encoding. A `|` inside `<backendId>` makes the
+  concatenation ambiguous at the byte level: two different
+  `(backendId, algorithmSuite, publicKey)` triples can produce
+  identical encoded input bytes, and therefore identical commitment
+  digests. Rejecting `|` is required for commitment uniqueness under
+  the current encoder.
+- **`:` (U+003A) — prefix delimiter, reserved for canonicalization
+  and forward-compatible encoding extensions.** `:` is the literal
+  separator between the `soma-manifest` prefix and `<backendId>`.
+  Under the v0.1 encoder alone a `:` inside `<backendId>` does not
+  cause a byte-level collision, because the literal prefix
+  `soma-manifest` contains no `:` and the first `:` in the input
+  unambiguously terminates the prefix. `:` is nevertheless reserved
+  so that a future, superseding encoding revision MAY introduce
+  additional `:`-delimited prefix fields (for example, an explicit
+  canonicalization-scheme version segment) without a backendId
+  compatibility break. Rejecting `:` in v0.1 is forward-compatible
+  encoding hygiene, not a v0.1 collision fix.
+- **U+0000 — downstream canonicalization safety.** The NUL byte is
+  not a structural delimiter in the v0.1 encoding. It is rejected so
+  that any downstream consumer that treats the encoded input, a
+  derived `backendId`, or a log line as a C string cannot be tricked
+  into truncating at an embedded NUL, and so that the encoded input
+  remains a clean printable-ASCII string end to end. This restriction
+  is canonicalization hygiene, not a v0.1 collision fix.
+
 The resulting ASCII string is hashed with the provider's canonical
 hash (`sha256` for v0.1). The commitment stored on the current
 credential is the hex digest of that hash, lowercase.
