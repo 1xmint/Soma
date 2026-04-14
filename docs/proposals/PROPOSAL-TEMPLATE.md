@@ -16,6 +16,14 @@ Explain the idea in plain language before writing protocol semantics.
 
 ## What 10/10 Looks Like
 
+## Fitness Check
+
+- protocol vision fit:
+- real implementer/operator need:
+- security exposure:
+- evidence this is needed now:
+- keep / reshape / pause / remove:
+
 ## Protocol Surface
 
 - spec change:

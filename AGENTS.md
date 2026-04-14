@@ -33,6 +33,10 @@ Idea triage rule:
 - ClawNet first-consumer integration ideas belong in `claw-net`; Pulse product ideas belong in `pulse`
 - label Soma issues/PRs with `claw-net-project` only when they are part of a real cross-repo initiative that should appear in the `Soma + ClawNet + Pulse` project
 - if an idea changes identity semantics, credential rotation semantics, delegation, verification, security posture, or public package API, require a proposal and likely an ADR/spec update before implementation
+- do not mark a Soma protocol idea complete just because a downstream consumer has partial integration code; the protocol/spec/security model must reach its own terminal state first
+- treat prematurely-built work as `partial-foundation`, not `done`, until it reaches a terminal state: shipped with docs/tests/package or spec updates, rejected with rationale, archived with status, or superseded by a newer decision
+- use a fitness check when touching existing or proposed functionality: does it still serve Soma's protocol vision, is it secure enough for its exposure level, is there evidence it is needed, and should it be kept, reshaped, paused, or removed?
+- do not run broad random audits as a substitute for execution; discover gaps naturally by applying the fitness check during proposals, PR reviews, security-sensitive changes, incidents, and when old code blocks current work
 
 ## Repo Truth Rules
 
