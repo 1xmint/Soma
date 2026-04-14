@@ -37,6 +37,7 @@ Idea triage rule:
 - treat prematurely-built work as `partial-foundation`, not `done`, until it reaches a terminal state: shipped with docs/tests/package or spec updates, rejected with rationale, archived with status, or superseded by a newer decision
 - use a fitness check when touching existing or proposed functionality: does it still serve Soma's protocol vision, is it secure enough for its exposure level, is there evidence it is needed, and should it be kept, reshaped, paused, or removed?
 - do not run broad random audits as a substitute for execution; discover gaps naturally by applying the fitness check during proposals, PR reviews, security-sensitive changes, incidents, and when old code blocks current work
+- for pre-system or salvaged work, add an evidence ledger before treating it as build-ready: protocol vision fit, security exposure, upstream/downstream dependencies, missing evidence, whether it blocks current work, next gate, and terminal condition
 
 ## Repo Truth Rules
 

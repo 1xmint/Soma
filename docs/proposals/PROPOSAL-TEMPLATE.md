@@ -24,6 +24,17 @@ Explain the idea in plain language before writing protocol semantics.
 - evidence this is needed now:
 - keep / reshape / pause / remove:
 
+## Evidence Ledger
+
+Use this for pre-system, salvaged, or partially-built work.
+
+- current status:
+- upstream/downstream dependencies:
+- missing evidence:
+- blocks current work: yes / no
+- next gate:
+- terminal condition:
+
 ## Protocol Surface
 
 - spec change:
