@@ -365,7 +365,7 @@ pre-commit to the questions.
    implicit in `SuiteDowngradeRejected`).
 4. **Verify-before-revoke** must be a testable invariant (invariant 12).
 5. **Rate limit floor** must be a hard floor, not advisory (currently
-   `POLICY_FLOORS.maxRotationsPerHourFloor = 2`).
+   `POLICY_FLOORS.maxRotationsPerHour = 2`).
 6. **Challenge period floor** must be a hard floor (currently 15min).
 7. **Witness quorum** — either specify M-of-N with a threshold or
    drop invariant 4 from v0.1. No middle ground.
