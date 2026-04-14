@@ -141,8 +141,10 @@ has not yet taken effect."
 ### 2.6 Challenge period
 
 `controller.ts` enforces `ChallengePeriodActive` for destructive
-operations against a per-class floor defined in `POLICY_FLOORS`.
-Default is 1h, floor is 15min. This is invariant 8.
+operations against the floor defined in `POLICY_FLOORS.challengePeriodMs`.
+Default is 1h, floor is 15min. `POLICY_FLOORS` itself is flat (not
+per-class); per-class floors today only exist in `DEFAULT_TTL_POLICY`.
+This is invariant 8.
 
 ### 2.7 Rate limit
 
