@@ -132,6 +132,27 @@ are deferred to a named follow-up ADR.
 **Reviewer focus.** Is deferral acceptable given that Soma is shipping
 rotation to a first consumer (claw-net) before break-glass exists?
 
+**Deferral is conditional.** This row's deferrability is not
+independent. It assumes both D3 (rollback required for v0.1) and D5
+(single-witness accepted for v0.1) are accepted as proposed. If
+reviewers reject D3, a compromised mid-rotation can strand the identity
+with no structural recovery; if reviewers reject D5 in favour of
+M-of-N, break-glass is entangled with quorum work and cannot be
+deferred cleanly. D4 should only be deferred alongside acceptance of
+D3 and D5.
+
+**What deferral does not claim.** Deferral does not claim that
+`rotate()` is a general recovery mechanism. `rotate()` can only serve
+as a recovery path under narrow, explicit conditions: the attacker
+holds the current signing key but not the pre-committed next key
+(invariant 10, `types.ts` line ~55), the operator retains control of
+the backend and controller execution path, and rotation execution is
+not itself blocked or corrupted. Scenarios outside those bounds — next
+key also compromised, backend unreachable, controller state
+inconsistent, operator unsure which keys are compromised — are exactly
+what break-glass exists to address, and are explicitly out of v0.1
+scope.
+
 **Resolution path.** Pick (a) deferral with rationale recorded here, or
 (b) name a follow-up ADR with scope and owner and carry the deferral
 through that pointer.
@@ -145,8 +166,21 @@ existing single-witness behaviour (`witnessEvent` at `controller.ts`
 line 584) is proposed as intended-for-v0.1 rather than a placeholder
 pending M-of-N.
 
-**Reviewer focus.** Does dropping invariant 4 from v0.1 weaken the
-security model unacceptably for the first consumer?
+**Assurance bound — stated plainly.** In the first-consumer
+configuration, the rotating identity and the witness are not
+independent parties: claw-net operates both the subject of rotation
+and the process that witnesses the rotation event. This is
+*non-independent single-witness* witnessing. It does not provide the
+assurance properties of M-of-N quorum across mutually-distrusting
+parties, nor of independent third-party witnessing. Specifically, it
+provides no defence against a fully-compromised operator environment
+where the attacker controls both the rotating controller and the
+witness process. The v0.1 threat model must be written to exclude
+that scenario; higher-assurance configurations are a future-ADR
+concern tracked under M-of-N.
+
+**Reviewer focus.** Given the non-independence above, is dropping
+invariant 4 from v0.1 acceptable for the first consumer?
 
 **Implementation consequence if accepted as proposed.** Slice D removes
 invariant 4 from the `types.ts` comment and explicitly annotates
