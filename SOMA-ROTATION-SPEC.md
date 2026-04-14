@@ -340,18 +340,21 @@ retention, not a substitute for it.
 
 Rationale: identity-bound delegation verification, as defined in
 `SOMA-DELEGATION-SPEC.md` §Rotation Interaction, requires a
-historical-credential lookup against the rotation subsystem. Slice D
-(Gate 4, §15) lands the code contract that exposes that lookup; it
-assumes the rotation controller has every credential the chain has
-ever bound. Pruning the chain would silently break identity-bound
-verification of delegations issued under earlier credentials.
+historical-credential lookup against the rotation subsystem. That
+lookup's Slice D code contract is specified normatively in
+`SOMA-DELEGATION-SPEC.md` §Rotation Interaction and lands alongside
+the Gate 4 code reconciliation scoped by §15. It assumes the
+rotation controller has every credential the chain has ever bound.
+Pruning the chain would silently break identity-bound verification
+of delegations issued under earlier credentials.
 
 Retention is a structural controller constraint, not a runtime
 detectable operation: no single `sign`, `rotate`, or `commit` call
 raises an error when pruning occurs. A controller that implements
-pruning is structurally non-conforming, and the historical-credential
-tests required by §15 are the reference assertion that this
-invariant holds.
+pruning is structurally non-conforming, and the reference assertion
+is the historical-credential lookup required by
+`SOMA-DELEGATION-SPEC.md` §Rotation Interaction's Slice D code
+contract, landing under the §15 Gate 4 reconciliation.
 
 ## 5. Staged Rotation and Rollback
 
@@ -768,9 +771,11 @@ issue time). Converting that spec to identity-binding is a
 scope for this document.
 
 Identity-bound verification in turn depends on the event chain
-retention invariant (§4.7): the historical-credential lookup Slice D
-exposes (§15) assumes the rotation controller has retained every
-credential the chain has ever made `effective`.
+retention invariant (§4.7): the historical-credential lookup
+specified by `SOMA-DELEGATION-SPEC.md` §Rotation Interaction's
+Slice D code contract (landing under the §15 Gate 4 reconciliation)
+assumes the rotation controller has retained every credential the
+chain has ever made `effective`.
 
 ### 13.2 Blocking Dependency (Normative)
 
@@ -848,8 +853,9 @@ Invariant 4 is removed, not renumbered: existing
 `InvariantViolation` codes stay stable, and the gap is normative.
 Invariant 13 is a structural retention constraint (§4.7) and has no
 corresponding runtime `InvariantViolation` code; it is enforced at
-the controller-design level and asserted by Slice D's
-historical-credential tests (§15).
+the controller-design level and asserted by the historical-credential
+lookup required by `SOMA-DELEGATION-SPEC.md` §Rotation Interaction's
+Slice D code contract, landing under the §15 Gate 4 reconciliation.
 
 ## 15. Code Reconciliation Readiness (Slice D Gate)
 
