@@ -16,8 +16,12 @@ build-ready gate for rotation. The evidence ledger is therefore
 included inline rather than maintained as a separate doc. Length is a
 deliberate exception, not a template drift.
 
-The ADR stays in `Status: proposed` until every decision row below is
-either RATIFIED or has a concrete disposition reviewers can accept.
+The ADR stays in `Status: proposed` until (a) every decision row below
+has a disposition reviewers have explicitly approved, and (b) this PR
+has been reviewed and approved for merge. Candidate dispositions in the
+draft are not sufficient. `Status: accepted` is the *result* of that
+acceptance, not its trigger — advancing the status line is the last
+step of acceptance, not a shortcut to it.
 
 ## Context
 
@@ -41,31 +45,42 @@ Soma ships rotation code that behaves as if a normative spec exists:
 PR #28 (`docs/proposals/credential-rotation.md`, merged as `9d0514e`)
 framed the gap and enumerated seven decisions that must be resolved —
 or explicitly carried as open — before a rotation ADR can land. This
-ADR resolves the three with pre-existing evidence and carries the
-remaining four as OPEN rows with proposed dispositions.
+ADR proposes dispositions for all seven: three that propose ratifying
+existing evidence (D1, D6, D7) and four that require reviewer judgment
+beyond existing evidence (D2, D3, D4, D5). None are ratified until
+reviewers approve them and the ADR advances to `Status: accepted`.
 
 ## Decision
 
-Rows marked **RATIFIED** record existing code state or a proposal-§5
-consensus and can be accepted without further debate. Rows marked
-**OPEN** carry a proposed disposition and a reviewer-focus prompt;
-they must be resolved to concrete dispositions before this ADR moves
-from `proposed` to `accepted`.
+All seven rows below are **proposed dispositions** authored by the ADR
+drafter. Nothing in this section is ratified until reviewers approve
+each row and the ADR advances to `Status: accepted`.
 
-### D1. Canonical subsystem — RATIFIED
+Three rows (D1, D6, D7) propose ratifying existing code state or the
+proposal-§5 consensus. They are expected to be low-friction but still
+require reviewer sign-off; they carry no dedicated reviewer-focus
+block because the proposal is "accept the current evidence as-is".
 
-`src/heart/credential-rotation/` is the canonical consumer-facing
-rotation substrate. `src/heart/key-rotation.ts` is an internal
-KERI-style log primitive. Downstream packages MUST NOT import
-`key-rotation.ts` directly. A future ADR may use it as
-`credential-rotation/`'s L1 log backend or deprecate it; ADR-0004
-does not.
+Four rows (D2, D3, D4, D5) propose dispositions that require reviewer
+judgment beyond the existing evidence. Each carries a reviewer-focus
+block. These are the reviewer-attention set and are listed in §Reviewer
+focus below in recommended discussion order.
 
-Evidence: `src/heart/credential-rotation/index.ts` header already
+### D1. Canonical subsystem
+
+**Proposed disposition.** `src/heart/credential-rotation/` is the
+canonical consumer-facing rotation substrate.
+`src/heart/key-rotation.ts` is an internal KERI-style log primitive.
+Downstream packages MUST NOT import `key-rotation.ts` directly. A
+future ADR may use it as `credential-rotation/`'s L1 log backend or
+deprecate it; ADR-0004 does not.
+
+**Evidence.** `src/heart/credential-rotation/index.ts` header already
 states this; `packages/soma-heart/package.json` `exports` surfaces
-only `./credential-rotation`.
+only `./credential-rotation`. The proposal is to ratify this
+existing code state, not to change it.
 
-### D2. Delegation-vs-rotation interaction — OPEN
+### D2. Delegation-vs-rotation interaction
 
 **Proposed disposition.** Delegations bind to a stable identity anchor,
 not to the credential that issued them. When a parent credential
@@ -84,7 +99,7 @@ update is a separate PR (Slice C) which codifies whichever answer this
 ADR accepts into normative delegation-spec text. ADR acceptance alone
 does not close OQ6; the delegation-spec PR does.
 
-### D3. Rollback semantics on mid-rotation failure — OPEN
+### D3. Rollback semantics on mid-rotation failure
 
 **Proposed disposition.** v0.1 requires that a mid-rotation failure
 leaves the identity in its pre-rotation state. Specifically: if any
@@ -107,7 +122,7 @@ rotation spec must state rollback as a testable invariant, and Slice D
 must land a test in `tests/credential-rotation/` that forces a throw
 mid-rotation and asserts clean revert.
 
-### D4. Recovery path after confirmed compromise — OPEN
+### D4. Recovery path after confirmed compromise
 
 **Proposed disposition.** v0.1 defines no operator-facing recovery
 ceremony beyond the existing `rotate()` + `revokeCredential()`
@@ -121,13 +136,14 @@ rotation to a first consumer (claw-net) before break-glass exists?
 (b) name a follow-up ADR with scope and owner and carry the deferral
 through that pointer.
 
-### D5. Witness quorum model — OPEN
+### D5. Witness quorum model
 
 **Proposed disposition.** v0.1 is single-witness. Invariant 4 ("panic
 freeze requires M-of-N quorum"), currently declared in `types.ts`
 line 13, is dropped from the v0.1 normative set. The controller's
 existing single-witness behaviour (`witnessEvent` at `controller.ts`
-line 584) is ratified as intended for v0.1.
+line 584) is proposed as intended-for-v0.1 rather than a placeholder
+pending M-of-N.
 
 **Reviewer focus.** Does dropping invariant 4 from v0.1 weaken the
 security model unacceptably for the first consumer?
@@ -141,29 +157,35 @@ a future ADR for M-of-N.
 significantly — threshold verification, test coverage, and a migration
 path for identities already in a single-witness state.
 
-### D6. Class A/B/C — mechanism vs. policy — RATIFIED
+### D6. Class A/B/C — mechanism vs. policy
 
-The class-based policy model is normative *mechanism*: exactly three
-classes (`A` | `B` | `C`), with per-class TTL (`DEFAULT_TTL_POLICY`)
-and floor semantics. The *default policy* — the concrete numeric
-values in `DEFAULT_TTL_POLICY`, `DEFAULT_POLICY` fields, and
-`POLICY_FLOORS` — is a starting set, not normative values.
+**Proposed disposition.** The class-based policy model is normative
+*mechanism*: exactly three classes (`A` | `B` | `C`), with per-class
+TTL (`DEFAULT_TTL_POLICY`) and floor semantics. The *default policy* —
+the concrete numeric values in `DEFAULT_TTL_POLICY`, `DEFAULT_POLICY`
+fields, and `POLICY_FLOORS` — is a starting set, not normative values.
 
 Consumers may raise floors and tighten policy within the mechanism;
 they may not lower floors below the absolute minimums the spec will
 declare. Adding or removing classes beyond `A | B | C` is not a
 configurable policy choice and requires a superseding ADR.
 
-This ratifies proposal §5.
+**Evidence.** This is the recommendation from proposal §5. The
+proposal carries it as a recommendation, not a settled decision; this
+ADR proposes accepting it as the disposition reviewers should ratify.
 
-### D7. Normative invariant text location — RATIFIED
+### D7. Normative invariant text location
 
-The normative rotation contract lives in `SOMA-ROTATION-SPEC.md` at
-repo root, indexed from `docs/reference/spec-index.md`, following the
-existing pattern of `SOMA-CHECK-SPEC.md`, `SOMA-DELEGATION-SPEC.md`,
-and `SOMA-CAPABILITIES-SPEC.md`. No separate
-`docs/architecture/rotation.md` is created. Source comments cite the
-spec path; they do not redeclare invariants.
+**Proposed disposition.** The normative rotation contract lives in
+`SOMA-ROTATION-SPEC.md` at repo root, indexed from
+`docs/reference/spec-index.md`, following the existing pattern of
+`SOMA-CHECK-SPEC.md`, `SOMA-DELEGATION-SPEC.md`, and
+`SOMA-CAPABILITIES-SPEC.md`. No separate `docs/architecture/rotation.md`
+is created. Source comments cite the spec path; they do not redeclare
+invariants.
+
+**Evidence.** The three existing `SOMA-*-SPEC.md` files establish a
+pattern; the proposal is to follow it.
 
 ## Consequences
 
@@ -179,9 +201,10 @@ spec path; they do not redeclare invariants.
   does not close it.
 - `src/heart/key-rotation.ts` stays in the tree as an internal
   primitive. A future ADR may deprecate or remove it; ADR-0004 does not.
-- The four OPEN rows (D2, D3, D4, D5) are the reviewer-focus set. Any
-  one of them may change scope or introduce additional slices if
-  reviewers pick the non-proposed alternative.
+- Four rows (D2, D3, D4, D5) require reviewer judgment beyond existing
+  evidence; their proposed dispositions are the reviewer-focus set.
+  Any one of them may change scope or introduce additional slices if
+  reviewers pick an alternative to the drafter's proposal.
 
 ## Readiness Gates
 
@@ -191,9 +214,12 @@ and does not imply future acceptance.
 
 - **Gate 1 — ADR drafted.** This document exists and is open for
   review.
-- **Gate 2 — ADR accepted.** All OPEN rows (D2–D5) have concrete
-  dispositions. Status advances from `proposed` to `accepted`. Merge
-  permitted only after reviewer sign-off.
+- **Gate 2 — ADR accepted.** Reviewers have explicitly approved the
+  disposition of every decision row (D1–D7), and the PR has been
+  reviewed and approved for merge. Only then does `Status:` advance
+  from `proposed` to `accepted`. Candidate dispositions in the draft
+  are not sufficient; the presence of proposed text does not clear
+  this gate.
 - **Gate 3 — `SOMA-ROTATION-SPEC.md` ratified.** Separate PR (Slice B).
   Spec includes byte layouts, test vectors, error taxonomy, snapshot
   wire format version, and policy-floor semantics. Indexed in
@@ -225,19 +251,19 @@ and does not imply future acceptance.
 | missing evidence | no normative `§13c`/`§14` architecture doc; no rollback-on-failure test; no M-of-N implementation or test (intentional if D5 defers); no byte-layout test vectors for `sha256(publicKey \|\| algorithmSuite \|\| backendId)`; no delegation-rotation interaction test |
 | blocks current work | yes — claw-net first-consumer implementation unlock is gated on this ADR plus `SOMA-ROTATION-SPEC.md` |
 | next gate | Gate 2 — ADR acceptance |
-| terminal condition | every OPEN row resolved; `SOMA-ROTATION-SPEC.md` ratified; Slice D merged; `soma-heart` version bump landed if public API changed |
+| terminal condition | every decision row has a reviewer-approved disposition; ADR merged with `Status: accepted`; `SOMA-ROTATION-SPEC.md` ratified; Slice D merged; `soma-heart` version bump landed if public API changed |
 
 ### Part 2 — Decision rows
 
 | # | Question | Evidence today | ADR disposition | Next gate | Terminal condition |
 |---|---|---|---|---|---|
-| 1 | Canonical subsystem | `credential-rotation/index.ts` header declares `key-rotation.ts` internal; package `exports` surfaces only `./credential-rotation` | RATIFIED (D1) | Gate 2 | Spec references only `credential-rotation/` symbols |
-| 2 | Delegation-vs-rotation (OQ6) | Undefined in both specs today | OPEN — proposed: delegations bind to identity (D2) | Gate 5 (Slice C) | `SOMA-DELEGATION-SPEC.md` line 307 replaced with a normative rule |
-| 3 | Rollback on mid-rotation failure | Not enforced; no transaction boundary in `controller.rotate()` | OPEN — proposed: required for v0.1 (D3) | Gate 3 (spec), Gate 4 (code) | Testable invariant in spec; test in `tests/credential-rotation/` asserting clean revert on mid-rotation throw |
-| 4 | Recovery after confirmed compromise | Not defined | OPEN — proposed: deferred from v0.1 to a named follow-up ADR (D4) | Gate 2 | Deferral rationale recorded or follow-up ADR named with owner |
-| 5 | Witness quorum | Single-witness MVP at `controller.ts:584`; invariant 4 claims M-of-N at `types.ts:13` | OPEN — proposed: single-witness, drop invariant 4 from v0.1 (D5) | Gate 4 (Slice D) | `types.ts` invariant 4 removed or re-annotated; single-witness test in `tests/credential-rotation/` |
-| 6 | Class A/B/C mechanism vs. policy | Hard-coded in `types.ts` `DEFAULT_TTL_POLICY` / `POLICY_FLOORS` | RATIFIED — mechanism normative, default policy non-normative (D6) | Gate 3 (spec) | Spec distinguishes mechanism from default policy; floors annotated as absolute minimums |
-| 7 | Normative text location | Comments in `types.ts` cite `§13c`/`§14`; no `docs/` counterpart | RATIFIED — `SOMA-ROTATION-SPEC.md` only (D7) | Gate 4 (Slice D) | `§13c`/`§14` strings removed from source; comments cite spec path |
+| 1 | Canonical subsystem | `credential-rotation/index.ts` header declares `key-rotation.ts` internal; package `exports` surfaces only `./credential-rotation` | Proposed: ratify existing code state (D1) | Gate 2 | Spec references only `credential-rotation/` symbols |
+| 2 | Delegation-vs-rotation (OQ6) | Undefined in both specs today | Proposed: delegations bind to identity (D2); reviewer judgment required | Gate 5 (Slice C) | `SOMA-DELEGATION-SPEC.md` line 307 replaced with a normative rule |
+| 3 | Rollback on mid-rotation failure | Not enforced; no transaction boundary in `controller.rotate()` | Proposed: required for v0.1 (D3); reviewer judgment required | Gate 3 (spec), Gate 4 (code) | Testable invariant in spec; test in `tests/credential-rotation/` asserting clean revert on mid-rotation throw |
+| 4 | Recovery after confirmed compromise | Not defined | Proposed: deferred from v0.1 to a named follow-up ADR (D4); reviewer judgment required | Gate 2 | Deferral rationale recorded or follow-up ADR named with owner |
+| 5 | Witness quorum | Single-witness MVP at `controller.ts:584`; invariant 4 claims M-of-N at `types.ts:13` | Proposed: single-witness, drop invariant 4 from v0.1 (D5); reviewer judgment required | Gate 4 (Slice D) | `types.ts` invariant 4 removed or re-annotated; single-witness test in `tests/credential-rotation/` |
+| 6 | Class A/B/C mechanism vs. policy | Hard-coded in `types.ts` `DEFAULT_TTL_POLICY` / `POLICY_FLOORS` | Proposed: ratify proposal §5 — mechanism normative, default policy non-normative (D6) | Gate 3 (spec) | Spec distinguishes mechanism from default policy; floors annotated as absolute minimums |
+| 7 | Normative text location | Comments in `types.ts` cite `§13c`/`§14`; no `docs/` counterpart | Proposed: ratify — `SOMA-ROTATION-SPEC.md` only (D7) | Gate 4 (Slice D) | `§13c`/`§14` strings removed from source; comments cite spec path |
 
 ## Reviewer focus
 
