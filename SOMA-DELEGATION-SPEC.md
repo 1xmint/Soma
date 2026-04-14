@@ -40,7 +40,7 @@ A secondary credential issued by a parent credential, bound to one or more const
 | `branch_spend_cap_usd` | Per-immediate-child ceiling |
 | `intent` | Signed declaration of purpose + data domain |
 | `ttl` | Wall-clock expiry |
-| `parent_id` | Cryptographic link to the issuing key |
+| `parent_id` | Stable identity anchor of the issuing parent. Under v0.1 identity-binding (see `Rotation Interaction`), this resolves to the parent's stable `identityId`, not to a specific credential. |
 
 ### Cascade
 
@@ -184,6 +184,70 @@ Providers MAY:
 
 Intent is advisory — providers enforce their own policy. But intent is signed, so misrepresentation is attributable.
 
+## Rotation Interaction
+
+Delegation verification under parent credential rotation is normatively defined in this section. Before this section was added, Open Question 6 treated the interaction as undefined; this section closes it, supersedes any earlier "key-bound parent" reading of `parent_id`, and is the Soma#24 / Gate 5 (Slice C) closure required by ADR-0004 D2.
+
+Per ADR-0004's Readiness Horizon, Gate 5 (this section) MUST precede Gate 6 (`soma-heart` package surface) and Gate 7 (first-consumer implementation unlock). Merging this section satisfies `SOMA-ROTATION-SPEC.md` §13.2's "until `SOMA-DELEGATION-SPEC.md` is updated" condition for the normative text; the residual operational precondition — a working historical-credential lookup — is tracked below under *Slice D code contract* and remains a Gate 4 / Slice D readiness item, not a Gate 5 blocker.
+
+### Identity binding (normative)
+
+A delegation binds to the parent's **stable identity anchor**, not to the specific credential that produced `issued_by_sig`. Concretely:
+
+- `parent_id` is an identity reference, not a credential reference. Under Soma's broader model, an identity (`SOMA-ROTATION-SPEC.md` §2.1) persists across credential rotations; the credential currently bound to that identity MAY change over time, but the identity anchor MUST NOT.
+- `issued_by_sig` was produced at `issued_at` by the parent's **then-effective** credential. After a parent rotation, that credential is no longer current, but the signature math still verifies against the credential's public key as it existed at issue time.
+- Existing delegation keys therefore remain valid without re-issuance across a parent rotation, provided the parent's identity anchor is unchanged and the delegation itself is still within its own lifetime constraints (`ttl`, `expires_at`, `revoked`, spend caps).
+
+This matches ADR-0004 D2 verbatim: delegations bind to identity, not credentials.
+
+### Why this required a verification-model amendment
+
+The v0.1 spec historically described `parent_id` as a "cryptographic link to the issuing key" and `issued_by_sig` as a signature under the parent's current signing key. Taken literally, that reading breaks under rotation: after a parent rotation, "the parent's current signing key" is a different key than the one that produced `issued_by_sig`, and a naive verifier would reject the delegation even though the identity that authorised it is unchanged.
+
+A conforming verifier therefore cannot resolve the signing key by reading "whatever is current for `parent_id` right now." It MUST resolve the credential that was effective when the delegation was issued, and verify against that credential's public key.
+
+### v0.1 verification mechanism (normative)
+
+ADR-0004 D2 and `SOMA-ROTATION-SPEC.md` §13.3 enumerated three candidate mechanisms for identity-bound delegation verification:
+
+1. **Historical archive** — retain superseded parent public keys so historic `issued_by_sig` values still verify after rotation.
+2. **Cascade re-signing** — re-issue every descendant delegation on every parent rotation. ADR-0004 D2 rejected this as the default on availability grounds.
+3. **Signature-scheme redesign** — replace ed25519-over-credential signatures with identity-based signatures, BLS aggregation, or threshold schemes.
+
+**v0.1 adopts Mechanism 1 (historical archive).** Mechanisms 2 and 3 are not adopted in v0.1. A superseding ADR is required to change the mechanism. Mechanism 2 MAY be re-added later as a policy-level option for specific delegation classes without superseding Mechanism 1.
+
+Mechanism 1 is the minimal v0.1 pick for a concrete reason: the historical archive it requires already exists in the rotation subsystem. `SOMA-ROTATION-SPEC.md` §10.2 requires every controller snapshot to carry the complete rotation event chain, and every rotation event (`RotationEvent` in `src/heart/credential-rotation/types.ts`) carries the `newCredential` that became effective at that event, including its `publicKey`. The full history of an identity's effective credentials is therefore already recoverable by walking the event chain. Mechanism 1 re-uses state the rotation spec already requires; no additional persistence, no new cryptography, and no new signing scheme are needed.
+
+### Conforming verifier rule (normative)
+
+A conforming delegation verifier MUST, before accepting any `issued_by_sig`:
+
+1. Resolve `parent_id` to the parent's stable `identityId` anchor.
+2. Consult the rotation subsystem's read-only historical-credential lookup (see *Slice D code contract* below) to locate the credential that produced `issued_by_sig`. The lookup key is the pair `(identityId, credentialId)` when the delegation carries an explicit credential reference, or `(identityId, publicKey)` when the delegation carries the issuing credential's public key. The verifier MUST NOT assume that the parent's *current* credential is the one that signed.
+3. Confirm that the returned credential was `effective` at `issued_at`. A credential that was staged-but-not-yet-effective at `issued_at`, or that was already revoked before `issued_at`, MUST NOT satisfy this check.
+4. Verify `issued_by_sig` against the returned credential's public key using the algorithm suite recorded on that credential (`AlgorithmSuite`, `SOMA-ROTATION-SPEC.md` §2.4).
+5. Reject the delegation if any step fails: unknown identity, no matching historical credential, credential not effective at `issued_at`, or signature verification failure.
+
+Verifiers MUST fail closed on any rotation-subsystem lookup error. A verifier that cannot consult the rotation subsystem at all MUST NOT accept delegations across parent rotation; such a verifier MAY only accept delegations whose `issued_by_sig` matches the parent's *current* credential, and MUST treat that narrower behaviour as a strict subset of this section's rules, not as a replacement for them.
+
+### Slice D code contract (normative)
+
+The rotation subsystem MUST expose, as part of Gate 4 / Slice D, a read-only **historical-credential lookup** that answers the membership question required by the Conforming Verifier Rule. The lookup:
+
+- MUST accept a query keyed by `(identityId, credentialId)` or `(identityId, publicKey)`.
+- MUST walk the event chain of the addressed identity (§4 of `SOMA-ROTATION-SPEC.md`) and return either the full `Credential` record (including `publicKey`, `algorithmSuite`, `issuedAt`, and the `effective`/`revoked` window in which it was authoritative), or a typed "not found" result if no such credential exists in that identity's event chain.
+- MUST be a pure read over existing rotation state. It MUST NOT mutate the event chain, the accepted pool, any rate-limit bucket, or any snapshot.
+- MUST NOT depend on the accepted-pool grace window (`SOMA-ROTATION-SPEC.md` §6). It MUST return historical credentials regardless of whether their accepted-pool entry has aged out, because the delegation verifier needs long-lived historical truth, not the short-lived verify-before-revoke window.
+- MUST NOT cross identity boundaries. A lookup against `identityId` A MUST NOT return credentials that were effective under `identityId` B, even if a `credentialId` or `publicKey` happens to collide.
+
+Until this lookup lands, no first-consumer integration MAY ship delegation-under-rotation as a supported path. This matches the conditional restriction in `SOMA-ROTATION-SPEC.md` §13.2.
+
+### What this section does NOT resolve
+
+- **Delegation wire-schema alignment.** The existing `parent_id`, `issued_by_sig`, and storage-schema fields in this spec predate ADR-0004 and do not carry an explicit issuer-public-key column in the reference SQL schema. Aligning the wire schema and the storage schema with the macaroon-style primitive in `src/heart/delegation.ts` (which embeds `issuerPublicKey` and `signature` directly on each delegation) is pre-existing tech debt and is out of scope for OQ6 closure. A separate docs-hygiene PR may formalise the alignment; that work is NOT a Slice C deliverable and NOT a Gate 5 blocker.
+- **Cross-issuer delegation.** Delegations that cross issuing authorities are still tracked under Open Question 5 (cross-platform delegation). Identity-binding within a single issuer is resolved by this section; cross-issuer resolution depends on the cross-issuer trust registry, which is out of v0.1 scope.
+- **Delegation-key rotation.** This section closes OQ6 for the case where a *parent credential* rotates. It does not address rotation of a delegation key itself. Delegation keys in v0.1 are expected to expire or be revoked, not rotated; rotating a delegation key is a superseding-ADR concern.
+
 ## Examples
 
 ### CrewAI-style three-level chain
@@ -304,7 +368,7 @@ CREATE INDEX idx_delegated_parent ON delegated_keys(parent_key);
 3. **Spend cap roll-up visibility:** should children see their parent's remaining cap, or only their own? Leaning own-only (least privilege).
 4. **Cascade revoke performance:** at depth > 10 with fan-out > 100, recursive revoke may be slow. Consider lazy mark-and-sweep.
 5. **Cross-platform delegation:** if Key A is issued by Soma issuer X and Key B is issued by Soma issuer Y, how do providers verify the chain? Requires cross-issuer trust registry.
-6. **Key rotation:** if parent rotates its signing key, do children need re-issuance?
+6. **Key rotation (CLOSED — Gate 5 / Slice C):** resolved by the `Rotation Interaction` section above. Delegations bind to the parent's stable `identityId`, not to a specific credential; existing delegation keys remain valid across a parent rotation without re-issuance. v0.1 adopts the historical-archive verification mechanism (ADR-0004 D2, Mechanism 1), which depends on a Slice D / Gate 4 historical-credential lookup contract defined in that section.
 
 ## Roadmap
 
