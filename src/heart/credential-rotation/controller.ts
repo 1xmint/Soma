@@ -1,29 +1,38 @@
 /**
  * CredentialRotationController — generic rotation primitive.
  *
- * Encodes the twelve invariants (§13c) and the three implementation locks
- * (§14 L1-L3) from the architecture spec. This class is the only
- * user-facing rotation API; backends are accessed only through it.
+ * Encodes the v0.1 invariant set and the L1/L2/L3 implementation locks
+ * from SOMA-ROTATION-SPEC.md (§14 for the invariant set; §3 for L1, §4.3
+ * for L2, §4.2 for L3). This class is the only user-facing rotation API;
+ * backends are accessed only through it.
  *
  * Backends are isolated (invariant 7). The controller holds a Map of
  * backendId -> backend instance, but does not expose that map to callers
  * and never passes one backend's state to another.
  *
- * Pre-rotation (invariant 9, L1) is enforced by storing the manifest
+ * Pre-rotation (invariant 9, L1, §3) is enforced by storing the manifest
  * commitment on the current credential and checking that the next
  * credential's full manifest hashes to that commitment at rotation time.
+ * Backend ids are validated at admission to reject any byte that would
+ * make the §3.2 canonical encoding ambiguous (`|`, `:`, NUL).
  *
- * Ratchet state (invariant 10) is held as an append-only chain: each
- * rotation event's `ratchetAnchor` is sha256 of the previous anchor plus
- * the new credential's public key. Losing the ratchet state forces
- * re-bootstrap via Tier 0 threshold (§14 D6).
+ * Ratchet state (invariant 10, §4.6) is held as an append-only chain:
+ * each rotation event's `ratchetAnchor` is sha256 of the previous anchor
+ * plus the new credential's public key. Losing the ratchet state forces
+ * re-bootstrap via the Tier 0 threshold path.
  *
- * Verify-before-revoke (invariant 12) — the controller holds old
+ * Event chain retention (invariant 13, §4.7) — the per-identity event
+ * array is append-only and is never pruned or compacted. Every credential
+ * the chain has ever made `effective` remains recoverable by walking the
+ * chain; this is the structural precondition for the historical-credential
+ * lookup that `SOMA-DELEGATION-SPEC.md` §Rotation Interaction consumes.
+ *
+ * Verify-before-revoke (invariant 12, §6) — the controller holds old
  * credentials in an `accepted` pool until either all subscribed verifiers
  * ack propagation of the rotation event or a grace TTL elapses. Fails
  * closed on verify failure.
  *
- * Rotation is transactional. The controller calls
+ * Rotation is transactional (§5). The controller calls
  * `backend.stageNextCredential` first, verifies the manifest commitment and
  * suite allowlist, signs the event under the old key, collects the new
  * key's first PoP, and only then calls `backend.commitStagedRotation`. Any
@@ -53,6 +62,7 @@ import {
   CredentialExpired,
   DEFAULT_POLICY,
   DuplicateBackend,
+  InvariantViolation,
   NotYetEffective,
   POLICY_FLOORS,
   PreRotationMismatch,
@@ -69,8 +79,11 @@ import {
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 /**
- * L1 — compute the pre-rotation commitment over a full manifest.
- * Binds backend id and algorithm suite in addition to the public key.
+ * L1 — compute the pre-rotation commitment over a full manifest
+ * (SOMA-ROTATION-SPEC.md §3.2). Binds backend id and algorithm suite in
+ * addition to the public key. The caller is responsible for having
+ * admitted the backend through the delimiter-validated path; a malformed
+ * `backendId` reaching this function is an invariant violation upstream.
  */
 export function computeManifestCommitment(
   manifest: CredentialManifest,
@@ -79,6 +92,35 @@ export function computeManifestCommitment(
   const pkB64 = provider.encoding.encodeBase64(manifest.publicKey);
   const input = `soma-manifest:${manifest.backendId}|${manifest.algorithmSuite}|${pkB64}`;
   return provider.hashing.hash(input);
+}
+
+/**
+ * Reject any `backendId` containing a byte that is reserved by the
+ * §3.2 canonical commitment encoding. Raises `InvariantViolation(9)`
+ * because the delimiter rule exists to protect pre-rotation commitment
+ * integrity — the allowlist admission point is the *enforcement* site,
+ * but invariant 9 (pre-rotation commitment) is the semantic invariant
+ * the rule defends.
+ *
+ * This is bare `InvariantViolation` rather than a new subclass because
+ * SOMA-ROTATION-SPEC.md §11 forbids inventing additional
+ * `InvariantViolation` subclasses without a superseding ADR.
+ */
+function validateBackendIdBytes(backendId: string): void {
+  for (const ch of backendId) {
+    if (ch === '|' || ch === ':' || ch === '\u0000') {
+      const label =
+        ch === '|'
+          ? "'|' (U+007C)"
+          : ch === ':'
+            ? "':' (U+003A)"
+            : 'NUL (U+0000)';
+      throw new InvariantViolation(
+        9,
+        `backendId ${JSON.stringify(backendId)} contains reserved delimiter byte ${label}; see SOMA-ROTATION-SPEC.md §3.2`,
+      );
+    }
+  }
 }
 
 /**
@@ -153,7 +195,7 @@ function deriveRatchetAnchor(
   return provider.hashing.hash(`soma-ratchet:${previousAnchor}|${pkB64}`);
 }
 
-/** Genesis ratchet anchor for a fresh identity (§14 D6). */
+/** Genesis ratchet anchor for a fresh identity (SOMA-ROTATION-SPEC.md §4.6). */
 function genesisRatchetAnchor(
   identityId: string,
   provider: CryptoProvider,
@@ -252,9 +294,9 @@ interface IdentityState {
   accepted: Map<string, { credential: Credential; graceUntil: number }>;
   /** Last ratchet anchor (mixed into the next rotation, invariant 10). */
   ratchetAnchor: string;
-  /** Rotation timestamps for rate limiting (token-bucket, D3). */
+  /** Rotation timestamps for rate limiting (token-bucket, §8.2). */
   rotationTimestamps: number[];
-  /** If a destructive op is pending, unlock time (D2). */
+  /** If a destructive op is pending, unlock time (§8.1). */
   challengePeriodUnlockAt: number | null;
 }
 
@@ -298,13 +340,19 @@ export class CredentialRotationController {
   // ─── Registration ─────────────────────────────────────────────────────────
 
   /**
-   * Register a backend. Fails if the backend id is not in the allowlist
-   * (invariant 6), if its suite is not in the suite allowlist (invariant 1
-   * downgrade protection), or if a backend with the same id is already
-   * registered (invariant 7 — isolation; duplicate registration would let
-   * the second backend observe the first's credentials).
+   * Register a backend. Fails if `backend.backendId` carries a byte
+   * reserved by the §3.2 commitment encoding (invariant 9, defense in
+   * depth — `validatePolicy` has already vetted allowlist entries, but
+   * a caller passing a backend instance whose id differs from what was
+   * admitted to the allowlist would otherwise slip through), if the
+   * backend id is not in the allowlist (invariant 6), if its suite is
+   * not in the suite allowlist (invariant 1 downgrade protection), or if
+   * a backend with the same id is already registered (invariant 7 —
+   * isolation; duplicate registration would let the second backend
+   * observe the first's credentials).
    */
   registerBackend(backend: CredentialBackend): void {
+    validateBackendIdBytes(backend.backendId);
     if (!this.policyInner.backendAllowlist.includes(backend.backendId)) {
       throw new BackendNotAllowlisted(backend.backendId);
     }
@@ -411,9 +459,9 @@ export class CredentialRotationController {
       current: null, // NOT primary yet — must be anchored + witnessed first (L3)
       accepted: new Map(),
       ratchetAnchor: newRatchet,
-      // D3: inception does NOT consume the rotation budget — the rate limit
-      // is about constraining rotation churn, and every identity has exactly
-      // one inception.
+      // §8.2: inception does NOT consume the rotation budget — the rate
+      // limit is about constraining rotation churn, and every identity has
+      // exactly one inception.
       rotationTimestamps: [],
       challengePeriodUnlockAt: null,
     });
@@ -432,7 +480,7 @@ export class CredentialRotationController {
    * Any failure between (1) and (3) triggers an abort in the backend so
    * its durable state never diverges from the controller's.
    *
-   * Rate-limited (D3). Fails if a challenge period is active (D2).
+   * Rate-limited (§8.2). Fails if a challenge period is active (§8.1).
    */
   async rotate(identityId: string): Promise<{
     event: RotationEvent;
@@ -580,9 +628,16 @@ export class CredentialRotationController {
   /**
    * L3.c — record an external witness cosignature on the anchoring root.
    * The first witness moves `anchored` directly to `effective` and installs
-   * the new credential as current. Additional witness calls are no-ops for
-   * the MVP single-witness quorum; the counter still increments so future
+   * the new credential as current. Additional witness calls are no-ops
+   * for the witness quorum; the counter still increments so future
    * multi-witness policies can use it.
+   *
+   * Single-witness-by-design for v0.1: SOMA-ROTATION-SPEC.md §7 scopes
+   * the v0.1 assurance bound to a single witness and §7.2 records the
+   * non-independence caveat that comes with that choice. Multi-witness
+   * quorum is not a deferred implementation detail — it is an
+   * out-of-scope assurance bound for v0.1, and changing it requires a
+   * superseding ADR. See also §7.4 on invariant 4's disposition.
    */
   witnessEvent(identityId: string, eventHash: string): void {
     if (!eventHash) throw new Error('witnessEvent: eventHash required');
@@ -858,8 +913,8 @@ export class CredentialRotationController {
   }
 
   /**
-   * D3 — token-bucket rate limit. `maxRotationsPerHour + rotationBurst` is
-   * the effective ceiling in any hour. Trims old timestamps.
+   * §8.2 — token-bucket rate limit. `maxRotationsPerHour + rotationBurst`
+   * is the effective ceiling in any hour. Trims old timestamps.
    */
   private enforceRateLimit(state: IdentityState, now: number): void {
     const windowStart = now - 60 * 60 * 1000;
@@ -870,7 +925,13 @@ export class CredentialRotationController {
     }
   }
 
-  /** Enforce floors on policy values (§14 D2, D3). */
+  /**
+   * Enforce floors on policy values (SOMA-ROTATION-SPEC.md §8.1, §8.2, §9.2)
+   * and reject any `backendAllowlist` entry whose bytes would break the
+   * §3.2 canonical commitment encoding. The delimiter rejection MUST
+   * happen before the backend is admitted to the allowlist so a
+   * malformed id can never reach `computeManifestCommitment`.
+   */
   private validatePolicy(policy: ControllerPolicy): ControllerPolicy {
     if (policy.challengePeriodMs < POLICY_FLOORS.challengePeriodMs) {
       throw new Error(
@@ -887,6 +948,9 @@ export class CredentialRotationController {
     }
     if (policy.backendAllowlist.length === 0) {
       throw new Error('backendAllowlist must contain at least one entry');
+    }
+    for (const entry of policy.backendAllowlist) {
+      validateBackendIdBytes(entry);
     }
     if (policy.suiteAllowlist.length === 0) {
       throw new Error('suiteAllowlist must contain at least one entry');

@@ -1,0 +1,86 @@
+{
+  "$comment": [
+    "L1 pre-rotation commitment test vectors (SOMA-ROTATION-SPEC.md §3.3).",
+    "Each vector encodes the manifest per §3.2 as",
+    "  soma-manifest:<backendId>|<algorithmSuite>|<base64(publicKey)>",
+    "and hashes the resulting ASCII bytes with sha256. `commitment` is the",
+    "lowercase hex digest. `input` is the exact pre-hash string for debug.",
+    "publicKeyHex carries the raw bytes; tests decode it and compare against",
+    "computeManifestCommitment(). If this file drifts from the encoder,",
+    "Slice D §15 item 6 has regressed."
+  ],
+  "hashAlgorithm": "sha256",
+  "encoding": "soma-manifest:<backendId>|<algorithmSuite>|<base64(publicKey)>",
+  "vectors": [
+    {
+      "name": "baseline-zero-key",
+      "description": "Fixed (backendId, algorithmSuite, publicKey) triple producing a known digest. 32-byte zero key; base64 output is 44 chars with one '=' pad.",
+      "backendId": "soma-heart-ed25519",
+      "algorithmSuite": "ed25519",
+      "publicKeyHex": "0000000000000000000000000000000000000000000000000000000000000000",
+      "publicKeyBase64": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "input": "soma-manifest:soma-heart-ed25519|ed25519|AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "commitment": "cc258fa3d28b9234cc88ccc22268842044952e4c45faf836ba5a979e90078187"
+    },
+    {
+      "name": "baseline-ff-key",
+      "description": "Second baseline with an all-ones 32-byte key — guards against accidental zero-key-specific shortcuts in the encoder.",
+      "backendId": "soma-heart-ed25519",
+      "algorithmSuite": "ed25519",
+      "publicKeyHex": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "publicKeyBase64": "//////////////////////////////////////////8=",
+      "input": "soma-manifest:soma-heart-ed25519|ed25519|//////////////////////////////////////////8=",
+      "commitment": "d680bf5684383514abdf3d6e05eadd076b5967b272ca75bb9559683ed47c42be"
+    },
+    {
+      "name": "cross-suite-distinguishability",
+      "description": "Same backendId + publicKey as baseline-zero-key, different algorithmSuite. Commitment MUST differ from baseline-zero-key (§3.3 case 2).",
+      "backendId": "soma-heart-ed25519",
+      "algorithmSuite": "secp256k1",
+      "publicKeyHex": "0000000000000000000000000000000000000000000000000000000000000000",
+      "publicKeyBase64": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "input": "soma-manifest:soma-heart-ed25519|secp256k1|AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "commitment": "afdc7c66e24e155079e49383ccb54fb59aa056d5a2f9e458d54af3389fa91482"
+    },
+    {
+      "name": "cross-backend-distinguishability",
+      "description": "Same algorithmSuite + publicKey as baseline-zero-key, different backendId. Commitment MUST differ from baseline-zero-key (§3.3 case 3).",
+      "backendId": "other-backend",
+      "algorithmSuite": "ed25519",
+      "publicKeyHex": "0000000000000000000000000000000000000000000000000000000000000000",
+      "publicKeyBase64": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "input": "soma-manifest:other-backend|ed25519|AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "commitment": "4d2ae677aae280e3b49ea523a93036d753cd4b0acb092c975f5e21c1a42ffccb"
+    },
+    {
+      "name": "base64-padding-residue-1",
+      "description": "publicKey length = 1, base64 output has two '=' pads (length mod 3 == 1). §3.3 case 4.",
+      "backendId": "soma-heart-ed25519",
+      "algorithmSuite": "ed25519",
+      "publicKeyHex": "ab",
+      "publicKeyBase64": "qw==",
+      "input": "soma-manifest:soma-heart-ed25519|ed25519|qw==",
+      "commitment": "233701a6407513b81770886e49bec74bf07036b4bebae47b544b1a2ba34cf7f8"
+    },
+    {
+      "name": "base64-padding-residue-2",
+      "description": "publicKey length = 2, base64 output has one '=' pad (length mod 3 == 2). §3.3 case 4.",
+      "backendId": "soma-heart-ed25519",
+      "algorithmSuite": "ed25519",
+      "publicKeyHex": "abcd",
+      "publicKeyBase64": "q80=",
+      "input": "soma-manifest:soma-heart-ed25519|ed25519|q80=",
+      "commitment": "bdd577b41f87ec8c7f19669f6899c669b4fcdf58475be8334e24875a322c85d7"
+    },
+    {
+      "name": "base64-padding-residue-0",
+      "description": "publicKey length = 33, base64 output has no '=' pad (length mod 3 == 0). Completes §3.3 case 4 by covering all three residue classes.",
+      "backendId": "soma-heart-ed25519",
+      "algorithmSuite": "ed25519",
+      "publicKeyHex": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20",
+      "publicKeyBase64": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8g",
+      "input": "soma-manifest:soma-heart-ed25519|ed25519|AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8g",
+      "commitment": "ce2f9453c1f03236f6d93f816991e364e6df9d29b98f24f453cee2946cd7d872"
+    }
+  ]
+}
