@@ -1,614 +1,606 @@
 Status: proposed
 
-# Soma Heart Trust Certificates and Heart-to-Heart Trust Chains
+# Soma Heart Trust Certificates and Evidence-Bound Trust Chains
 
-**Normativity:** design-only. Nothing in this document is normative
-until a superseding ADR is accepted and, if needed, a spec is
-ratified. The proposal does not ship runtime code, package changes,
-or spec changes in its own merge.
-**First consumer:** ClawNet, as an implementation-neutral consumer of
-Soma protocol semantics. ClawNet is a consumer and potential
-reference implementation; protocol ownership stays in this repo.
-**Covers:** Soma Check boundaries, Soma Heart exchange-envelope
-boundaries, rail-agnostic payment integration, conceptual
-birth/trust certificate semantics, and heart-to-heart trust-chain
-linking.
+**Normativity:** design-only. Nothing in this document is normative until a
+superseding ADR is accepted and, if needed, a spec is ratified. This proposal
+does not ship runtime code, package/API changes, package exports, or spec
+changes in its own merge.
 
----
+**Primary artifact:** Soma Heart Trust Certificates. The claim and evidence
+language below is deliberately scoped to certificate and chain interpretation.
+It is not a broad standalone claim/evidence framework.
 
-## 0. Scope note
+**First consumer:** ClawNet is expected to be the first downstream consumer of
+these semantics, but ClawNet runtime, pricing, routing, staking, marketplace,
+proof-mining, reward/burn, and token-utility choices are out of scope here.
 
-This is a Soma-first protocol proposal. It defines the smallest durable
-protocol boundary needed before downstream systems design runtime,
-pricing, routing, caching, or marketplace behaviour.
-
-The proposal does not implement code, define a production certificate
-schema, change credential-rotation semantics, or ship ClawNet product
-behaviour. It records protocol intent tightly enough that a downstream
-proposal cannot accidentally redefine Soma Check or Soma Heart.
+**Credential-rotation posture:** `ADR-0004` and `SOMA-ROTATION-SPEC.md` are
+authoritative. This proposal references rotation state for certificate
+verification but proposes no credential-rotation semantic changes.
 
 ---
 
-## 1. Problem
+## 1. Context and motivation
 
-Agent commerce creates a trust gap at the exact moment money, authority,
-and machine-generated work start moving between autonomous systems.
-A buyer or agent needs to know:
+Agent commerce and agent-to-agent exchange need records that are attributable,
+bounded, and reusable across later verification decisions. A verifier may need
+to know which Soma identity issued a statement, which endpoint or artifact the
+statement concerns, which evidence was bound to it, whether prior certificates
+were intentionally referenced, and which verification policy interpreted the
+chain.
 
-- whether a resource has changed before paying or fetching again;
-- which identity produced an output or exchange claim;
-- which payment or settlement rail was used, without making that rail
-  part of the identity protocol;
-- whether an exchange produced evidence that can be linked into later
-  exchanges;
-- what the evidence proves, and what it emphatically does not prove.
+Soma already owns the protocol layer for identity, delegation, verification
+semantics, trust primitives, and security limits. Soma Check already gives a
+narrow freshness and payment-avoidance protocol. Credential rotation already
+has an accepted ADR and a draft normative spec. The missing piece is a Soma
+Heart certificate language that can bind identity, exchange context, bounded
+claims, evidence references, and prior certificates without pretending to
+verify real-world truth.
 
-Without a protocol boundary, downstream runtimes are tempted to bundle
-freshness checks, payment orchestration, receipts, reputation, routing,
-cache policy, and trust semantics into one product-specific system. That
-would make Soma hard to implement independently and easy for first
-consumers to redefine by accident.
+Without this boundary, a downstream runtime could accidentally combine
+freshness, receipts, provider routing, pricing, reputation, staking, proof
+mining, and business policy into one product-defined "trust" surface. Soma
+should instead define the open certificate and chain semantics, while
+downstream systems decide how to query, cache, price, route, and operationalize
+them.
 
-Soma should instead define the open protocol for accurate
-agent-commerce birth certificates and chainable trust evidence. Products
-can compete on implementation quality, routing, witness networks,
-operator experience, policy, and commercial packaging while sharing the
-same core semantics.
+## 2. Goals and non-goals
 
-## 2. Why now
+### Goals
 
-Soma already has separate pieces that point toward this shape:
+- Define Soma Heart Trust Certificates as the center of the proposal.
+- Define Soma Birth Certificates as a certificate profile for origin/provenance
+  records.
+- Define heart-to-heart trust chains as linked certificate graphs interpreted
+  by verifier policy, not automatic transitive trust.
+- Provide a bounded claim/evidence vocabulary that is safe to standardize now
+  as supporting certificate language.
+- Preserve Soma Check as freshness/payment-avoidance only.
+- Keep certificate semantics modular, rail-agnostic, and independent of any
+  ClawNet runtime.
+- Make assurance limits explicit enough that a verifier cannot mistake
+  signatures, hashes, receipts, or chains for factual truth.
+- Reference credential-rotation semantics without revising them.
 
-- Soma Check exists as a conditional payment/freshness primitive
-  (`SOMA-CHECK-SPEC.md`).
-- Soma Heart is the protocol home for identity, delegation,
-  verification semantics, and the security model.
-- Credential rotation is covered by `ADR-0004` and
-  `SOMA-ROTATION-SPEC.md`; rotation semantics are fixed and
-  explicitly out of scope for this proposal.
-- ClawNet is the likely first full implementation and will need product
-  decisions around pricing, routing, witnessing, and exchange flows.
+### Non-goals
 
-The protocol boundary should be drawn before ClawNet runtime design
-turns product choices into de facto Soma semantics. Once a downstream
-runtime ships around undefined boundaries, retroactively narrowing
-Soma becomes a breaking change instead of a proposal decision.
+- No implementation.
+- No package/API/export changes.
+- No broad standalone claim/evidence framework.
+- No tokenomics, staking markets, reward/burn mechanics, or `$CLAWNET` utility.
+- No ClawNet pricing, provider routing, cache/orchestration, proof mining, or
+  marketplace/business model.
+- No Pulse work.
+- No Gate 7 or ClawNet first-consumer implementation work.
+- No claim that Soma verifies real-world truth, endpoint quality, model
+  correctness, delivery quality, or future reliability.
+- No automatic transitive trust. Chains are interpreted by verifier policy.
+- No credential-rotation semantic changes.
 
 ## 3. Broad idea
 
-Soma has two related but distinct protocol surfaces:
+A **Soma Heart Trust Certificate** is a signed, hash-addressable record from a
+Soma identity that binds a bounded set of claims to evidence references and, if
+applicable, prior certificate identifiers.
 
-1. **Soma Check** is a narrow freshness and payment-avoidance
-   primitive. It answers whether an endpoint or resource appears to
-   have a fresh hash/new data, so a buyer or agent can avoid an
-   unnecessary payment or fetch.
-2. **Soma Heart** is a modular, rail-agnostic verified exchange
-   envelope. It binds participating identities, exchange context,
-   payment-rail evidence, output hashes, signatures, and optional
-   witnesses into certificate material that can be verified later.
+A **Soma Birth Certificate** is a Trust Certificate profile used when an
+artifact, resource version, agent instance, endpoint observation, delegation
+context, or fulfillment record first enters a Soma-verifiable provenance trail.
 
-Soma Birth Certificates / Trust Certificates are the chainable records
-produced by verified exchanges. A certificate is not "truth" by itself;
-it is signed, hash-linked evidence about who claimed what, when, under
-which protocol modules and payment/witness conditions.
-
-Heart-to-heart chaining occurs when both parties run compatible Soma
-Heart modules and produce or link compatible certificates. Each new
-certificate can reference prior certificate identifiers or hashes,
-forming an auditable trail of exchanges without requiring a central
-Soma runtime.
+A **heart-to-heart trust chain** is a graph of certificates linked by hashes,
+participant identities, signatures, and certificate references. The chain
+preserves provenance and linkage. It does not create universal trust in later
+claims and does not make trust transitive by default. Verifiers apply their own
+policy to decide which issuers, evidence kinds, certificate profiles, freshness
+windows, revocation state, and chain shapes they accept.
 
 ## 4. What 10/10 looks like
 
-- Soma Check remains independently usable without installing or running
-  the full Soma Heart.
-- Soma Heart can use x402 as the first/default payment adapter without
-  making x402 a protocol dependency.
-- A certificate produced by one conforming implementation can be
-  verified by another conforming implementation.
-- ClawNet can act as a high-quality implementation, co-signer, witness,
-  router, and operator layer where applicable, while Soma remains open
-  and implementation-neutral.
-- Future ClawNet proposals can cite this document for boundaries rather
-  than redefining Soma Check, Soma Heart, or certificate semantics.
+- One conforming Soma implementation can produce certificates that another
+  conforming implementation can parse and verify once a later spec exists.
+- Birth and trust certificates are profiles of a focused certificate primitive
+  unless a later ADR finds a concrete semantic reason to split them.
+- Claim/evidence primitives are narrow enough to support certificates without
+  becoming a general-purpose truth framework.
+- Soma Check stays independently useful and does not become a reputation,
+  pricing, staking, or routing surface.
+- x402 can be the first/default payment adapter while Soma certificates remain
+  payment-rail agnostic.
+- ClawNet can consume the protocol without owning it.
 
 ## 5. Fitness check
 
-- protocol vision fit: high. This keeps Soma as the protocol home for
-  identity, verification, delegation-adjacent exchange evidence, and
-  security semantics.
-- real implementer/operator need: high. Downstream systems need a clear
-  split between freshness/payment avoidance, verified exchange
-  envelopes, and product runtime behaviour.
-- security exposure: high. Certificates can influence payment,
-  provider selection, delegation decisions, and audit outcomes; limits
-  must be explicit.
-- evidence this is needed now: ClawNet is the first likely consumer,
-  while Soma Check and credential rotation already exist as protocol
-  surfaces.
-- keep / reshape / pause / remove: reshape into a proposal now; do not
-  implement until ADR/spec decisions are accepted.
+- protocol vision fit: high. This is protocol semantics, certificate language,
+  trust primitives, assurance limits, and package/spec surface planning.
+- real implementer/operator need: high. First consumers need citable Soma
+  semantics before product runtimes harden around local definitions.
+- security exposure: high. Certificates may influence payment, access,
+  delegation interpretation, audit, and provider selection.
+- evidence this is needed now: downstream designs would otherwise define trust
+  chain, claim, and evidence semantics locally; a prior draft merged in
+  proposal space already surfaced the need for a narrower Soma-owned
+  vocabulary.
+- keep / reshape / pause / remove: reshape in proposal space; do not implement
+  until ADR/spec decisions are accepted.
 
 ## 6. Evidence ledger
 
 | Field | Value |
 |---|---|
-| current status | proposed protocol boundary; no runtime implementation in this slice |
-| upstream dependencies | Soma Check spec, Soma Heart package/reference docs, Soma security model, credential-rotation ADR/spec state |
-| downstream dependencies | ClawNet runtime, pricing, routing, witnessing, and first-consumer design |
-| missing evidence | production certificate schema, adapter interface, verifier test vectors, witness policy, privacy review |
-| blocks current work | yes, for downstream ClawNet designs that would otherwise define trust-chain semantics locally |
-| next gate | ADR deciding whether these module boundaries become durable Soma protocol rules |
-| terminal condition | accepted ADR and, if needed, a normative Soma Heart certificate/trust-chain spec |
+| current status | proposed protocol design; no implementation in this slice |
+| upstream dependencies | `AGENTS.md`, `SOMA-CHECK-SPEC.md`, `SOMA-DELEGATION-SPEC.md`, `SOMA-ROTATION-SPEC.md`, `ADR-0004`, Soma security model |
+| downstream dependencies | ClawNet may be the first consumer, but its runtime and business choices are deferred |
+| missing evidence | canonical certificate encoding, verifier policy model, privacy profile, adapter conformance rules, test vectors, concrete package surface |
+| blocks current work | yes, for downstream designs that would otherwise define Soma trust-chain semantics locally |
+| next gate | proposal review, then ADR if accepted direction changes protocol ownership, semantics, package surface, or security posture |
+| terminal condition | accepted ADR and, if warranted, a normative Soma Heart certificate/trust-chain spec |
 
-## 7. Required decisions
+## 7. Credential-rotation compatibility check
 
-### D1. Soma Check is narrow
+Accepted rotation semantics can support Soma Birth Certificates and Soma Heart
+Trust Certificates without semantic revision, provided certificate verification
+references rotation state instead of redefining it.
 
-Soma Check is a freshness and payment-avoidance primitive. It checks
-whether an endpoint or resource has a fresh hash/new data so a buyer or
-agent can avoid unnecessary payment or fetch.
+Relevant accepted constraints:
 
-Soma Check is not a general trust engine. It does not decide reputation,
-route requests, share cached bodies, arbitrate receipts, operate a
-marketplace, or prove semantic truth.
+- `ADR-0004` defines `src/heart/credential-rotation/` as the canonical
+  consumer-facing rotation substrate.
+- Identities persist across credential rotations via stable `identityId`
+  anchors.
+- `SOMA-ROTATION-SPEC.md` requires append-only event-chain retention for the
+  lifetime of an identity.
+- Historical credential lookup resolves the credential that was effective when
+  a signature was made, rather than assuming the current credential signed old
+  material.
+- New credentials become authoritative only once the rotation event reaches
+  `effective`; certificate verification must respect that effective window.
 
-Soma Check does not issue, chain, or verify certificates. Certificate
-production and verification are Soma Heart concerns. Soma Heart MAY
-include a Soma Check result as one field inside a certificate; that
-inclusion does not merge the two protocols and does not grant Soma
-Check new responsibilities. A downstream proposal that adds trust,
-routing, caching, or reputation behaviour to Soma Check is a scope
-violation of this proposal and requires a superseding ADR.
+Certificate fields may therefore reference `identityId`, issuer credential
+metadata, event-chain position, effective window, and revocation/rotation
+status as inputs to verification. They must not alter rotation lifecycle,
+rollback, witness, quorum, class, policy-floor, snapshot, or historical-lookup
+semantics.
 
-### D2. Soma Check is independently usable
+Gate 7 remains out of scope for this proposal. No credential-rotation
+incompatibility was found that would block certificate design at proposal time.
 
-Soma Check must remain usable without installing, running, or hosting
-the full Soma Heart. A lightweight consumer or provider should be able
-to participate in the freshness/payment-avoidance protocol without
-adopting heart-to-heart exchange certificates.
+## 8. Soma Birth Certificate definition
 
-Soma Heart may reuse Soma Check hashes as certificate inputs. That reuse
-does not collapse the two modules.
+A **Soma Birth Certificate** is a Soma Heart Trust Certificate profile that
+records the first Soma-verifiable introduction of a subject into a provenance
+trail.
 
-### D3. Soma Heart is a modular, rail-agnostic verified exchange envelope
+The subject may be:
 
-Soma Heart is a modular protocol surface for verified exchanges. A
-conforming implementation constructs an exchange envelope that
-coordinates identity, signatures, content hashes, payment-rail
-evidence, freshness/check results, optional witnesses, and certificate
-output.
+- a generated output;
+- a deterministic endpoint response;
+- a resource or content version;
+- an agent or heart instance;
+- a delegation/capability context;
+- an endpoint observation;
+- a fulfillment artifact;
+- another bounded artifact later ratified by spec.
 
-Modularity means:
+A Birth Certificate should bind, at minimum:
 
-- each module (identity, Check, payment adapter, witness, certificate
-  primitive) has a defined surface and is individually replaceable;
-- implementations may omit optional modules and still produce
-  certificates of a documented profile;
-- Soma Heart core does not bake in a specific payment rail, specific
-  witness network, specific cache policy, or specific runtime
-  operator.
+- issuer identity;
+- subject identifier or subject hash;
+- creation or observation time;
+- certificate profile/version;
+- bounded claim set;
+- evidence references;
+- issuer signature;
+- optional prior inputs or parent certificates;
+- optional verifier-policy reference if the issuer is asserting a policy-bound
+  interpretation.
 
-Rail-agnostic means: Soma Heart can bind to payment evidence from a
-rail, but no rail — including x402 — is part of Soma Heart's identity
-or trust semantics.
+A Birth Certificate proves only that the issuer signed the certificate payload
+and bound the included evidence references to that subject. It does not prove
+that the subject is factually true, useful, fair, complete, high quality, or
+legally sufficient.
 
-### D4. x402 is the first/default adapter, not a dependency
+## 9. Soma Heart Trust Certificate definition
 
-x402 should be the first/default payment rail adapter for Soma Heart
-because it is a practical fit for agent-commerce HTTP payments.
+A **Soma Heart Trust Certificate** is the general certificate primitive. It is
+a signed, hash-addressable envelope containing:
 
-Soma Heart must not require x402 at the protocol layer. A conforming
-implementation can use another payment rail if it can bind equivalent
-payment evidence into the exchange envelope.
+- certificate metadata: version, profile, identifier/hash, issued time, expiry
+  or freshness bounds when applicable;
+- issuer identity and credential/rotation reference sufficient for signature
+  verification under accepted Soma semantics;
+- subject: endpoint, resource, artifact, agent, delegation, policy, capability,
+  fulfillment, receipt reference, or other later-ratified subject;
+- bounded claims from the safe claim vocabulary in this proposal or later
+  accepted extensions;
+- evidence references from the safe evidence vocabulary in this proposal or
+  later accepted extensions;
+- optional participant, verifier, witness, or counterparty identities;
+- optional prior certificate references;
+- optional disclosure/privacy profile;
+- issuer signature and any participant, witness, or counterparty signatures
+  required by the profile.
 
-### D5. Certificates are chainable exchange records, not truth
+Trust Certificates should be profile-driven. A profile states which fields are
+required, which claims are allowed, which evidence kinds are acceptable, how
+freshness and revocation are evaluated, and which verification failures are
+fatal. A later spec must define canonical encoding, hashing, signatures,
+required/optional fields, and test vectors.
 
-A Soma Birth Certificate / Trust Certificate is the chainable record
-produced by a verified exchange. It records signed, hash-linked
-evidence about the exchange and can reference prior certificates. It
-is evidence, not ground truth; §11 enumerates what certificates
-cannot prove.
+## 10. Heart-to-heart trust chain semantics
 
-The name "birth certificate" is appropriate when the record introduces
-or anchors a newly produced output, agent instance, delegation context,
-resource version, or commercial exchange artifact. The name "trust
-certificate" is appropriate when the same record is used as reusable
-evidence in later verification decisions.
+A heart-to-heart trust chain is a graph of Soma Heart Trust Certificates where
+each edge is an intentional reference from one certificate to prior evidence.
+Edges may point to Birth Certificates, Trust Certificates, receipt references,
+delegation records, policy statements, or fulfillment records, depending on
+the profile.
 
-This proposal takes the position that birth and trust certificates
-should be **profiles of a single certificate primitive** unless a
-later ADR finds a concrete semantic reason to split them. The final
-decision belongs to the ADR in §18; this proposal explicitly does not
-ratify two parallel primitives.
+A chain can establish:
 
-### D6. Heart-to-heart chains require compatible modules and verifiable counterparty evidence
+- provenance links between certificates;
+- issuer/counterparty participation where signatures verify;
+- evidence continuity where hashes and references match;
+- freshness/payment/fulfillment references where the relevant evidence verifies;
+- compatibility with the verifier's accepted certificate profiles;
+- whether each signing credential was valid at signing time under current Soma
+  rotation and revocation semantics.
 
-Heart-to-heart chaining occurs when both parties run compatible Soma
-Heart modules AND each party's contribution is independently
-verifiable by the other under the accepted Soma semantics.
-Compatibility does not require a shared operator, marketplace,
-payment rail, cache, or product runtime.
+A chain cannot establish:
 
-Minimum bar for a record to be labelled heart-to-heart rather than
-one-sided:
+- that any claim is factually true;
+- that trust transfers automatically from issuer A to issuer B;
+- that all prior relevant evidence was disclosed;
+- that a verifier must accept downstream claims because it accepted upstream
+  claims;
+- that a provider, model, endpoint, or fulfiller will remain reliable.
 
-- both parties are identified under Soma identity rules;
-- both parties sign compatible views of the same exchange envelope
-  (or a witnessed equivalent as defined by a later spec);
-- each side's signature and module set is verifiable by the other
-  without trusting a single operator.
+Verifier policy owns chain interpretation. A verifier policy may require
+specific roots, issuer allowlists, profile allowlists, freshness windows,
+counterparty signatures, witness signatures, payment rails, receipt kinds,
+revocation checks, disclosure limits, or maximum chain depth. If the chain does
+not satisfy policy, verification fails closed for that verifier.
 
-If only one party runs Soma Heart, that party may still produce a
-local certificate, but it MUST be labelled one-sided. A one-sided
-certificate is not upgraded to heart-to-heart by later unilateral
-assertions; upgrade requires counterparty-signed evidence that
-satisfies the bar above. The exact labelling scheme is an ADR/spec
-concern; this proposal only fixes that the distinction is mandatory.
+## 11. v0.1 minimum certificate fields
 
-### D7. Soma remains implementation-neutral; ClawNet is a consumer, not the owner
+This table is a proposal to the ADR for the smallest field set a conforming
+v0.1 Soma Heart Trust Certificate should expose. Canonical encoding, byte
+layouts, hash algorithms, and field names are deferred to a follow-up spec.
 
-ClawNet may be the first and best implementation. It may act as a
-co-signer, witness, router, verifier, hosted operator, or policy layer
-where applicable.
+| Field | Purpose | Required | Notes |
+|---|---|---|---|
+| `version` / `profile` | Declares certificate profile and version so verifiers can match policy. | yes | Profile names drawn from the v0.1 profile candidates table. |
+| certificate identifier / hash | Stable content-addressed handle for the certificate. | yes | Canonical encoding and hash algorithm are spec-level. |
+| issuer identity | Stable Soma `identityId` of the issuer. | yes | Must survive credential rotation; references identity, not a specific key. |
+| issuer credential / rotation reference | Pointer to the credential and rotation state effective at signing time. | yes | Must resolve under `SOMA-ROTATION-SPEC.md` semantics; does not redefine them. |
+| subject identifier / hash | Identifies the bound subject (endpoint, artifact, agent, delegation, policy, receipt, etc.). | yes | May be an opaque hash for privacy profiles. |
+| `issued_at` | Signer-asserted issuance time. | yes | Policy decides accepted time sources. |
+| expiry / freshness bounds | Absolute expiry or freshness window. | conditional | Required where the profile depends on freshness or revocation windows. |
+| claim set | Bounded claims from the v0.1 claim primitive table. | yes | Empty claim sets are not meaningful; profiles define allowed claims. |
+| evidence references | Evidence drawn from the v0.1 evidence primitive table. | conditional | Required where the claim set depends on bound evidence. |
+| prior certificate references | References to earlier certificates this one intentionally extends. | conditional | Required for chain-forming profiles; forbidden from implying automatic transitive trust. |
+| disclosure / privacy profile | Declares what was hidden, redacted, or withheld. | conditional | Required when any evidence is private, encrypted, selectively disclosed, or outside the verifier's reach. |
+| signature set | Issuer signature plus any additional signatures the profile requires. | yes | Counterparty, witness, and participant signatures are profile-specific. |
 
-Those roles are ClawNet runtime/product behaviour, not Soma protocol
-requirements. Soma must remain open enough for other conforming
-implementations to produce and verify compatible certificates without
-running, trusting, or contacting ClawNet.
+## 12. v0.1 profile candidates
 
-Protocol ownership lives in this repo. A ClawNet runtime decision,
-pricing decision, or product policy MUST NOT be cited as the normative
-definition of a Soma protocol rule. Downstream documents describe how
-they use Soma; they do not redefine it.
+This table is a proposal to the ADR for which certificate profiles should be
+ratified in v0.1. The v0.1 column uses the same legend as the claim and
+evidence tables (accept, defer, open).
 
-## 8. Module boundaries
+| Profile | Purpose | Minimum signers | Required evidence kinds | v0.1 |
+|---|---|---|---|---|
+| `birth` | Records the first Soma-verifiable introduction of a subject into a provenance trail. | issuer | subject hash, creation or observation time | accept |
+| `one-sided` (single-issuer trust) | Issuer asserts bounded claims about a subject with no counterparty signature. | issuer | claim-appropriate evidence | accept |
+| `heart-to-heart` (counterparty-signed) | Binds the same statement to issuer and counterparty identities. | issuer + counterparty | transcript and/or exchange-envelope evidence | accept |
+| `freshness-receipt-bound` | Carries Soma Check-style freshness or zero-charge unchanged-result evidence. | issuer | freshness receipt, content hash | accept |
+| `fulfillment-receipt-bound` | References a fulfillment record for a requested action, delivery, or service. | issuer (+ counterparty when available) | fulfillment receipt, transcript or log reference | open |
+| `policy-statement` | Attributable statement of issuer, verifier, endpoint, or certificate policy. | issuer | policy text/hash | defer |
+| `witnessed` | Adds an independent or non-independent witness signature to any of the above. | issuer + witness | witness signature, witness policy reference | defer |
 
-### Soma Check
+Each profile's required fields and signatures are cumulative with section 11. The ADR
+must decide which profiles are ratified, which are deferred, and which remain
+open pending further evidence.
 
-Soma Check owns:
+## 13. Safe claim primitives
 
-- request/response freshness negotiation;
-- hash comparison for payment avoidance;
-- zero-charge unchanged responses where the provider's current hash
-  matches the caller's known hash;
-- the rule that matching freshness checks avoid unnecessary payment or
-  fetch.
+These primitives are safe now only as bounded certificate claim types. Each
+claim must identify its issuer, subject, evidence references, time bounds where
+relevant, and verification limits.
 
-Soma Check does not own:
+| Claim primitive | Meaning | Safe bound | v0.1 |
+|---|---|---|---|
+| `identity_control` | Issuer claims control of an identity or key at a time. | Proved only by valid signature/proof-of-possession under accepted identity and rotation semantics. | accept |
+| `credential_validity` | Issuer or verifier claims a credential was valid, effective, or revoked in a stated window. | Must reference Soma rotation/revocation state; does not redefine it. | accept |
+| `endpoint_observation` | Issuer claims it observed an endpoint request/response or endpoint state. | Proves an observation record was signed, not that the endpoint was honest or complete. | accept |
+| `freshness_receipt` | Issuer claims a freshness check or hash comparison occurred. | Binds Soma Check-style freshness evidence; does not prove semantic freshness beyond the check policy. | accept |
+| `payment_receipt_reference` | Issuer references a payment event, challenge, proof, settlement, or zero-charge result. | Rail-agnostic reference; proves only what the rail evidence can verify. | accept |
+| `content_hash_commitment` | Issuer commits to bytes via a content hash. | Proves commitment to bytes, not correctness, authorship, legality, or quality. | accept |
+| `policy_statement` | Issuer states a verifier, issuer, endpoint, or certificate policy. | Policy is attributable; acceptance is verifier-controlled. | accept |
+| `capability_statement` | Issuer states a capability, permission, or supported operation. | Capability meaning is verifier/service policy; statement alone grants nothing. | defer |
+| `fulfillment_receipt` | Issuer claims a requested action or delivery was fulfilled. | Proves a fulfillment record was signed; does not prove quality or real-world completion unless supporting evidence and policy say so. | open |
+| `delegation_or_endorsement` | Issuer references a delegation, endorsement, or vouching relationship. | Must preserve Soma delegation/revocation semantics; does not create automatic transitive authority or trust. | defer |
 
-- semantic cache reuse;
-- shared cache infrastructure;
-- cache policy decisions beyond the unchanged-response rule;
-- provider routing;
-- reputation;
-- receipts;
-- certificate production or chain verification;
-- marketplace selection;
-- ClawNet pricing or orchestration.
+v0.1 column legend: **accept** = proposed for ratification in the first ADR;
+**defer** = recognized but not normative in v0.1; **open** = ADR must decide
+inclusion. Dispositions above are proposals to the ADR, not decisions.
 
-### Soma Heart core
+This list is intentionally small. Future claims require proposal/ADR/spec
+review if they alter protocol semantics, security posture, package surface, or
+chain interpretation.
 
-Soma Heart core owns:
+## 14. Safe evidence primitives
 
-- participant identity binding;
-- exchange-envelope construction;
-- signature and hash-chain verification semantics;
-- certificate production and verification boundaries;
-- module compatibility signalling;
-- links to credential rotation, delegation, revocation, and security
-  model rules where those existing Soma semantics apply.
+Evidence primitives are references or commitments attached to claims. They are
+not truth guarantees by themselves.
 
-Soma Heart core does not own:
+| Evidence primitive | Meaning | Verification limit | v0.1 |
+|---|---|---|---|
+| signatures | Cryptographic signatures by issuers, participants, witnesses, or counterparties. | Prove key control under verification policy, not factual truth. | accept |
+| hash commitments | Content-addressed commitments to bytes or canonical structures. | Prove byte equality/commitment, not correctness. | accept |
+| timestamps | Local, monotonic, witness, or policy-accepted time evidence. | Depend on clock/witness policy and freshness windows. | accept |
+| request/response transcript hashes | Hashes over exchange transcripts. | Prove commitment to a transcript representation, not that undisclosed context is absent. | accept |
+| receipt references | References to delivery, payment, freshness, or fulfillment receipts. | Prove only what the referenced receipt and verifier can validate. | accept |
+| credential presentation references | References to credential presentations, proofs, or disclosure artifacts. | Depend on credential format and verifier policy; may disclose limited fields only. | defer |
+| payment rail receipt references | Rail-specific payment evidence references. | Rail-agnostic at Soma layer; rail adapter/verifier determines what can be checked. | accept |
+| verifier policy references | Identifiers or hashes for the policy used to interpret a certificate or chain. | Make policy attributable; do not force other verifiers to accept it. | accept |
+| observation log references | References to logs, witness records, monitoring events, or local observations. | Log integrity and completeness depend on the log's own guarantees. | open |
+| media/content hashes | Hashes of images, audio, video, documents, or other content. | Prove commitment to media bytes, not authenticity or provenance beyond other evidence. | defer |
+| third-party attestation references | References to external attestations. | Inherit the attester's trust model and verifier allowlist. | defer |
+| private evidence pointers with disclosed verification limits | Encrypted, access-controlled, or selectively disclosed evidence references. | Verifier must know which checks were impossible because evidence was private or withheld. | open |
 
-- a specific payment rail;
-- a specific hosting/runtime operator;
-- a shared product cache;
-- cache policy or cache invalidation strategy;
-- a provider marketplace;
-- a reputation or scoring system;
-- ClawNet orchestration;
-- credential-rotation semantics (owned by `ADR-0004` and
-  `SOMA-ROTATION-SPEC.md`; this proposal MUST NOT redefine them).
+v0.1 column legend matches the claim primitives table.
 
-### x402 adapter
+## 15. Assurance limits
 
-The x402 adapter owns:
+Soma certificates make claims attributable and evidence tamper-evident. They
+do not make claims true.
 
-- translating x402 payment challenges, proofs, and settlement evidence
-  into Soma Heart exchange-envelope inputs;
-- preserving enough rail evidence for later verification;
-- failing closed when rail evidence is absent, malformed, expired, or
-  inconsistent with the exchange envelope.
+- Signatures prove issuer key control under a verification policy, not factual
+  truth.
+- Hashes prove commitment to bytes, not correctness, completeness, legality,
+  or quality.
+- Receipts prove a referenced event or artifact within the receipt's own trust
+  model, not quality or truth.
+- Chains prove provenance and linkage, not universal trustworthiness.
+- Counterparty signatures prove participation in a signed view, not agreement
+  with unstated facts.
+- Witness signatures prove the witness signed a statement, not that the witness
+  was independent, neutral, or omniscient.
+- Private evidence pointers reduce what a verifier can check; certificates
+  must disclose those limits rather than implying hidden evidence was verified.
 
-The x402 adapter does not own:
+## 16. Endpoint truth models
 
-- Soma identity semantics;
-- certificate-chain semantics;
-- non-x402 rail semantics;
-- global trust or reputation.
+Certificates must not treat all endpoints as if they have the same truth model.
+Profiles and verifier policies should distinguish at least:
 
-### Certificate / receipt primitives
+- **Deterministic data.** The same input and same data version should produce
+  the same output. Hash commitments and freshness receipts are comparatively
+  strong here, but still do not prove source correctness.
+- **Random/LLM/image/video generation.** Outputs may be stochastic or
+  non-repeatable. Certificates can bind prompt/request hashes, model or policy
+  identifiers, output hashes, and observation records, but cannot prove the
+  output is correct or reproducible unless the generation mode supplies that
+  evidence.
+- **Physical fulfillment.** Delivery, shipping, robotics, real-world services,
+  or human action require external evidence. Soma can reference receipts,
+  attestations, media hashes, and logs; it does not verify the physical world.
+- **Private/proprietary endpoints.** Some evidence cannot be disclosed. Private
+  evidence pointers must state what was hidden and which verification limits
+  follow.
+- **One-time actions.** Actions such as sending a message, executing a trade,
+  or consuming a nonce may not be replayable for verification. Certificates can
+  bind receipts and transcript hashes, but policy must handle irreversibility
+  and non-repeatability.
 
-Certificate primitives own:
+## 17. Soma Check interaction
 
-- canonical certificate identifiers or hashes;
-- signed participant claims;
-- content/output hashes;
-- payment evidence references;
-- witness/co-signer references when present;
-- links to prior certificates.
+Soma Check remains freshness/payment-avoidance only. It answers whether a
+caller's known hash matches the provider's current hash or whether payment/fetch
+should proceed.
 
-Receipts, if retained as a separate term, should be treated as payment
-or delivery evidence inside a certificate, not as a parallel trust
-system. A later ADR should decide whether Soma needs a distinct receipt
-primitive or whether receipts are always certificate fields.
+Soma Check may contribute:
 
-## 9. Tentative certificate fields
-
-This is conceptual, not a production schema. A future spec must define
-canonical encoding, required/optional fields, versioning, and test
-vectors before implementation.
-
-Tentative fields:
-
-- `certificateVersion`: certificate format/protocol version.
-- `certificateType`: birth, trust, exchange, or another later-ratified
+- `freshness_receipt` claims;
+- content hash evidence;
+- zero-charge unchanged-result evidence;
+- request/response headers or transcript hashes needed by a later certificate
   profile.
-- `certificateId`: canonical hash or identifier of the certificate.
-- `issuedAt` and optional freshness bounds.
-- `issuer`: Soma identity that produced the certificate.
-- `subject`: output, resource, counterparty, agent instance,
-  delegation, exchange, or other subject being certified.
-- `participants`: buyer, seller/provider, agent, witness, co-signer, or
-  verifier identities as applicable.
-- `exchangeContext`: endpoint/resource, method, intent, purpose,
-  request hash, response hash, or task hash.
-- `somaCheck`: optional freshness result and data hash when Soma Check
-  participated.
-- `paymentRail`: rail identifier such as x402, plus adapter version.
-- `paymentEvidence`: reference or digest of payment proof, challenge,
-  settlement, or zero-charge unchanged result.
-- `outputHash` / `dataHash`: content-addressed output or resource hash.
-- `moduleSet`: Soma Heart modules and versions used for the exchange.
-- `credentialState`: identity/credential reference sufficient for
-  verification under the current rotation semantics defined in
-  `ADR-0004` and `SOMA-ROTATION-SPEC.md`. This field references
-  rotation state; it does not redefine, extend, or bypass it.
-- `previousCertificates`: prior certificate IDs or hashes being linked.
-- `witnesses`: optional co-signer/witness identities and signatures.
-- `signatures`: issuer, participant, witness, or threshold signatures
-  as required by the profile.
-- `privacyProfile`: disclosure mode, redaction commitments, or selective
-  disclosure references if applicable.
 
-## 10. Trust-chain model
+Soma Check does not provide reputation, pricing, staking, routing, provider
+selection, reputation systems, certificate-chain verification, shared cache
+orchestration, or proof of semantic truth.
 
-A trust chain is a graph of certificates linked by certificate IDs,
-hashes, signatures, and participant identities. The simplest chain is
-linear: certificate B references certificate A as prior evidence. More
-realistic chains may fork or merge when an agent consumes multiple
-inputs and produces one output.
+## 18. Payment rail boundary
 
-A linked certificate can prove:
+x402 is the first/default payment adapter for the initial Soma Heart
+certificate design because it is a practical fit for HTTP agent commerce.
 
-- a signer or witness made a claim at a point in the chain;
-- the certificate content has not changed since its hash/signature was
-  produced;
-- a later exchange intentionally referenced earlier evidence;
-- payment/freshness/witness material was bound into the exchange
-  envelope if the relevant fields and signatures verify;
-- the chain is internally consistent under the accepted Soma
-  verification rules.
+x402 is not a hard Soma protocol dependency. Soma Heart certificates remain
+rail-agnostic:
 
-A linked certificate does not prove:
+- certificate claims should use `payment_receipt_reference`, not x402-specific
+  protocol semantics, at the core layer;
+- rail adapters translate rail-specific challenges, proofs, settlements,
+  refunds, or zero-charge outcomes into evidence references;
+- a conforming non-x402 rail may be used if it can bind equivalent evidence
+  into the certificate profile;
+- Soma does not define wallet semantics or settlement finality beyond what the
+  adapter evidence can verify.
 
-- the underlying data was true;
-- the provider was honest outside the signed exchange;
-- the buyer's local cache was untampered;
-- the model reasoned correctly;
-- the product was fairly priced;
-- the payment rail settled if only an unsigned or unverifiable reference
-  is present;
-- the absence of undisclosed side agreements, off-chain state, or
-  omitted context;
-- the absence of prior exchanges that were intentionally not linked;
-- that a counterparty signed anything, unless the counterparty
-  signature is actually present and verifies;
-- global reputation or future reliability.
+## 19. Security and abuse considerations
 
-Heart-to-heart chaining is strongest when both parties sign compatible
-views of the same exchange and any witness/co-signer evidence is
-independently verifiable. A one-sided certificate is still useful, but
-its assurance is narrower and must be labelled accordingly.
+- **False signed claims.** A malicious issuer can sign false claims. Soma makes
+  those claims attributable; it does not make them true.
+- **Evidence laundering.** Attackers may attach impressive but irrelevant
+  evidence. Profiles must require evidence-to-claim binding, not loose bundles.
+- **Chain laundering.** A later certificate may reference a legitimate earlier
+  certificate to imply more than the earlier certificate supports. Verifier
+  policy must evaluate each link and each claim independently.
+- **Replay.** Certificates and receipts need nonce, timestamp, expiry, audience,
+  or transcript binding where replay would be harmful.
+- **Credential rotation confusion.** Verifiers must resolve the credential
+  effective at signing time and fail closed on ambiguous rotation state.
+- **Revocation gaps.** Profiles must state how revocation state is checked and
+  what happens when revocation or gossip state is stale.
+- **Privacy leakage.** Endpoint identifiers, payment references, participant
+  identities, transcript hashes, and timing can leak sensitive business or user
+  information even when payloads are hashed.
+- **Private evidence overclaiming.** Certificates with private evidence pointers
+  must disclose what the verifier could not inspect.
+- **Sybil issuers.** Free-to-mint identities require verifier policy,
+  attestations, allowlists, or other application-level controls.
+- **Witness non-independence.** A witness may be operated by the same party as
+  the issuer. Certificates must not imply independence unless the evidence and
+  policy support it.
+- **Endpoint equivocation.** Providers can show different outputs to different
+  verifiers. Transcript hashes, counterparty signatures, logs, and witnesses can
+  make equivocation attributable but cannot prevent it in all cases.
 
-## 11. Assurance limits
+## 20. Deferred to ClawNet
 
-Signatures, hash chains, payment proofs, and receipts are evidence, not
-magic truth. They make claims attributable and tamper-evident; they do
-not make claims correct.
+The following are downstream ClawNet concerns and must not be defined as Soma
+protocol semantics in this proposal:
 
-The protocol should explicitly preserve these limits:
+- runtime trust queries;
+- provider routing;
+- cache and orchestration behavior;
+- pricing and billing policy;
+- staking markets;
+- proof mining;
+- reward/burn mechanics;
+- `$CLAWNET` utility;
+- marketplace and business model;
+- hosted witness operations;
+- product-specific policy defaults;
+- first-consumer Gate 7 implementation.
 
-- A signed false statement is still false; Soma makes the lie
-  attributable.
-- A hash proves content equality, not quality, accuracy, or freshness
-  unless the freshness rule is separately satisfied.
-- A payment receipt proves only what the rail/verifier can actually
-  verify.
-- A witness proves that a witness signed a statement under its own trust
-  assumptions; it does not make the witness neutral or omniscient.
-- A complete-looking chain can still omit relevant external context.
-- Certificate verification should fail closed on malformed,
-  incompatible, expired, revoked, or unverifiable evidence.
+ClawNet may later cite accepted Soma certificate semantics and build product
+policy around them. It should not redefine certificate, claim, evidence, or
+chain semantics locally.
 
-## 12. Clone-resistance boundary
+## 21. Protocol surface
 
-Soma's openness intentionally enables independent implementations. A
-competitor should be able to implement the protocol, produce compatible
-certificates, and verify heart-to-heart chains without running ClawNet.
+- spec change: likely yes after ADR acceptance; a future
+  `SOMA-HEART-CERTIFICATE-SPEC.md` (name non-binding) or equivalent may be
+  needed.
+- package API change: none in this proposal.
+- security model change: assurance-boundary clarification rather than a change
+  to existing guarantees; the ADR should record whether reviewers consider
+  that clarification large enough to require updating
+  `docs/explanation/security-model.md` directly.
+- downstream integration impact: yes; ClawNet should treat accepted Soma
+  semantics as upstream constraints.
 
-That openness does not erase ClawNet's competitive surface. ClawNet can
-still compete on:
+## 22. Delivery shape
 
-- hosted reliability and latency;
-- operator/user experience;
-- witness and co-signer availability;
-- routing quality;
-- provider relationships;
-- policy defaults;
-- monitoring and audit tools;
-- fraud response;
-- ecosystem trust;
-- commercial packaging.
+1. Review this proposal.
+2. Draft an ADR that resolves each row of the section 23 ADR decision surface and
+   records the accepted dispositions for the v0.1 field, profile, claim, and
+   evidence tables.
+3. If accepted, draft a normative Soma Heart certificate/trust-chain spec
+   (provisional name `SOMA-HEART-CERTIFICATE-SPEC.md`) and index it from
+   `docs/reference/spec-index.md`.
+4. Only after spec shape is clear, propose package/API surfaces.
+5. Defer ClawNet first-consumer implementation to a downstream proposal that
+   cites the accepted Soma ADR/spec.
 
-Soma should not use protocol opacity as clone resistance. ClawNet should
-win by being the best implementation and network, not by owning private
-definitions of Soma trust semantics.
+## 23. ADR decision surface
 
-## 13. Downstream implications for ClawNet
+An ADR is needed. This proposal changes or clarifies protocol semantics, trust
+primitives, certificate language, assurance limits, payment-rail boundaries,
+and future package/spec surface. Per `AGENTS.md`, those decisions need
+proposal review and ADR/spec follow-up before implementation.
 
-ClawNet can design runtime and pricing around these protocol boundaries,
-but should not redefine them.
+The ADR must decide each row below. The "Proposal suggests" column records the
+direction this document leans, not a pre-decided outcome.
 
-Likely ClawNet responsibilities:
+| # | Decision | Proposal suggests |
+|---|---|---|
+| D1 | One certificate primitive with profiles, or separate normative primitives for Birth, Trust, and Heart-to-Heart records? | One primitive with profiles unless review finds a concrete semantic reason to split. |
+| D2 | What is the v0.1 required certificate field set? | The v0.1 minimum certificate fields table in section 11. |
+| D3 | Which v0.1 profiles are accepted, deferred, or left open? | Accept `birth`, `one-sided`, `heart-to-heart`, `freshness-receipt-bound`; open `fulfillment-receipt-bound`; defer `policy-statement`, `witnessed`. |
+| D4 | Which claim primitives are accepted for v0.1? | The accept rows in the section 13 claim primitives table. |
+| D5 | Which evidence primitives are accepted for v0.1? | The accept rows in the section 14 evidence primitives table. |
+| D6 | What verifier-policy properties are required for chain interpretation? | Policy must be attributable, declare accepted issuers/profiles/freshness/revocation rules, fail closed, and never imply automatic transitive trust. |
+| D7 | Soma Check boundary. | Soma Check remains freshness/payment-avoidance only; certificates may bind Soma Check evidence but Soma Check does not verify chains, claims, or reputation. |
+| D8 | x402 adapter boundary. | x402 is the first/default payment adapter, not a hard Soma protocol dependency; certificates stay rail-agnostic at the core layer. |
+| D9 | Credential-rotation compatibility posture. | Certificate verification references `ADR-0004` and `SOMA-ROTATION-SPEC.md` state without proposing any rotation semantic changes. |
+| D10 | Deferred-to-ClawNet items. | Runtime trust queries, routing, caching, pricing, staking, proof mining, reward/burn, token utility, marketplace, hosted witness operations, and first-consumer Gate 7 implementation. |
+| D11 | What spec file owns normative certificate and trust-chain semantics? | A future `SOMA-HEART-CERTIFICATE-SPEC.md` (name non-binding) indexed from `docs/reference/spec-index.md`, following the existing spec pattern. |
+| D12 | Is a package/API proposal warranted now? | No. Package surface work waits until spec shape is accepted. |
 
-- offer the first production-grade Soma Heart implementation;
-- operate witnesses, co-signers, routers, or hosted verification where
-  useful;
-- expose product policy around when certificates are required, optional,
-  witnessed, or rejected;
-- bind x402 evidence through the Soma Heart x402 adapter;
-- use Soma Check for payment avoidance without treating it as a shared
-  cache or reputation engine;
-- document ClawNet-specific trust tiers as product policy layered on
-  Soma certificates, not as Soma protocol truth.
+Security model impact is an assurance-boundary clarification: certificates and
+chains do not weaken or strengthen existing Soma security guarantees, but they
+make the limits of attribution, provenance, and linkage explicit. If
+reviewers conclude this clarification rises to a security model change, the
+ADR should record that upgrade explicitly.
 
-This proposal intentionally does not define a ClawNet pricing table,
-cache implementation, orchestration implementation, or provider
-marketplace.
+## 24. Open questions
 
-## 14. Non-goals
+The ADR decision surface in section 23 covers primitive/profile, field-set, claim,
+evidence, boundary, rotation-compatibility, and deferred-to-ClawNet decisions.
+The following remain open and may be answered by the ADR or by the spec that
+follows it:
 
-- Tokenomics.
-- A full pricing model.
-- A ClawNet cache implementation.
-- ClawNet orchestration implementation.
-- Pulse work.
-- Credential-rotation semantic changes. `ADR-0004` and
-  `SOMA-ROTATION-SPEC.md` are authoritative and this proposal MUST
-  NOT redefine, bypass, or silently extend them.
-- Expanding Soma Check into a trust engine, shared cache, semantic
-  cache, router, receipt system, reputation system, provider
-  marketplace, enterprise runtime, or ClawNet product.
-- Defining a production certificate schema, encoding, or test
-  vectors.
-- Defining a universal reputation score.
-- Choosing all future payment rails.
-- Replacing x402, AP2, ACP, L402, HTTP caching, or verifiable
-  credential standards.
-- Treating any ClawNet runtime, pricing, or product decision as a
-  normative definition of Soma protocol behaviour.
-- Merging, deploying, publishing, or changing package exports.
+1. What canonical encoding and hash algorithm should certificate IDs use?
+2. How should verifier policy be identified: URI, hash, inline object, package
+   version, or another mechanism?
+3. Which evidence references are allowed to remain private, and what
+   disclosure language is mandatory when they are private?
+4. What timestamp sources are acceptable for each profile?
+5. How should revocation state, stale gossip, and unavailable rotation history
+   affect certificate verification, while remaining consistent with
+   `ADR-0004` and `SOMA-ROTATION-SPEC.md`?
+6. What counterparty signature is required before a record can be labelled
+   `heart-to-heart` rather than `one-sided`?
+7. Which x402 evidence fields should the first adapter preserve, while keeping
+   the core certificate model rail-agnostic?
+8. Should receipt references be fields inside certificates only, or should
+   Soma later define a distinct receipt primitive?
+9. How should certificate profiles interact with existing delegation and
+   capability specs without changing their semantics?
+10. What test vectors are required before implementation: certificate hash,
+    signature verification, chain link verification, rotation lookup,
+    redaction, and malformed evidence?
 
-## 15. Protocol surface
+## 25. Acceptance criteria
 
-- spec change: likely yes, after ADR acceptance; a future
-  `SOMA-HEART-CERTIFICATE-SPEC.md` or equivalent may be warranted.
-- package API change: not in this proposal; future implementation may
-  require one.
-- security model change: yes if accepted, because this defines what
-  certificates and heart-to-heart chains can and cannot assure.
-- downstream integration impact: yes; ClawNet should treat these
-  boundaries as upstream Soma constraints.
+This proposal is ADR-ready when all of the following hold:
 
-## 16. Security / reliability requirements
+- The proposal remains centered on Soma Heart Trust Certificates.
+- Claim/evidence language is scoped as supporting protocol language, not a
+  standalone framework.
+- Soma Birth Certificate and Soma Heart Trust Certificate definitions are
+  present.
+- Heart-to-heart trust chains are interpreted by verifier policy and do not
+  imply automatic transitive trust.
+- A v0.1 minimum certificate fields table is present (section 11).
+- A v0.1 profile candidates table with accept/defer/open marks is present
+  (section 12).
+- Claim and evidence primitive tables carry an explicit v0.1 disposition
+  column (sections 13 and 14).
+- Assurance limits are explicit for signatures, hashes, receipts, chains,
+  counterparty signatures, witness signatures, and private evidence.
+- Endpoint truth models are addressed.
+- Soma Check remains freshness/payment-avoidance only.
+- x402 is the first/default payment adapter and not a hard Soma protocol
+  dependency.
+- ClawNet runtime, routing, caching, pricing, staking, proof mining,
+  reward/burn, token utility, marketplace, and first-consumer Gate 7
+  implementation are deferred.
+- No credential-rotation semantic changes are proposed; `ADR-0004` and
+  `SOMA-ROTATION-SPEC.md` remain authoritative.
+- The ADR decision surface (section 23) enumerates every decision the ADR must
+  record.
+- No code, package/API, or spec implementation changes are made by this
+  proposal.
 
-Before implementation, a follow-up ADR/spec should require:
-
-- canonical certificate encoding and hash computation;
-- explicit required vs optional fields by certificate profile;
-- verifier behaviour for missing, expired, revoked, malformed, or
-  incompatible evidence;
-- adapter conformance rules for x402 and any later payment rail;
-- privacy review for exchange context and participant fields;
-- test vectors for certificate hashes, signatures, and chain links;
-- clear labels for one-sided, two-sided, witnessed, and co-signed
-  certificates;
-- compatibility with credential-rotation verification, without changing
-  rotation semantics silently.
-
-## 17. Delivery shape
-
-Recommended sequence:
-
-1. Proposal review of this document.
-2. ADR deciding whether the module boundaries and certificate/trust-chain
-   semantics are accepted.
-3. Normative spec for Soma Heart certificates and trust chains if the
-   ADR accepts the direction.
-4. Small package/API design proposal only after the spec boundary is
-   clear.
-5. ClawNet first-consumer proposal that cites the accepted Soma ADR/spec
-   and limits itself to runtime/product choices.
-
-## 18. ADR needed?
-
-Yes. This proposal makes protocol-boundary decisions around Soma Check,
-Soma Heart, x402 adapter status, certificate semantics, and
-implementation neutrality. Those decisions should not become canonical
-only by appearing in a proposal.
-
-The ADR should answer:
-
-- whether Soma Check's narrow scope is accepted as a non-expansion rule;
-- whether Soma Heart is formally the rail-agnostic verified exchange
-  envelope;
-- whether x402 is the default first adapter rather than a dependency;
-- whether birth certificates and trust certificates are profiles of one
-  certificate primitive or separate primitives;
-- what assurance labels are required for one-sided vs heart-to-heart
-  certificates;
-- what spec file should hold the normative certificate semantics.
-
-## 19. Open questions
-
-1. Should "Birth Certificate" and "Trust Certificate" be one primitive
-   with profiles, or two normative primitives? (This proposal leans
-   toward one primitive with profiles; the ADR is authoritative.)
-2. What is the minimum certificate profile required for a record to be
-   called heart-to-heart rather than one-sided, and what label is
-   mandatory when that bar is not met?
-3. What certificate fields are mandatory for v0.1, and which belong in
-   optional profiles?
-4. Should the first normative spec be named
-   `SOMA-HEART-CERTIFICATE-SPEC.md`, `SOMA-TRUST-CHAIN-SPEC.md`, or
-   something broader? Does the certificate primitive deserve its own
-   spec separate from a trust-chain spec?
-5. What privacy profile is required before exchange certificates are
-   safe for production use, and which fields are considered sensitive
-   by default?
-6. Which x402 evidence fields can be verified without requiring a
-   specific x402 implementation, and what is the minimum adapter
-   conformance surface?
-7. How should certificate verification surface credential-rotation
-   history without changing `ADR-0004` or `SOMA-ROTATION-SPEC.md`?
-8. How should certificates interact with delegation and revocation
-   (`SOMA-DELEGATION-SPEC.md`, revocation log) when a participant's
-   authority changes mid-chain?
-9. What, if anything, should ClawNet witnesses be allowed to claim
-   beyond "I observed/signed this exchange envelope"? What is the
-   upper bound on witness claims in the Soma protocol, independent of
-   ClawNet product policy?
-10. What is the failure mode when two conforming implementations
-    disagree on certificate verification? Is there a canonical
-    arbitration rule, or is disagreement simply fail-closed on both
-    sides?
-
-## 20. Links
+## 26. Links
 
 - `AGENTS.md`
 - `SOMA-CHECK-SPEC.md`
+- `SOMA-DELEGATION-SPEC.md`
 - `SOMA-ROTATION-SPEC.md`
 - `docs/decisions/ADR-0004-credential-rotation-semantics.md`
 - `docs/reference/spec-index.md`
