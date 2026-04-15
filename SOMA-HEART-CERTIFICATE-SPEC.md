@@ -13,8 +13,10 @@
 > coverage list. It does not ship runtime code, package/API exports,
 > or any certificate implementation. Gate 5 (package surface
 > proposal) and Gate 6 (package surface stabilised) must clear
-> before any implementation is authorised. The remaining Gate 5
-> acceptance blocker is test-vector-file delivery (see section 19.2).
+> before any implementation is authorised. The Gate 5
+> test-vector-file delivery blocker is addressed by the v0.1 corpus
+> at `test-vectors/soma-heart-certificate/v0.1/`; Gate 5 acceptance
+> still requires reviewer confirmation and package-surface approval.
 > Credential-rotation semantics remain authoritative in ADR-0004
 > and `SOMA-ROTATION-SPEC.md`; this spec only references rotation
 > state, it does not change it.
@@ -46,11 +48,12 @@ ratified at Gate 4 in section 9.1. Credential-rotation semantics
 remain unchanged; section 15 continues to defer entirely to
 ADR-0004 and `SOMA-ROTATION-SPEC.md`.
 
-After the amendment, the remaining Gate 5 acceptance blocker is
-test-vector-file delivery under section 19.2, authored against
-the canonical encoding pinned in section 9. No package or API
-surface is authorised until the Gate 5 proposal has itself been
-accepted.
+After the amendment, vector authoring proceeded against the
+canonical encoding pinned in section 9. The v0.1 corpus lives at
+`test-vectors/soma-heart-certificate/v0.1/` and is intended to
+satisfy section 19.2, subject to reviewer confirmation. No package
+or API surface is authorised until the Gate 5 proposal has itself
+been accepted.
 
 RFC 2119 / RFC 8174 key words (`MUST`, `MUST NOT`, `SHOULD`,
 `SHOULD NOT`, `MAY`, `REQUIRED`, `OPTIONAL`) apply throughout this
@@ -351,13 +354,15 @@ Any conforming canonicalization (v0.1 or future) MUST satisfy:
 - **Determinism.** Two conforming serializers MUST produce
   byte-identical canonical bytes for the same logical certificate.
 - **Total field coverage.** Canonical bytes MUST cover every
-  REQUIRED field and every CONDITIONAL field that is present.
-  Optional fields that are absent MUST NOT be silently replaced
-  with defaults during canonicalization.
-- **Signature exclusion.** The `signatures` field MUST be excluded
-  from the bytes that are hashed to produce the certificate
-  identifier, and MUST be omitted from the canonical input
-  entirely rather than emitted as an empty value. Signatures MUST
+  REQUIRED field and every CONDITIONAL field that is present,
+  except for the two declared wire fields excluded below. Optional
+  fields that are absent MUST NOT be silently replaced with
+  defaults during canonicalization.
+- **Identifier and signature exclusion.** The `certificate_id` and
+  `signatures` fields MUST be excluded from the bytes that are
+  hashed to produce the certificate identifier, and MUST be omitted
+  from the canonical input entirely rather than emitted as empty
+  values. This avoids a self-referential identifier. Signatures MUST
   cover those identifier-input bytes.
 - **Hash commitment.** The hash algorithm MUST be
   collision-resistant, deterministic, and replayable by any
@@ -446,8 +451,9 @@ receives bytes violating any rule below MUST raise
 ### 9.3 Certificate identifier hash
 
 The certificate identifier is computed from the canonical bytes
-of the certificate **with the `signatures` field omitted from the
-canonicalization input entirely**. The identifier is:
+of the certificate **with the `certificate_id` and `signatures`
+fields omitted from the canonicalization input entirely**. The
+identifier is:
 
 ```
 certificate_id = lowercase_hex( sha256( domain_prefix || canonical_bytes ) )
@@ -463,7 +469,7 @@ where:
   with no separator;
 - `canonical_bytes` is the UTF-8 canonical JSON byte sequence
   produced under section 9.2 from the certificate payload with
-  the `signatures` field omitted;
+  `certificate_id` and `signatures` omitted;
 - `lowercase_hex` is the 64-character lowercase hexadecimal
   encoding of the 32-byte SHA-256 digest.
 
@@ -492,7 +498,7 @@ where:
   in lowercase ASCII;
 - `canonical_bytes` is the same UTF-8 canonical JSON byte
   sequence used to compute the certificate identifier in section
-  9.3 (with the `signatures` field omitted).
+  9.3 (with `certificate_id` and `signatures` omitted).
 
 This domain-separation pattern matches
 `SOMA-ROTATION-SPEC.md` section 4.3, which namespaces signing
@@ -819,12 +825,9 @@ structure) is an open spec item (section 21).
 
 This section is normative. Gate 4 acceptance ratifies the required
 test-vector coverage list in section 19.1 as part of the accepted
-contract. Gate 4 does NOT itself ship vector files: canonical
-encoding (section 9) and hash algorithm selection are spec-level
-open items tracked in section 21, and vector files cannot be
-authored deterministically until those selections are pinned.
-Section 19.2 classifies vector file delivery as a Gate 5
-precondition.
+contract. Gate 4 did not itself ship vector files. The canonical
+encoding and hash algorithm are now pinned in section 9, and section
+19.2 classifies vector file delivery as a Gate 5 precondition.
 
 ### 19.1 Required vector coverage
 
@@ -858,9 +861,11 @@ Vector files MUST be reproducible from this spec plus ADR-0004 and
 internals, private helpers, or ClawNet runtime. Vector files MUST
 be delivered before the Gate 5 package surface proposal may be
 accepted. Vectors MUST be authored against the canonical encoding
-pinned in sections 9.2-9.5 and MUST satisfy section 19.1. Any
-implementation produced under Gate 5 or Gate 6 MUST satisfy the
-delivered vector set.
+pinned in sections 9.2-9.5 and MUST satisfy section 19.1. The
+v0.1 vector corpus lives at
+`test-vectors/soma-heart-certificate/v0.1/`. Any implementation
+produced under Gate 5 or Gate 6 MUST satisfy the delivered vector
+set.
 
 ## 20. Readiness Gates
 
@@ -885,10 +890,12 @@ This spec participates in the ADR-0005 gate sequence.
   semantics.
 - **Gate 5 - Package surface proposal.** Draftable now that Gate 4
   is cleared. The canonicalization blocker (sections 9.2-9.5) has
-  been resolved by the post-Gate-4 amendment; the remaining Gate 5
-  acceptance blocker is the delivery of section 19.2 vector files
-  authored against the pinned canonical encoding and satisfying
-  section 19.1. Out of scope for this PR.
+  been resolved by the post-Gate-4 amendment. The section 19.2
+  vector corpus has been delivered at
+  `test-vectors/soma-heart-certificate/v0.1/`; Gate 5 acceptance
+  still requires reviewer confirmation that it satisfies section
+  19.1 and acceptance of the package-surface proposal. Out of scope
+  for this spec alone.
 - **Gate 6 - Package surface stabilised.** Not draftable without
   Gate 5 acceptance. Out of scope for this PR.
 - **Gate 7 - ClawNet first-consumer implementation unlock.**
@@ -933,10 +940,11 @@ Gate 5 unless a reviewer explicitly promotes them.
 Item 1 (canonical encoding and hash algorithm) was a hard Gate 5
 precondition because section 19.2 vector files cannot be authored
 deterministically until it is resolved. It has been resolved
-post-Gate-4 by pinning the rules in sections 9.2-9.5; vector file
-authoring is therefore unblocked and may proceed against the
-pinned encoding. Gate 5 acceptance is still blocked on the
-delivery of those vector files (section 19.2).
+post-Gate-4 by pinning the rules in sections 9.2-9.5. The vector
+corpus has been delivered at
+`test-vectors/soma-heart-certificate/v0.1/`; Gate 5 acceptance
+still requires reviewer confirmation that the corpus satisfies
+section 19.1 and acceptance of the package-surface proposal.
 
 ## 22. Links
 
