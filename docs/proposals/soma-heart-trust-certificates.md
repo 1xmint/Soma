@@ -2,9 +2,13 @@ Status: proposed
 
 # Soma Heart Trust Certificates and Heart-to-Heart Trust Chains
 
-**Status:** design. No runtime implementation changes.
+**Normativity:** design-only. Nothing in this document is normative
+until a superseding ADR is accepted and, if needed, a spec is
+ratified. The proposal does not ship runtime code, package changes,
+or spec changes in its own merge.
 **First consumer:** ClawNet, as an implementation-neutral consumer of
-Soma protocol semantics.
+Soma protocol semantics. ClawNet is a consumer and potential
+reference implementation; protocol ownership stays in this repo.
 **Covers:** Soma Check boundaries, Soma Heart exchange-envelope
 boundaries, rail-agnostic payment integration, conceptual
 birth/trust certificate semantics, and heart-to-heart trust-chain
@@ -55,16 +59,20 @@ same core semantics.
 
 Soma already has separate pieces that point toward this shape:
 
-- Soma Check exists as a conditional payment/freshness primitive.
+- Soma Check exists as a conditional payment/freshness primitive
+  (`SOMA-CHECK-SPEC.md`).
 - Soma Heart is the protocol home for identity, delegation,
   verification semantics, and the security model.
-- Credential rotation has a ratified ADR and later merged slices,
-  including PR #36 and follow-on rotation work.
+- Credential rotation is covered by `ADR-0004` and
+  `SOMA-ROTATION-SPEC.md`; rotation semantics are fixed and
+  explicitly out of scope for this proposal.
 - ClawNet is the likely first full implementation and will need product
   decisions around pricing, routing, witnessing, and exchange flows.
 
 The protocol boundary should be drawn before ClawNet runtime design
-turns product choices into de facto Soma semantics.
+turns product choices into de facto Soma semantics. Once a downstream
+runtime ships around undefined boundaries, retroactively narrowing
+Soma becomes a breaking change instead of a proposal decision.
 
 ## 3. Broad idea
 
@@ -145,6 +153,14 @@ Soma Check is not a general trust engine. It does not decide reputation,
 route requests, share cached bodies, arbitrate receipts, operate a
 marketplace, or prove semantic truth.
 
+Soma Check does not issue, chain, or verify certificates. Certificate
+production and verification are Soma Heart concerns. Soma Heart MAY
+include a Soma Check result as one field inside a certificate; that
+inclusion does not merge the two protocols and does not grant Soma
+Check new responsibilities. A downstream proposal that adds trust,
+routing, caching, or reputation behaviour to Soma Check is a scope
+violation of this proposal and requires a superseding ADR.
+
 ### D2. Soma Check is independently usable
 
 Soma Check must remain usable without installing, running, or hosting
@@ -155,14 +171,27 @@ adopting heart-to-heart exchange certificates.
 Soma Heart may reuse Soma Check hashes as certificate inputs. That reuse
 does not collapse the two modules.
 
-### D3. Soma Heart is a verified exchange envelope
+### D3. Soma Heart is a modular, rail-agnostic verified exchange envelope
 
-Soma Heart is a modular envelope for verified exchanges. It coordinates
-identity, signatures, content hashes, payment-rail evidence,
-freshness/check results, optional witnesses, and certificate output.
+Soma Heart is a modular protocol surface for verified exchanges. A
+conforming implementation constructs an exchange envelope that
+coordinates identity, signatures, content hashes, payment-rail
+evidence, freshness/check results, optional witnesses, and certificate
+output.
 
-Soma Heart should be rail-agnostic: it can bind to payment evidence
-from a rail, but the rail is not the identity or trust protocol.
+Modularity means:
+
+- each module (identity, Check, payment adapter, witness, certificate
+  primitive) has a defined surface and is individually replaceable;
+- implementations may omit optional modules and still produce
+  certificates of a documented profile;
+- Soma Heart core does not bake in a specific payment rail, specific
+  witness network, specific cache policy, or specific runtime
+  operator.
+
+Rail-agnostic means: Soma Heart can bind to payment evidence from a
+rail, but no rail — including x402 — is part of Soma Heart's identity
+or trust semantics.
 
 ### D4. x402 is the first/default adapter, not a dependency
 
@@ -173,32 +202,51 @@ Soma Heart must not require x402 at the protocol layer. A conforming
 implementation can use another payment rail if it can bind equivalent
 payment evidence into the exchange envelope.
 
-### D5. Certificates are chainable exchange records
+### D5. Certificates are chainable exchange records, not truth
 
 A Soma Birth Certificate / Trust Certificate is the chainable record
-produced by a verified exchange. It records evidence about the exchange
-and can link to prior certificates.
+produced by a verified exchange. It records signed, hash-linked
+evidence about the exchange and can reference prior certificates. It
+is evidence, not ground truth; §11 enumerates what certificates
+cannot prove.
 
 The name "birth certificate" is appropriate when the record introduces
 or anchors a newly produced output, agent instance, delegation context,
 resource version, or commercial exchange artifact. The name "trust
 certificate" is appropriate when the same record is used as reusable
-evidence in later verification decisions. The protocol should avoid
-creating two incompatible primitives unless a later ADR finds a real
-semantic difference.
+evidence in later verification decisions.
 
-### D6. Heart-to-heart chains require compatible modules
+This proposal takes the position that birth and trust certificates
+should be **profiles of a single certificate primitive** unless a
+later ADR finds a concrete semantic reason to split them. The final
+decision belongs to the ADR in §18; this proposal explicitly does not
+ratify two parallel primitives.
+
+### D6. Heart-to-heart chains require compatible modules and verifiable counterparty evidence
 
 Heart-to-heart chaining occurs when both parties run compatible Soma
-Heart modules and produce or link compatible certificates. Compatibility
-does not require a shared operator, marketplace, payment rail, cache,
-or product runtime.
+Heart modules AND each party's contribution is independently
+verifiable by the other under the accepted Soma semantics.
+Compatibility does not require a shared operator, marketplace,
+payment rail, cache, or product runtime.
 
-If only one party runs Soma Heart, that party may still produce a local
-certificate, but it is not a full heart-to-heart certificate unless the
-counterparty evidence is compatible and verifiable.
+Minimum bar for a record to be labelled heart-to-heart rather than
+one-sided:
 
-### D7. Soma remains implementation-neutral
+- both parties are identified under Soma identity rules;
+- both parties sign compatible views of the same exchange envelope
+  (or a witnessed equivalent as defined by a later spec);
+- each side's signature and module set is verifiable by the other
+  without trusting a single operator.
+
+If only one party runs Soma Heart, that party may still produce a
+local certificate, but it MUST be labelled one-sided. A one-sided
+certificate is not upgraded to heart-to-heart by later unilateral
+assertions; upgrade requires counterparty-signed evidence that
+satisfies the bar above. The exact labelling scheme is an ADR/spec
+concern; this proposal only fixes that the distinction is mandatory.
+
+### D7. Soma remains implementation-neutral; ClawNet is a consumer, not the owner
 
 ClawNet may be the first and best implementation. It may act as a
 co-signer, witness, router, verifier, hosted operator, or policy layer
@@ -206,7 +254,13 @@ where applicable.
 
 Those roles are ClawNet runtime/product behaviour, not Soma protocol
 requirements. Soma must remain open enough for other conforming
-implementations to produce and verify compatible certificates.
+implementations to produce and verify compatible certificates without
+running, trusting, or contacting ClawNet.
+
+Protocol ownership lives in this repo. A ClawNet runtime decision,
+pricing decision, or product policy MUST NOT be cited as the normative
+definition of a Soma protocol rule. Downstream documents describe how
+they use Soma; they do not redefine it.
 
 ## 8. Module boundaries
 
@@ -225,10 +279,11 @@ Soma Check does not own:
 
 - semantic cache reuse;
 - shared cache infrastructure;
+- cache policy decisions beyond the unchanged-response rule;
 - provider routing;
 - reputation;
 - receipts;
-- certificate-chain verification;
+- certificate production or chain verification;
 - marketplace selection;
 - ClawNet pricing or orchestration.
 
@@ -249,8 +304,12 @@ Soma Heart core does not own:
 - a specific payment rail;
 - a specific hosting/runtime operator;
 - a shared product cache;
+- cache policy or cache invalidation strategy;
 - a provider marketplace;
-- ClawNet orchestration.
+- a reputation or scoring system;
+- ClawNet orchestration;
+- credential-rotation semantics (owned by `ADR-0004` and
+  `SOMA-ROTATION-SPEC.md`; this proposal MUST NOT redefine them).
 
 ### x402 adapter
 
@@ -313,7 +372,9 @@ Tentative fields:
 - `outputHash` / `dataHash`: content-addressed output or resource hash.
 - `moduleSet`: Soma Heart modules and versions used for the exchange.
 - `credentialState`: identity/credential reference sufficient for
-  verification under the current rotation semantics.
+  verification under the current rotation semantics defined in
+  `ADR-0004` and `SOMA-ROTATION-SPEC.md`. This field references
+  rotation state; it does not redefine, extend, or bypass it.
 - `previousCertificates`: prior certificate IDs or hashes being linked.
 - `witnesses`: optional co-signer/witness identities and signatures.
 - `signatures`: issuer, participant, witness, or threshold signatures
@@ -351,6 +412,9 @@ A linked certificate does not prove:
   is present;
 - the absence of undisclosed side agreements, off-chain state, or
   omitted context;
+- the absence of prior exchanges that were intentionally not linked;
+- that a counterparty signed anything, unless the counterparty
+  signature is actually present and verifies;
 - global reputation or future reliability.
 
 Heart-to-heart chaining is strongest when both parties sign compatible
@@ -431,15 +495,20 @@ marketplace.
 - A ClawNet cache implementation.
 - ClawNet orchestration implementation.
 - Pulse work.
-- Credential-rotation semantic changes.
+- Credential-rotation semantic changes. `ADR-0004` and
+  `SOMA-ROTATION-SPEC.md` are authoritative and this proposal MUST
+  NOT redefine, bypass, or silently extend them.
 - Expanding Soma Check into a trust engine, shared cache, semantic
   cache, router, receipt system, reputation system, provider
   marketplace, enterprise runtime, or ClawNet product.
-- Defining a production certificate schema.
+- Defining a production certificate schema, encoding, or test
+  vectors.
 - Defining a universal reputation score.
 - Choosing all future payment rails.
 - Replacing x402, AP2, ACP, L402, HTTP caching, or verifiable
   credential standards.
+- Treating any ClawNet runtime, pricing, or product decision as a
+  normative definition of Soma protocol behaviour.
 - Merging, deploying, publishing, or changing package exports.
 
 ## 15. Protocol surface
@@ -505,22 +574,36 @@ The ADR should answer:
 ## 19. Open questions
 
 1. Should "Birth Certificate" and "Trust Certificate" be one primitive
-   with profiles, or two normative primitives?
+   with profiles, or two normative primitives? (This proposal leans
+   toward one primitive with profiles; the ADR is authoritative.)
 2. What is the minimum certificate profile required for a record to be
-   called heart-to-heart rather than one-sided?
+   called heart-to-heart rather than one-sided, and what label is
+   mandatory when that bar is not met?
 3. What certificate fields are mandatory for v0.1, and which belong in
    optional profiles?
 4. Should the first normative spec be named
    `SOMA-HEART-CERTIFICATE-SPEC.md`, `SOMA-TRUST-CHAIN-SPEC.md`, or
-   something broader?
-5. What privacy profile is required before exchange certificates are safe
-   for production use?
+   something broader? Does the certificate primitive deserve its own
+   spec separate from a trust-chain spec?
+5. What privacy profile is required before exchange certificates are
+   safe for production use, and which fields are considered sensitive
+   by default?
 6. Which x402 evidence fields can be verified without requiring a
-   specific x402 implementation?
+   specific x402 implementation, and what is the minimum adapter
+   conformance surface?
 7. How should certificate verification surface credential-rotation
-   history without changing ADR-0004 or `SOMA-ROTATION-SPEC.md`?
-8. What, if anything, should ClawNet witnesses be allowed to claim beyond
-   "I observed/signed this exchange envelope"?
+   history without changing `ADR-0004` or `SOMA-ROTATION-SPEC.md`?
+8. How should certificates interact with delegation and revocation
+   (`SOMA-DELEGATION-SPEC.md`, revocation log) when a participant's
+   authority changes mid-chain?
+9. What, if anything, should ClawNet witnesses be allowed to claim
+   beyond "I observed/signed this exchange envelope"? What is the
+   upper bound on witness claims in the Soma protocol, independent of
+   ClawNet product policy?
+10. What is the failure mode when two conforming implementations
+    disagree on certificate verification? Is there a canonical
+    arbitration rule, or is disagreement simply fail-closed on both
+    sides?
 
 ## 20. Links
 
