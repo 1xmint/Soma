@@ -404,12 +404,31 @@ Soma Check may contribute:
 - `freshness_receipt` claims;
 - content hash evidence;
 - zero-charge unchanged-result evidence;
+- provider-advertised payment-term references for a freshness check,
+  unchanged result, or changed-result fetch, when those terms are
+  visible before payment and bound to the request;
 - request/response headers or transcript hashes needed by a later certificate
   profile.
 
-Soma Check does not provide reputation, pricing, staking, routing, provider
-selection, reputation systems, certificate-chain verification, shared cache
-orchestration, or proof of semantic truth.
+Soma MAY allow a provider to advertise neutral, attributable,
+request-bound price terms for a freshness flow. Those terms MAY
+include freshness check price, unchanged-result price, changed-result
+fetch price, payment rail / asset / currency reference, expiry,
+nonce/request/hash binding, provider identity, and receipt reference.
+The recommended unchanged-result behavior remains zero-charge where
+possible. If a provider advertises different terms, the caller must be
+able to inspect and reject them before payment.
+
+Provider-advertised terms should be authenticated, signed, or bound to
+the payment rail challenge. They should be rail-agnostic at the Soma
+layer and usable with x402 or another conforming payment rail. Soma
+records what was offered and what receipt evidence was bound; it does
+not decide whether the terms are commercially good.
+
+Soma Check does not provide reputation systems, pricing policy, price selection,
+staking, routing, provider selection, certificate-chain verification, shared
+cache orchestration, or proof of semantic truth. Carrying an attributable
+payment-term reference does not make Soma Check a pricing engine.
 
 ## 18. Payment rail boundary
 
@@ -421,12 +440,21 @@ rail-agnostic:
 
 - certificate claims should use `payment_receipt_reference`, not x402-specific
   protocol semantics, at the core layer;
+- provider-advertised price terms, when present, should be represented as
+  payment-term references bound to the request, provider identity, expiry,
+  nonce/hash, and receipt evidence rather than as x402-only fields;
 - rail adapters translate rail-specific challenges, proofs, settlements,
-  refunds, or zero-charge outcomes into evidence references;
+  refunds, price-term commitments, or zero-charge outcomes into evidence
+  references;
 - a conforming non-x402 rail may be used if it can bind equivalent evidence
   into the certificate profile;
 - Soma does not define wallet semantics or settlement finality beyond what the
   adapter evidence can verify.
+
+Different providers may advertise different check/fetch terms. Soma can make
+those offers attributable and receipt-verifiable, but it must not choose a
+provider, judge whether a price is good, define platform cuts, or define
+competitive routing policy.
 
 ## 19. Security and abuse considerations
 
@@ -456,6 +484,18 @@ rail-agnostic:
 - **Endpoint equivocation.** Providers can show different outputs to different
   verifiers. Transcript hashes, counterparty signatures, logs, and witnesses can
   make equivocation attributable but cannot prevent it in all cases.
+- **Payment-term bait and switch.** A provider may advertise one set of terms
+  before payment and attempt to bind a different price, asset, rail, expiry, or
+  receipt afterward. Certificates and rail adapters should bind the visible
+  pre-payment terms to the request, nonce/hash, provider identity, and receipt
+  reference, and verifiers should fail closed when those bindings diverge.
+- **Stale or replayed offers.** A price-term reference can be replayed outside
+  its intended freshness window unless it carries expiry and request/nonce/hash
+  binding. Callers should reject stale, unsigned, or context-mismatched terms.
+- **Undisclosed or ambiguous fees.** Soma should record attributable payment
+  terms and receipt references, but it must not infer hidden fees, judge the
+  fairness of a price, or resolve rail-specific ambiguity beyond what the
+  adapter evidence can verify.
 
 ## 20. Deferred to ClawNet
 
@@ -464,8 +504,11 @@ protocol semantics in this proposal:
 
 - runtime trust queries;
 - provider routing;
+- competitive provider routing or ranking by price, latency, freshness,
+  evidence quality, policy compatibility, or other business/runtime factors;
 - cache and orchestration behavior;
 - pricing and billing policy;
+- platform cuts, marketplace fees, revenue shares, or fee splits;
 - staking markets;
 - proof mining;
 - reward/burn mechanics;
@@ -526,9 +569,10 @@ direction this document leans, not a pre-decided outcome.
 | D7 | Soma Check boundary. | Soma Check remains freshness/payment-avoidance only; certificates may bind Soma Check evidence but Soma Check does not verify chains, claims, or reputation. |
 | D8 | x402 adapter boundary. | x402 is the first/default payment adapter, not a hard Soma protocol dependency; certificates stay rail-agnostic at the core layer. |
 | D9 | Credential-rotation compatibility posture. | Certificate verification references `ADR-0004` and `SOMA-ROTATION-SPEC.md` state without proposing any rotation semantic changes. |
-| D10 | Deferred-to-ClawNet items. | Runtime trust queries, routing, caching, pricing, staking, proof mining, reward/burn, token utility, marketplace, hosted witness operations, and first-consumer Gate 7 implementation. |
+| D10 | Deferred-to-ClawNet items. | Runtime trust queries, competitive provider routing/ranking, caching, pricing policy, platform cuts, marketplace fees, staking, proof mining, reward/burn, token utility, hosted witness operations, and first-consumer Gate 7 implementation. |
 | D11 | What spec file owns normative certificate and trust-chain semantics? | A future `SOMA-HEART-CERTIFICATE-SPEC.md` (name non-binding) indexed from `docs/reference/spec-index.md`, following the existing spec pattern. |
 | D12 | Is a package/API proposal warranted now? | No. Package surface work waits until spec shape is accepted. |
+| D13 | Should v0.1 include provider-advertised payment-term references for Soma Check and payment-bound certificate flows? | Open. If accepted, terms should be neutral, attributable, visible before payment, request-bound, rejectable by the caller, rail-agnostic, and limited to offer/receipt evidence rather than provider selection or commercial judgement. |
 
 Security model impact is an assurance-boundary clarification: certificates and
 chains do not weaken or strengthen existing Soma security guarantees, but they
@@ -563,6 +607,15 @@ follows it:
 10. What test vectors are required before implementation: certificate hash,
     signature verification, chain link verification, rotation lookup,
     redaction, and malformed evidence?
+11. Should v0.1 certificates include provider-advertised payment-term
+    references for freshness check price, unchanged-result price,
+    changed-result fetch price, payment rail / asset / currency reference,
+    expiry, nonce/request/hash binding, provider identity, and receipt
+    reference? If yes, which fields are mandatory, and how are the visible
+    pre-payment terms authenticated or bound to the rail challenge?
+12. Should zero-charge unchanged results remain the recommended/default
+    unchanged-result behavior even when the protocol allows providers to
+    advertise non-zero unchanged-result terms?
 
 ## 25. Acceptance criteria
 
