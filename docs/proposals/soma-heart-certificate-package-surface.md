@@ -27,18 +27,26 @@ Soma Heart Certificate Package Surface Proposal
   the required test-vector coverage list in section 19.1. Gate 4
   did NOT ratify the final canonical byte layout, hash algorithm,
   or vector files.
+- Post-Gate-4 amendment: the final canonical byte layout and hash
+  algorithm were subsequently pinned in
+  `SOMA-HEART-CERTIFICATE-SPEC.md` sections 9.2-9.5 as a docs-only
+  amendment under the v0.1 contract, without reopening Gate 4.
+  The pinned rules in the spec are authoritative.
 - Gate 5 (package surface proposal) is now draftable. This
   document is that draft.
 
 Gate 5 acceptance is explicitly blocked by:
 
-1. selection of the final canonical byte layout and hash algorithm
-   (spec section 9 requirements, section 21 open item 1);
-2. existence of test vector files that satisfy spec section 19.1
-   under that canonical encoding (spec section 19.2).
+1. existence of test vector files that satisfy spec section 19.1
+   under the pinned canonical encoding from spec sections 9.2-9.5
+   (spec section 19.2).
 
-Nothing in this proposal attempts to short-circuit those blockers.
-Drafting is not acceptance.
+The canonicalization/hash blocker that previously headed this list
+has been resolved by the post-Gate-4 amendment and is no longer a
+Gate 5 decision point.
+
+Nothing in this proposal attempts to short-circuit the remaining
+blocker. Drafting is not acceptance.
 
 ## Goals
 
@@ -151,10 +159,25 @@ code contract. No names below are binding; all are illustrative.
 
 ## Canonicalization and hash decision packet
 
-Spec section 9 requires a deterministic canonical encoding and a
-collision-resistant hash, but deliberately leaves the final byte
-layout and hash algorithm as Gate 5 preconditions (section 21 open
-item 1).
+> **Status update (post-Gate-4 amendment).** The canonicalization
+> and hash algorithm blocker has been resolved. Option A below
+> (canonical JSON + SHA-256) has been **pinned** in
+> `SOMA-HEART-CERTIFICATE-SPEC.md` sections 9.2-9.5 as a
+> docs-only amendment under the v0.1 contract. The option space
+> below is retained for historical context only; the pinned rules
+> in the spec are authoritative, and Gate 5 review no longer
+> selects between the options. The remaining Gate 5 blocker is
+> test-vector-file delivery under spec section 19.2.
+
+Spec section 9 originally stated requirements only and deferred
+the final byte layout and hash algorithm as a Gate 5 precondition.
+Sections 9.2-9.5 now pin the v0.1 canonical encoding
+(canonical JSON with explicit key ordering, number, byte-array,
+and escaping rules), the certificate identifier hash
+(`lowercase_hex(sha256("soma-heart-certificate:v0.1:" || canonical_bytes))`),
+the signature input (`"soma-heart-certificate:v0.1:<role>:" ||
+canonical_bytes`), and the crypto-agility rules for any future
+revision.
 
 ### Option space
 
@@ -166,11 +189,36 @@ item 1).
 | D | SSZ / deterministic binary framing | SHA-256 or BLAKE3 | Used in some adjacent ecosystems; no existing Soma precedent. |
 | E | Any of the above with SHA-3-256 or BLAKE3 instead of SHA-256 | - | Introduces a hash family Soma does not currently use. |
 
-### Conservative-default recommendation
+### Pinned v0.1 decision
 
-**Recommended default for Gate 5 ratification review: Option A -
-Canonical JSON + SHA-256.** The recommendation is justified by
-existing repo patterns:
+**Option A (canonical JSON + SHA-256) is pinned for v0.1.** The
+decision has been ratified in `SOMA-HEART-CERTIFICATE-SPEC.md`
+sections 9.2-9.5 as a docs-only amendment under the v0.1
+contract. Gate 5 review no longer decides between Options A-E;
+the option table above is retained as historical context only.
+
+The spec's pinned rules are authoritative. In summary:
+
+- Canonical encoding (spec section 9.2): canonical JSON, UTF-8
+  with no BOM, Unicode code-point key ordering, duplicate keys
+  rejected, no insignificant whitespace, tightened RFC 8259
+  string escaping, integer-millisecond timestamps, string
+  decimals for monetary or out-of-range numbers, NaN / Infinity /
+  undefined rejected, optional absent fields omitted, array order
+  preserved, byte arrays as base64 RFC 4648 section 4 with
+  padding, `signatures` omitted from the canonical input
+  entirely.
+- Certificate identifier hash (spec section 9.3):
+  `certificate_id = lowercase_hex(sha256("soma-heart-certificate:v0.1:" || canonical_bytes))`.
+- Signature input (spec section 9.4):
+  `"soma-heart-certificate:v0.1:<role>:" || canonical_bytes`,
+  with role in lowercase ASCII.
+- Crypto-agility (spec section 9.5): future revisions ship as a
+  separate spec or ADR slice with a new version-prefixed domain
+  separator; identifier stability is preserved (no retroactive
+  rehash); any migration MUST ship vectors for both encodings.
+
+The pinning is justified by existing repo patterns:
 
 - `SOMA-ROTATION-SPEC.md` section 4.4 defines event hashing as
   `sha256("soma-rotation-event:" || canonicalJson(preEventWithSignatures))`.
@@ -179,27 +227,10 @@ existing repo patterns:
 - Canonical JSON keeps tooling surface small for implementers who
   are already producing rotation events and Soma Check hashes.
 
-This recommendation is **not a ratification**. It is a starting
-point for the Gate 5 review. Ratification at Gate 5 acceptance
-MUST:
-
-- fix the exact canonical JSON rules (key sorting, number shape,
-  UTF-8 normalisation, whitespace handling, duplicate-key rejection);
-- fix the exact domain-separation prefix (analogous to the
-  `soma-rotation-event:` prefix used by rotation);
-- fix the exact hashed-byte range (excluding the `signatures`
-  field per spec section 9);
-- fix the exact hex/base encoding for the certificate identifier;
-- justify SHA-256 against collision-resistance and crypto-agility
-  requirements, including how a future hash migration would work
-  without changing stable identifiers of already-issued
-  certificates.
-
-If Gate 5 review surfaces evidence that Option B, C, D, or E
-better serves the crypto-agility requirement or the package
-surface, the ratification MAY select a different option. The
-decision MUST be recorded either in this proposal's acceptance
-note or in a dedicated follow-up ADR slice.
+Any future change to the canonical encoding or hash algorithm
+MUST go through a new spec or ADR slice under the crypto-agility
+rules in spec section 9.5, not through Gate 5 review of this
+proposal.
 
 ### Hard requirements at any option
 
@@ -273,12 +304,14 @@ on package internals, private helpers, or ClawNet runtime.
 
 Gate 5 acceptance is blocked until:
 
-1. the canonicalization and hash decision above is pinned;
-2. the vector file set exists at the agreed location and satisfies
-   spec section 19.1 under the pinned canonical encoding.
+1. the vector file set exists at the agreed location and satisfies
+   spec section 19.1 under the pinned canonical encoding from spec
+   sections 9.2-9.5.
 
-No implementation may be authorised before both conditions are
-met.
+The canonicalization and hash decision is already pinned in the
+spec and is no longer a Gate 5 blocker. No implementation may be
+authorised before the vector file condition is met and the
+package-surface readiness items in this proposal are accepted.
 
 ## Package / API shape sketch (conceptual only)
 
@@ -386,12 +419,13 @@ on any of the concerns above.
 
 Gate 5 acceptance requires all of the following, in order:
 
-1. **Canonicalization and hash algorithm pinned.** The final
-   canonical byte layout and hash algorithm MUST be ratified,
-   either inline in this proposal's acceptance note or in a
-   dedicated follow-up ADR slice. Ratification MUST cover the
-   exact canonical rules, domain-separation prefix, hashed-byte
-   range, and identifier encoding.
+1. **Canonicalization and hash algorithm already pinned.** The
+   final canonical byte layout and hash algorithm are pinned in
+   `SOMA-HEART-CERTIFICATE-SPEC.md` sections 9.2-9.5. Gate 5
+   acceptance MUST confirm that this proposal is consistent with
+   the pinned rules and does not attempt to redefine them. Any
+   future change MUST go through a new spec or ADR slice under
+   the crypto-agility rules in spec section 9.5.
 2. **Vector files exist.** Test vector files MUST exist at the
    agreed location and MUST satisfy spec section 19.1 under the
    pinned canonical encoding. Vector files MUST be reproducible
@@ -420,35 +454,33 @@ the criteria above.
 
 ## Open questions
 
-1. Final canonical byte layout and hash algorithm (spec section 9,
-   section 21 open item 1). Current recommendation is Option A
-   (canonical JSON + SHA-256) consistent with existing repo
-   patterns; ratification is owed to Gate 5 review.
-2. Exact canonical JSON rules: key sorting, number shape, UTF-8
-   normalisation, duplicate-key rejection, whitespace handling.
-3. Exact domain-separation prefix for the certificate identifier
-   hash.
-4. Test vector file location (`soma-heart-certificate-vectors/`
+1. Test vector file location (`soma-heart-certificate-vectors/`
    vs `test-vectors/soma-heart-certificate/` vs another path).
-5. Verifier policy wire representation (spec section 21 open
+2. Verifier policy wire representation (spec section 21 open
    item 2).
-6. Wire representation for the spec section 18 failure modes
+3. Wire representation for the spec section 18 failure modes
    (spec section 21 open item 10).
-7. Whether the package surface lives in `soma-heart` directly or
+4. Whether the package surface lives in `soma-heart` directly or
    in a sub-namespace such as `soma-heart/certificate`.
-8. Whether `soma-sense` re-exports observer-only primitives from
+5. Whether `soma-sense` re-exports observer-only primitives from
    this surface and, if so, which ones.
-9. Whether the rail adapter boundary (area 10) ships inside
+6. Whether the rail adapter boundary (area 10) ships inside
    `soma-heart` at all or lives in a separate adapter package.
-10. Whether receipt references remain certificate fields or
-    migrate to a distinct Soma receipt primitive (future ADR
-    candidate, spec section 21 item 8).
-11. Joint resolution of the `fulfillment-receipt-bound` profile
-    and the `fulfillment_receipt` claim (future ADR candidate,
-    spec section 21 item 11).
-12. Migration strategy if a future hash algorithm or encoding
-    change is required, without breaking stable identifiers of
-    already-issued certificates.
+7. Whether receipt references remain certificate fields or
+   migrate to a distinct Soma receipt primitive (future ADR
+   candidate, spec section 21 item 8).
+8. Joint resolution of the `fulfillment-receipt-bound` profile
+   and the `fulfillment_receipt` claim (future ADR candidate,
+   spec section 21 item 11).
+
+Resolved since the original draft:
+
+- Final canonical byte layout and hash algorithm. Pinned in
+  `SOMA-HEART-CERTIFICATE-SPEC.md` sections 9.2-9.5 (canonical
+  JSON + SHA-256, domain separator
+  `soma-heart-certificate:v0.1:`, lowercase hex digest). Any
+  future migration is governed by the crypto-agility rules in
+  spec section 9.5 and is out of scope for Gate 5.
 
 ## Links
 
