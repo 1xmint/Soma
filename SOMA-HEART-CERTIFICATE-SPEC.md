@@ -225,6 +225,13 @@ The v0.1 profile set is fixed by ADR-0005 D3.
 Implementers MUST NOT invent additional profiles in v0.1 without a
 follow-up spec revision or ADR.
 
+For v0.1, `heart-to-heart` requires at least two signatures over
+the same section 9.4 signature input: one `issuer` signature and
+one `counterparty` signature. The counterparty signature MUST bind
+to a stable counterparty `identityId` resolved under ADR-0004 and
+`SOMA-ROTATION-SPEC.md`. A certificate without both roles is
+`one-sided` at most and MUST NOT be labelled `heart-to-heart`.
+
 ## 6. Minimum Certificate Fields
 
 The minimum v0.1 field set, per ADR-0005 D2. Canonical encoding,
@@ -251,6 +258,19 @@ MUST expose CONDITIONAL fields when the profile triggers them.
 Implementations MUST NOT silently drop REQUIRED fields under any
 privacy profile; the disclosure field records what was withheld
 rather than hiding the field itself.
+
+Accepted timestamp sources for v0.1 are profile-bound. `birth` and
+`one-sided` certificates MAY use the issuer clock for `issued_at`.
+`heart-to-heart` certificates MUST have issuer and counterparty
+signatures over the same `issued_at` value, making both parties
+accountable for the timestamp they signed. `freshness-receipt-bound`
+certificates MAY use the issuer clock only when the freshness receipt
+or content hash evidence is also bound to a receipt timestamp or
+request/response transcript timestamp. Expiry and freshness bounds
+MUST be interpreted by verifier policy, including any maximum clock
+skew. A verifier that cannot evaluate the required timestamp source
+MUST fail closed with `evidence-missing` or
+`freshness-window-expired`, as applicable.
 
 ### 6.1 Conceptual wire shape (non-normative)
 
@@ -312,6 +332,16 @@ limit.
 A conforming verifier MUST reject certificates containing deferred
 claim kinds. It MAY accept certificates containing `open` claim
 kinds but MUST NOT treat them as ratified behaviour.
+
+Delegation and capability interactions in v0.1 are reference-only.
+Certificates MAY identify a delegation, endorsement, capability, or
+capability policy as a subject or evidence reference, but MUST NOT
+interpret that reference as a valid delegation or capability unless
+`SOMA-DELEGATION-SPEC.md` or `SOMA-CAPABILITIES-SPEC.md` independently
+verifies it. The deferred `capability_statement` and
+`delegation_or_endorsement` claim kinds remain rejected in v0.1.
+Any attempt to make certificate verification grant delegated
+authority or capability rights requires a later ADR/spec slice.
 
 ## 8. Evidence Primitives
 
@@ -569,10 +599,18 @@ state (see section 12 and section 18).
 ### 10.3 Revocation
 
 A verifier MUST consult rotation/revocation state as an input to
-the decision. The exact rules for "stale" or "unavailable"
-revocation state are spec-level open items (section 21); v0.1 requires
-only that the rules be declared by policy and applied
-deterministically.
+the decision. If historical credential lookup is unavailable,
+ambiguous, or internally inconsistent, verification MUST fail closed
+with `credential-unresolvable`. If the resolved credential was not
+effective at signing time, verification MUST fail with
+`credential-ineffective`. If the resolved signing-time credential is
+revoked under ADR-0004 and `SOMA-ROTATION-SPEC.md`, verification
+MUST fail with `credential-revoked`. Verifier policy MAY declare a
+maximum age for cached rotation or revocation observations; if that
+age is exceeded, the verifier MUST treat rotation state as
+unavailable and fail with `credential-unresolvable`. This spec does
+not change rotation lifecycle, gossip, snapshot, witness, quorum, or
+historical-lookup semantics.
 
 ## 11. Trust Chain Semantics
 
@@ -642,10 +680,27 @@ policy MUST:
 A verifier MUST NOT treat the absence of a policy field as "accept
 by default". A verifier MUST NOT imply automatic transitive trust.
 
-Verifier policy MAY be represented by a URI, hash, inline object,
-or package version; the exact representation is an open spec item
-(section 21). Whichever representation is chosen, the policy MUST be
-attributable and replayable.
+Verifier policy references in v0.1 use a `policy_ref` object:
+
+```
+{
+  policy_id,
+  policy_hash?,
+  policy_version?,
+  policy_uri?
+}
+```
+
+`policy_id` is REQUIRED and MUST be a stable ASCII identifier or URI
+chosen by the policy publisher. `policy_hash` is OPTIONAL but, when
+present, MUST be the lowercase SHA-256 hex digest of the referenced
+policy document or inline policy object under a representation
+declared by `policy_id`. `policy_version` and `policy_uri` are
+OPTIONAL attribution fields. A verifier MUST fail closed if a
+certificate references a policy it cannot identify, fetch, hash, or
+match to local policy configuration. This representation is a
+protocol reference shape only; it does not define a package API or
+force all verifiers to fetch remote policy documents.
 
 ## 13. Soma Check Interaction
 
@@ -690,6 +745,16 @@ rail-agnostic:
 Implementations MUST NOT elevate x402 to a hard dependency of this
 spec.
 
+The first/default x402 adapter evidence reference SHOULD preserve,
+where available from the rail challenge or receipt, the rail name
+(`x402`), adapter version, payment requirement or challenge hash,
+request method, resource URI or resource hash, amount, asset or
+currency reference, payee/provider identity, expiry, nonce or
+request hash binding, receipt reference, and settlement/refund
+status reference. Soma records these as evidence fields only. It
+does not define wallet semantics, settlement finality, pricing
+policy, provider routing, or whether a price is commercially good.
+
 ## 15. Credential Rotation Interaction
 
 Per ADR-0005 D9, this spec references ADR-0004 and
@@ -729,9 +794,32 @@ any evidence is private or withheld:
 - verifier policy MUST decide whether private-evidence certificates
   are acceptable for the decision at hand.
 
-The exact disclosure-language grammar is an open spec item (section 21).
-v0.1 requires only that disclosure be attributable, declarative,
-and non-misleading.
+v0.1 disclosure uses a `disclosure` object:
+
+```
+{
+  profile,
+  hidden_evidence?,
+  private_evidence_pointers?,
+  verification_limit,
+  access_policy_ref?
+}
+```
+
+`profile` is REQUIRED and MUST be one of `public`, `redacted`,
+`private-evidence-pointer`, or `selective-disclosure`.
+`verification_limit` is REQUIRED whenever `profile` is not `public`
+and MUST state the checks the verifier cannot perform.
+`hidden_evidence` is an OPTIONAL array of stable evidence identifiers
+withheld from the verifier. `private_evidence_pointers` is an
+OPTIONAL array of references with at least a pointer identifier,
+evidence kind, and hash commitment where a commitment is available.
+`access_policy_ref` MAY reference a policy governing later
+disclosure. A verifier MUST fail with `disclosure-missing` when
+private, redacted, selectively disclosed, or withheld evidence
+appears without this object. Disclosure language is attribution and
+limitation language only; it MUST NOT imply hidden evidence was
+verified.
 
 ## 17. Security and Abuse Considerations
 
@@ -818,8 +906,24 @@ soft-fail disposition:
 - `canonicalisation-divergence` - reserializing the certificate
   produces different bytes from the declared identifier.
 
-The exact wire representation of these errors (codes, names,
-structure) is an open spec item (section 21).
+The v0.1 wire identifier for each failure is the lowercase
+kebab-case string shown above. A structured failure report, where
+emitted, MUST use:
+
+```
+{
+  error_code,
+  failure_mode,
+  message?,
+  vector_id?
+}
+```
+
+`error_code` and `failure_mode` MUST both carry the same v0.1 wire
+identifier unless a later package proposal explicitly separates
+machine and human naming. `message` and `vector_id` are OPTIONAL
+diagnostic fields. This shape is a protocol diagnostic shape, not a
+TypeScript API commitment.
 
 ## 19. Test Vector Requirements
 
@@ -910,30 +1014,28 @@ preconditions enumerated above.
 
 ## 21. Open Questions
 
-These items remain open after Gate 4 acceptance. Each is classified
-by the earliest gate at which it must be resolved, or marked as a
-future ADR candidate or post-v0.1 follow-up. None of these items
-reopens ADR-0005 D1-D12, none of them changes credential-rotation
-semantics, and none of them authorises implementation. "Gate 5
-precondition" items MUST be resolved before the Gate 5 package
-surface proposal may be accepted. "Future ADR candidate" items
-MUST NOT be resolved inline in this spec if resolution would cross
-an ADR boundary; a follow-up ADR slice is the correct path.
-"Post-v0.1" items MAY slip to a v0.2 revision without blocking
-Gate 5 unless a reviewer explicitly promotes them.
+These items were classified after Gate 4 acceptance. Gate 5
+preconditions are now resolved in this spec or by the delivered
+vector corpus. None of these items reopens ADR-0005 D1-D12, none
+of them changes credential-rotation semantics, and none of them
+authorises implementation. "Future ADR candidate" items MUST NOT
+be resolved inline in this spec if resolution would cross an ADR
+boundary; a follow-up ADR slice is the correct path. "Post-v0.1"
+items MAY slip to a v0.2 revision without blocking Gate 5 unless a
+reviewer explicitly promotes them.
 
 | # | Question | Classification |
 |---|---|---|
 | 1 | Canonical encoding and hash algorithm for certificate identifiers (section 9). | Resolved (post-Gate-4 amendment; pinned in sections 9.2-9.5) |
-| 2 | Exact wire representation for verifier policy identifiers: URI, hash, inline object, package version, or another mechanism (section 12). | Gate 5 precondition |
-| 3 | Disclosure-language grammar for private evidence pointers (section 16). | Gate 5 precondition |
-| 4 | Accepted timestamp sources per profile (section 6, section 12). | Gate 5 precondition |
-| 5 | Stale-revocation, stale-gossip, and unavailable-rotation-history handling, consistent with ADR-0004 and `SOMA-ROTATION-SPEC.md` (section 10.3, section 12, section 18). | Gate 5 precondition |
-| 6 | Counterparty-signature threshold distinguishing `heart-to-heart` from `one-sided` (section 5). | Gate 5 precondition |
-| 7 | Which x402 evidence fields the first adapter preserves while the certificate core stays rail-agnostic (section 14). | Gate 5 precondition |
+| 2 | Exact wire representation for verifier policy identifiers: URI, hash, inline object, package version, or another mechanism (section 12). | Resolved for v0.1 by `policy_ref` in section 12. |
+| 3 | Disclosure-language grammar for private evidence pointers (section 16). | Resolved for v0.1 by the `disclosure` object in section 16. |
+| 4 | Accepted timestamp sources per profile (section 6, section 12). | Resolved for v0.1 in section 6. |
+| 5 | Stale-revocation, stale-gossip, and unavailable-rotation-history handling, consistent with ADR-0004 and `SOMA-ROTATION-SPEC.md` (section 10.3, section 12, section 18). | Resolved for v0.1 in section 10.3 by fail-closed `credential-unresolvable`, `credential-ineffective`, and `credential-revoked` handling. |
+| 6 | Counterparty-signature threshold distinguishing `heart-to-heart` from `one-sided` (section 5). | Resolved for v0.1 in section 5: issuer + counterparty signatures over the same signature input. |
+| 7 | Which x402 evidence fields the first adapter preserves while the certificate core stays rail-agnostic (section 14). | Resolved for v0.1 in section 14 as adapter evidence fields only. |
 | 8 | Whether receipt references remain fields inside certificates or whether Soma later defines a distinct receipt primitive. | Future ADR candidate |
-| 9 | How certificate profiles interact with existing delegation and capability specs without changing their semantics. | Gate 5 precondition |
-| 10 | Exact wire representation for the section 18 failure modes. | Gate 5 precondition |
+| 9 | How certificate profiles interact with existing delegation and capability specs without changing their semantics. | Resolved for v0.1 in section 7 as reference-only interaction; delegation/capability verification remains owned by their specs. |
+| 10 | Exact wire representation for the section 18 failure modes. | Resolved for v0.1 in section 18 as lowercase kebab-case `error_code` / `failure_mode` identifiers. |
 | 11 | Joint resolution of the `fulfillment-receipt-bound` profile and the `fulfillment_receipt` claim. If resolution alters the claim's meaning beyond ADR-0005 D4, a follow-up ADR slice MUST be opened rather than absorbed into this spec. | Future ADR candidate |
 | 12 | Whether observation log references (section 8) and private evidence pointers (section 8) can be advanced from `open` to `accepted` given the section 16 disclosure-language outcome. | Post-v0.1 (v0.2) |
 
@@ -944,7 +1046,8 @@ post-Gate-4 by pinning the rules in sections 9.2-9.5. The vector
 corpus has been delivered at
 `test-vectors/soma-heart-certificate/v0.1/`; Gate 5 acceptance
 still requires reviewer confirmation that the corpus satisfies
-section 19.1 and acceptance of the package-surface proposal.
+section 19.1 and acceptance of the package-surface proposal. Items
+2-7, 9, and 10 have also been resolved in the sections named above.
 
 ## 22. Links
 
