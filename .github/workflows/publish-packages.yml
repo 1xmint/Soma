@@ -1,11 +1,16 @@
 name: Publish Packages
 
-# Two publishable packages:
+# Publishable package:
 #   soma-heart  — the trust machine (heart + sensorium + MCP)
-#   soma-sense  — thin re-export of soma-heart/sense for observer-only installs
 #
-# soma-heart is the source of truth. soma-sense depends on it.
-# Both are published on the same tag push.
+# soma-sense is intentionally NOT published by this workflow. As of
+# soma-heart@0.3.0 the sensorium code lives inside soma-heart as the
+# `soma-heart/sense` subpath export, and soma-sense is documented in
+# README.md and CHANGELOG.md as superseded / receiving no further
+# releases. Re-publishing it here would either halfway-publish the run
+# (if the version is unchanged on the registry) or contradict the
+# deprecation stance. If the soma-sense package is ever revived, add
+# a fresh publish step in a follow-up PR — do not re-attach it here.
 #
 # Two ways to ship a release:
 #
@@ -21,7 +26,7 @@ name: Publish Packages
 #
 # Both paths gate on the current release suite (lint, typecheck, test,
 # build) before calling `npm publish`. Provenance attestations are
-# generated automatically because both packages have `publishConfig.provenance = true`;
+# generated automatically because soma-heart has `publishConfig.provenance = true`;
 # that requires trusted publishing to be configured on npmjs.com for
 # the package. See docs/secure-release-workflow.md.
 
@@ -95,8 +100,4 @@ jobs:
 
       - name: Publish soma-heart
         working-directory: packages/soma-heart
-        run: npm publish
-
-      - name: Publish soma-sense
-        working-directory: packages/soma-sense
         run: npm publish
