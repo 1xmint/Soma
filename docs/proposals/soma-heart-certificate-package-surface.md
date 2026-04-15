@@ -1,15 +1,26 @@
 # Soma Heart Certificate Package Surface Proposal
 
-Status: proposed
+Status: accepted
 
 > Docs-only readiness proposal for Gate 5 of the ADR-0005 gate
-> sequence. This document does not authorise package, API, runtime,
-> or test-vector code. It defines the package/API surface shape and
-> the readiness checklist that must be satisfied before Gate 5
-> acceptance, consistent with `SOMA-HEART-CERTIFICATE-SPEC.md`
-> (accepted) and ADR-0005 (accepted). Credential-rotation semantics
-> remain authoritative in ADR-0004 and `SOMA-ROTATION-SPEC.md` and
-> are not modified by anything in this proposal.
+> sequence. This document does not itself merge package, API, or
+> runtime implementation. It accepts the package/API surface shape
+> and readiness checklist needed to unblock Gate 6 planning,
+> consistent with `SOMA-HEART-CERTIFICATE-SPEC.md` (accepted) and
+> ADR-0005 (accepted). Credential-rotation semantics remain
+> authoritative in ADR-0004 and `SOMA-ROTATION-SPEC.md` and are not
+> modified by anything in this proposal.
+
+## Acceptance note
+
+Gate 5 is accepted by this document. Review confirmed that
+canonicalization and hash rules are pinned in
+`SOMA-HEART-CERTIFICATE-SPEC.md` sections 9.2-9.5, the v0.1 vector
+corpus exists at `test-vectors/soma-heart-certificate/v0.1/`, spec
+section 21 items 2-7, 9, and 10 are resolved, and the functional
+areas below are accepted as the package-surface planning shape. Gate
+5 acceptance does not merge implementation, package exports, or API
+files. It only makes Gate 6 package-surface stabilisation draftable.
 
 ## Title
 
@@ -32,8 +43,7 @@ Soma Heart Certificate Package Surface Proposal
   `SOMA-HEART-CERTIFICATE-SPEC.md` sections 9.2-9.5 as a docs-only
   amendment under the v0.1 contract, without reopening Gate 4.
   The pinned rules in the spec are authoritative.
-- Gate 5 (package surface proposal) is now draftable. This
-  document is that draft.
+- Gate 5 (package surface proposal): accepted by this document.
 
 Gate 5 acceptance was explicitly blocked by:
 
@@ -46,10 +56,9 @@ has been resolved by the post-Gate-4 amendment and is no longer a
 Gate 5 decision point.
 
 The vector-file blocker is resolved by the v0.1 corpus at
-`test-vectors/soma-heart-certificate/v0.1/`, subject to reviewer
-confirmation that the corpus satisfies spec section 19.1. Drafting
-is still not acceptance: the package-surface readiness items below
-must be accepted before any implementation is authorised.
+`test-vectors/soma-heart-certificate/v0.1/`. The package-surface
+readiness items below are accepted as the Gate 5 planning surface.
+No implementation is authorised by this acceptance.
 
 ## Goals
 
@@ -421,7 +430,7 @@ on any of the concerns above.
 
 ## Acceptance criteria
 
-Gate 5 acceptance requires all of the following, in order:
+Gate 5 acceptance required all of the following, in order:
 
 1. **Canonicalization and hash algorithm already pinned.** The
    final canonical byte layout and hash algorithm are pinned in
@@ -457,8 +466,8 @@ Gate 5 acceptance requires all of the following, in order:
    MUST explicitly confirm no change to ADR-0004 or
    `SOMA-ROTATION-SPEC.md` semantics.
 
-Gates 6 and 7 remain blocked until Gate 5 acceptance lands under
-the criteria above.
+Gate 6 is now draftable. Gate 7 remains blocked until Gate 6 lands
+and must be handled outside Soma in `claw-net/docs/decisions/`.
 
 ## Open questions
 

@@ -12,11 +12,11 @@
 > certificate identifier construction, and the required test-vector
 > coverage list. It does not ship runtime code, package/API exports,
 > or any certificate implementation. Gate 5 (package surface
-> proposal) and Gate 6 (package surface stabilised) must clear
-> before any implementation is authorised. The Gate 5
+> proposal) has cleared; Gate 6 (package surface stabilised) must
+> clear before any implementation is authorised. The Gate 5
 > test-vector-file delivery blocker is addressed by the v0.1 corpus
-> at `test-vectors/soma-heart-certificate/v0.1/`; Gate 5 acceptance
-> still requires reviewer confirmation and package-surface approval.
+> at `test-vectors/soma-heart-certificate/v0.1/`, and the package
+> surface proposal has advanced to accepted.
 > Credential-rotation semantics remain authoritative in ADR-0004
 > and `SOMA-ROTATION-SPEC.md`; this spec only references rotation
 > state, it does not change it.
@@ -992,16 +992,14 @@ This spec participates in the ADR-0005 gate sequence.
   (section 19.2), does NOT authorise any package, API, runtime,
   or ClawNet work, and does NOT change credential-rotation
   semantics.
-- **Gate 5 - Package surface proposal.** Draftable now that Gate 4
-  is cleared. The canonicalization blocker (sections 9.2-9.5) has
-  been resolved by the post-Gate-4 amendment. The section 19.2
-  vector corpus has been delivered at
-  `test-vectors/soma-heart-certificate/v0.1/`; Gate 5 acceptance
-  still requires reviewer confirmation that it satisfies section
-  19.1 and acceptance of the package-surface proposal. Out of scope
-  for this spec alone.
-- **Gate 6 - Package surface stabilised.** Not draftable without
-  Gate 5 acceptance. Out of scope for this PR.
+- **Gate 5 - Package surface proposal.** Cleared by the accepted
+  package-surface proposal. The canonicalization blocker (sections
+  9.2-9.5) has been resolved by the post-Gate-4 amendment, the
+  section 19.2 vector corpus has been delivered at
+  `test-vectors/soma-heart-certificate/v0.1/`, and spec section 21
+  Gate 5 preconditions are resolved.
+- **Gate 6 - Package surface stabilised.** Draftable now that Gate 5
+  is cleared. Out of scope for this PR.
 - **Gate 7 - ClawNet first-consumer implementation unlock.**
   Separate ADR in `claw-net/docs/decisions/`. Out of scope for
   Soma. Not draftable without Gate 6.
@@ -1009,8 +1007,7 @@ This spec participates in the ADR-0005 gate sequence.
 Nothing in this spec authorises any package, API, runtime, or
 ClawNet integration work. Gate 4 acceptance specifically does NOT
 unlock implementation; the earliest implementation-relevant
-threshold is Gate 5 acceptance, which is itself blocked on the
-preconditions enumerated above.
+threshold is Gate 6 package-surface stabilisation.
 
 ## 21. Open Questions
 
