@@ -1,20 +1,42 @@
 # Soma Heart Certificate Protocol
 
 **Version:** `soma-heart-certificate/0.1`
-**Status:** Draft
+**Status:** accepted
 **Author:** Joshua Fair (`1xmint`)
 **Repository:** [github.com/1xmint/Soma](https://github.com/1xmint/Soma)
 
-> v0.1 is a **draft normative** certificate contract following
+> v0.1 is an **accepted normative** certificate contract following
 > ADR-0005. It defines the certificate primitive, v0.1 profiles, the
-> bounded claim and evidence vocabulary, trust-chain semantics, and
-> verifier-policy requirements. It does not ship runtime code,
-> package/API exports, or any certificate implementation; Gate 3
-> (this spec) must be accepted, and Gate 5/6 (package surface) must
-> clear before any implementation is authorised. Credential-rotation
-> semantics remain authoritative in ADR-0004 and
-> `SOMA-ROTATION-SPEC.md`; this spec only references rotation state,
-> it does not change it.
+> bounded claim and evidence vocabulary, trust-chain semantics,
+> verifier-policy requirements, and the required test-vector
+> coverage list. It does not ship runtime code, package/API exports,
+> canonical encoding, or any certificate implementation. Gate 5
+> (package surface proposal) and Gate 6 (package surface stabilised)
+> must clear before any implementation is authorised, and Gate 5
+> acceptance is itself blocked on canonical-encoding selection and
+> test-vector-file delivery (see section 19.2 and section 21).
+> Credential-rotation semantics remain authoritative in ADR-0004
+> and `SOMA-ROTATION-SPEC.md`; this spec only references rotation
+> state, it does not change it.
+
+## Acceptance note
+
+This spec advanced from `Status: Draft` to `Status: accepted` at
+Gate 4 after reviewer approval of every normative section (1-18)
+and the required test-vector coverage list (section 19.1). Gate 4
+scope is deliberately limited to ratifying the normative contract
+and boundary rules. Gate 4 ratifies the canonicalization
+requirements in section 9, but does NOT ratify the final canonical
+byte layout or hash algorithm; those selections are Gate 5
+preconditions per section 21. Gate 4 does NOT ship test vector
+files (section 19.2), does NOT authorise any package, API,
+runtime, or ClawNet work, and does NOT alter credential-rotation
+semantics. Canonical byte layout and hash algorithm selection and
+test-vector-file delivery are classified as Gate 5 preconditions
+per section 21, and no package or API surface is authorised until
+the Gate 5 proposal has itself been accepted. Credential-rotation
+semantics remain authoritative in ADR-0004 and
+`SOMA-ROTATION-SPEC.md` and are not changed by this acceptance.
 
 RFC 2119 / RFC 8174 key words (`MUST`, `MUST NOT`, `SHOULD`,
 `SHOULD NOT`, `MAY`, `REQUIRED`, `OPTIONAL`) apply throughout this
@@ -317,9 +339,13 @@ ratified:
 - **Signature exclusion.** The `signatures` field MUST be excluded
   from the bytes that are hashed to produce the certificate
   identifier, but signatures MUST cover those identifier bytes.
-- **Hash commitment.** The hash algorithm chosen by Gate 3
-  acceptance MUST be collision-resistant, deterministic, and
-  replayable by any conforming verifier.
+- **Hash commitment.** The hash algorithm selected before Gate 5
+  package-surface acceptance MUST be collision-resistant,
+  deterministic, and replayable by any conforming verifier.
+  Selection of the final canonical byte layout and hash algorithm
+  is a Gate 5 precondition per section 21; Gate 4 ratifies the
+  requirements stated in this section, not the final byte layout
+  or algorithm.
 - **Identifier stability across rotation.** Rotating an issuer's
   credential MUST NOT change the certificate identifier of any
   previously issued certificate.
@@ -624,8 +650,18 @@ structure) is an open spec item (section 21).
 
 ## 19. Test Vector Requirements
 
-Acceptance of this spec (Gate 4) MUST be accompanied by normative
-test vectors covering at least:
+This section is normative. Gate 4 acceptance ratifies the required
+test-vector coverage list in section 19.1 as part of the accepted
+contract. Gate 4 does NOT itself ship vector files: canonical
+encoding (section 9) and hash algorithm selection are spec-level
+open items tracked in section 21, and vector files cannot be
+authored deterministically until those selections are pinned.
+Section 19.2 classifies vector file delivery as a Gate 5
+precondition.
+
+### 19.1 Required vector coverage
+
+A conforming vector set MUST include:
 
 - at least one conforming certificate for each accepted profile
   under section 5;
@@ -645,72 +681,87 @@ test vectors covering at least:
 - a freshness-window-expired vector;
 - a canonicalisation-divergence vector;
 - a redaction/disclosure vector exercising section 16;
-- at least one malformed-evidence vector exercising section 17 evidence
-  laundering.
+- at least one malformed-evidence vector exercising section 17
+  evidence laundering.
 
-Test vectors MUST be reproducible from this spec plus ADR-0004 and
+### 19.2 Vector file delivery
+
+Vector files MUST be reproducible from this spec plus ADR-0004 and
 `SOMA-ROTATION-SPEC.md` alone; they MUST NOT depend on package
-internals, private helpers, or ClawNet runtime.
+internals, private helpers, or ClawNet runtime. Vector files MUST
+be delivered before the Gate 5 package surface proposal may be
+accepted. Gate 5 acceptance is blocked until the vector set
+satisfies section 19.1 under the canonical encoding selected for
+section 9. Any implementation produced under Gate 5 or Gate 6 MUST
+satisfy the delivered vector set.
 
 ## 20. Readiness Gates
 
-This spec participates in the ADR-0005 gate sequence. It does NOT
-advance any gate beyond the one it drafts.
+This spec participates in the ADR-0005 gate sequence.
 
 - **Gate 1 - ADR drafted.** Cleared by the initial draft of
   ADR-0005.
 - **Gate 2 - ADR accepted.** Cleared by the ADR-0005 acceptance PR.
 - **Gate 3 - Follow-up spec drafted.** Cleared by the initial
   merge of this document as `Status: Draft`.
-- **Gate 4 - Follow-up spec accepted.** Requires reviewer approval
-  of every normative section and the section 19 test vectors. NOT cleared
-  by this PR.
-- **Gate 5 - Package surface proposal.** Not draftable until Gate 4
-  is cleared. Out of scope here.
-- **Gate 6 - Package surface stabilised.** Not draftable until
-  Gate 5. Out of scope here.
+- **Gate 4 - Follow-up spec accepted.** Cleared by the acceptance
+  PR that moves this document to `Status: accepted`. Gate 4 scope
+  is the normative contract and boundary rules in sections 1-18,
+  plus the required test-vector coverage list in section 19.1.
+  Gate 4 ratifies the canonicalization requirements in section 9,
+  but does NOT ratify the final canonical byte layout or hash
+  algorithm. Gate 4 does NOT ship test vector files (section 19.2),
+  does NOT authorise any package, API, runtime, or ClawNet work,
+  and does NOT change credential-rotation semantics.
+- **Gate 5 - Package surface proposal.** Draftable now that Gate 4
+  is cleared. Gate 5 acceptance is blocked until the final
+  canonical byte layout and hash algorithm (section 21 open item 1)
+  are pinned and the section 19.2 vector files exist and satisfy
+  section 19.1. Out of scope for this PR.
+- **Gate 6 - Package surface stabilised.** Not draftable without
+  Gate 5 acceptance. Out of scope for this PR.
 - **Gate 7 - ClawNet first-consumer implementation unlock.**
   Separate ADR in `claw-net/docs/decisions/`. Out of scope for
   Soma. Not draftable without Gate 6.
 
 Nothing in this spec authorises any package, API, runtime, or
-ClawNet integration work.
+ClawNet integration work. Gate 4 acceptance specifically does NOT
+unlock implementation; the earliest implementation-relevant
+threshold is Gate 5 acceptance, which is itself blocked on the
+preconditions enumerated above.
 
 ## 21. Open Questions
 
-These items are intentionally left open at Gate 3 and MUST be
-resolved before Gate 4 acceptance unless explicitly marked as
-spec-level follow-ups.
+These items remain open after Gate 4 acceptance. Each is classified
+by the earliest gate at which it must be resolved, or marked as a
+future ADR candidate or post-v0.1 follow-up. None of these items
+reopens ADR-0005 D1-D12, none of them changes credential-rotation
+semantics, and none of them authorises implementation. "Gate 5
+precondition" items MUST be resolved before the Gate 5 package
+surface proposal may be accepted. "Future ADR candidate" items
+MUST NOT be resolved inline in this spec if resolution would cross
+an ADR boundary; a follow-up ADR slice is the correct path.
+"Post-v0.1" items MAY slip to a v0.2 revision without blocking
+Gate 5 unless a reviewer explicitly promotes them.
 
-1. Canonical encoding and hash algorithm for certificate
-   identifiers (section 9).
-2. Exact wire representation for verifier policy identifiers: URI,
-   hash, inline object, package version, or another mechanism
-   (section 12).
-3. Disclosure-language grammar for private evidence pointers (section 16).
-4. Accepted timestamp sources per profile (section 6, section 12).
-5. Stale-revocation, stale-gossip, and unavailable-rotation-history
-   handling, consistent with ADR-0004 and `SOMA-ROTATION-SPEC.md`
-   (section 10.3, section 12, section 18).
-6. Counterparty-signature threshold distinguishing `heart-to-heart`
-   from `one-sided` (section 5).
-7. Which x402 evidence fields the first adapter preserves while
-   the certificate core stays rail-agnostic (section 14).
-8. Whether receipt references remain fields inside certificates
-   or whether Soma later defines a distinct receipt primitive.
-   This is noted spec-level but MAY rise to a new ADR if a distinct
-   primitive is chosen.
-9. How certificate profiles interact with existing delegation and
-   capability specs without changing their semantics.
-10. Exact wire representation for the section 18 failure modes.
-11. Joint resolution of the `fulfillment-receipt-bound` profile
-    and the `fulfillment_receipt` claim. If resolution alters the
-    claim's meaning beyond ADR-0005 D4, a follow-up ADR slice may
-    be required.
-12. Whether observation log references (section 8) and private evidence
-    pointers (section 8) can be advanced from `open` to `accepted` in
-    v0.1 given the section 16 disclosure-language outcome, or whether
-    they stay `open` until v0.2.
+| # | Question | Classification |
+|---|---|---|
+| 1 | Canonical encoding and hash algorithm for certificate identifiers (section 9). | Gate 5 precondition |
+| 2 | Exact wire representation for verifier policy identifiers: URI, hash, inline object, package version, or another mechanism (section 12). | Gate 5 precondition |
+| 3 | Disclosure-language grammar for private evidence pointers (section 16). | Gate 5 precondition |
+| 4 | Accepted timestamp sources per profile (section 6, section 12). | Gate 5 precondition |
+| 5 | Stale-revocation, stale-gossip, and unavailable-rotation-history handling, consistent with ADR-0004 and `SOMA-ROTATION-SPEC.md` (section 10.3, section 12, section 18). | Gate 5 precondition |
+| 6 | Counterparty-signature threshold distinguishing `heart-to-heart` from `one-sided` (section 5). | Gate 5 precondition |
+| 7 | Which x402 evidence fields the first adapter preserves while the certificate core stays rail-agnostic (section 14). | Gate 5 precondition |
+| 8 | Whether receipt references remain fields inside certificates or whether Soma later defines a distinct receipt primitive. | Future ADR candidate |
+| 9 | How certificate profiles interact with existing delegation and capability specs without changing their semantics. | Gate 5 precondition |
+| 10 | Exact wire representation for the section 18 failure modes. | Gate 5 precondition |
+| 11 | Joint resolution of the `fulfillment-receipt-bound` profile and the `fulfillment_receipt` claim. If resolution alters the claim's meaning beyond ADR-0005 D4, a follow-up ADR slice MUST be opened rather than absorbed into this spec. | Future ADR candidate |
+| 12 | Whether observation log references (section 8) and private evidence pointers (section 8) can be advanced from `open` to `accepted` given the section 16 disclosure-language outcome. | Post-v0.1 (v0.2) |
+
+Item 1 (canonical encoding and hash algorithm) is a hard Gate 5
+precondition because section 19.2 vector files cannot be authored
+deterministically until it is resolved.
 
 ## 22. Links
 
