@@ -1,6 +1,6 @@
 # Soma Heart Certificate Gate 6 Stabilisation Proposal
 
-Status: proposed
+Status: accepted
 
 > Docs-only readiness proposal for Gate 6 of the ADR-0005 gate
 > sequence. This document does not itself merge package, API,
@@ -14,6 +14,63 @@ Status: proposed
 > Credential-rotation semantics remain authoritative in ADR-0004
 > and `SOMA-ROTATION-SPEC.md` and are not modified by anything in
 > this proposal.
+
+## Acceptance note
+
+Gate 6 is accepted by this document. Acceptance confirms the
+package-surface ownership and stabilisation plan set out below:
+
+- package: `soma-heart` (source of truth, no new top-level
+  package);
+- subpath export: `soma-heart/certificate`;
+- conceptual source directory:
+  `packages/soma-heart/src/certificate/` (conceptual ownership
+  only; no file created by this acceptance);
+- `soma-sense` re-export posture: observer-safe read path only,
+  covering canonicalisation helpers, certificate identifier
+  derivation, signature-input construction, vector-corpus
+  loading and conformance helpers, profile validation,
+  claim-vocabulary validation, evidence-vocabulary validation,
+  and the failure-mode / error mapping (areas 1, 2, 3, 4, 5, 6,
+  7, and 12);
+- public / internal API boundary as listed in the
+  "Public vs internal API boundary" section of this proposal,
+  including the full-install-only posture for the
+  verifier-policy evaluator (area 8) and the internal-only
+  posture for the rotation lookup adapter (area 9) and concrete
+  rail adapter wiring (area 11 concrete implementations);
+- vector conformance requirement against
+  `test-vectors/soma-heart-certificate/v0.1/manifest.json`; any
+  future implementation PR, if separately authorised, MUST
+  produce canonical bytes, certificate identifiers, and
+  signature-input hashes that exactly match every entry in that
+  corpus;
+- failure-mode wire identifiers: the lowercase kebab-case
+  identifiers defined in `SOMA-HEART-CERTIFICATE-SPEC.md`
+  section 18 are the only error identifiers that may be emitted
+  for the mapped failure modes.
+
+Acceptance does not:
+
+- implement package code;
+- edit `package.json`, any `packages/*/package.json`, any
+  `exports` map, or any build configuration;
+- edit TypeScript or any other source file under `src/` or
+  `packages/*/`;
+- edit the vector corpus at
+  `test-vectors/soma-heart-certificate/v0.1/`;
+- edit `SOMA-HEART-CERTIFICATE-SPEC.md`, ADR-0005, ADR-0004,
+  `SOMA-ROTATION-SPEC.md`, or any other spec or ADR;
+- change credential-rotation semantics in any way;
+- authorise Gate 7.
+
+Acceptance makes a future implementation PR eligible to be
+proposed separately against the ownership, boundary, and export
+plan ratified here. No such PR is triggered or pre-approved by
+accepting this proposal; any implementation PR remains a
+distinct future instrument that MUST be separately proposed,
+reviewed, and authorised. Gate 7 remains blocked and downstream
+to `claw-net/docs/decisions/`.
 
 ## Title
 
@@ -31,7 +88,7 @@ The ADR-0005 gate sequence is:
 6. Gate 6 - package surface stabilised (this proposal).
 7. Gate 7 - ClawNet first-consumer unlock, handled in `claw-net`.
 
-State at the time of this proposal:
+State at this document's acceptance:
 
 - **Gate 1**: cleared by the ADR-0005 draft PR.
 - **Gate 2**: cleared by the ADR-0005 acceptance PR.
@@ -51,20 +108,23 @@ State at the time of this proposal:
   - the functional-area boundary shape of the future
     package/API surface;
   - resolution of spec section 21 items 2-7, 9, and 10.
-- **Gate 6**: this proposal. Goal is to pin surface ownership,
-  naming, and a concrete import path for the future certificate
-  module so that a later implementation PR, if separately
-  authorised, can be drafted without re-opening architecture
-  discussions. Gate 6 acceptance by itself does not authorise
-  that implementation PR; acceptance only makes it eligible to
-  be proposed against a stabilised surface shape.
-- **Gate 7**: remains blocked. It is downstream to Soma and will
-  be raised in `claw-net/docs/decisions/` after Gate 6 lands.
+- **Gate 6**: cleared by this document moving to
+  `Status: accepted`. Gate 6 pinned surface ownership, naming,
+  import path, source-file ownership, public/internal API
+  boundary, vector conformance requirement, failure-mode wire
+  identifiers, export plan, and `soma-sense` re-export posture
+  as listed in the Acceptance note above and the sections
+  below. Gate 6 acceptance by itself does not authorise the
+  implementation PR; acceptance only makes it eligible to be
+  proposed against a stabilised surface shape.
+- **Gate 7**: remains blocked. It is downstream to Soma and
+  MUST be raised in `claw-net/docs/decisions/`, not in this
+  repo. Gate 6 acceptance does not unblock Gate 7 by itself.
 
-This proposal assumes the accepted state of the above gates and
-does not re-litigate anything they already ratified. If any gate
-is later reopened, this proposal MUST be re-reviewed against the
-reopened gate before acceptance.
+This proposal assumed the accepted state of Gates 1-5 and did
+not re-litigate anything they already ratified. Gates 1-6 are
+now cleared. If any earlier gate is later reopened, this
+acceptance MUST be re-reviewed against the reopened gate.
 
 ## Goals
 
@@ -434,7 +494,8 @@ shape.
 
 ## Gate 6 acceptance criteria
 
-Gate 6 acceptance requires all of the following, in order:
+Gate 6 acceptance required all of the following, in order, and
+all are satisfied by this document:
 
 1. **Package namespace chosen.** The subpath export
    `soma-heart/certificate` (or an explicitly named alternative)
@@ -509,22 +570,24 @@ Gate 6 acceptance requires all of the following, in order:
 ## Gate 7 remains blocked and downstream
 
 Gate 7 is the ClawNet first-consumer unlock. It remains blocked
-by this proposal and by any future implementation PR that may
-follow it, and it MUST be planned in `claw-net/docs/decisions/`
-rather than in Soma.
+after Gate 6 acceptance and by any future implementation PR
+that may follow, and it MUST be planned in
+`claw-net/docs/decisions/` rather than in Soma. Gate 6
+acceptance does not unblock, authorise, or pre-approve Gate 7
+in any form.
 
-- Soma does not ship ClawNet integration code in Gate 6.
-- Soma does not ship ClawNet runtime contracts in Gate 6.
+- Soma does not ship ClawNet integration code under Gate 6.
+- Soma does not ship ClawNet runtime contracts under Gate 6.
 - Soma does not ship pricing, routing, cache/orchestration,
   staking, reward/burn, proof mining, marketplace, hosted
-  witness operations, or `$CLAWNET` utility in Gate 6.
+  witness operations, or `$CLAWNET` utility under Gate 6.
 - ClawNet MAY cite accepted Soma certificate semantics and
   build product policy around them in `claw-net`. ClawNet MUST
   NOT redefine certificate, claim, evidence, or chain semantics
   locally, and MUST NOT ship code that would require Soma to
   take on any of the concerns above.
 
-Gate 7 acceptance is out of scope for Soma and is not part of
+Gate 7 acceptance is out of scope for Soma and was not part of
 this proposal's acceptance criteria.
 
 ## Security and abuse considerations
@@ -612,22 +675,24 @@ Abuse scenarios Gate 6 MUST not open:
    change.
 6. Whether `fulfillment-receipt-bound` and `fulfillment_receipt`
    should graduate from deferred to accepted in a follow-up
-   spec slice before Gate 6 acceptance, or after. Default: after
-   Gate 6, via a separate spec slice and a separate ADR.
+   spec slice. Default: handled in a separate spec slice and a
+   separate ADR after Gate 6; not a blocker for the
+   implementation slice.
 7. Whether a future migration of receipt references to a
    distinct Soma receipt primitive (spec section 21 item 8)
-   should block Gate 6 acceptance. Default: no; it is a future
-   ADR candidate and is not required for the certificate
-   package surface to stabilise.
+   should affect the certificate package surface. Default: no;
+   it is a future ADR candidate and was not required for the
+   certificate package surface to stabilise.
 8. Whether `soma-heart/certificate` should expose any
    observability hook (metrics, tracing, structured error
    context) in its first implementation slice, or defer all
    observability to a later slice. Default: defer to a later
-   slice; Gate 6 does not require observability to be planned.
+   slice; Gate 6 did not require observability to be planned.
 
-None of these open questions block Gate 6 acceptance if a
-decision is recorded in the acceptance note or in a follow-up
-ADR slice.
+None of these open questions blocked Gate 6 acceptance. They
+remain implementation-slice questions to be resolved in the
+acceptance note of any future implementation PR or in a
+follow-up ADR slice, and do not reopen Gate 6.
 
 ## Links
 
