@@ -63,10 +63,11 @@ interface Harness {
 async function setup(opts: {
   backend?: MockCredentialBackend;
   provider?: CryptoProvider;
+  policy?: ControllerPolicy;
 } = {}): Promise<Harness> {
   const clockRef = { t: 1_700_000_000_000 };
   const controller = new CredentialRotationController({
-    policy: makePolicy(),
+    policy: opts.policy ?? makePolicy(),
     clock: () => clockRef.t,
     provider: opts.provider,
   });
@@ -135,19 +136,22 @@ class TamperedPublicKeyBackend extends MockCredentialBackend {
 }
 
 /**
- * Backend subclass that rewrites the staged credential's algorithm
- * suite to one that is NOT in the controller's suite allowlist, so
- * the suite check raises `SuiteDowngradeRejected`.
+ * Backend subclass that declares its `algorithmSuite` as `secp256k1`
+ * from construction time onward. Inception and rotation both mint
+ * credentials whose `nextManifestCommitment` is computed with that
+ * declared suite baked in (see `mintEntry` in the reference backend),
+ * so the controller's L1 commitment re-derivation passes regardless
+ * of which suite is policy-allowed at rotate time. This lets the
+ * §5.2 suite-allowlist substep be exercised **independently** of the
+ * commitment substep by narrowing the controller policy's
+ * `suiteAllowlist` after the backend is already registered. The
+ * underlying key material is still ed25519 (inherited from the
+ * reference backend), which is irrelevant here because the suite
+ * check at `controller.ts:578` reads `newCredential.algorithmSuite`
+ * directly and never inspects the key bytes.
  */
-class WrongSuiteBackend extends MockCredentialBackend {
-  override async stageNextCredential(args: {
-    identityId: string;
-    oldCredentialId: string;
-    issuedAt: number;
-  }): Promise<Credential> {
-    const real = await super.stageNextCredential(args);
-    return { ...real, algorithmSuite: 'secp256k1' as AlgorithmSuite };
-  }
+class DeclaredSuiteBackend extends MockCredentialBackend {
+  override readonly algorithmSuite: AlgorithmSuite = 'secp256k1';
 }
 
 /**
@@ -242,19 +246,60 @@ describe('§5.2 rollback substep — commitment re-derivation', () => {
 });
 
 describe('§5.2 rollback substep — suite allowlist check', () => {
-  it('SuiteDowngradeRejected on a suite-tampered stage leaves the identity pre-stage', async () => {
-    const backend = new WrongSuiteBackend({ backendId: 'mock-a' });
-    const h = await setup({ backend });
-    // The tampered suite also shifts the manifest commitment, so the
-    // L1 check fires first. That is itself a rollback substep; for
-    // the suite-path coverage we relax the commitment check by
-    // asserting that either invariant trips and the post-state is
-    // pre-stage in both cases.
-    await expect(h.controller.rotate('alice')).rejects.toSatisfy((err: unknown) => {
-      return (
-        err instanceof PreRotationMismatch || err instanceof SuiteDowngradeRejected
-      );
-    });
+  it('SuiteDowngradeRejected fires independently of the L1 commitment check and leaves the identity pre-stage', async () => {
+    // Strategy: bind the inception commitment to a suite (`secp256k1`)
+    // that the controller DOES accept at registration time, then
+    // narrow the policy's suiteAllowlist to exclude that suite before
+    // the rotate call. The controller stores the policy by reference
+    // (no defensive clone in `validatePolicy`) so an in-place edit on
+    // the same object the controller was constructed with updates
+    // the live allowlist used by the §5.2 substep check at
+    // `controller.ts:578`. At rotate time:
+    //
+    //   1. Stage returns a credential with `algorithmSuite = secp256k1`.
+    //   2. Commitment re-derivation computes the hash over the same
+    //      `(backendId, 'secp256k1', publicKey)` triple the parent's
+    //      `mintEntry` used at inception, so it MATCHES the old
+    //      credential's `nextManifestCommitment` and the L1 check
+    //      passes.
+    //   3. The suite check now sees `secp256k1` against the narrowed
+    //      allowlist `['ed25519']` and raises `SuiteDowngradeRejected`.
+    //
+    // This exercises the suite-allowlist rollback substep on a path
+    // where PreRotationMismatch provably did NOT fire first.
+    const mutablePolicy: ControllerPolicy = {
+      ...DEFAULT_POLICY,
+      backendAllowlist: ['mock-a'],
+      suiteAllowlist: ['secp256k1'],
+    };
+    const backend = new DeclaredSuiteBackend({ backendId: 'mock-a' });
+    const h = await setup({ backend, policy: mutablePolicy });
+    // Sanity: inception commitment actually bound the disallowed-to-be
+    // suite, so if the upcoming narrowing works the suite check is the
+    // only substep that can trip on rotate.
+    expect(h.priorCurrent.algorithmSuite).toBe('secp256k1');
+
+    // Narrow the policy to exclude secp256k1 without touching any
+    // other field. Cast through `unknown` because `suiteAllowlist` is
+    // declared `readonly AlgorithmSuite[]` on the ControllerPolicy
+    // type.
+    (
+      mutablePolicy as unknown as { suiteAllowlist: AlgorithmSuite[] }
+    ).suiteAllowlist = ['ed25519'];
+
+    let caught: unknown;
+    try {
+      await h.controller.rotate('alice');
+    } catch (err) {
+      caught = err;
+    }
+    expect(caught).toBeInstanceOf(SuiteDowngradeRejected);
+    // And NOT PreRotationMismatch — make the independence explicit so
+    // a future implementation reshuffle that accidentally tangled the
+    // two substeps would fail loudly here. Both classes extend
+    // `InvariantViolation` and neither subclasses the other, so the
+    // negative check is meaningful.
+    expect(caught).not.toBeInstanceOf(PreRotationMismatch);
     assertPreStageState(h);
   });
 });
