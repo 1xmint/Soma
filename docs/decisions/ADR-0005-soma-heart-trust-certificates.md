@@ -1,11 +1,11 @@
 # ADR-0005: Soma Heart Trust Certificates - v0.1 Certificate Primitive, Profiles, and Claim/Evidence Vocabulary
 
-Status: proposed
+Status: accepted
 
 ## Note on ADR shape
 
 This ADR is a decision packet, not implementation. It records the
-dispositions this repo should take on the certificate primitive, v0.1
+dispositions this repo takes on the certificate primitive, v0.1
 profiles, and the bounded claim/evidence vocabulary surfaced by
 `docs/proposals/soma-heart-trust-certificates.md`. It does not ship
 runtime code, package/API exports, or normative spec text. Any
@@ -19,6 +19,18 @@ Per `AGENTS.md`, decisions that change or clarify protocol semantics,
 trust primitives, or security posture require proposal review and an
 ADR before implementation. The source proposal is docs-only; this
 ADR is the ADR gate that review called for.
+
+This ADR was accepted after reviewers explicitly approved every
+decision row (D1-D12). The advancement of `Status:` from `proposed`
+to `accepted` is the result of that review, recorded here at merge
+time. Acceptance clears Gate 2 only. Gate 2 does **not** authorise
+certificate implementation, a normative spec, or package/API
+surfaces; it only unblocks Gate 3 drafting under the constraints
+enumerated below. Gates 3-7 remain blocked until their own work
+lands. Credential-rotation semantics remain unchanged: ADR-0004 and
+`SOMA-ROTATION-SPEC.md` stay authoritative, and nothing in ADR-0005's
+acceptance alters rotation lifecycle, rollback, witness, quorum,
+class, policy-floor, snapshot, or historical-lookup semantics.
 
 ## Context
 
@@ -56,11 +68,21 @@ accepted rotation substrate as-is.
 
 ## Decision
 
-All twelve rows below are **proposed decisions**. Acceptance happens
-when reviewers explicitly approve each row and `Status:` is advanced
-from `proposed` to `accepted` at merge time, following the pattern
-used by ADR-0004. The proposal's ADR decision surface (section 23)
-is the source artifact; this ADR packages those rows for review.
+All twelve rows below are **accepted decisions**. Reviewers
+explicitly approved the disposition of every decision row (D1-D12)
+and the PR was approved for merge. `Status:` advanced from
+`proposed` to `accepted` at merge time, following the pattern used
+by ADR-0004. The proposal's ADR decision surface (section 23) is the
+source artifact; this ADR packages those rows as the settled
+disposition for v0.1.
+
+Acceptance of these rows does not implement certificates, does not
+ratify a spec, and does not authorise any package/API surface.
+Package surface work remains blocked until after the follow-up spec
+(Gate 5); the follow-up spec itself is draftable only because Gate 2
+has cleared (Gate 3). ClawNet first-consumer implementation (Gate 7)
+remains out of scope for Soma and blocked behind the intervening
+gates.
 
 ### D1. One certificate primitive with profiles
 
@@ -418,15 +440,18 @@ Downstream work MUST NOT be merged or ratified until the prior gate
 has cleared. Drafting work below a gate requires explicit
 authorisation and does not imply future acceptance.
 
-- **Gate 1 - ADR drafted.** Cleared by this document.
-- **Gate 2 - ADR accepted.** Reviewers explicitly approve each of
-  D1-D12 and advance `Status:` from `proposed` to `accepted` at
-  merge time.
+- **Gate 1 - ADR drafted.** Cleared by the initial draft of this
+  document.
+- **Gate 2 - ADR accepted.** Cleared: reviewers explicitly approved
+  the disposition of every decision row (D1-D12) and the PR was
+  approved for merge. `Status:` advanced from `proposed` to
+  `accepted` at merge time. Subsequent gates (3 onward) are unblocked
+  for drafting under the constraints recorded in this ADR.
 - **Gate 3 - Follow-up spec drafted.** A separate PR introduces
   `SOMA-HEART-CERTIFICATE-SPEC.md` (name non-binding) with canonical
   encoding, byte layouts, signature scheme, required/optional fields,
   profile-level requirements, test vectors, and error taxonomy.
-  Indexed from `docs/reference/spec-index.md`. Not draftable until
+  Indexed from `docs/reference/spec-index.md`. Draftable now that
   Gate 2 is cleared.
 - **Gate 4 - Follow-up spec accepted.** Reviewers approve the spec
   and it moves to `Status: accepted`.
