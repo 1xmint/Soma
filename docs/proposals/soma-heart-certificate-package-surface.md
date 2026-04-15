@@ -127,11 +127,11 @@ code contract. No names below are binding; all are illustrative.
    without re-implementing or extending them. MUST fail closed on
    ambiguous rotation state.
 8. **Verifier-policy evaluator boundary.** Accepts a verifier
-   policy object (URI, hash, inline, or package-version reference -
-   wire representation is a Gate 5 precondition per spec section 21
-   open item 2) and applies it to a certificate or chain. MUST NOT
-   treat an absent policy field as "accept by default". MUST NOT
-   expose an "is-this-trusted" surface based on chain presence.
+   policy reference using the v0.1 `policy_ref` shape in spec
+   section 12 and applies local verifier policy to a certificate or
+   chain. MUST NOT treat an absent policy field as "accept by
+   default". MUST NOT expose an "is-this-trusted" surface based on
+   chain presence.
 9. **Soma Check evidence binding helper.** Binds Soma Check
    freshness receipts, content-hash commitments, zero-charge
    unchanged-result evidence, and transcript hashes into
@@ -145,8 +145,8 @@ code contract. No names below are binding; all are illustrative.
     x402 to a hard dependency, and MUST allow a conforming non-x402
     rail to substitute equivalent evidence.
 11. **Error taxonomy mapping.** Maps the 16 failure modes in spec
-    section 18 to stable wire identifiers. Wire representation is
-    a Gate 5 precondition per spec section 21 open item 10.
+    section 18 to the stable lowercase kebab-case wire identifiers
+    defined there.
 
 ### What the surface intentionally does not cover
 
@@ -435,22 +435,25 @@ Gate 5 acceptance requires all of the following, in order:
    spec section 19.1 under the pinned canonical encoding. Vector
    files MUST be reproducible from the spec plus ADR-0004 and
    `SOMA-ROTATION-SPEC.md` alone.
-3. **Package surface shape agreed.** The functional areas above
+3. **Spec Gate 5 preconditions resolved.** Spec section 21 items
+   2-7, 9, and 10 MUST be classified as resolved before this
+   proposal is accepted.
+4. **Package surface shape agreed.** The functional areas above
    MUST be reviewed and either accepted as the Gate 5 surface
    shape or explicitly amended. Name-level bikeshedding is
    expected at this step; the boundary-level shape is what is
    being ratified.
-4. **No implementation yet unless a later PR starts it.** Gate 5
+5. **No implementation yet unless a later PR starts it.** Gate 5
    acceptance DOES NOT, by itself, merge package code. A
    subsequent PR (or Gate 6 sequence) MUST be the instrument that
    lands code. This proposal's acceptance only unlocks that
    subsequent work.
-5. **Boundary rules preserved.** The ADR-0005 boundary rules and
+6. **Boundary rules preserved.** The ADR-0005 boundary rules and
    the spec's accepted non-goals MUST remain intact. Any drift
    into ClawNet runtime, tokenomics, pricing, routing, cache,
    proof mining, staking, reward/burn, reputation, or runtime
    trust query APIs blocks acceptance.
-6. **Credential-rotation semantics unchanged.** The acceptance
+7. **Credential-rotation semantics unchanged.** The acceptance
    MUST explicitly confirm no change to ADR-0004 or
    `SOMA-ROTATION-SPEC.md` semantics.
 
@@ -459,20 +462,16 @@ the criteria above.
 
 ## Open questions
 
-1. Verifier policy wire representation (spec section 21 open
-   item 2).
-2. Wire representation for the spec section 18 failure modes
-   (spec section 21 open item 10).
-3. Whether the package surface lives in `soma-heart` directly or
+1. Whether the package surface lives in `soma-heart` directly or
    in a sub-namespace such as `soma-heart/certificate`.
-4. Whether `soma-sense` re-exports observer-only primitives from
+2. Whether `soma-sense` re-exports observer-only primitives from
    this surface and, if so, which ones.
-5. Whether the rail adapter boundary (area 10) ships inside
+3. Whether the rail adapter boundary (area 10) ships inside
    `soma-heart` at all or lives in a separate adapter package.
-6. Whether receipt references remain certificate fields or
+4. Whether receipt references remain certificate fields or
    migrate to a distinct Soma receipt primitive (future ADR
    candidate, spec section 21 item 8).
-7. Joint resolution of the `fulfillment-receipt-bound` profile
+5. Joint resolution of the `fulfillment-receipt-bound` profile
    and the `fulfillment_receipt` claim (future ADR candidate,
    spec section 21 item 11).
 
@@ -486,6 +485,13 @@ Resolved since the original draft:
   spec section 9.5 and is out of scope for Gate 5.
 - Test vector file location. The v0.1 corpus lives at
   `test-vectors/soma-heart-certificate/v0.1/`.
+- Spec Gate 5 preconditions. Spec section 21 items 2-7, 9, and
+  10 are resolved in `SOMA-HEART-CERTIFICATE-SPEC.md` by the
+  v0.1 `policy_ref`, disclosure object, timestamp-source rules,
+  fail-closed rotation-state handling, heart-to-heart signature
+  threshold, x402 adapter evidence-field guidance,
+  delegation/capability reference-only language, and failure-mode
+  wire identifiers.
 
 ## Links
 
