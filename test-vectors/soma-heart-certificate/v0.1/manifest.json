@@ -1,0 +1,1943 @@
+{
+  "schema": "soma-heart-certificate-vectors/0.1",
+  "spec": "soma-heart-certificate/0.1",
+  "generated_against": {
+    "canonical_encoding": "SOMA-HEART-CERTIFICATE-SPEC.md sections 9.2-9.5",
+    "certificate_id_domain_prefix": "soma-heart-certificate:v0.1:",
+    "hash_algorithm": "SHA-256",
+    "signature_input_prefix_template": "soma-heart-certificate:v0.1:<role>:"
+  },
+  "scope": "Normative vector corpus for Gate 5. No package/API/runtime implementation is defined here.",
+  "coverage_summary": {
+    "accepted_profiles": [
+      "birth",
+      "one-sided",
+      "heart-to-heart",
+      "freshness-receipt-bound"
+    ],
+    "deferred_claims_rejected": [
+      "capability_statement",
+      "delegation_or_endorsement"
+    ],
+    "deferred_evidence_rejected": [
+      "credential_presentation_reference",
+      "media_content_hash",
+      "third_party_attestation_reference"
+    ],
+    "deferred_profiles_rejected": [
+      "policy-statement",
+      "witnessed"
+    ],
+    "disclosure": [
+      "accepted-redaction-disclosure"
+    ],
+    "failure_modes_exercised": [
+      "chain-link-mismatch",
+      "chain-link-unresolvable",
+      "credential-ineffective",
+      "credential-revoked",
+      "freshness-window-expired",
+      "canonicalisation-divergence",
+      "evidence-malformed"
+    ],
+    "rotation": [
+      "signature-historical-lookup"
+    ]
+  },
+  "rotation_fixture": {
+    "identities": [
+      {
+        "identity_id": "did:soma:issuer-alpha",
+        "credential_id": "cred-alpha-2026-01",
+        "algorithm_suite": "ed25519",
+        "public_key_spki_der_base64": "MCowBQYDK2VwAyEASqcSsDSxWTBKNHFZU8OHojJ+n95mKoGPP4gfnC0Ky44=",
+        "effective_at": 1770000000000,
+        "revoked_at": null,
+        "rotation_event_hash": "rot-alpha-effective-001"
+      },
+      {
+        "identity_id": "did:soma:counterparty-beta",
+        "credential_id": "cred-beta-2026-01",
+        "algorithm_suite": "ed25519",
+        "public_key_spki_der_base64": "MCowBQYDK2VwAyEAC+cJV6txnCXsOD6bIc5eS02VMca3AjyBpLe+QhymT90=",
+        "effective_at": 1770000000000,
+        "revoked_at": null,
+        "rotation_event_hash": "rot-beta-effective-001"
+      },
+      {
+        "identity_id": "did:soma:witness-gamma",
+        "credential_id": "cred-gamma-2026-01",
+        "algorithm_suite": "ed25519",
+        "public_key_spki_der_base64": "MCowBQYDK2VwAyEAdbJnaKeaL3vwrI5trJ7oKliPTNV4wQR8UlYsEeo35t0=",
+        "effective_at": 1770000000000,
+        "revoked_at": null,
+        "rotation_event_hash": "rot-gamma-effective-001"
+      },
+      {
+        "identity_id": "did:soma:issuer-alpha",
+        "credential_id": "cred-alpha-2026-02",
+        "algorithm_suite": "ed25519",
+        "public_key_spki_der_base64": "MCowBQYDK2VwAyEASqcSsDSxWTBKNHFZU8OHojJ+n95mKoGPP4gfnC0Ky44=",
+        "effective_at": 1770100000000,
+        "revoked_at": null,
+        "rotation_event_hash": "rot-alpha-effective-002"
+      },
+      {
+        "identity_id": "did:soma:revoked-delta",
+        "credential_id": "cred-delta-2026-01",
+        "algorithm_suite": "ed25519",
+        "public_key_spki_der_base64": "MCowBQYDK2VwAyEASqcSsDSxWTBKNHFZU8OHojJ+n95mKoGPP4gfnC0Ky44=",
+        "effective_at": 1770000000000,
+        "revoked_at": 1770000100000,
+        "rotation_event_hash": "rot-delta-revoked-001"
+      }
+    ]
+  },
+  "vectors": [
+    {
+      "id": "accepted-birth",
+      "certificate": {
+        "certificate_id": "606e53d4d81eed4289e1bf9dce74587df79be1f91646e4b037a5b650e19d937c",
+        "claim_set": [
+          {
+            "kind": "identity_control",
+            "statement": "issuer controls the subject identifier for this vector"
+          }
+        ],
+        "disclosure": {
+          "profile": "public"
+        },
+        "evidence_references": [
+          {
+            "kind": "signature",
+            "reference": "signature_set.issuer"
+          }
+        ],
+        "expiry": 1770086400000,
+        "issued_at": 1770000000000,
+        "issuer_credential_rotation_reference": {
+          "credential_id": "cred-alpha-2026-01",
+          "identity_id": "did:soma:issuer-alpha",
+          "rotation_event_hash": "rot-alpha-effective-001"
+        },
+        "issuer_identity": "did:soma:issuer-alpha",
+        "profile": "birth",
+        "subject_identifier_hash": "sha256:27cf433806cd5175a0689a60db9172d7e9ac45aa9fa9cd435c9ebb4d6eb78327",
+        "version": "soma-heart-certificate/0.1",
+        "signatures": [
+          {
+            "credential_rotation_reference": {
+              "credential_id": "cred-alpha-2026-01",
+              "identity_id": "did:soma:issuer-alpha",
+              "rotation_event_hash": "rot-alpha-effective-001"
+            },
+            "identity_id": "did:soma:issuer-alpha",
+            "signature_bytes": "ynXc3GU7ZGrnv5El0/cXmEtp61jOsJjcjnFHzfZnUQ56huD/oUf7DVVKFJpqZR1B+6GE9Lm+afx46PXI3rnlCg==",
+            "signer_role": "issuer"
+          }
+        ]
+      },
+      "canonical_json": "{\"claim_set\":[{\"kind\":\"identity_control\",\"statement\":\"issuer controls the subject identifier for this vector\"}],\"disclosure\":{\"profile\":\"public\"},\"evidence_references\":[{\"kind\":\"signature\",\"reference\":\"signature_set.issuer\"}],\"expiry\":1770086400000,\"issued_at\":1770000000000,\"issuer_credential_rotation_reference\":{\"credential_id\":\"cred-alpha-2026-01\",\"identity_id\":\"did:soma:issuer-alpha\",\"rotation_event_hash\":\"rot-alpha-effective-001\"},\"issuer_identity\":\"did:soma:issuer-alpha\",\"profile\":\"birth\",\"subject_identifier_hash\":\"sha256:27cf433806cd5175a0689a60db9172d7e9ac45aa9fa9cd435c9ebb4d6eb78327\",\"version\":\"soma-heart-certificate/0.1\"}",
+      "canonical_utf8_hex": "7b22636c61696d5f736574223a5b7b226b696e64223a226964656e746974795f636f6e74726f6c222c2273746174656d656e74223a2269737375657220636f6e74726f6c7320746865207375626a656374206964656e74696669657220666f72207468697320766563746f72227d5d2c22646973636c6f73757265223a7b2270726f66696c65223a227075626c6963227d2c2265766964656e63655f7265666572656e636573223a5b7b226b696e64223a227369676e6174757265222c227265666572656e6365223a227369676e61747572655f7365742e697373756572227d5d2c22657870697279223a313737303038363430303030302c226973737565645f6174223a313737303030303030303030302c226973737565725f63726564656e7469616c5f726f746174696f6e5f7265666572656e6365223a7b2263726564656e7469616c5f6964223a22637265642d616c7068612d323032362d3031222c226964656e746974795f6964223a226469643a736f6d613a6973737565722d616c706861222c22726f746174696f6e5f6576656e745f68617368223a22726f742d616c7068612d6566666563746976652d303031227d2c226973737565725f6964656e74697479223a226469643a736f6d613a6973737565722d616c706861222c2270726f66696c65223a226269727468222c227375626a6563745f6964656e7469666965725f68617368223a227368613235363a32376366343333383036636435313735613036383961363064623931373264376539616334356161396661396364343335633965626234643665623738333237222c2276657273696f6e223a22736f6d612d68656172742d63657274696669636174652f302e31227d",
+      "coverage": [
+        "accepted-profile:birth"
+      ],
+      "expected_certificate_id": "606e53d4d81eed4289e1bf9dce74587df79be1f91646e4b037a5b650e19d937c",
+      "expected_failure": null,
+      "expected_result": "accept",
+      "notes": "",
+      "signature_inputs": [
+        {
+          "input_sha256": "7c68eaa7945e2bcfb885f217fdef3eaed896c5f7598d08b61a2f0f8098db42e0",
+          "signer_role": "issuer"
+        }
+      ],
+      "verifier_policy": {
+        "policy_id": "soma-heart-policy:v0.1:test-vector-strict",
+        "accepted_claim_kinds": [
+          "content_hash_commitment",
+          "credential_validity",
+          "endpoint_observation",
+          "freshness_receipt",
+          "identity_control",
+          "payment_receipt_reference",
+          "policy_statement"
+        ],
+        "accepted_evidence_kinds": [
+          "hash_commitment",
+          "payment_rail_receipt_reference",
+          "receipt_reference",
+          "request_response_transcript_hash",
+          "signature",
+          "timestamp",
+          "verifier_policy_reference"
+        ],
+        "accepted_profiles": [
+          "birth",
+          "freshness-receipt-bound",
+          "heart-to-heart",
+          "one-sided"
+        ],
+        "fail_closed": true,
+        "max_chain_depth": 2,
+        "require_rotation_lookup": true
+      }
+    },
+    {
+      "id": "accepted-one-sided",
+      "certificate": {
+        "certificate_id": "96acbef0b8f054acc8ccc935194082804911659ac0294c1cc85ffddecd09c88a",
+        "claim_set": [
+          {
+            "kind": "endpoint_observation",
+            "observed_hash": "sha256:cef31bfbdc595a1e6e372ac2f56b0fe602296cb0a2ed6255bc620317bfea9468",
+            "statement": "endpoint observation hash committed by issuer"
+          }
+        ],
+        "disclosure": {
+          "profile": "public"
+        },
+        "evidence_references": [
+          {
+            "kind": "hash_commitment",
+            "reference": "sha256:cef31bfbdc595a1e6e372ac2f56b0fe602296cb0a2ed6255bc620317bfea9468"
+          },
+          {
+            "kind": "signature",
+            "reference": "signature_set.issuer"
+          }
+        ],
+        "expiry": 1770086400000,
+        "issued_at": 1770000000000,
+        "issuer_credential_rotation_reference": {
+          "credential_id": "cred-alpha-2026-01",
+          "identity_id": "did:soma:issuer-alpha",
+          "rotation_event_hash": "rot-alpha-effective-001"
+        },
+        "issuer_identity": "did:soma:issuer-alpha",
+        "profile": "one-sided",
+        "subject_identifier_hash": "sha256:7324a5958103f0ba3ea5594afdf268fcfadc5b7bfecf13888a4e5fe726f29945",
+        "version": "soma-heart-certificate/0.1",
+        "signatures": [
+          {
+            "credential_rotation_reference": {
+              "credential_id": "cred-alpha-2026-01",
+              "identity_id": "did:soma:issuer-alpha",
+              "rotation_event_hash": "rot-alpha-effective-001"
+            },
+            "identity_id": "did:soma:issuer-alpha",
+            "signature_bytes": "WxCwp87ieFIh2TPG523rjE0yr1+wxBHFBNQEyiWC68lhrvbZfkZEe4YQokqX5DqHi4Ku9jFckI4xgwmnfgjWBQ==",
+            "signer_role": "issuer"
+          }
+        ]
+      },
+      "canonical_json": "{\"claim_set\":[{\"kind\":\"endpoint_observation\",\"observed_hash\":\"sha256:cef31bfbdc595a1e6e372ac2f56b0fe602296cb0a2ed6255bc620317bfea9468\",\"statement\":\"endpoint observation hash committed by issuer\"}],\"disclosure\":{\"profile\":\"public\"},\"evidence_references\":[{\"kind\":\"hash_commitment\",\"reference\":\"sha256:cef31bfbdc595a1e6e372ac2f56b0fe602296cb0a2ed6255bc620317bfea9468\"},{\"kind\":\"signature\",\"reference\":\"signature_set.issuer\"}],\"expiry\":1770086400000,\"issued_at\":1770000000000,\"issuer_credential_rotation_reference\":{\"credential_id\":\"cred-alpha-2026-01\",\"identity_id\":\"did:soma:issuer-alpha\",\"rotation_event_hash\":\"rot-alpha-effective-001\"},\"issuer_identity\":\"did:soma:issuer-alpha\",\"profile\":\"one-sided\",\"subject_identifier_hash\":\"sha256:7324a5958103f0ba3ea5594afdf268fcfadc5b7bfecf13888a4e5fe726f29945\",\"version\":\"soma-heart-certificate/0.1\"}",
+      "canonical_utf8_hex": "7b22636c61696d5f736574223a5b7b226b696e64223a22656e64706f696e745f6f62736572766174696f6e222c226f627365727665645f68617368223a227368613235363a63656633316266626463353935613165366533373261633266353662306665363032323936636230613265643632353562633632303331376266656139343638222c2273746174656d656e74223a22656e64706f696e74206f62736572766174696f6e206861736820636f6d6d697474656420627920697373756572227d5d2c22646973636c6f73757265223a7b2270726f66696c65223a227075626c6963227d2c2265766964656e63655f7265666572656e636573223a5b7b226b696e64223a22686173685f636f6d6d69746d656e74222c227265666572656e6365223a227368613235363a63656633316266626463353935613165366533373261633266353662306665363032323936636230613265643632353562633632303331376266656139343638227d2c7b226b696e64223a227369676e6174757265222c227265666572656e6365223a227369676e61747572655f7365742e697373756572227d5d2c22657870697279223a313737303038363430303030302c226973737565645f6174223a313737303030303030303030302c226973737565725f63726564656e7469616c5f726f746174696f6e5f7265666572656e6365223a7b2263726564656e7469616c5f6964223a22637265642d616c7068612d323032362d3031222c226964656e746974795f6964223a226469643a736f6d613a6973737565722d616c706861222c22726f746174696f6e5f6576656e745f68617368223a22726f742d616c7068612d6566666563746976652d303031227d2c226973737565725f6964656e74697479223a226469643a736f6d613a6973737565722d616c706861222c2270726f66696c65223a226f6e652d7369646564222c227375626a6563745f6964656e7469666965725f68617368223a227368613235363a37333234613539353831303366306261336561353539346166646632363866636661646335623762666563663133383838613465356665373236663239393435222c2276657273696f6e223a22736f6d612d68656172742d63657274696669636174652f302e31227d",
+      "coverage": [
+        "accepted-profile:one-sided"
+      ],
+      "expected_certificate_id": "96acbef0b8f054acc8ccc935194082804911659ac0294c1cc85ffddecd09c88a",
+      "expected_failure": null,
+      "expected_result": "accept",
+      "notes": "",
+      "signature_inputs": [
+        {
+          "input_sha256": "4120b520400458b342e4fa551ff7ee5256f91070344685f2684b23ceee515f5a",
+          "signer_role": "issuer"
+        }
+      ],
+      "verifier_policy": {
+        "policy_id": "soma-heart-policy:v0.1:test-vector-strict",
+        "accepted_claim_kinds": [
+          "content_hash_commitment",
+          "credential_validity",
+          "endpoint_observation",
+          "freshness_receipt",
+          "identity_control",
+          "payment_receipt_reference",
+          "policy_statement"
+        ],
+        "accepted_evidence_kinds": [
+          "hash_commitment",
+          "payment_rail_receipt_reference",
+          "receipt_reference",
+          "request_response_transcript_hash",
+          "signature",
+          "timestamp",
+          "verifier_policy_reference"
+        ],
+        "accepted_profiles": [
+          "birth",
+          "freshness-receipt-bound",
+          "heart-to-heart",
+          "one-sided"
+        ],
+        "fail_closed": true,
+        "max_chain_depth": 2,
+        "require_rotation_lookup": true
+      }
+    },
+    {
+      "id": "accepted-heart-to-heart",
+      "certificate": {
+        "certificate_id": "b146cc9c009fa4bcaed93ccad00d3a5724590aed032eb5e988fb6ddac173744d",
+        "claim_set": [
+          {
+            "kind": "endpoint_observation",
+            "observed_hash": "sha256:d9ffd0bdf17f309744596be5a57b9bfdf0c653c1666fc1e683aecf753b3d9e15",
+            "statement": "issuer and counterparty observed the same transcript hash"
+          }
+        ],
+        "disclosure": {
+          "profile": "public"
+        },
+        "evidence_references": [
+          {
+            "kind": "request_response_transcript_hash",
+            "reference": "sha256:d9ffd0bdf17f309744596be5a57b9bfdf0c653c1666fc1e683aecf753b3d9e15"
+          },
+          {
+            "kind": "signature",
+            "reference": "signature_set.issuer"
+          },
+          {
+            "kind": "signature",
+            "reference": "signature_set.counterparty"
+          }
+        ],
+        "expiry": 1770086400000,
+        "issued_at": 1770000000000,
+        "issuer_credential_rotation_reference": {
+          "credential_id": "cred-alpha-2026-01",
+          "identity_id": "did:soma:issuer-alpha",
+          "rotation_event_hash": "rot-alpha-effective-001"
+        },
+        "issuer_identity": "did:soma:issuer-alpha",
+        "profile": "heart-to-heart",
+        "subject_identifier_hash": "sha256:d93bf3d7cd396a2e30c9abc6410f7f86ff1c2847f802f132a33311b776b09350",
+        "version": "soma-heart-certificate/0.1",
+        "signatures": [
+          {
+            "credential_rotation_reference": {
+              "credential_id": "cred-alpha-2026-01",
+              "identity_id": "did:soma:issuer-alpha",
+              "rotation_event_hash": "rot-alpha-effective-001"
+            },
+            "identity_id": "did:soma:issuer-alpha",
+            "signature_bytes": "KcoWmpHiXYHGZJzSGPRv6fYh6f4+0oE9akm82SpkaHyhjOhQXU7hl5tzmW7paDpn+5cNISSCnwmwd1tLf/wkDg==",
+            "signer_role": "issuer"
+          },
+          {
+            "credential_rotation_reference": {
+              "credential_id": "cred-beta-2026-01",
+              "identity_id": "did:soma:counterparty-beta",
+              "rotation_event_hash": "rot-beta-effective-001"
+            },
+            "identity_id": "did:soma:counterparty-beta",
+            "signature_bytes": "lVdTeQD4rtuoGvCboJ7UZHiU1llxNxspEOsMxDl6+m2idVELdWvqZ9zmidcWeCxjHgl2flb2k/NDyMdOGu6XDA==",
+            "signer_role": "counterparty"
+          }
+        ]
+      },
+      "canonical_json": "{\"claim_set\":[{\"kind\":\"endpoint_observation\",\"observed_hash\":\"sha256:d9ffd0bdf17f309744596be5a57b9bfdf0c653c1666fc1e683aecf753b3d9e15\",\"statement\":\"issuer and counterparty observed the same transcript hash\"}],\"disclosure\":{\"profile\":\"public\"},\"evidence_references\":[{\"kind\":\"request_response_transcript_hash\",\"reference\":\"sha256:d9ffd0bdf17f309744596be5a57b9bfdf0c653c1666fc1e683aecf753b3d9e15\"},{\"kind\":\"signature\",\"reference\":\"signature_set.issuer\"},{\"kind\":\"signature\",\"reference\":\"signature_set.counterparty\"}],\"expiry\":1770086400000,\"issued_at\":1770000000000,\"issuer_credential_rotation_reference\":{\"credential_id\":\"cred-alpha-2026-01\",\"identity_id\":\"did:soma:issuer-alpha\",\"rotation_event_hash\":\"rot-alpha-effective-001\"},\"issuer_identity\":\"did:soma:issuer-alpha\",\"profile\":\"heart-to-heart\",\"subject_identifier_hash\":\"sha256:d93bf3d7cd396a2e30c9abc6410f7f86ff1c2847f802f132a33311b776b09350\",\"version\":\"soma-heart-certificate/0.1\"}",
+      "canonical_utf8_hex": "7b22636c61696d5f736574223a5b7b226b696e64223a22656e64706f696e745f6f62736572766174696f6e222c226f627365727665645f68617368223a227368613235363a64396666643062646631376633303937343435393662653561353762396266646630633635336331363636666331653638336165636637353362336439653135222c2273746174656d656e74223a2269737375657220616e6420636f756e7465727061727479206f62736572766564207468652073616d65207472616e7363726970742068617368227d5d2c22646973636c6f73757265223a7b2270726f66696c65223a227075626c6963227d2c2265766964656e63655f7265666572656e636573223a5b7b226b696e64223a22726571756573745f726573706f6e73655f7472616e7363726970745f68617368222c227265666572656e6365223a227368613235363a64396666643062646631376633303937343435393662653561353762396266646630633635336331363636666331653638336165636637353362336439653135227d2c7b226b696e64223a227369676e6174757265222c227265666572656e6365223a227369676e61747572655f7365742e697373756572227d2c7b226b696e64223a227369676e6174757265222c227265666572656e6365223a227369676e61747572655f7365742e636f756e7465727061727479227d5d2c22657870697279223a313737303038363430303030302c226973737565645f6174223a313737303030303030303030302c226973737565725f63726564656e7469616c5f726f746174696f6e5f7265666572656e6365223a7b2263726564656e7469616c5f6964223a22637265642d616c7068612d323032362d3031222c226964656e746974795f6964223a226469643a736f6d613a6973737565722d616c706861222c22726f746174696f6e5f6576656e745f68617368223a22726f742d616c7068612d6566666563746976652d303031227d2c226973737565725f6964656e74697479223a226469643a736f6d613a6973737565722d616c706861222c2270726f66696c65223a2268656172742d746f2d6865617274222c227375626a6563745f6964656e7469666965725f68617368223a227368613235363a64393362663364376364333936613265333063396162633634313066376638366666316332383437663830326631333261333333313162373736623039333530222c2276657273696f6e223a22736f6d612d68656172742d63657274696669636174652f302e31227d",
+      "coverage": [
+        "accepted-profile:heart-to-heart",
+        "counterparty-signature-threshold"
+      ],
+      "expected_certificate_id": "b146cc9c009fa4bcaed93ccad00d3a5724590aed032eb5e988fb6ddac173744d",
+      "expected_failure": null,
+      "expected_result": "accept",
+      "notes": "",
+      "signature_inputs": [
+        {
+          "input_sha256": "f0272db2a300059e6c4955cea7408eaac842cc580d38f3a8683303267337c178",
+          "signer_role": "issuer"
+        },
+        {
+          "input_sha256": "37e6bc3ad4359e43b4eede28aa588d5480f7b8615c5e471fa420dc18148e33bb",
+          "signer_role": "counterparty"
+        }
+      ],
+      "verifier_policy": {
+        "policy_id": "soma-heart-policy:v0.1:test-vector-strict",
+        "accepted_claim_kinds": [
+          "content_hash_commitment",
+          "credential_validity",
+          "endpoint_observation",
+          "freshness_receipt",
+          "identity_control",
+          "payment_receipt_reference",
+          "policy_statement"
+        ],
+        "accepted_evidence_kinds": [
+          "hash_commitment",
+          "payment_rail_receipt_reference",
+          "receipt_reference",
+          "request_response_transcript_hash",
+          "signature",
+          "timestamp",
+          "verifier_policy_reference"
+        ],
+        "accepted_profiles": [
+          "birth",
+          "freshness-receipt-bound",
+          "heart-to-heart",
+          "one-sided"
+        ],
+        "fail_closed": true,
+        "max_chain_depth": 2,
+        "require_rotation_lookup": true
+      }
+    },
+    {
+      "id": "accepted-freshness-receipt-bound",
+      "certificate": {
+        "certificate_id": "52f8107b600fa0c19ddee2b8de3e8af60b754145549190f44cb7361c11f0701d",
+        "claim_set": [
+          {
+            "kind": "freshness_receipt",
+            "current_hash": "sha256:f991897b5b5c76f3c0098295db9058ba1f516e155ec0a98fbd3d7f035f441d18",
+            "previous_hash": "sha256:f991897b5b5c76f3c0098295db9058ba1f516e155ec0a98fbd3d7f035f441d18",
+            "result": "unchanged"
+          }
+        ],
+        "disclosure": {
+          "profile": "public"
+        },
+        "evidence_references": [
+          {
+            "kind": "receipt_reference",
+            "reference": "soma-check-receipt:unchanged-001"
+          },
+          {
+            "kind": "hash_commitment",
+            "reference": "sha256:f991897b5b5c76f3c0098295db9058ba1f516e155ec0a98fbd3d7f035f441d18"
+          },
+          {
+            "kind": "signature",
+            "reference": "signature_set.issuer"
+          }
+        ],
+        "expiry": 1770000300000,
+        "issued_at": 1770000000000,
+        "issuer_credential_rotation_reference": {
+          "credential_id": "cred-alpha-2026-01",
+          "identity_id": "did:soma:issuer-alpha",
+          "rotation_event_hash": "rot-alpha-effective-001"
+        },
+        "issuer_identity": "did:soma:issuer-alpha",
+        "profile": "freshness-receipt-bound",
+        "subject_identifier_hash": "sha256:d0401ebbbdc4a40c319a16869c0ed3400b5d035bbff7a98c619ffdba99811992",
+        "version": "soma-heart-certificate/0.1",
+        "signatures": [
+          {
+            "credential_rotation_reference": {
+              "credential_id": "cred-alpha-2026-01",
+              "identity_id": "did:soma:issuer-alpha",
+              "rotation_event_hash": "rot-alpha-effective-001"
+            },
+            "identity_id": "did:soma:issuer-alpha",
+            "signature_bytes": "zF2KfycFf+dsuid0WefU0Q43jvXdhU5N9izgEFDy9UVKmqxminBnO9HUse9t3wf7U+kArhvXoTPF4X8JLrrgAA==",
+            "signer_role": "issuer"
+          }
+        ]
+      },
+      "canonical_json": "{\"claim_set\":[{\"current_hash\":\"sha256:f991897b5b5c76f3c0098295db9058ba1f516e155ec0a98fbd3d7f035f441d18\",\"kind\":\"freshness_receipt\",\"previous_hash\":\"sha256:f991897b5b5c76f3c0098295db9058ba1f516e155ec0a98fbd3d7f035f441d18\",\"result\":\"unchanged\"}],\"disclosure\":{\"profile\":\"public\"},\"evidence_references\":[{\"kind\":\"receipt_reference\",\"reference\":\"soma-check-receipt:unchanged-001\"},{\"kind\":\"hash_commitment\",\"reference\":\"sha256:f991897b5b5c76f3c0098295db9058ba1f516e155ec0a98fbd3d7f035f441d18\"},{\"kind\":\"signature\",\"reference\":\"signature_set.issuer\"}],\"expiry\":1770000300000,\"issued_at\":1770000000000,\"issuer_credential_rotation_reference\":{\"credential_id\":\"cred-alpha-2026-01\",\"identity_id\":\"did:soma:issuer-alpha\",\"rotation_event_hash\":\"rot-alpha-effective-001\"},\"issuer_identity\":\"did:soma:issuer-alpha\",\"profile\":\"freshness-receipt-bound\",\"subject_identifier_hash\":\"sha256:d0401ebbbdc4a40c319a16869c0ed3400b5d035bbff7a98c619ffdba99811992\",\"version\":\"soma-heart-certificate/0.1\"}",
+      "canonical_utf8_hex": "7b22636c61696d5f736574223a5b7b2263757272656e745f68617368223a227368613235363a66393931383937623562356337366633633030393832393564623930353862613166353136653135356563306139386662643364376630333566343431643138222c226b696e64223a2266726573686e6573735f72656365697074222c2270726576696f75735f68617368223a227368613235363a66393931383937623562356337366633633030393832393564623930353862613166353136653135356563306139386662643364376630333566343431643138222c22726573756c74223a22756e6368616e676564227d5d2c22646973636c6f73757265223a7b2270726f66696c65223a227075626c6963227d2c2265766964656e63655f7265666572656e636573223a5b7b226b696e64223a22726563656970745f7265666572656e6365222c227265666572656e6365223a22736f6d612d636865636b2d726563656970743a756e6368616e6765642d303031227d2c7b226b696e64223a22686173685f636f6d6d69746d656e74222c227265666572656e6365223a227368613235363a66393931383937623562356337366633633030393832393564623930353862613166353136653135356563306139386662643364376630333566343431643138227d2c7b226b696e64223a227369676e6174757265222c227265666572656e6365223a227369676e61747572655f7365742e697373756572227d5d2c22657870697279223a313737303030303330303030302c226973737565645f6174223a313737303030303030303030302c226973737565725f63726564656e7469616c5f726f746174696f6e5f7265666572656e6365223a7b2263726564656e7469616c5f6964223a22637265642d616c7068612d323032362d3031222c226964656e746974795f6964223a226469643a736f6d613a6973737565722d616c706861222c22726f746174696f6e5f6576656e745f68617368223a22726f742d616c7068612d6566666563746976652d303031227d2c226973737565725f6964656e74697479223a226469643a736f6d613a6973737565722d616c706861222c2270726f66696c65223a2266726573686e6573732d726563656970742d626f756e64222c227375626a6563745f6964656e7469666965725f68617368223a227368613235363a64303430316562626264633461343063333139613136383639633065643334303062356430333562626666376139386336313966666462613939383131393932222c2276657273696f6e223a22736f6d612d68656172742d63657274696669636174652f302e31227d",
+      "coverage": [
+        "accepted-profile:freshness-receipt-bound"
+      ],
+      "expected_certificate_id": "52f8107b600fa0c19ddee2b8de3e8af60b754145549190f44cb7361c11f0701d",
+      "expected_failure": null,
+      "expected_result": "accept",
+      "notes": "",
+      "signature_inputs": [
+        {
+          "input_sha256": "492b83d81ca5fb6d8452b64703b24e14313ddae6108a0dfd6db3b5d776e88134",
+          "signer_role": "issuer"
+        }
+      ],
+      "verifier_policy": {
+        "policy_id": "soma-heart-policy:v0.1:test-vector-strict",
+        "accepted_claim_kinds": [
+          "content_hash_commitment",
+          "credential_validity",
+          "endpoint_observation",
+          "freshness_receipt",
+          "identity_control",
+          "payment_receipt_reference",
+          "policy_statement"
+        ],
+        "accepted_evidence_kinds": [
+          "hash_commitment",
+          "payment_rail_receipt_reference",
+          "receipt_reference",
+          "request_response_transcript_hash",
+          "signature",
+          "timestamp",
+          "verifier_policy_reference"
+        ],
+        "accepted_profiles": [
+          "birth",
+          "freshness-receipt-bound",
+          "heart-to-heart",
+          "one-sided"
+        ],
+        "fail_closed": true,
+        "max_chain_depth": 2,
+        "require_rotation_lookup": true
+      }
+    },
+    {
+      "id": "reject-profile-policy-statement",
+      "certificate": {
+        "certificate_id": "283cb7bfae84d0ea31163d841f62ed2939cc65e6b38ad36c8dc9ceb03edbafc1",
+        "claim_set": [
+          {
+            "kind": "policy_statement",
+            "statement": "policy profile is deferred even though policy_statement claim is accepted"
+          }
+        ],
+        "disclosure": {
+          "profile": "public"
+        },
+        "evidence_references": [
+          {
+            "kind": "signature",
+            "reference": "signature_set.issuer"
+          }
+        ],
+        "expiry": 1770086400000,
+        "issued_at": 1770000000000,
+        "issuer_credential_rotation_reference": {
+          "credential_id": "cred-alpha-2026-01",
+          "identity_id": "did:soma:issuer-alpha",
+          "rotation_event_hash": "rot-alpha-effective-001"
+        },
+        "issuer_identity": "did:soma:issuer-alpha",
+        "profile": "policy-statement",
+        "subject_identifier_hash": "sha256:627b60709f427fcd93983bfecc7ed9a2786d7c383ca7bbdef5cec73bd0260dff",
+        "version": "soma-heart-certificate/0.1",
+        "signatures": [
+          {
+            "credential_rotation_reference": {
+              "credential_id": "cred-alpha-2026-01",
+              "identity_id": "did:soma:issuer-alpha",
+              "rotation_event_hash": "rot-alpha-effective-001"
+            },
+            "identity_id": "did:soma:issuer-alpha",
+            "signature_bytes": "DRXggsaUUkTzRZFA5AuTtzOVFm/hneHyj7xpVluY7Y0nL8s1AENver9lcQWQ58rRMKX+lhc0aEBjMBFKNZ85Dg==",
+            "signer_role": "issuer"
+          }
+        ]
+      },
+      "canonical_json": "{\"claim_set\":[{\"kind\":\"policy_statement\",\"statement\":\"policy profile is deferred even though policy_statement claim is accepted\"}],\"disclosure\":{\"profile\":\"public\"},\"evidence_references\":[{\"kind\":\"signature\",\"reference\":\"signature_set.issuer\"}],\"expiry\":1770086400000,\"issued_at\":1770000000000,\"issuer_credential_rotation_reference\":{\"credential_id\":\"cred-alpha-2026-01\",\"identity_id\":\"did:soma:issuer-alpha\",\"rotation_event_hash\":\"rot-alpha-effective-001\"},\"issuer_identity\":\"did:soma:issuer-alpha\",\"profile\":\"policy-statement\",\"subject_identifier_hash\":\"sha256:627b60709f427fcd93983bfecc7ed9a2786d7c383ca7bbdef5cec73bd0260dff\",\"version\":\"soma-heart-certificate/0.1\"}",
+      "canonical_utf8_hex": "7b22636c61696d5f736574223a5b7b226b696e64223a22706f6c6963795f73746174656d656e74222c2273746174656d656e74223a22706f6c6963792070726f66696c65206973206465666572726564206576656e2074686f75676820706f6c6963795f73746174656d656e7420636c61696d206973206163636570746564227d5d2c22646973636c6f73757265223a7b2270726f66696c65223a227075626c6963227d2c2265766964656e63655f7265666572656e636573223a5b7b226b696e64223a227369676e6174757265222c227265666572656e6365223a227369676e61747572655f7365742e697373756572227d5d2c22657870697279223a313737303038363430303030302c226973737565645f6174223a313737303030303030303030302c226973737565725f63726564656e7469616c5f726f746174696f6e5f7265666572656e6365223a7b2263726564656e7469616c5f6964223a22637265642d616c7068612d323032362d3031222c226964656e746974795f6964223a226469643a736f6d613a6973737565722d616c706861222c22726f746174696f6e5f6576656e745f68617368223a22726f742d616c7068612d6566666563746976652d303031227d2c226973737565725f6964656e74697479223a226469643a736f6d613a6973737565722d616c706861222c2270726f66696c65223a22706f6c6963792d73746174656d656e74222c227375626a6563745f6964656e7469666965725f68617368223a227368613235363a36323762363037303966343237666364393339383362666563633765643961323738366437633338336361376262646566356365633733626430323630646666222c2276657273696f6e223a22736f6d612d68656172742d63657274696669636174652f302e31227d",
+      "coverage": [
+        "deferred-profile:policy-statement"
+      ],
+      "expected_certificate_id": "283cb7bfae84d0ea31163d841f62ed2939cc65e6b38ad36c8dc9ceb03edbafc1",
+      "expected_failure": "profile-deferred",
+      "expected_result": "reject",
+      "notes": "",
+      "signature_inputs": [
+        {
+          "input_sha256": "19a4e5a5800df2ea137f2372a4d77941e60092cdd3566264c8f2537857a1fca6",
+          "signer_role": "issuer"
+        }
+      ],
+      "verifier_policy": {
+        "policy_id": "soma-heart-policy:v0.1:test-vector-strict",
+        "accepted_claim_kinds": [
+          "content_hash_commitment",
+          "credential_validity",
+          "endpoint_observation",
+          "freshness_receipt",
+          "identity_control",
+          "payment_receipt_reference",
+          "policy_statement"
+        ],
+        "accepted_evidence_kinds": [
+          "hash_commitment",
+          "payment_rail_receipt_reference",
+          "receipt_reference",
+          "request_response_transcript_hash",
+          "signature",
+          "timestamp",
+          "verifier_policy_reference"
+        ],
+        "accepted_profiles": [
+          "birth",
+          "freshness-receipt-bound",
+          "heart-to-heart",
+          "one-sided"
+        ],
+        "fail_closed": true,
+        "max_chain_depth": 2,
+        "require_rotation_lookup": true
+      }
+    },
+    {
+      "id": "reject-profile-witnessed",
+      "certificate": {
+        "certificate_id": "ab6883fbd835778b404e61ee8e587eba9c821580807cbafd7c1af34d10c85aba",
+        "claim_set": [
+          {
+            "kind": "identity_control",
+            "statement": "issuer controls the subject identifier for this vector"
+          }
+        ],
+        "disclosure": {
+          "profile": "public"
+        },
+        "evidence_references": [
+          {
+            "kind": "signature",
+            "reference": "signature_set.issuer"
+          },
+          {
+            "kind": "signature",
+            "reference": "signature_set.witness"
+          }
+        ],
+        "expiry": 1770086400000,
+        "issued_at": 1770000000000,
+        "issuer_credential_rotation_reference": {
+          "credential_id": "cred-alpha-2026-01",
+          "identity_id": "did:soma:issuer-alpha",
+          "rotation_event_hash": "rot-alpha-effective-001"
+        },
+        "issuer_identity": "did:soma:issuer-alpha",
+        "profile": "witnessed",
+        "subject_identifier_hash": "sha256:c8e8a26a14e13965cc393b66d76331bea1ef58e91a2c713ca76854b5b803cfab",
+        "version": "soma-heart-certificate/0.1",
+        "signatures": [
+          {
+            "credential_rotation_reference": {
+              "credential_id": "cred-alpha-2026-01",
+              "identity_id": "did:soma:issuer-alpha",
+              "rotation_event_hash": "rot-alpha-effective-001"
+            },
+            "identity_id": "did:soma:issuer-alpha",
+            "signature_bytes": "vWMEGvvWNXuAWOEzjXM75hU/Wk5RShYe7/Yy72qFy1iK7hrk3rqvPvHPmymbKV2QAXohg5z7W7AxswevP+nVAw==",
+            "signer_role": "issuer"
+          }
+        ]
+      },
+      "canonical_json": "{\"claim_set\":[{\"kind\":\"identity_control\",\"statement\":\"issuer controls the subject identifier for this vector\"}],\"disclosure\":{\"profile\":\"public\"},\"evidence_references\":[{\"kind\":\"signature\",\"reference\":\"signature_set.issuer\"},{\"kind\":\"signature\",\"reference\":\"signature_set.witness\"}],\"expiry\":1770086400000,\"issued_at\":1770000000000,\"issuer_credential_rotation_reference\":{\"credential_id\":\"cred-alpha-2026-01\",\"identity_id\":\"did:soma:issuer-alpha\",\"rotation_event_hash\":\"rot-alpha-effective-001\"},\"issuer_identity\":\"did:soma:issuer-alpha\",\"profile\":\"witnessed\",\"subject_identifier_hash\":\"sha256:c8e8a26a14e13965cc393b66d76331bea1ef58e91a2c713ca76854b5b803cfab\",\"version\":\"soma-heart-certificate/0.1\"}",
+      "canonical_utf8_hex": "7b22636c61696d5f736574223a5b7b226b696e64223a226964656e746974795f636f6e74726f6c222c2273746174656d656e74223a2269737375657220636f6e74726f6c7320746865207375626a656374206964656e74696669657220666f72207468697320766563746f72227d5d2c22646973636c6f73757265223a7b2270726f66696c65223a227075626c6963227d2c2265766964656e63655f7265666572656e636573223a5b7b226b696e64223a227369676e6174757265222c227265666572656e6365223a227369676e61747572655f7365742e697373756572227d2c7b226b696e64223a227369676e6174757265222c227265666572656e6365223a227369676e61747572655f7365742e7769746e657373227d5d2c22657870697279223a313737303038363430303030302c226973737565645f6174223a313737303030303030303030302c226973737565725f63726564656e7469616c5f726f746174696f6e5f7265666572656e6365223a7b2263726564656e7469616c5f6964223a22637265642d616c7068612d323032362d3031222c226964656e746974795f6964223a226469643a736f6d613a6973737565722d616c706861222c22726f746174696f6e5f6576656e745f68617368223a22726f742d616c7068612d6566666563746976652d303031227d2c226973737565725f6964656e74697479223a226469643a736f6d613a6973737565722d616c706861222c2270726f66696c65223a227769746e6573736564222c227375626a6563745f6964656e7469666965725f68617368223a227368613235363a63386538613236613134653133393635636333393362363664373633333162656131656635386539316132633731336361373638353462356238303363666162222c2276657273696f6e223a22736f6d612d68656172742d63657274696669636174652f302e31227d",
+      "coverage": [
+        "deferred-profile:witnessed"
+      ],
+      "expected_certificate_id": "ab6883fbd835778b404e61ee8e587eba9c821580807cbafd7c1af34d10c85aba",
+      "expected_failure": "profile-deferred",
+      "expected_result": "reject",
+      "notes": "",
+      "signature_inputs": [
+        {
+          "input_sha256": "fac77077ab57b90cb35f5e021eabaab42a04f510270f43d78001b23e3b9f54f1",
+          "signer_role": "issuer"
+        }
+      ],
+      "verifier_policy": {
+        "policy_id": "soma-heart-policy:v0.1:test-vector-strict",
+        "accepted_claim_kinds": [
+          "content_hash_commitment",
+          "credential_validity",
+          "endpoint_observation",
+          "freshness_receipt",
+          "identity_control",
+          "payment_receipt_reference",
+          "policy_statement"
+        ],
+        "accepted_evidence_kinds": [
+          "hash_commitment",
+          "payment_rail_receipt_reference",
+          "receipt_reference",
+          "request_response_transcript_hash",
+          "signature",
+          "timestamp",
+          "verifier_policy_reference"
+        ],
+        "accepted_profiles": [
+          "birth",
+          "freshness-receipt-bound",
+          "heart-to-heart",
+          "one-sided"
+        ],
+        "fail_closed": true,
+        "max_chain_depth": 2,
+        "require_rotation_lookup": true
+      }
+    },
+    {
+      "id": "reject-claim-capability-statement",
+      "certificate": {
+        "certificate_id": "b9e8b7a99c9bc4dc0270d2943014daa6a2ce69e6ce4fcf36b5d88e91d7ae6fc9",
+        "claim_set": [
+          {
+            "kind": "capability_statement",
+            "statement": "deferred capability claim"
+          }
+        ],
+        "disclosure": {
+          "profile": "public"
+        },
+        "evidence_references": [
+          {
+            "kind": "signature",
+            "reference": "signature_set.issuer"
+          }
+        ],
+        "expiry": 1770086400000,
+        "issued_at": 1770000000000,
+        "issuer_credential_rotation_reference": {
+          "credential_id": "cred-alpha-2026-01",
+          "identity_id": "did:soma:issuer-alpha",
+          "rotation_event_hash": "rot-alpha-effective-001"
+        },
+        "issuer_identity": "did:soma:issuer-alpha",
+        "profile": "one-sided",
+        "subject_identifier_hash": "sha256:7324a5958103f0ba3ea5594afdf268fcfadc5b7bfecf13888a4e5fe726f29945",
+        "version": "soma-heart-certificate/0.1",
+        "signatures": [
+          {
+            "credential_rotation_reference": {
+              "credential_id": "cred-alpha-2026-01",
+              "identity_id": "did:soma:issuer-alpha",
+              "rotation_event_hash": "rot-alpha-effective-001"
+            },
+            "identity_id": "did:soma:issuer-alpha",
+            "signature_bytes": "GN5hNvQf2Zn1VEatha0mRDgArf3C2gaZNt3YqdQ3DV6tfa0B2eHmfrEHKLqS5gUd64NJbiUcgqHTKwuOIQbkBw==",
+            "signer_role": "issuer"
+          }
+        ]
+      },
+      "canonical_json": "{\"claim_set\":[{\"kind\":\"capability_statement\",\"statement\":\"deferred capability claim\"}],\"disclosure\":{\"profile\":\"public\"},\"evidence_references\":[{\"kind\":\"signature\",\"reference\":\"signature_set.issuer\"}],\"expiry\":1770086400000,\"issued_at\":1770000000000,\"issuer_credential_rotation_reference\":{\"credential_id\":\"cred-alpha-2026-01\",\"identity_id\":\"did:soma:issuer-alpha\",\"rotation_event_hash\":\"rot-alpha-effective-001\"},\"issuer_identity\":\"did:soma:issuer-alpha\",\"profile\":\"one-sided\",\"subject_identifier_hash\":\"sha256:7324a5958103f0ba3ea5594afdf268fcfadc5b7bfecf13888a4e5fe726f29945\",\"version\":\"soma-heart-certificate/0.1\"}",
+      "canonical_utf8_hex": "7b22636c61696d5f736574223a5b7b226b696e64223a226361706162696c6974795f73746174656d656e74222c2273746174656d656e74223a226465666572726564206361706162696c69747920636c61696d227d5d2c22646973636c6f73757265223a7b2270726f66696c65223a227075626c6963227d2c2265766964656e63655f7265666572656e636573223a5b7b226b696e64223a227369676e6174757265222c227265666572656e6365223a227369676e61747572655f7365742e697373756572227d5d2c22657870697279223a313737303038363430303030302c226973737565645f6174223a313737303030303030303030302c226973737565725f63726564656e7469616c5f726f746174696f6e5f7265666572656e6365223a7b2263726564656e7469616c5f6964223a22637265642d616c7068612d323032362d3031222c226964656e746974795f6964223a226469643a736f6d613a6973737565722d616c706861222c22726f746174696f6e5f6576656e745f68617368223a22726f742d616c7068612d6566666563746976652d303031227d2c226973737565725f6964656e74697479223a226469643a736f6d613a6973737565722d616c706861222c2270726f66696c65223a226f6e652d7369646564222c227375626a6563745f6964656e7469666965725f68617368223a227368613235363a37333234613539353831303366306261336561353539346166646632363866636661646335623762666563663133383838613465356665373236663239393435222c2276657273696f6e223a22736f6d612d68656172742d63657274696669636174652f302e31227d",
+      "coverage": [
+        "deferred-claim:capability_statement"
+      ],
+      "expected_certificate_id": "b9e8b7a99c9bc4dc0270d2943014daa6a2ce69e6ce4fcf36b5d88e91d7ae6fc9",
+      "expected_failure": "claim-deferred",
+      "expected_result": "reject",
+      "notes": "",
+      "signature_inputs": [
+        {
+          "input_sha256": "a4d68c2698da86bcfa152fab2bce279fa8db27ccfb2d3f676957a6bacad4ba73",
+          "signer_role": "issuer"
+        }
+      ],
+      "verifier_policy": {
+        "policy_id": "soma-heart-policy:v0.1:test-vector-strict",
+        "accepted_claim_kinds": [
+          "content_hash_commitment",
+          "credential_validity",
+          "endpoint_observation",
+          "freshness_receipt",
+          "identity_control",
+          "payment_receipt_reference",
+          "policy_statement"
+        ],
+        "accepted_evidence_kinds": [
+          "hash_commitment",
+          "payment_rail_receipt_reference",
+          "receipt_reference",
+          "request_response_transcript_hash",
+          "signature",
+          "timestamp",
+          "verifier_policy_reference"
+        ],
+        "accepted_profiles": [
+          "birth",
+          "freshness-receipt-bound",
+          "heart-to-heart",
+          "one-sided"
+        ],
+        "fail_closed": true,
+        "max_chain_depth": 2,
+        "require_rotation_lookup": true
+      }
+    },
+    {
+      "id": "reject-claim-delegation-or-endorsement",
+      "certificate": {
+        "certificate_id": "7ee130664970d8190de341618584dfda0b946554399259f8e4183a834861817d",
+        "claim_set": [
+          {
+            "kind": "delegation_or_endorsement",
+            "statement": "deferred delegation claim"
+          }
+        ],
+        "disclosure": {
+          "profile": "public"
+        },
+        "evidence_references": [
+          {
+            "kind": "signature",
+            "reference": "signature_set.issuer"
+          }
+        ],
+        "expiry": 1770086400000,
+        "issued_at": 1770000000000,
+        "issuer_credential_rotation_reference": {
+          "credential_id": "cred-alpha-2026-01",
+          "identity_id": "did:soma:issuer-alpha",
+          "rotation_event_hash": "rot-alpha-effective-001"
+        },
+        "issuer_identity": "did:soma:issuer-alpha",
+        "profile": "one-sided",
+        "subject_identifier_hash": "sha256:7324a5958103f0ba3ea5594afdf268fcfadc5b7bfecf13888a4e5fe726f29945",
+        "version": "soma-heart-certificate/0.1",
+        "signatures": [
+          {
+            "credential_rotation_reference": {
+              "credential_id": "cred-alpha-2026-01",
+              "identity_id": "did:soma:issuer-alpha",
+              "rotation_event_hash": "rot-alpha-effective-001"
+            },
+            "identity_id": "did:soma:issuer-alpha",
+            "signature_bytes": "mtskEYNQ70Gkq5sGfKrPfHffLTbcibOI8joWQlukUYz6qzwO43kkhbnje4H1fhT5RJihEW/1yHwNjSWKHA2wBw==",
+            "signer_role": "issuer"
+          }
+        ]
+      },
+      "canonical_json": "{\"claim_set\":[{\"kind\":\"delegation_or_endorsement\",\"statement\":\"deferred delegation claim\"}],\"disclosure\":{\"profile\":\"public\"},\"evidence_references\":[{\"kind\":\"signature\",\"reference\":\"signature_set.issuer\"}],\"expiry\":1770086400000,\"issued_at\":1770000000000,\"issuer_credential_rotation_reference\":{\"credential_id\":\"cred-alpha-2026-01\",\"identity_id\":\"did:soma:issuer-alpha\",\"rotation_event_hash\":\"rot-alpha-effective-001\"},\"issuer_identity\":\"did:soma:issuer-alpha\",\"profile\":\"one-sided\",\"subject_identifier_hash\":\"sha256:7324a5958103f0ba3ea5594afdf268fcfadc5b7bfecf13888a4e5fe726f29945\",\"version\":\"soma-heart-certificate/0.1\"}",
+      "canonical_utf8_hex": "7b22636c61696d5f736574223a5b7b226b696e64223a2264656c65676174696f6e5f6f725f656e646f7273656d656e74222c2273746174656d656e74223a2264656665727265642064656c65676174696f6e20636c61696d227d5d2c22646973636c6f73757265223a7b2270726f66696c65223a227075626c6963227d2c2265766964656e63655f7265666572656e636573223a5b7b226b696e64223a227369676e6174757265222c227265666572656e6365223a227369676e61747572655f7365742e697373756572227d5d2c22657870697279223a313737303038363430303030302c226973737565645f6174223a313737303030303030303030302c226973737565725f63726564656e7469616c5f726f746174696f6e5f7265666572656e6365223a7b2263726564656e7469616c5f6964223a22637265642d616c7068612d323032362d3031222c226964656e746974795f6964223a226469643a736f6d613a6973737565722d616c706861222c22726f746174696f6e5f6576656e745f68617368223a22726f742d616c7068612d6566666563746976652d303031227d2c226973737565725f6964656e74697479223a226469643a736f6d613a6973737565722d616c706861222c2270726f66696c65223a226f6e652d7369646564222c227375626a6563745f6964656e7469666965725f68617368223a227368613235363a37333234613539353831303366306261336561353539346166646632363866636661646335623762666563663133383838613465356665373236663239393435222c2276657273696f6e223a22736f6d612d68656172742d63657274696669636174652f302e31227d",
+      "coverage": [
+        "deferred-claim:delegation_or_endorsement"
+      ],
+      "expected_certificate_id": "7ee130664970d8190de341618584dfda0b946554399259f8e4183a834861817d",
+      "expected_failure": "claim-deferred",
+      "expected_result": "reject",
+      "notes": "",
+      "signature_inputs": [
+        {
+          "input_sha256": "5a977b5785bc8c9760ab7c7c636be1f265e55af40c9cd0eb22d2191790eed0e0",
+          "signer_role": "issuer"
+        }
+      ],
+      "verifier_policy": {
+        "policy_id": "soma-heart-policy:v0.1:test-vector-strict",
+        "accepted_claim_kinds": [
+          "content_hash_commitment",
+          "credential_validity",
+          "endpoint_observation",
+          "freshness_receipt",
+          "identity_control",
+          "payment_receipt_reference",
+          "policy_statement"
+        ],
+        "accepted_evidence_kinds": [
+          "hash_commitment",
+          "payment_rail_receipt_reference",
+          "receipt_reference",
+          "request_response_transcript_hash",
+          "signature",
+          "timestamp",
+          "verifier_policy_reference"
+        ],
+        "accepted_profiles": [
+          "birth",
+          "freshness-receipt-bound",
+          "heart-to-heart",
+          "one-sided"
+        ],
+        "fail_closed": true,
+        "max_chain_depth": 2,
+        "require_rotation_lookup": true
+      }
+    },
+    {
+      "id": "reject-evidence-credential-presentation-reference",
+      "certificate": {
+        "certificate_id": "e05a176e8b8202706a6d4bf157cbe3e872e426055cc319fbb6b951c15ac7069d",
+        "claim_set": [
+          {
+            "kind": "identity_control",
+            "statement": "issuer controls the subject identifier for this vector"
+          }
+        ],
+        "disclosure": {
+          "profile": "public"
+        },
+        "evidence_references": [
+          {
+            "kind": "credential_presentation_reference",
+            "reference": "credential-presentation:test"
+          }
+        ],
+        "expiry": 1770086400000,
+        "issued_at": 1770000000000,
+        "issuer_credential_rotation_reference": {
+          "credential_id": "cred-alpha-2026-01",
+          "identity_id": "did:soma:issuer-alpha",
+          "rotation_event_hash": "rot-alpha-effective-001"
+        },
+        "issuer_identity": "did:soma:issuer-alpha",
+        "profile": "one-sided",
+        "subject_identifier_hash": "sha256:7324a5958103f0ba3ea5594afdf268fcfadc5b7bfecf13888a4e5fe726f29945",
+        "version": "soma-heart-certificate/0.1",
+        "signatures": [
+          {
+            "credential_rotation_reference": {
+              "credential_id": "cred-alpha-2026-01",
+              "identity_id": "did:soma:issuer-alpha",
+              "rotation_event_hash": "rot-alpha-effective-001"
+            },
+            "identity_id": "did:soma:issuer-alpha",
+            "signature_bytes": "oD8CLZ6Ck79yUEyz3eKw9cpvZ0ao+SebVkwbNeXkXgHIElwrgApixpfFeMJ/bd8XO4JlhXrBhbqKYkD72/LwBA==",
+            "signer_role": "issuer"
+          }
+        ]
+      },
+      "canonical_json": "{\"claim_set\":[{\"kind\":\"identity_control\",\"statement\":\"issuer controls the subject identifier for this vector\"}],\"disclosure\":{\"profile\":\"public\"},\"evidence_references\":[{\"kind\":\"credential_presentation_reference\",\"reference\":\"credential-presentation:test\"}],\"expiry\":1770086400000,\"issued_at\":1770000000000,\"issuer_credential_rotation_reference\":{\"credential_id\":\"cred-alpha-2026-01\",\"identity_id\":\"did:soma:issuer-alpha\",\"rotation_event_hash\":\"rot-alpha-effective-001\"},\"issuer_identity\":\"did:soma:issuer-alpha\",\"profile\":\"one-sided\",\"subject_identifier_hash\":\"sha256:7324a5958103f0ba3ea5594afdf268fcfadc5b7bfecf13888a4e5fe726f29945\",\"version\":\"soma-heart-certificate/0.1\"}",
+      "canonical_utf8_hex": "7b22636c61696d5f736574223a5b7b226b696e64223a226964656e746974795f636f6e74726f6c222c2273746174656d656e74223a2269737375657220636f6e74726f6c7320746865207375626a656374206964656e74696669657220666f72207468697320766563746f72227d5d2c22646973636c6f73757265223a7b2270726f66696c65223a227075626c6963227d2c2265766964656e63655f7265666572656e636573223a5b7b226b696e64223a2263726564656e7469616c5f70726573656e746174696f6e5f7265666572656e6365222c227265666572656e6365223a2263726564656e7469616c2d70726573656e746174696f6e3a74657374227d5d2c22657870697279223a313737303038363430303030302c226973737565645f6174223a313737303030303030303030302c226973737565725f63726564656e7469616c5f726f746174696f6e5f7265666572656e6365223a7b2263726564656e7469616c5f6964223a22637265642d616c7068612d323032362d3031222c226964656e746974795f6964223a226469643a736f6d613a6973737565722d616c706861222c22726f746174696f6e5f6576656e745f68617368223a22726f742d616c7068612d6566666563746976652d303031227d2c226973737565725f6964656e74697479223a226469643a736f6d613a6973737565722d616c706861222c2270726f66696c65223a226f6e652d7369646564222c227375626a6563745f6964656e7469666965725f68617368223a227368613235363a37333234613539353831303366306261336561353539346166646632363866636661646335623762666563663133383838613465356665373236663239393435222c2276657273696f6e223a22736f6d612d68656172742d63657274696669636174652f302e31227d",
+      "coverage": [
+        "deferred-evidence:credential_presentation_reference"
+      ],
+      "expected_certificate_id": "e05a176e8b8202706a6d4bf157cbe3e872e426055cc319fbb6b951c15ac7069d",
+      "expected_failure": "evidence-deferred",
+      "expected_result": "reject",
+      "notes": "",
+      "signature_inputs": [
+        {
+          "input_sha256": "486da2e88dd0a4e56487c7bd99b7d4fa41ad54a2b84351b1aded4e5533adf485",
+          "signer_role": "issuer"
+        }
+      ],
+      "verifier_policy": {
+        "policy_id": "soma-heart-policy:v0.1:test-vector-strict",
+        "accepted_claim_kinds": [
+          "content_hash_commitment",
+          "credential_validity",
+          "endpoint_observation",
+          "freshness_receipt",
+          "identity_control",
+          "payment_receipt_reference",
+          "policy_statement"
+        ],
+        "accepted_evidence_kinds": [
+          "hash_commitment",
+          "payment_rail_receipt_reference",
+          "receipt_reference",
+          "request_response_transcript_hash",
+          "signature",
+          "timestamp",
+          "verifier_policy_reference"
+        ],
+        "accepted_profiles": [
+          "birth",
+          "freshness-receipt-bound",
+          "heart-to-heart",
+          "one-sided"
+        ],
+        "fail_closed": true,
+        "max_chain_depth": 2,
+        "require_rotation_lookup": true
+      }
+    },
+    {
+      "id": "reject-evidence-media-content-hash",
+      "certificate": {
+        "certificate_id": "a208168ab69778adaec4e9a7005beb520cf6f55ec99cce955044c8454bb94ce5",
+        "claim_set": [
+          {
+            "kind": "identity_control",
+            "statement": "issuer controls the subject identifier for this vector"
+          }
+        ],
+        "disclosure": {
+          "profile": "public"
+        },
+        "evidence_references": [
+          {
+            "kind": "media_content_hash",
+            "reference": "sha256:7f57bbb7bcdffc8eddf34019f50a9363982933045603c3c2c8e3e86e20b16f0e"
+          }
+        ],
+        "expiry": 1770086400000,
+        "issued_at": 1770000000000,
+        "issuer_credential_rotation_reference": {
+          "credential_id": "cred-alpha-2026-01",
+          "identity_id": "did:soma:issuer-alpha",
+          "rotation_event_hash": "rot-alpha-effective-001"
+        },
+        "issuer_identity": "did:soma:issuer-alpha",
+        "profile": "one-sided",
+        "subject_identifier_hash": "sha256:7324a5958103f0ba3ea5594afdf268fcfadc5b7bfecf13888a4e5fe726f29945",
+        "version": "soma-heart-certificate/0.1",
+        "signatures": [
+          {
+            "credential_rotation_reference": {
+              "credential_id": "cred-alpha-2026-01",
+              "identity_id": "did:soma:issuer-alpha",
+              "rotation_event_hash": "rot-alpha-effective-001"
+            },
+            "identity_id": "did:soma:issuer-alpha",
+            "signature_bytes": "ndyTMPQ1k0jtHQVUVVEx/uPQ2hmFXn3Pl4LnV3gY1z8JQwZIi15Bt7dH80uUtEQM61ImbisZXvfZ7SEa9FfAAA==",
+            "signer_role": "issuer"
+          }
+        ]
+      },
+      "canonical_json": "{\"claim_set\":[{\"kind\":\"identity_control\",\"statement\":\"issuer controls the subject identifier for this vector\"}],\"disclosure\":{\"profile\":\"public\"},\"evidence_references\":[{\"kind\":\"media_content_hash\",\"reference\":\"sha256:7f57bbb7bcdffc8eddf34019f50a9363982933045603c3c2c8e3e86e20b16f0e\"}],\"expiry\":1770086400000,\"issued_at\":1770000000000,\"issuer_credential_rotation_reference\":{\"credential_id\":\"cred-alpha-2026-01\",\"identity_id\":\"did:soma:issuer-alpha\",\"rotation_event_hash\":\"rot-alpha-effective-001\"},\"issuer_identity\":\"did:soma:issuer-alpha\",\"profile\":\"one-sided\",\"subject_identifier_hash\":\"sha256:7324a5958103f0ba3ea5594afdf268fcfadc5b7bfecf13888a4e5fe726f29945\",\"version\":\"soma-heart-certificate/0.1\"}",
+      "canonical_utf8_hex": "7b22636c61696d5f736574223a5b7b226b696e64223a226964656e746974795f636f6e74726f6c222c2273746174656d656e74223a2269737375657220636f6e74726f6c7320746865207375626a656374206964656e74696669657220666f72207468697320766563746f72227d5d2c22646973636c6f73757265223a7b2270726f66696c65223a227075626c6963227d2c2265766964656e63655f7265666572656e636573223a5b7b226b696e64223a226d656469615f636f6e74656e745f68617368222c227265666572656e6365223a227368613235363a37663537626262376263646666633865646466333430313966353061393336333938323933333034353630336333633263386533653836653230623136663065227d5d2c22657870697279223a313737303038363430303030302c226973737565645f6174223a313737303030303030303030302c226973737565725f63726564656e7469616c5f726f746174696f6e5f7265666572656e6365223a7b2263726564656e7469616c5f6964223a22637265642d616c7068612d323032362d3031222c226964656e746974795f6964223a226469643a736f6d613a6973737565722d616c706861222c22726f746174696f6e5f6576656e745f68617368223a22726f742d616c7068612d6566666563746976652d303031227d2c226973737565725f6964656e74697479223a226469643a736f6d613a6973737565722d616c706861222c2270726f66696c65223a226f6e652d7369646564222c227375626a6563745f6964656e7469666965725f68617368223a227368613235363a37333234613539353831303366306261336561353539346166646632363866636661646335623762666563663133383838613465356665373236663239393435222c2276657273696f6e223a22736f6d612d68656172742d63657274696669636174652f302e31227d",
+      "coverage": [
+        "deferred-evidence:media_content_hash"
+      ],
+      "expected_certificate_id": "a208168ab69778adaec4e9a7005beb520cf6f55ec99cce955044c8454bb94ce5",
+      "expected_failure": "evidence-deferred",
+      "expected_result": "reject",
+      "notes": "",
+      "signature_inputs": [
+        {
+          "input_sha256": "1a40c646cd3be9d7c72797c4851e7525bee4eeb0e2573fe7dc2f2906400170f9",
+          "signer_role": "issuer"
+        }
+      ],
+      "verifier_policy": {
+        "policy_id": "soma-heart-policy:v0.1:test-vector-strict",
+        "accepted_claim_kinds": [
+          "content_hash_commitment",
+          "credential_validity",
+          "endpoint_observation",
+          "freshness_receipt",
+          "identity_control",
+          "payment_receipt_reference",
+          "policy_statement"
+        ],
+        "accepted_evidence_kinds": [
+          "hash_commitment",
+          "payment_rail_receipt_reference",
+          "receipt_reference",
+          "request_response_transcript_hash",
+          "signature",
+          "timestamp",
+          "verifier_policy_reference"
+        ],
+        "accepted_profiles": [
+          "birth",
+          "freshness-receipt-bound",
+          "heart-to-heart",
+          "one-sided"
+        ],
+        "fail_closed": true,
+        "max_chain_depth": 2,
+        "require_rotation_lookup": true
+      }
+    },
+    {
+      "id": "reject-evidence-third-party-attestation-reference",
+      "certificate": {
+        "certificate_id": "22eb1a87dd6506eb7bf879b3bd6995a7f23535e7e6fee46cc1e47affb3676b68",
+        "claim_set": [
+          {
+            "kind": "identity_control",
+            "statement": "issuer controls the subject identifier for this vector"
+          }
+        ],
+        "disclosure": {
+          "profile": "public"
+        },
+        "evidence_references": [
+          {
+            "kind": "third_party_attestation_reference",
+            "reference": "attestation:test"
+          }
+        ],
+        "expiry": 1770086400000,
+        "issued_at": 1770000000000,
+        "issuer_credential_rotation_reference": {
+          "credential_id": "cred-alpha-2026-01",
+          "identity_id": "did:soma:issuer-alpha",
+          "rotation_event_hash": "rot-alpha-effective-001"
+        },
+        "issuer_identity": "did:soma:issuer-alpha",
+        "profile": "one-sided",
+        "subject_identifier_hash": "sha256:7324a5958103f0ba3ea5594afdf268fcfadc5b7bfecf13888a4e5fe726f29945",
+        "version": "soma-heart-certificate/0.1",
+        "signatures": [
+          {
+            "credential_rotation_reference": {
+              "credential_id": "cred-alpha-2026-01",
+              "identity_id": "did:soma:issuer-alpha",
+              "rotation_event_hash": "rot-alpha-effective-001"
+            },
+            "identity_id": "did:soma:issuer-alpha",
+            "signature_bytes": "SlkPYA5MnYzAYuUvi14FMI2szLn24x2I/R96Ws6Uk6yfaHzKj6QvjkHTiKykUnfQbhtGfLX7ui5IarRe4PyGBw==",
+            "signer_role": "issuer"
+          }
+        ]
+      },
+      "canonical_json": "{\"claim_set\":[{\"kind\":\"identity_control\",\"statement\":\"issuer controls the subject identifier for this vector\"}],\"disclosure\":{\"profile\":\"public\"},\"evidence_references\":[{\"kind\":\"third_party_attestation_reference\",\"reference\":\"attestation:test\"}],\"expiry\":1770086400000,\"issued_at\":1770000000000,\"issuer_credential_rotation_reference\":{\"credential_id\":\"cred-alpha-2026-01\",\"identity_id\":\"did:soma:issuer-alpha\",\"rotation_event_hash\":\"rot-alpha-effective-001\"},\"issuer_identity\":\"did:soma:issuer-alpha\",\"profile\":\"one-sided\",\"subject_identifier_hash\":\"sha256:7324a5958103f0ba3ea5594afdf268fcfadc5b7bfecf13888a4e5fe726f29945\",\"version\":\"soma-heart-certificate/0.1\"}",
+      "canonical_utf8_hex": "7b22636c61696d5f736574223a5b7b226b696e64223a226964656e746974795f636f6e74726f6c222c2273746174656d656e74223a2269737375657220636f6e74726f6c7320746865207375626a656374206964656e74696669657220666f72207468697320766563746f72227d5d2c22646973636c6f73757265223a7b2270726f66696c65223a227075626c6963227d2c2265766964656e63655f7265666572656e636573223a5b7b226b696e64223a2274686972645f70617274795f6174746573746174696f6e5f7265666572656e6365222c227265666572656e6365223a226174746573746174696f6e3a74657374227d5d2c22657870697279223a313737303038363430303030302c226973737565645f6174223a313737303030303030303030302c226973737565725f63726564656e7469616c5f726f746174696f6e5f7265666572656e6365223a7b2263726564656e7469616c5f6964223a22637265642d616c7068612d323032362d3031222c226964656e746974795f6964223a226469643a736f6d613a6973737565722d616c706861222c22726f746174696f6e5f6576656e745f68617368223a22726f742d616c7068612d6566666563746976652d303031227d2c226973737565725f6964656e74697479223a226469643a736f6d613a6973737565722d616c706861222c2270726f66696c65223a226f6e652d7369646564222c227375626a6563745f6964656e7469666965725f68617368223a227368613235363a37333234613539353831303366306261336561353539346166646632363866636661646335623762666563663133383838613465356665373236663239393435222c2276657273696f6e223a22736f6d612d68656172742d63657274696669636174652f302e31227d",
+      "coverage": [
+        "deferred-evidence:third_party_attestation_reference"
+      ],
+      "expected_certificate_id": "22eb1a87dd6506eb7bf879b3bd6995a7f23535e7e6fee46cc1e47affb3676b68",
+      "expected_failure": "evidence-deferred",
+      "expected_result": "reject",
+      "notes": "",
+      "signature_inputs": [
+        {
+          "input_sha256": "a149f1a4db84f178957be0459d2d64d5896b2180f9fb7a2d7701a21fc73df95f",
+          "signer_role": "issuer"
+        }
+      ],
+      "verifier_policy": {
+        "policy_id": "soma-heart-policy:v0.1:test-vector-strict",
+        "accepted_claim_kinds": [
+          "content_hash_commitment",
+          "credential_validity",
+          "endpoint_observation",
+          "freshness_receipt",
+          "identity_control",
+          "payment_receipt_reference",
+          "policy_statement"
+        ],
+        "accepted_evidence_kinds": [
+          "hash_commitment",
+          "payment_rail_receipt_reference",
+          "receipt_reference",
+          "request_response_transcript_hash",
+          "signature",
+          "timestamp",
+          "verifier_policy_reference"
+        ],
+        "accepted_profiles": [
+          "birth",
+          "freshness-receipt-bound",
+          "heart-to-heart",
+          "one-sided"
+        ],
+        "fail_closed": true,
+        "max_chain_depth": 2,
+        "require_rotation_lookup": true
+      }
+    },
+    {
+      "id": "signature-historical-lookup",
+      "certificate": {
+        "certificate_id": "b78b7829039ae184bca7c405a869c8e48a5b3412dbdac7a216ae1a37befd9f70",
+        "claim_set": [
+          {
+            "kind": "credential_validity",
+            "statement": "signature resolves through historical credential lookup"
+          }
+        ],
+        "disclosure": {
+          "profile": "public"
+        },
+        "evidence_references": [
+          {
+            "kind": "signature",
+            "reference": "signature_set.issuer"
+          }
+        ],
+        "expiry": 1770086400000,
+        "issued_at": 1770001000000,
+        "issuer_credential_rotation_reference": {
+          "credential_id": "cred-alpha-2026-01",
+          "identity_id": "did:soma:issuer-alpha",
+          "rotation_event_hash": "rot-alpha-effective-001"
+        },
+        "issuer_identity": "did:soma:issuer-alpha",
+        "profile": "one-sided",
+        "subject_identifier_hash": "sha256:7324a5958103f0ba3ea5594afdf268fcfadc5b7bfecf13888a4e5fe726f29945",
+        "version": "soma-heart-certificate/0.1",
+        "signatures": [
+          {
+            "credential_rotation_reference": {
+              "credential_id": "cred-alpha-2026-01",
+              "identity_id": "did:soma:issuer-alpha",
+              "rotation_event_hash": "rot-alpha-effective-001"
+            },
+            "identity_id": "did:soma:issuer-alpha",
+            "signature_bytes": "ZtLtnhpPmJOcMsxYdJLrKxpTzRDDi3HiGUefTAk3LhyOTmh8dVKChNU+O6I9I4tzVv6uFrtr0RYEUeIB9UzoCQ==",
+            "signer_role": "issuer"
+          }
+        ]
+      },
+      "canonical_json": "{\"claim_set\":[{\"kind\":\"credential_validity\",\"statement\":\"signature resolves through historical credential lookup\"}],\"disclosure\":{\"profile\":\"public\"},\"evidence_references\":[{\"kind\":\"signature\",\"reference\":\"signature_set.issuer\"}],\"expiry\":1770086400000,\"issued_at\":1770001000000,\"issuer_credential_rotation_reference\":{\"credential_id\":\"cred-alpha-2026-01\",\"identity_id\":\"did:soma:issuer-alpha\",\"rotation_event_hash\":\"rot-alpha-effective-001\"},\"issuer_identity\":\"did:soma:issuer-alpha\",\"profile\":\"one-sided\",\"subject_identifier_hash\":\"sha256:7324a5958103f0ba3ea5594afdf268fcfadc5b7bfecf13888a4e5fe726f29945\",\"version\":\"soma-heart-certificate/0.1\"}",
+      "canonical_utf8_hex": "7b22636c61696d5f736574223a5b7b226b696e64223a2263726564656e7469616c5f76616c6964697479222c2273746174656d656e74223a227369676e6174757265207265736f6c766573207468726f75676820686973746f726963616c2063726564656e7469616c206c6f6f6b7570227d5d2c22646973636c6f73757265223a7b2270726f66696c65223a227075626c6963227d2c2265766964656e63655f7265666572656e636573223a5b7b226b696e64223a227369676e6174757265222c227265666572656e6365223a227369676e61747572655f7365742e697373756572227d5d2c22657870697279223a313737303038363430303030302c226973737565645f6174223a313737303030313030303030302c226973737565725f63726564656e7469616c5f726f746174696f6e5f7265666572656e6365223a7b2263726564656e7469616c5f6964223a22637265642d616c7068612d323032362d3031222c226964656e746974795f6964223a226469643a736f6d613a6973737565722d616c706861222c22726f746174696f6e5f6576656e745f68617368223a22726f742d616c7068612d6566666563746976652d303031227d2c226973737565725f6964656e74697479223a226469643a736f6d613a6973737565722d616c706861222c2270726f66696c65223a226f6e652d7369646564222c227375626a6563745f6964656e7469666965725f68617368223a227368613235363a37333234613539353831303366306261336561353539346166646632363866636661646335623762666563663133383838613465356665373236663239393435222c2276657273696f6e223a22736f6d612d68656172742d63657274696669636174652f302e31227d",
+      "coverage": [
+        "signature-verification:historical-credential-lookup"
+      ],
+      "expected_certificate_id": "b78b7829039ae184bca7c405a869c8e48a5b3412dbdac7a216ae1a37befd9f70",
+      "expected_failure": null,
+      "expected_result": "accept",
+      "notes": "",
+      "signature_inputs": [
+        {
+          "input_sha256": "75deb0112f42d3086b97d0a9379e440a5434682797f3417b07f8af5827429052",
+          "signer_role": "issuer"
+        }
+      ],
+      "verifier_policy": {
+        "policy_id": "soma-heart-policy:v0.1:test-vector-strict",
+        "accepted_claim_kinds": [
+          "content_hash_commitment",
+          "credential_validity",
+          "endpoint_observation",
+          "freshness_receipt",
+          "identity_control",
+          "payment_receipt_reference",
+          "policy_statement"
+        ],
+        "accepted_evidence_kinds": [
+          "hash_commitment",
+          "payment_rail_receipt_reference",
+          "receipt_reference",
+          "request_response_transcript_hash",
+          "signature",
+          "timestamp",
+          "verifier_policy_reference"
+        ],
+        "accepted_profiles": [
+          "birth",
+          "freshness-receipt-bound",
+          "heart-to-heart",
+          "one-sided"
+        ],
+        "fail_closed": true,
+        "max_chain_depth": 2,
+        "require_rotation_lookup": true
+      }
+    },
+    {
+      "id": "reject-chain-link-mismatch",
+      "certificate": {
+        "certificate_id": "37fdd4ae84e7c9d4b9d607d91261dbe6c872976daab05b59517943fc93de5316",
+        "claim_set": [
+          {
+            "kind": "identity_control",
+            "statement": "issuer controls the subject identifier for this vector"
+          }
+        ],
+        "disclosure": {
+          "profile": "public"
+        },
+        "evidence_references": [
+          {
+            "kind": "signature",
+            "reference": "signature_set.issuer"
+          }
+        ],
+        "expiry": 1770086400000,
+        "issued_at": 1770000000000,
+        "issuer_credential_rotation_reference": {
+          "credential_id": "cred-alpha-2026-01",
+          "identity_id": "did:soma:issuer-alpha",
+          "rotation_event_hash": "rot-alpha-effective-001"
+        },
+        "issuer_identity": "did:soma:issuer-alpha",
+        "profile": "one-sided",
+        "subject_identifier_hash": "sha256:7324a5958103f0ba3ea5594afdf268fcfadc5b7bfecf13888a4e5fe726f29945",
+        "version": "soma-heart-certificate/0.1",
+        "prior_certificate_references": [
+          {
+            "certificate_id": "sha256:2d3e70f7579de37cc817cd7aa513d8a9e364848c4ddc2bf0c6b405573bfcb3e3",
+            "relationship": "extends"
+          }
+        ],
+        "signatures": [
+          {
+            "credential_rotation_reference": {
+              "credential_id": "cred-alpha-2026-01",
+              "identity_id": "did:soma:issuer-alpha",
+              "rotation_event_hash": "rot-alpha-effective-001"
+            },
+            "identity_id": "did:soma:issuer-alpha",
+            "signature_bytes": "cMaw/LDZTxvSF1ihTEJz4wRUCb6r6J9ob08QEIqAocXtXgOPilgi3BxtetcvDCwkRPP1Ayux66VulaCL1n6wAw==",
+            "signer_role": "issuer"
+          }
+        ]
+      },
+      "canonical_json": "{\"claim_set\":[{\"kind\":\"identity_control\",\"statement\":\"issuer controls the subject identifier for this vector\"}],\"disclosure\":{\"profile\":\"public\"},\"evidence_references\":[{\"kind\":\"signature\",\"reference\":\"signature_set.issuer\"}],\"expiry\":1770086400000,\"issued_at\":1770000000000,\"issuer_credential_rotation_reference\":{\"credential_id\":\"cred-alpha-2026-01\",\"identity_id\":\"did:soma:issuer-alpha\",\"rotation_event_hash\":\"rot-alpha-effective-001\"},\"issuer_identity\":\"did:soma:issuer-alpha\",\"prior_certificate_references\":[{\"certificate_id\":\"sha256:2d3e70f7579de37cc817cd7aa513d8a9e364848c4ddc2bf0c6b405573bfcb3e3\",\"relationship\":\"extends\"}],\"profile\":\"one-sided\",\"subject_identifier_hash\":\"sha256:7324a5958103f0ba3ea5594afdf268fcfadc5b7bfecf13888a4e5fe726f29945\",\"version\":\"soma-heart-certificate/0.1\"}",
+      "canonical_utf8_hex": "7b22636c61696d5f736574223a5b7b226b696e64223a226964656e746974795f636f6e74726f6c222c2273746174656d656e74223a2269737375657220636f6e74726f6c7320746865207375626a656374206964656e74696669657220666f72207468697320766563746f72227d5d2c22646973636c6f73757265223a7b2270726f66696c65223a227075626c6963227d2c2265766964656e63655f7265666572656e636573223a5b7b226b696e64223a227369676e6174757265222c227265666572656e6365223a227369676e61747572655f7365742e697373756572227d5d2c22657870697279223a313737303038363430303030302c226973737565645f6174223a313737303030303030303030302c226973737565725f63726564656e7469616c5f726f746174696f6e5f7265666572656e6365223a7b2263726564656e7469616c5f6964223a22637265642d616c7068612d323032362d3031222c226964656e746974795f6964223a226469643a736f6d613a6973737565722d616c706861222c22726f746174696f6e5f6576656e745f68617368223a22726f742d616c7068612d6566666563746976652d303031227d2c226973737565725f6964656e74697479223a226469643a736f6d613a6973737565722d616c706861222c227072696f725f63657274696669636174655f7265666572656e636573223a5b7b2263657274696669636174655f6964223a227368613235363a32643365373066373537396465333763633831376364376161353133643861396533363438343863346464633262663063366234303535373362666362336533222c2272656c6174696f6e73686970223a22657874656e6473227d5d2c2270726f66696c65223a226f6e652d7369646564222c227375626a6563745f6964656e7469666965725f68617368223a227368613235363a37333234613539353831303366306261336561353539346166646632363866636661646335623762666563663133383838613465356665373236663239393435222c2276657273696f6e223a22736f6d612d68656172742d63657274696669636174652f302e31227d",
+      "coverage": [
+        "chain-link-mismatch"
+      ],
+      "expected_certificate_id": "37fdd4ae84e7c9d4b9d607d91261dbe6c872976daab05b59517943fc93de5316",
+      "expected_failure": "chain-link-mismatch",
+      "expected_result": "reject",
+      "notes": "",
+      "signature_inputs": [
+        {
+          "input_sha256": "189870b566f54cac5720e77b26a2b8278ab112ff23e4648f031481c366f72457",
+          "signer_role": "issuer"
+        }
+      ],
+      "verifier_policy": {
+        "policy_id": "soma-heart-policy:v0.1:test-vector-strict",
+        "accepted_claim_kinds": [
+          "content_hash_commitment",
+          "credential_validity",
+          "endpoint_observation",
+          "freshness_receipt",
+          "identity_control",
+          "payment_receipt_reference",
+          "policy_statement"
+        ],
+        "accepted_evidence_kinds": [
+          "hash_commitment",
+          "payment_rail_receipt_reference",
+          "receipt_reference",
+          "request_response_transcript_hash",
+          "signature",
+          "timestamp",
+          "verifier_policy_reference"
+        ],
+        "accepted_profiles": [
+          "birth",
+          "freshness-receipt-bound",
+          "heart-to-heart",
+          "one-sided"
+        ],
+        "fail_closed": true,
+        "max_chain_depth": 2,
+        "require_rotation_lookup": true
+      }
+    },
+    {
+      "id": "reject-chain-link-unresolvable",
+      "certificate": {
+        "certificate_id": "9a6a347e61dda5702fb924971485a5c0761fcc5377dd01d53dc0590bdbc726dd",
+        "claim_set": [
+          {
+            "kind": "identity_control",
+            "statement": "issuer controls the subject identifier for this vector"
+          }
+        ],
+        "disclosure": {
+          "profile": "public"
+        },
+        "evidence_references": [
+          {
+            "kind": "signature",
+            "reference": "signature_set.issuer"
+          }
+        ],
+        "expiry": 1770086400000,
+        "issued_at": 1770000000000,
+        "issuer_credential_rotation_reference": {
+          "credential_id": "cred-alpha-2026-01",
+          "identity_id": "did:soma:issuer-alpha",
+          "rotation_event_hash": "rot-alpha-effective-001"
+        },
+        "issuer_identity": "did:soma:issuer-alpha",
+        "profile": "one-sided",
+        "subject_identifier_hash": "sha256:7324a5958103f0ba3ea5594afdf268fcfadc5b7bfecf13888a4e5fe726f29945",
+        "version": "soma-heart-certificate/0.1",
+        "prior_certificate_references": [
+          {
+            "certificate_id": "606e53d4d81eed4289e1bf9dce74587df79be1f91646e4b037a5b650e19d937c",
+            "relationship": "extends",
+            "retrieval_hint": "missing:test-vector"
+          }
+        ],
+        "signatures": [
+          {
+            "credential_rotation_reference": {
+              "credential_id": "cred-alpha-2026-01",
+              "identity_id": "did:soma:issuer-alpha",
+              "rotation_event_hash": "rot-alpha-effective-001"
+            },
+            "identity_id": "did:soma:issuer-alpha",
+            "signature_bytes": "fA4GrICr/z6D0y2RQ2B3TpP/ObXGan3r+HAi791SMWpvrxKlS9G9DwOQVr+11uod/Gf9Zj7xt9ohUvDCo3WNAg==",
+            "signer_role": "issuer"
+          }
+        ]
+      },
+      "canonical_json": "{\"claim_set\":[{\"kind\":\"identity_control\",\"statement\":\"issuer controls the subject identifier for this vector\"}],\"disclosure\":{\"profile\":\"public\"},\"evidence_references\":[{\"kind\":\"signature\",\"reference\":\"signature_set.issuer\"}],\"expiry\":1770086400000,\"issued_at\":1770000000000,\"issuer_credential_rotation_reference\":{\"credential_id\":\"cred-alpha-2026-01\",\"identity_id\":\"did:soma:issuer-alpha\",\"rotation_event_hash\":\"rot-alpha-effective-001\"},\"issuer_identity\":\"did:soma:issuer-alpha\",\"prior_certificate_references\":[{\"certificate_id\":\"606e53d4d81eed4289e1bf9dce74587df79be1f91646e4b037a5b650e19d937c\",\"relationship\":\"extends\",\"retrieval_hint\":\"missing:test-vector\"}],\"profile\":\"one-sided\",\"subject_identifier_hash\":\"sha256:7324a5958103f0ba3ea5594afdf268fcfadc5b7bfecf13888a4e5fe726f29945\",\"version\":\"soma-heart-certificate/0.1\"}",
+      "canonical_utf8_hex": "7b22636c61696d5f736574223a5b7b226b696e64223a226964656e746974795f636f6e74726f6c222c2273746174656d656e74223a2269737375657220636f6e74726f6c7320746865207375626a656374206964656e74696669657220666f72207468697320766563746f72227d5d2c22646973636c6f73757265223a7b2270726f66696c65223a227075626c6963227d2c2265766964656e63655f7265666572656e636573223a5b7b226b696e64223a227369676e6174757265222c227265666572656e6365223a227369676e61747572655f7365742e697373756572227d5d2c22657870697279223a313737303038363430303030302c226973737565645f6174223a313737303030303030303030302c226973737565725f63726564656e7469616c5f726f746174696f6e5f7265666572656e6365223a7b2263726564656e7469616c5f6964223a22637265642d616c7068612d323032362d3031222c226964656e746974795f6964223a226469643a736f6d613a6973737565722d616c706861222c22726f746174696f6e5f6576656e745f68617368223a22726f742d616c7068612d6566666563746976652d303031227d2c226973737565725f6964656e74697479223a226469643a736f6d613a6973737565722d616c706861222c227072696f725f63657274696669636174655f7265666572656e636573223a5b7b2263657274696669636174655f6964223a2236303665353364346438316565643432383965316266396463653734353837646637396265316639313634366534623033376135623635306531396439333763222c2272656c6174696f6e73686970223a22657874656e6473222c2272657472696576616c5f68696e74223a226d697373696e673a746573742d766563746f72227d5d2c2270726f66696c65223a226f6e652d7369646564222c227375626a6563745f6964656e7469666965725f68617368223a227368613235363a37333234613539353831303366306261336561353539346166646632363866636661646335623762666563663133383838613465356665373236663239393435222c2276657273696f6e223a22736f6d612d68656172742d63657274696669636174652f302e31227d",
+      "coverage": [
+        "chain-link-unresolvable"
+      ],
+      "expected_certificate_id": "9a6a347e61dda5702fb924971485a5c0761fcc5377dd01d53dc0590bdbc726dd",
+      "expected_failure": "chain-link-unresolvable",
+      "expected_result": "reject",
+      "notes": "",
+      "signature_inputs": [
+        {
+          "input_sha256": "7aad3fd684876b498e6a337ab4f805bda9a719fdc50d6139f9b0c32be755b382",
+          "signer_role": "issuer"
+        }
+      ],
+      "verifier_policy": {
+        "policy_id": "soma-heart-policy:v0.1:test-vector-strict",
+        "accepted_claim_kinds": [
+          "content_hash_commitment",
+          "credential_validity",
+          "endpoint_observation",
+          "freshness_receipt",
+          "identity_control",
+          "payment_receipt_reference",
+          "policy_statement"
+        ],
+        "accepted_evidence_kinds": [
+          "hash_commitment",
+          "payment_rail_receipt_reference",
+          "receipt_reference",
+          "request_response_transcript_hash",
+          "signature",
+          "timestamp",
+          "verifier_policy_reference"
+        ],
+        "accepted_profiles": [
+          "birth",
+          "freshness-receipt-bound",
+          "heart-to-heart",
+          "one-sided"
+        ],
+        "fail_closed": true,
+        "max_chain_depth": 2,
+        "require_rotation_lookup": true
+      }
+    },
+    {
+      "id": "reject-credential-ineffective",
+      "certificate": {
+        "certificate_id": "0c99c115c2f6e1a9e675d7aa6e4f235288960c2caa29ea31c15ac43a0d258829",
+        "claim_set": [
+          {
+            "kind": "identity_control",
+            "statement": "issuer controls the subject identifier for this vector"
+          }
+        ],
+        "disclosure": {
+          "profile": "public"
+        },
+        "evidence_references": [
+          {
+            "kind": "signature",
+            "reference": "signature_set.issuer"
+          }
+        ],
+        "expiry": 1770086400000,
+        "issued_at": 1770000000000,
+        "issuer_credential_rotation_reference": {
+          "credential_id": "cred-alpha-2026-02",
+          "identity_id": "did:soma:issuer-alpha",
+          "rotation_event_hash": "rot-alpha-effective-002"
+        },
+        "issuer_identity": "did:soma:issuer-alpha",
+        "profile": "one-sided",
+        "subject_identifier_hash": "sha256:7324a5958103f0ba3ea5594afdf268fcfadc5b7bfecf13888a4e5fe726f29945",
+        "version": "soma-heart-certificate/0.1",
+        "signatures": [
+          {
+            "credential_rotation_reference": {
+              "credential_id": "cred-alpha-2026-02",
+              "identity_id": "did:soma:issuer-alpha",
+              "rotation_event_hash": "rot-alpha-effective-002"
+            },
+            "identity_id": "did:soma:issuer-alpha",
+            "signature_bytes": "84Izr83MSDgG7JRmiQ83w9qZl5kZbua+5Yt5+EIyofNdRCMAbTl5T/MtijhAIDopuytfc85rmX4mCivHKONXDw==",
+            "signer_role": "issuer"
+          }
+        ]
+      },
+      "canonical_json": "{\"claim_set\":[{\"kind\":\"identity_control\",\"statement\":\"issuer controls the subject identifier for this vector\"}],\"disclosure\":{\"profile\":\"public\"},\"evidence_references\":[{\"kind\":\"signature\",\"reference\":\"signature_set.issuer\"}],\"expiry\":1770086400000,\"issued_at\":1770000000000,\"issuer_credential_rotation_reference\":{\"credential_id\":\"cred-alpha-2026-02\",\"identity_id\":\"did:soma:issuer-alpha\",\"rotation_event_hash\":\"rot-alpha-effective-002\"},\"issuer_identity\":\"did:soma:issuer-alpha\",\"profile\":\"one-sided\",\"subject_identifier_hash\":\"sha256:7324a5958103f0ba3ea5594afdf268fcfadc5b7bfecf13888a4e5fe726f29945\",\"version\":\"soma-heart-certificate/0.1\"}",
+      "canonical_utf8_hex": "7b22636c61696d5f736574223a5b7b226b696e64223a226964656e746974795f636f6e74726f6c222c2273746174656d656e74223a2269737375657220636f6e74726f6c7320746865207375626a656374206964656e74696669657220666f72207468697320766563746f72227d5d2c22646973636c6f73757265223a7b2270726f66696c65223a227075626c6963227d2c2265766964656e63655f7265666572656e636573223a5b7b226b696e64223a227369676e6174757265222c227265666572656e6365223a227369676e61747572655f7365742e697373756572227d5d2c22657870697279223a313737303038363430303030302c226973737565645f6174223a313737303030303030303030302c226973737565725f63726564656e7469616c5f726f746174696f6e5f7265666572656e6365223a7b2263726564656e7469616c5f6964223a22637265642d616c7068612d323032362d3032222c226964656e746974795f6964223a226469643a736f6d613a6973737565722d616c706861222c22726f746174696f6e5f6576656e745f68617368223a22726f742d616c7068612d6566666563746976652d303032227d2c226973737565725f6964656e74697479223a226469643a736f6d613a6973737565722d616c706861222c2270726f66696c65223a226f6e652d7369646564222c227375626a6563745f6964656e7469666965725f68617368223a227368613235363a37333234613539353831303366306261336561353539346166646632363866636661646335623762666563663133383838613465356665373236663239393435222c2276657273696f6e223a22736f6d612d68656172742d63657274696669636174652f302e31227d",
+      "coverage": [
+        "credential-ineffective"
+      ],
+      "expected_certificate_id": "0c99c115c2f6e1a9e675d7aa6e4f235288960c2caa29ea31c15ac43a0d258829",
+      "expected_failure": "credential-ineffective",
+      "expected_result": "reject",
+      "notes": "",
+      "signature_inputs": [
+        {
+          "input_sha256": "dfcb432fee204da9579ca5d5acca146424b250550b975fbd5a32f2bc1ce04882",
+          "signer_role": "issuer"
+        }
+      ],
+      "verifier_policy": {
+        "policy_id": "soma-heart-policy:v0.1:test-vector-strict",
+        "accepted_claim_kinds": [
+          "content_hash_commitment",
+          "credential_validity",
+          "endpoint_observation",
+          "freshness_receipt",
+          "identity_control",
+          "payment_receipt_reference",
+          "policy_statement"
+        ],
+        "accepted_evidence_kinds": [
+          "hash_commitment",
+          "payment_rail_receipt_reference",
+          "receipt_reference",
+          "request_response_transcript_hash",
+          "signature",
+          "timestamp",
+          "verifier_policy_reference"
+        ],
+        "accepted_profiles": [
+          "birth",
+          "freshness-receipt-bound",
+          "heart-to-heart",
+          "one-sided"
+        ],
+        "fail_closed": true,
+        "max_chain_depth": 2,
+        "require_rotation_lookup": true
+      }
+    },
+    {
+      "id": "reject-credential-revoked",
+      "certificate": {
+        "certificate_id": "c6e5f81e1a914687fa06e120bfc9a2c3aeeca279f703ddf3ddbca450f3697517",
+        "claim_set": [
+          {
+            "kind": "identity_control",
+            "statement": "issuer controls the subject identifier for this vector"
+          }
+        ],
+        "disclosure": {
+          "profile": "public"
+        },
+        "evidence_references": [
+          {
+            "kind": "signature",
+            "reference": "signature_set.issuer"
+          }
+        ],
+        "expiry": 1770086400000,
+        "issued_at": 1770000200000,
+        "issuer_credential_rotation_reference": {
+          "credential_id": "cred-delta-2026-01",
+          "identity_id": "did:soma:revoked-delta",
+          "rotation_event_hash": "rot-delta-revoked-001"
+        },
+        "issuer_identity": "did:soma:revoked-delta",
+        "profile": "one-sided",
+        "subject_identifier_hash": "sha256:7324a5958103f0ba3ea5594afdf268fcfadc5b7bfecf13888a4e5fe726f29945",
+        "version": "soma-heart-certificate/0.1",
+        "signatures": [
+          {
+            "credential_rotation_reference": {
+              "credential_id": "cred-delta-2026-01",
+              "identity_id": "did:soma:revoked-delta",
+              "rotation_event_hash": "rot-delta-revoked-001"
+            },
+            "identity_id": "did:soma:revoked-delta",
+            "signature_bytes": "s+YG8ZpuqpqSeTck65XwIthBAsVsy6PmcynhW656T/8rJCpCw24XMe7g3DPHtAepIYN6mLmVOMG5vJeBoNy0BQ==",
+            "signer_role": "issuer"
+          }
+        ]
+      },
+      "canonical_json": "{\"claim_set\":[{\"kind\":\"identity_control\",\"statement\":\"issuer controls the subject identifier for this vector\"}],\"disclosure\":{\"profile\":\"public\"},\"evidence_references\":[{\"kind\":\"signature\",\"reference\":\"signature_set.issuer\"}],\"expiry\":1770086400000,\"issued_at\":1770000200000,\"issuer_credential_rotation_reference\":{\"credential_id\":\"cred-delta-2026-01\",\"identity_id\":\"did:soma:revoked-delta\",\"rotation_event_hash\":\"rot-delta-revoked-001\"},\"issuer_identity\":\"did:soma:revoked-delta\",\"profile\":\"one-sided\",\"subject_identifier_hash\":\"sha256:7324a5958103f0ba3ea5594afdf268fcfadc5b7bfecf13888a4e5fe726f29945\",\"version\":\"soma-heart-certificate/0.1\"}",
+      "canonical_utf8_hex": "7b22636c61696d5f736574223a5b7b226b696e64223a226964656e746974795f636f6e74726f6c222c2273746174656d656e74223a2269737375657220636f6e74726f6c7320746865207375626a656374206964656e74696669657220666f72207468697320766563746f72227d5d2c22646973636c6f73757265223a7b2270726f66696c65223a227075626c6963227d2c2265766964656e63655f7265666572656e636573223a5b7b226b696e64223a227369676e6174757265222c227265666572656e6365223a227369676e61747572655f7365742e697373756572227d5d2c22657870697279223a313737303038363430303030302c226973737565645f6174223a313737303030303230303030302c226973737565725f63726564656e7469616c5f726f746174696f6e5f7265666572656e6365223a7b2263726564656e7469616c5f6964223a22637265642d64656c74612d323032362d3031222c226964656e746974795f6964223a226469643a736f6d613a7265766f6b65642d64656c7461222c22726f746174696f6e5f6576656e745f68617368223a22726f742d64656c74612d7265766f6b65642d303031227d2c226973737565725f6964656e74697479223a226469643a736f6d613a7265766f6b65642d64656c7461222c2270726f66696c65223a226f6e652d7369646564222c227375626a6563745f6964656e7469666965725f68617368223a227368613235363a37333234613539353831303366306261336561353539346166646632363866636661646335623762666563663133383838613465356665373236663239393435222c2276657273696f6e223a22736f6d612d68656172742d63657274696669636174652f302e31227d",
+      "coverage": [
+        "credential-revoked"
+      ],
+      "expected_certificate_id": "c6e5f81e1a914687fa06e120bfc9a2c3aeeca279f703ddf3ddbca450f3697517",
+      "expected_failure": "credential-revoked",
+      "expected_result": "reject",
+      "notes": "",
+      "signature_inputs": [
+        {
+          "input_sha256": "46dc590d1ec82dbfbe920106547823d5cd6fea2554f46988f13ce9967f8d3bcb",
+          "signer_role": "issuer"
+        }
+      ],
+      "verifier_policy": {
+        "policy_id": "soma-heart-policy:v0.1:test-vector-strict",
+        "accepted_claim_kinds": [
+          "content_hash_commitment",
+          "credential_validity",
+          "endpoint_observation",
+          "freshness_receipt",
+          "identity_control",
+          "payment_receipt_reference",
+          "policy_statement"
+        ],
+        "accepted_evidence_kinds": [
+          "hash_commitment",
+          "payment_rail_receipt_reference",
+          "receipt_reference",
+          "request_response_transcript_hash",
+          "signature",
+          "timestamp",
+          "verifier_policy_reference"
+        ],
+        "accepted_profiles": [
+          "birth",
+          "freshness-receipt-bound",
+          "heart-to-heart",
+          "one-sided"
+        ],
+        "fail_closed": true,
+        "max_chain_depth": 2,
+        "require_rotation_lookup": true
+      }
+    },
+    {
+      "id": "reject-freshness-window-expired",
+      "certificate": {
+        "certificate_id": "e79f4d17008d76adb8c00e64502b0e6ca43c8dd65c09a777c14353fe70ff7c0c",
+        "claim_set": [
+          {
+            "kind": "freshness_receipt",
+            "current_hash": "sha256:a03f2386ae06b21109577020844df367857b72c2fcce384c1896fed98a89c82b",
+            "previous_hash": "sha256:a03f2386ae06b21109577020844df367857b72c2fcce384c1896fed98a89c82b",
+            "result": "unchanged"
+          }
+        ],
+        "disclosure": {
+          "profile": "public"
+        },
+        "evidence_references": [
+          {
+            "kind": "signature",
+            "reference": "signature_set.issuer"
+          }
+        ],
+        "expiry": 1770000001000,
+        "issued_at": 1770000000000,
+        "issuer_credential_rotation_reference": {
+          "credential_id": "cred-alpha-2026-01",
+          "identity_id": "did:soma:issuer-alpha",
+          "rotation_event_hash": "rot-alpha-effective-001"
+        },
+        "issuer_identity": "did:soma:issuer-alpha",
+        "profile": "freshness-receipt-bound",
+        "subject_identifier_hash": "sha256:d0401ebbbdc4a40c319a16869c0ed3400b5d035bbff7a98c619ffdba99811992",
+        "version": "soma-heart-certificate/0.1",
+        "signatures": [
+          {
+            "credential_rotation_reference": {
+              "credential_id": "cred-alpha-2026-01",
+              "identity_id": "did:soma:issuer-alpha",
+              "rotation_event_hash": "rot-alpha-effective-001"
+            },
+            "identity_id": "did:soma:issuer-alpha",
+            "signature_bytes": "NkXpvhgCoiZJj/xf6K/UzeB3/KfUlM1ZJrtBr4qiMdba2KmqnUj17YGpHht7zECksklEZAuETsQLL0gzNlMXCg==",
+            "signer_role": "issuer"
+          }
+        ]
+      },
+      "canonical_json": "{\"claim_set\":[{\"current_hash\":\"sha256:a03f2386ae06b21109577020844df367857b72c2fcce384c1896fed98a89c82b\",\"kind\":\"freshness_receipt\",\"previous_hash\":\"sha256:a03f2386ae06b21109577020844df367857b72c2fcce384c1896fed98a89c82b\",\"result\":\"unchanged\"}],\"disclosure\":{\"profile\":\"public\"},\"evidence_references\":[{\"kind\":\"signature\",\"reference\":\"signature_set.issuer\"}],\"expiry\":1770000001000,\"issued_at\":1770000000000,\"issuer_credential_rotation_reference\":{\"credential_id\":\"cred-alpha-2026-01\",\"identity_id\":\"did:soma:issuer-alpha\",\"rotation_event_hash\":\"rot-alpha-effective-001\"},\"issuer_identity\":\"did:soma:issuer-alpha\",\"profile\":\"freshness-receipt-bound\",\"subject_identifier_hash\":\"sha256:d0401ebbbdc4a40c319a16869c0ed3400b5d035bbff7a98c619ffdba99811992\",\"version\":\"soma-heart-certificate/0.1\"}",
+      "canonical_utf8_hex": "7b22636c61696d5f736574223a5b7b2263757272656e745f68617368223a227368613235363a61303366323338366165303662323131303935373730323038343464663336373835376237326332666363653338346331383936666564393861383963383262222c226b696e64223a2266726573686e6573735f72656365697074222c2270726576696f75735f68617368223a227368613235363a61303366323338366165303662323131303935373730323038343464663336373835376237326332666363653338346331383936666564393861383963383262222c22726573756c74223a22756e6368616e676564227d5d2c22646973636c6f73757265223a7b2270726f66696c65223a227075626c6963227d2c2265766964656e63655f7265666572656e636573223a5b7b226b696e64223a227369676e6174757265222c227265666572656e6365223a227369676e61747572655f7365742e697373756572227d5d2c22657870697279223a313737303030303030313030302c226973737565645f6174223a313737303030303030303030302c226973737565725f63726564656e7469616c5f726f746174696f6e5f7265666572656e6365223a7b2263726564656e7469616c5f6964223a22637265642d616c7068612d323032362d3031222c226964656e746974795f6964223a226469643a736f6d613a6973737565722d616c706861222c22726f746174696f6e5f6576656e745f68617368223a22726f742d616c7068612d6566666563746976652d303031227d2c226973737565725f6964656e74697479223a226469643a736f6d613a6973737565722d616c706861222c2270726f66696c65223a2266726573686e6573732d726563656970742d626f756e64222c227375626a6563745f6964656e7469666965725f68617368223a227368613235363a64303430316562626264633461343063333139613136383639633065643334303062356430333562626666376139386336313966666462613939383131393932222c2276657273696f6e223a22736f6d612d68656172742d63657274696669636174652f302e31227d",
+      "coverage": [
+        "freshness-window-expired"
+      ],
+      "expected_certificate_id": "e79f4d17008d76adb8c00e64502b0e6ca43c8dd65c09a777c14353fe70ff7c0c",
+      "expected_failure": "freshness-window-expired",
+      "expected_result": "reject",
+      "notes": "",
+      "signature_inputs": [
+        {
+          "input_sha256": "224c4a171f371e60ee4a876a25a51f78d26de735d5f3d6b7c0d1b720a479abf6",
+          "signer_role": "issuer"
+        }
+      ],
+      "verifier_policy": {
+        "policy_id": "soma-heart-policy:v0.1:test-vector-strict",
+        "accepted_claim_kinds": [
+          "content_hash_commitment",
+          "credential_validity",
+          "endpoint_observation",
+          "freshness_receipt",
+          "identity_control",
+          "payment_receipt_reference",
+          "policy_statement"
+        ],
+        "accepted_evidence_kinds": [
+          "hash_commitment",
+          "payment_rail_receipt_reference",
+          "receipt_reference",
+          "request_response_transcript_hash",
+          "signature",
+          "timestamp",
+          "verifier_policy_reference"
+        ],
+        "accepted_profiles": [
+          "birth",
+          "freshness-receipt-bound",
+          "heart-to-heart",
+          "one-sided"
+        ],
+        "fail_closed": true,
+        "max_chain_depth": 2,
+        "require_rotation_lookup": true
+      }
+    },
+    {
+      "id": "reject-canonicalisation-divergence",
+      "certificate": {
+        "certificate_id": "0000000000000000000000000000000000000000000000000000000000000000",
+        "claim_set": [
+          {
+            "kind": "identity_control",
+            "statement": "issuer controls the subject identifier for this vector"
+          }
+        ],
+        "disclosure": {
+          "profile": "public"
+        },
+        "evidence_references": [
+          {
+            "kind": "signature",
+            "reference": "signature_set.issuer"
+          }
+        ],
+        "expiry": 1770086400000,
+        "issued_at": 1770000000000,
+        "issuer_credential_rotation_reference": {
+          "credential_id": "cred-alpha-2026-01",
+          "identity_id": "did:soma:issuer-alpha",
+          "rotation_event_hash": "rot-alpha-effective-001"
+        },
+        "issuer_identity": "did:soma:issuer-alpha",
+        "profile": "birth",
+        "subject_identifier_hash": "sha256:42e9f53fcf5480eeb72eb8c1bd048ae97301708ddc78ffe34dfcb2642c8cf83b",
+        "version": "soma-heart-certificate/0.1",
+        "signatures": [
+          {
+            "credential_rotation_reference": {
+              "credential_id": "cred-alpha-2026-01",
+              "identity_id": "did:soma:issuer-alpha",
+              "rotation_event_hash": "rot-alpha-effective-001"
+            },
+            "identity_id": "did:soma:issuer-alpha",
+            "signature_bytes": "VBoqyHFE9Y8qlHdkQqkgtP8RRQf4inR9xfiUEwgbmUWjoN+78vbJol51J/FhmmnGkUY24ZhYxES/QfGBcrZSBQ==",
+            "signer_role": "issuer"
+          }
+        ]
+      },
+      "canonical_json": "{\"claim_set\":[{\"kind\":\"identity_control\",\"statement\":\"issuer controls the subject identifier for this vector\"}],\"disclosure\":{\"profile\":\"public\"},\"evidence_references\":[{\"kind\":\"signature\",\"reference\":\"signature_set.issuer\"}],\"expiry\":1770086400000,\"issued_at\":1770000000000,\"issuer_credential_rotation_reference\":{\"credential_id\":\"cred-alpha-2026-01\",\"identity_id\":\"did:soma:issuer-alpha\",\"rotation_event_hash\":\"rot-alpha-effective-001\"},\"issuer_identity\":\"did:soma:issuer-alpha\",\"profile\":\"birth\",\"subject_identifier_hash\":\"sha256:42e9f53fcf5480eeb72eb8c1bd048ae97301708ddc78ffe34dfcb2642c8cf83b\",\"version\":\"soma-heart-certificate/0.1\"}",
+      "canonical_utf8_hex": "7b22636c61696d5f736574223a5b7b226b696e64223a226964656e746974795f636f6e74726f6c222c2273746174656d656e74223a2269737375657220636f6e74726f6c7320746865207375626a656374206964656e74696669657220666f72207468697320766563746f72227d5d2c22646973636c6f73757265223a7b2270726f66696c65223a227075626c6963227d2c2265766964656e63655f7265666572656e636573223a5b7b226b696e64223a227369676e6174757265222c227265666572656e6365223a227369676e61747572655f7365742e697373756572227d5d2c22657870697279223a313737303038363430303030302c226973737565645f6174223a313737303030303030303030302c226973737565725f63726564656e7469616c5f726f746174696f6e5f7265666572656e6365223a7b2263726564656e7469616c5f6964223a22637265642d616c7068612d323032362d3031222c226964656e746974795f6964223a226469643a736f6d613a6973737565722d616c706861222c22726f746174696f6e5f6576656e745f68617368223a22726f742d616c7068612d6566666563746976652d303031227d2c226973737565725f6964656e74697479223a226469643a736f6d613a6973737565722d616c706861222c2270726f66696c65223a226269727468222c227375626a6563745f6964656e7469666965725f68617368223a227368613235363a34326539663533666366353438306565623732656238633162643034386165393733303137303864646337386666653334646663623236343263386366383362222c2276657273696f6e223a22736f6d612d68656172742d63657274696669636174652f302e31227d",
+      "coverage": [
+        "canonicalisation-divergence"
+      ],
+      "expected_certificate_id": "5373ebc564b4cca7a8fb87bca09f70feab99b0dad98fb6556314f849fbd975a7",
+      "expected_failure": "canonicalisation-divergence",
+      "expected_result": "reject",
+      "notes": "declared certificate_id intentionally differs from expected_certificate_id",
+      "signature_inputs": [
+        {
+          "input_sha256": "b33fc5d049f698e8ffdb012e8462623e8516281b0ac56dee85bacf3866ad9e25",
+          "signer_role": "issuer"
+        }
+      ],
+      "verifier_policy": {
+        "policy_id": "soma-heart-policy:v0.1:test-vector-strict",
+        "accepted_claim_kinds": [
+          "content_hash_commitment",
+          "credential_validity",
+          "endpoint_observation",
+          "freshness_receipt",
+          "identity_control",
+          "payment_receipt_reference",
+          "policy_statement"
+        ],
+        "accepted_evidence_kinds": [
+          "hash_commitment",
+          "payment_rail_receipt_reference",
+          "receipt_reference",
+          "request_response_transcript_hash",
+          "signature",
+          "timestamp",
+          "verifier_policy_reference"
+        ],
+        "accepted_profiles": [
+          "birth",
+          "freshness-receipt-bound",
+          "heart-to-heart",
+          "one-sided"
+        ],
+        "fail_closed": true,
+        "max_chain_depth": 2,
+        "require_rotation_lookup": true
+      }
+    },
+    {
+      "id": "accepted-redaction-disclosure",
+      "certificate": {
+        "certificate_id": "6ee8d4f1cec4fc1515e014ee53504debf82205c6cb73ccc8b847c778da9decf2",
+        "claim_set": [
+          {
+            "kind": "identity_control",
+            "statement": "issuer controls the subject identifier for this vector"
+          }
+        ],
+        "disclosure": {
+          "hidden_evidence": [
+            "private-transcript-body"
+          ],
+          "profile": "private-evidence-pointer",
+          "verification_limit": "verifier can inspect transcript hash and receipt reference, not plaintext body"
+        },
+        "evidence_references": [
+          {
+            "kind": "request_response_transcript_hash",
+            "reference": "sha256:9598c839e91e96444b50795d995c6324a2e65e0bdba95e5922bc5cae72269ee3"
+          },
+          {
+            "kind": "signature",
+            "reference": "signature_set.issuer"
+          }
+        ],
+        "expiry": 1770086400000,
+        "issued_at": 1770000000000,
+        "issuer_credential_rotation_reference": {
+          "credential_id": "cred-alpha-2026-01",
+          "identity_id": "did:soma:issuer-alpha",
+          "rotation_event_hash": "rot-alpha-effective-001"
+        },
+        "issuer_identity": "did:soma:issuer-alpha",
+        "profile": "one-sided",
+        "subject_identifier_hash": "sha256:7324a5958103f0ba3ea5594afdf268fcfadc5b7bfecf13888a4e5fe726f29945",
+        "version": "soma-heart-certificate/0.1",
+        "signatures": [
+          {
+            "credential_rotation_reference": {
+              "credential_id": "cred-alpha-2026-01",
+              "identity_id": "did:soma:issuer-alpha",
+              "rotation_event_hash": "rot-alpha-effective-001"
+            },
+            "identity_id": "did:soma:issuer-alpha",
+            "signature_bytes": "iVRBdLQS1WeRqDsfssqTBpo0eW2SRgMt2PGKhw6h0bXECfUZ6KXMUblc619klw2j3N2F5HcPgrPfT8hoqRU1CA==",
+            "signer_role": "issuer"
+          }
+        ]
+      },
+      "canonical_json": "{\"claim_set\":[{\"kind\":\"identity_control\",\"statement\":\"issuer controls the subject identifier for this vector\"}],\"disclosure\":{\"hidden_evidence\":[\"private-transcript-body\"],\"profile\":\"private-evidence-pointer\",\"verification_limit\":\"verifier can inspect transcript hash and receipt reference, not plaintext body\"},\"evidence_references\":[{\"kind\":\"request_response_transcript_hash\",\"reference\":\"sha256:9598c839e91e96444b50795d995c6324a2e65e0bdba95e5922bc5cae72269ee3\"},{\"kind\":\"signature\",\"reference\":\"signature_set.issuer\"}],\"expiry\":1770086400000,\"issued_at\":1770000000000,\"issuer_credential_rotation_reference\":{\"credential_id\":\"cred-alpha-2026-01\",\"identity_id\":\"did:soma:issuer-alpha\",\"rotation_event_hash\":\"rot-alpha-effective-001\"},\"issuer_identity\":\"did:soma:issuer-alpha\",\"profile\":\"one-sided\",\"subject_identifier_hash\":\"sha256:7324a5958103f0ba3ea5594afdf268fcfadc5b7bfecf13888a4e5fe726f29945\",\"version\":\"soma-heart-certificate/0.1\"}",
+      "canonical_utf8_hex": "7b22636c61696d5f736574223a5b7b226b696e64223a226964656e746974795f636f6e74726f6c222c2273746174656d656e74223a2269737375657220636f6e74726f6c7320746865207375626a656374206964656e74696669657220666f72207468697320766563746f72227d5d2c22646973636c6f73757265223a7b2268696464656e5f65766964656e6365223a5b22707269766174652d7472616e7363726970742d626f6479225d2c2270726f66696c65223a22707269766174652d65766964656e63652d706f696e746572222c22766572696669636174696f6e5f6c696d6974223a2276657269666965722063616e20696e7370656374207472616e736372697074206861736820616e642072656365697074207265666572656e63652c206e6f7420706c61696e7465787420626f6479227d2c2265766964656e63655f7265666572656e636573223a5b7b226b696e64223a22726571756573745f726573706f6e73655f7472616e7363726970745f68617368222c227265666572656e6365223a227368613235363a39353938633833396539316539363434346235303739356439393563363332346132653635653062646261393565353932326263356361653732323639656533227d2c7b226b696e64223a227369676e6174757265222c227265666572656e6365223a227369676e61747572655f7365742e697373756572227d5d2c22657870697279223a313737303038363430303030302c226973737565645f6174223a313737303030303030303030302c226973737565725f63726564656e7469616c5f726f746174696f6e5f7265666572656e6365223a7b2263726564656e7469616c5f6964223a22637265642d616c7068612d323032362d3031222c226964656e746974795f6964223a226469643a736f6d613a6973737565722d616c706861222c22726f746174696f6e5f6576656e745f68617368223a22726f742d616c7068612d6566666563746976652d303031227d2c226973737565725f6964656e74697479223a226469643a736f6d613a6973737565722d616c706861222c2270726f66696c65223a226f6e652d7369646564222c227375626a6563745f6964656e7469666965725f68617368223a227368613235363a37333234613539353831303366306261336561353539346166646632363866636661646335623762666563663133383838613465356665373236663239393435222c2276657273696f6e223a22736f6d612d68656172742d63657274696669636174652f302e31227d",
+      "coverage": [
+        "redaction-disclosure"
+      ],
+      "expected_certificate_id": "6ee8d4f1cec4fc1515e014ee53504debf82205c6cb73ccc8b847c778da9decf2",
+      "expected_failure": null,
+      "expected_result": "accept",
+      "notes": "",
+      "signature_inputs": [
+        {
+          "input_sha256": "d695393ca75e0013cbc698711bc9244c0ee937eef99e7e6e036f4d38a1ddcc6c",
+          "signer_role": "issuer"
+        }
+      ],
+      "verifier_policy": {
+        "policy_id": "soma-heart-policy:v0.1:test-vector-strict",
+        "accepted_claim_kinds": [
+          "content_hash_commitment",
+          "credential_validity",
+          "endpoint_observation",
+          "freshness_receipt",
+          "identity_control",
+          "payment_receipt_reference",
+          "policy_statement"
+        ],
+        "accepted_evidence_kinds": [
+          "hash_commitment",
+          "payment_rail_receipt_reference",
+          "receipt_reference",
+          "request_response_transcript_hash",
+          "signature",
+          "timestamp",
+          "verifier_policy_reference"
+        ],
+        "accepted_profiles": [
+          "birth",
+          "freshness-receipt-bound",
+          "heart-to-heart",
+          "one-sided"
+        ],
+        "fail_closed": true,
+        "max_chain_depth": 2,
+        "require_rotation_lookup": true
+      }
+    },
+    {
+      "id": "reject-malformed-evidence",
+      "certificate": {
+        "certificate_id": "b6cca31b116b1e89117c289bee88f72a572c101427980f2fd5ac5f0849a75018",
+        "claim_set": [
+          {
+            "kind": "identity_control",
+            "statement": "issuer controls the subject identifier for this vector"
+          }
+        ],
+        "disclosure": {
+          "profile": "public"
+        },
+        "evidence_references": [
+          {
+            "kind": "hash_commitment"
+          }
+        ],
+        "expiry": 1770086400000,
+        "issued_at": 1770000000000,
+        "issuer_credential_rotation_reference": {
+          "credential_id": "cred-alpha-2026-01",
+          "identity_id": "did:soma:issuer-alpha",
+          "rotation_event_hash": "rot-alpha-effective-001"
+        },
+        "issuer_identity": "did:soma:issuer-alpha",
+        "profile": "one-sided",
+        "subject_identifier_hash": "sha256:7324a5958103f0ba3ea5594afdf268fcfadc5b7bfecf13888a4e5fe726f29945",
+        "version": "soma-heart-certificate/0.1",
+        "signatures": [
+          {
+            "credential_rotation_reference": {
+              "credential_id": "cred-alpha-2026-01",
+              "identity_id": "did:soma:issuer-alpha",
+              "rotation_event_hash": "rot-alpha-effective-001"
+            },
+            "identity_id": "did:soma:issuer-alpha",
+            "signature_bytes": "l8XB0865bCSpXA2UIMtavs36Z1wTzp+q675ATrFk7fytctPYZnOD7LAy7AOviErR8ipaTNb4GyFBuE+HbkCxBg==",
+            "signer_role": "issuer"
+          }
+        ]
+      },
+      "canonical_json": "{\"claim_set\":[{\"kind\":\"identity_control\",\"statement\":\"issuer controls the subject identifier for this vector\"}],\"disclosure\":{\"profile\":\"public\"},\"evidence_references\":[{\"kind\":\"hash_commitment\"}],\"expiry\":1770086400000,\"issued_at\":1770000000000,\"issuer_credential_rotation_reference\":{\"credential_id\":\"cred-alpha-2026-01\",\"identity_id\":\"did:soma:issuer-alpha\",\"rotation_event_hash\":\"rot-alpha-effective-001\"},\"issuer_identity\":\"did:soma:issuer-alpha\",\"profile\":\"one-sided\",\"subject_identifier_hash\":\"sha256:7324a5958103f0ba3ea5594afdf268fcfadc5b7bfecf13888a4e5fe726f29945\",\"version\":\"soma-heart-certificate/0.1\"}",
+      "canonical_utf8_hex": "7b22636c61696d5f736574223a5b7b226b696e64223a226964656e746974795f636f6e74726f6c222c2273746174656d656e74223a2269737375657220636f6e74726f6c7320746865207375626a656374206964656e74696669657220666f72207468697320766563746f72227d5d2c22646973636c6f73757265223a7b2270726f66696c65223a227075626c6963227d2c2265766964656e63655f7265666572656e636573223a5b7b226b696e64223a22686173685f636f6d6d69746d656e74227d5d2c22657870697279223a313737303038363430303030302c226973737565645f6174223a313737303030303030303030302c226973737565725f63726564656e7469616c5f726f746174696f6e5f7265666572656e6365223a7b2263726564656e7469616c5f6964223a22637265642d616c7068612d323032362d3031222c226964656e746974795f6964223a226469643a736f6d613a6973737565722d616c706861222c22726f746174696f6e5f6576656e745f68617368223a22726f742d616c7068612d6566666563746976652d303031227d2c226973737565725f6964656e74697479223a226469643a736f6d613a6973737565722d616c706861222c2270726f66696c65223a226f6e652d7369646564222c227375626a6563745f6964656e7469666965725f68617368223a227368613235363a37333234613539353831303366306261336561353539346166646632363866636661646335623762666563663133383838613465356665373236663239393435222c2276657273696f6e223a22736f6d612d68656172742d63657274696669636174652f302e31227d",
+      "coverage": [
+        "malformed-evidence"
+      ],
+      "expected_certificate_id": "b6cca31b116b1e89117c289bee88f72a572c101427980f2fd5ac5f0849a75018",
+      "expected_failure": "evidence-malformed",
+      "expected_result": "reject",
+      "notes": "hash commitment evidence lacks a reference value",
+      "signature_inputs": [
+        {
+          "input_sha256": "4f53606cbfde0cff566cc6cdb685bdd5db68f18d24e4754d601e02592999fbd1",
+          "signer_role": "issuer"
+        }
+      ],
+      "verifier_policy": {
+        "policy_id": "soma-heart-policy:v0.1:test-vector-strict",
+        "accepted_claim_kinds": [
+          "content_hash_commitment",
+          "credential_validity",
+          "endpoint_observation",
+          "freshness_receipt",
+          "identity_control",
+          "payment_receipt_reference",
+          "policy_statement"
+        ],
+        "accepted_evidence_kinds": [
+          "hash_commitment",
+          "payment_rail_receipt_reference",
+          "receipt_reference",
+          "request_response_transcript_hash",
+          "signature",
+          "timestamp",
+          "verifier_policy_reference"
+        ],
+        "accepted_profiles": [
+          "birth",
+          "freshness-receipt-bound",
+          "heart-to-heart",
+          "one-sided"
+        ],
+        "fail_closed": true,
+        "max_chain_depth": 2,
+        "require_rotation_lookup": true
+      }
+    }
+  ]
+}

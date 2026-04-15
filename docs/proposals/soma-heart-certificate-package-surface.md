@@ -35,7 +35,7 @@ Soma Heart Certificate Package Surface Proposal
 - Gate 5 (package surface proposal) is now draftable. This
   document is that draft.
 
-Gate 5 acceptance is explicitly blocked by:
+Gate 5 acceptance was explicitly blocked by:
 
 1. existence of test vector files that satisfy spec section 19.1
    under the pinned canonical encoding from spec sections 9.2-9.5
@@ -45,8 +45,11 @@ The canonicalization/hash blocker that previously headed this list
 has been resolved by the post-Gate-4 amendment and is no longer a
 Gate 5 decision point.
 
-Nothing in this proposal attempts to short-circuit the remaining
-blocker. Drafting is not acceptance.
+The vector-file blocker is resolved by the v0.1 corpus at
+`test-vectors/soma-heart-certificate/v0.1/`, subject to reviewer
+confirmation that the corpus satisfies spec section 19.1. Drafting
+is still not acceptance: the package-surface readiness items below
+must be accepted before any implementation is authorised.
 
 ## Goals
 
@@ -69,8 +72,8 @@ blocker. Drafting is not acceptance.
 
 - No implementation. This proposal authorises no code.
 - No package or API file edits.
-- No test vector files in this PR unless explicitly requested as a
-  separate task.
+- Test vector files are docs/test-vector artifacts only; they do
+  not authorise package, API, runtime, or verifier implementation.
 - No TypeScript type definitions, interfaces, or class sketches
   that could be mistaken for a binding contract.
 - No ClawNet work, no Gate 7 scaffolding, no first-consumer
@@ -245,20 +248,19 @@ proposal.
 ## Test vector delivery plan
 
 Spec section 19.2 requires test vector files to exist and satisfy
-section 19.1 before Gate 5 may be accepted. This proposal does NOT
-ship those files; it defines where they will live and what they
-will cover.
+section 19.1 before Gate 5 may be accepted. The v0.1 vector corpus
+now lives at `test-vectors/soma-heart-certificate/v0.1/`; this
+section records that location and the coverage it must preserve.
 
 ### Proposed location
 
-`soma-heart-certificate-vectors/` at the repo root, or
-`test-vectors/soma-heart-certificate/` alongside existing
-spec-adjacent fixture material. Final location is an open item in
-this proposal and MUST be fixed before Gate 5 acceptance.
+`test-vectors/soma-heart-certificate/v0.1/`.
 
 ### Vector structure (conceptual only)
 
-Each vector is a directory containing:
+The v0.1 corpus uses a compact manifest:
+`test-vectors/soma-heart-certificate/v0.1/manifest.json`.
+Each vector entry contains:
 
 - a canonical certificate input file;
 - the expected canonical byte output;
@@ -309,9 +311,11 @@ Gate 5 acceptance is blocked until:
    sections 9.2-9.5.
 
 The canonicalization and hash decision is already pinned in the
-spec and is no longer a Gate 5 blocker. No implementation may be
-authorised before the vector file condition is met and the
-package-surface readiness items in this proposal are accepted.
+spec and is no longer a Gate 5 blocker. The vector corpus has been
+delivered at `test-vectors/soma-heart-certificate/v0.1/`. No
+implementation may be authorised before reviewers confirm the vector
+condition is met and the package-surface readiness items in this
+proposal are accepted.
 
 ## Package / API shape sketch (conceptual only)
 
@@ -426,10 +430,11 @@ Gate 5 acceptance requires all of the following, in order:
    the pinned rules and does not attempt to redefine them. Any
    future change MUST go through a new spec or ADR slice under
    the crypto-agility rules in spec section 9.5.
-2. **Vector files exist.** Test vector files MUST exist at the
-   agreed location and MUST satisfy spec section 19.1 under the
-   pinned canonical encoding. Vector files MUST be reproducible
-   from the spec plus ADR-0004 and `SOMA-ROTATION-SPEC.md` alone.
+2. **Vector files exist.** Test vector files MUST exist at
+   `test-vectors/soma-heart-certificate/v0.1/` and MUST satisfy
+   spec section 19.1 under the pinned canonical encoding. Vector
+   files MUST be reproducible from the spec plus ADR-0004 and
+   `SOMA-ROTATION-SPEC.md` alone.
 3. **Package surface shape agreed.** The functional areas above
    MUST be reviewed and either accepted as the Gate 5 surface
    shape or explicitly amended. Name-level bikeshedding is
@@ -454,22 +459,20 @@ the criteria above.
 
 ## Open questions
 
-1. Test vector file location (`soma-heart-certificate-vectors/`
-   vs `test-vectors/soma-heart-certificate/` vs another path).
-2. Verifier policy wire representation (spec section 21 open
+1. Verifier policy wire representation (spec section 21 open
    item 2).
-3. Wire representation for the spec section 18 failure modes
+2. Wire representation for the spec section 18 failure modes
    (spec section 21 open item 10).
-4. Whether the package surface lives in `soma-heart` directly or
+3. Whether the package surface lives in `soma-heart` directly or
    in a sub-namespace such as `soma-heart/certificate`.
-5. Whether `soma-sense` re-exports observer-only primitives from
+4. Whether `soma-sense` re-exports observer-only primitives from
    this surface and, if so, which ones.
-6. Whether the rail adapter boundary (area 10) ships inside
+5. Whether the rail adapter boundary (area 10) ships inside
    `soma-heart` at all or lives in a separate adapter package.
-7. Whether receipt references remain certificate fields or
+6. Whether receipt references remain certificate fields or
    migrate to a distinct Soma receipt primitive (future ADR
    candidate, spec section 21 item 8).
-8. Joint resolution of the `fulfillment-receipt-bound` profile
+7. Joint resolution of the `fulfillment-receipt-bound` profile
    and the `fulfillment_receipt` claim (future ADR candidate,
    spec section 21 item 11).
 
@@ -481,6 +484,8 @@ Resolved since the original draft:
   `soma-heart-certificate:v0.1:`, lowercase hex digest). Any
   future migration is governed by the crypto-agility rules in
   spec section 9.5 and is out of scope for Gate 5.
+- Test vector file location. The v0.1 corpus lives at
+  `test-vectors/soma-heart-certificate/v0.1/`.
 
 ## Links
 
