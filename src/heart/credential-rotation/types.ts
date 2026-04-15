@@ -3,28 +3,38 @@
  *
  * This module defines the contract between the generic
  * `CredentialRotationController` and its pluggable backends. The controller
- * encodes the twelve invariants from the architecture spec; backends provide
- * the algorithm-specific mint / sign / verify operations.
+ * encodes the v0.1 invariant set from SOMA-ROTATION-SPEC.md; backends
+ * provide the algorithm-specific mint / sign / verify operations.
  *
- * The twelve invariants (summarised, see architecture doc §13c for full text):
+ * The v0.1 invariant set (see SOMA-ROTATION-SPEC.md §14 for full text):
  *   1. Threshold mandatory for Tier 0.
  *   2. Session credentials always derived, never imported.
- *   3. Rotation events anchored before effect.
- *   4. Panic freeze requires M-of-N quorum.
+ *   3. Rotation events anchored before effect (§4.2).
+ *   4. Reserved — removed from v0.1 (see §7.4). The invariant number is
+ *      kept as a gap so existing `InvariantViolation` codes stay stable.
  *   5. Proof-of-possession mandatory per use.
- *   6. Backends come from a signed allowlist in the birth certificate.
+ *   6. Backends come from a signed allowlist.
  *   7. Backends are isolated.
- *   8. Challenge period for destructive operations.
- *   9. Pre-rotation (every event commits to next public key manifest).
- *  10. Post-compromise security via durable ratchet state.
+ *   8. Challenge period and rate limit for destructive operations (§8).
+ *   9. Pre-rotation commitment (§3) — every credential commits to the
+ *      full manifest of the next credential.
+ *  10. Post-compromise security via durable ratchet state (§4.6).
  *  11. No legacy path — no coexistence with static auth.
- *  12. Verify before revoke.
+ *  12. Verify before revoke (§6).
+ *  13. Event chain retention (§4.7) — append-only, no pruning or
+ *      compaction; every credential the chain has ever made `effective`
+ *      stays recoverable by walking the chain. Structural constraint,
+ *      enforced at controller-design level rather than via a runtime
+ *      `InvariantViolation` code.
  *
- * Implementation locks (§14 L1-L3):
- *   L1. Pre-rotation commits to sha256(nextPubKey || nextAlgorithmSuite || nextBackendId).
- *   L2. Rotation events are signed under the OLD key; new key signs first PoP.
- *   L3. An event is only effective after local log write + pulse-tree anchor
- *       + external witness.
+ * Implementation locks (see SOMA-ROTATION-SPEC.md §3, §4.2, §4.3):
+ *   L1 — Pre-rotation commits to sha256 of the canonical manifest
+ *        encoding `soma-manifest:<backendId>|<algorithmSuite>|<base64(publicKey)>`
+ *        (§3.2); every credential stores its next credential's commitment.
+ *   L2 — Rotation events are signed under the OLD key, and the new key
+ *        provides its first PoP over the event body (§4.3).
+ *   L3 — An event is only `effective` after local log write + pulse-tree
+ *        anchor + external witness (§4.2).
  */
 
 // ─── Classes and suites ──────────────────────────────────────────────────────
@@ -51,7 +61,9 @@ export type AlgorithmSuite =
 
 /**
  * Full description of a credential's public identity. This is what
- * pre-rotation commits to (L1): `sha256(publicKey || algorithmSuite || backendId)`.
+ * pre-rotation commits to (L1): the canonical encoding
+ * `soma-manifest:<backendId>|<algorithmSuite>|<base64(publicKey)>`
+ * from SOMA-ROTATION-SPEC.md §3.2, hashed with sha256.
  *
  * Committing the whole manifest instead of just the public key closes a
  * cross-suite confusion attack where an adversary who obtains a future
@@ -85,8 +97,9 @@ export interface Credential {
   /** Expiry timestamp (ms since epoch). */
   readonly expiresAt: number;
   /**
-   * Commitment to the NEXT credential's full manifest (L1):
-   * sha256(nextPublicKey || nextAlgorithmSuite || nextBackendId).
+   * Commitment to the NEXT credential's full manifest (L1, §3). Computed
+   * per SOMA-ROTATION-SPEC.md §3.2 over
+   * `soma-manifest:<backendId>|<algorithmSuite>|<base64(publicKey)>`.
    * Pre-rotation requires the next key to be committed at issue time.
    */
   readonly nextManifestCommitment: string;
@@ -257,7 +270,9 @@ export interface CredentialBackend {
 // ─── Policy ─────────────────────────────────────────────────────────────────
 
 /**
- * Per-class TTL defaults and floors (§14 D7).
+ * Per-class TTL defaults and floors. Defaults are non-normative
+ * (SOMA-ROTATION-SPEC.md §9.3); the only normative requirement is that an
+ * implementation choose a value that does not undercut its own floor.
  * Operators can override per-identity rows but never below the class floor.
  */
 export interface TtlPolicy {
@@ -280,11 +295,11 @@ export interface ControllerPolicy {
   readonly backendAllowlist: readonly string[];
   /** Allowed algorithm suites. Downgrade protection. */
   readonly suiteAllowlist: readonly AlgorithmSuite[];
-  /** Challenge period for destructive ops (D2). Default 1h, floor 15min. */
+  /** Challenge period for destructive ops (§8.1). Default 1h, floor 15min. */
   readonly challengePeriodMs: number;
-  /** Maximum rotations per hour per identity (D3). Default 10, floor 2. */
+  /** Maximum rotations per hour per identity (§8.2). Default 10, floor 2. */
   readonly maxRotationsPerHour: number;
-  /** Token-bucket burst allowance (D3). */
+  /** Token-bucket burst allowance (§8.2). */
   readonly rotationBurst: number;
   /** Per-class TTL policy. */
   readonly ttl: Readonly<Record<CredentialClass, TtlPolicy>>;
