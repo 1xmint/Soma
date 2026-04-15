@@ -73,6 +73,9 @@ import {
   type Credential,
   type CredentialBackend,
   type CredentialManifest,
+  type HistoricalCredentialLookupHit,
+  type HistoricalCredentialLookupKey,
+  type HistoricalCredentialLookupResult,
   type RotationEvent,
 } from './types.js';
 
@@ -147,7 +150,11 @@ function toWireCredential(
 function toWirePreEvent(
   preEvent: Omit<
     RotationEvent,
-    'hash' | 'status' | 'pulseTreeRoot' | 'externalWitnessCount'
+    | 'hash'
+    | 'status'
+    | 'pulseTreeRoot'
+    | 'externalWitnessCount'
+    | 'effectiveAt'
   >,
   provider: CryptoProvider,
 ): Record<string, unknown> {
@@ -161,7 +168,11 @@ function toWirePreEvent(
 function computeEventHash(
   event: Omit<
     RotationEvent,
-    'hash' | 'status' | 'pulseTreeRoot' | 'externalWitnessCount'
+    | 'hash'
+    | 'status'
+    | 'pulseTreeRoot'
+    | 'externalWitnessCount'
+    | 'effectiveAt'
   >,
   provider: CryptoProvider,
 ): string {
@@ -175,7 +186,11 @@ function eventSigningInput(
   role: 'inception-pop' | 'rotation-sign' | 'rotation-pop',
   preEvent: Omit<
     RotationEvent,
-    'hash' | 'status' | 'pulseTreeRoot' | 'externalWitnessCount'
+    | 'hash'
+    | 'status'
+    | 'pulseTreeRoot'
+    | 'externalWitnessCount'
+    | 'effectiveAt'
   >,
   provider: CryptoProvider,
 ): Uint8Array {
@@ -193,6 +208,31 @@ function deriveRatchetAnchor(
 ): string {
   const pkB64 = provider.encoding.encodeBase64(newPublicKey);
   return provider.hashing.hash(`soma-ratchet:${previousAnchor}|${pkB64}`);
+}
+
+/**
+ * Byte-exact match between a stored credential and a historical-lookup
+ * key. Extracted so the lookup path and any future callers share the
+ * same matching semantics. For `publicKey` keys, every byte must
+ * match; length mismatch is an immediate miss. `credentialId` matching
+ * is exact string equality.
+ */
+function matchCredentialByKey(
+  credential: Credential,
+  key:
+    | { kind: 'credentialId'; credentialId: string }
+    | { kind: 'publicKey'; publicKey: Uint8Array },
+): boolean {
+  if (key.kind === 'credentialId') {
+    return credential.credentialId === key.credentialId;
+  }
+  const a = credential.publicKey;
+  const b = key.publicKey;
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
 }
 
 /** Genesis ratchet anchor for a fresh identity (SOMA-ROTATION-SPEC.md §4.6). */
@@ -442,6 +482,12 @@ export class CredentialRotationController {
         status: 'pending',
         pulseTreeRoot: null,
         externalWitnessCount: 0,
+        // §4.8 — populated exactly once on the first witness that
+        // advances this event to `effective`. Excluded from the hash
+        // above by the `toWirePreEvent`/`computeEventHash` Omit list
+        // so the event hash stays stable across the
+        // pending→anchored→effective transition.
+        effectiveAt: null,
       };
     } catch (err) {
       try {
@@ -583,6 +629,8 @@ export class CredentialRotationController {
         status: 'pending',
         pulseTreeRoot: null,
         externalWitnessCount: 0,
+        // §4.8 — set by `witnessEvent` on transition to `effective`.
+        effectiveAt: null,
       };
 
       await backend.commitStagedRotation(identityId);
@@ -644,6 +692,10 @@ export class CredentialRotationController {
     const state = this.requireIdentity(identityId);
     const event = this.findEvent(identityId, eventHash);
     if (event.status === 'effective') {
+      // §4.8 — additional witnesses on an already-`effective` event MAY
+      // increment `externalWitnessCount` for future multi-witness
+      // policies (§7.1) but MUST NOT overwrite `effectiveAt`, which is
+      // fixed at the moment of first transition below.
       event.externalWitnessCount += 1;
       return;
     }
@@ -654,6 +706,15 @@ export class CredentialRotationController {
     const priorCurrent = state.current;
     state.current = event.newCredential;
     event.status = 'effective';
+    // §4.8 — record the clock reading at the exact moment the event
+    // first transitioned to `effective` and the new credential became
+    // `state.current`. This is the reference source of truth for the
+    // credential's effective window used by
+    // `lookupHistoricalCredential` and by `SOMA-DELEGATION-SPEC.md`
+    // §Rotation Interaction's Slice D code contract. MUST be set
+    // exactly once — never overwritten by later witness calls (see the
+    // already-`effective` short-circuit above).
+    event.effectiveAt = this.clock();
     if (priorCurrent) {
       const priorEvent = state.events.find(
         e => e.newCredential.credentialId === priorCurrent.credentialId,
@@ -764,6 +825,82 @@ export class CredentialRotationController {
     return this.requireIdentity(identityId).ratchetAnchor;
   }
 
+  // ─── Historical-credential lookup ─────────────────────────────────────────
+
+  /**
+   * Historical-credential lookup required by `SOMA-DELEGATION-SPEC.md`
+   * §Rotation Interaction's Slice D code contract.
+   *
+   * Given an `(identityId, credentialId | publicKey)` pair, walks the
+   * identity's event chain and returns the full `Credential` together
+   * with its `effective` window. The window is computed from §4.8
+   * `effectiveAt` — NOT from `timestamp` — so delegations whose
+   * `issued_at` falls inside the L3 anchor-before-effect gap are
+   * correctly surfaced with `effectiveFrom = null` and rejected by
+   * the delegation verifier's "effective at `issued_at`" check
+   * (§Conforming verifier rule item 3 in that section).
+   *
+   * Contract invariants (all required by the delegation spec's
+   * Slice D section):
+   *
+   *   - **Pure read.** Does not mutate any controller or backend
+   *     state. Safe to call from a verifier hot path.
+   *   - **Event-chain only.** Consults only
+   *     `state.events` for the target identity. Does NOT consult the
+   *     `accepted` pool — grace-period acceptance for signature
+   *     verification is orthogonal to a credential's effective
+   *     window, and a pooled credential that has already been
+   *     superseded MUST surface its historical effective window, not
+   *     a live-grace one.
+   *   - **Identity-scoped.** Never crosses identity boundaries. A
+   *     credential that happens to share a public key or id with a
+   *     credential under a different identity (theoretically
+   *     impossible under ed25519 keygen, but the spec does not rely
+   *     on that) is invisible to this lookup.
+   *   - **Byte-exact public-key comparison.** When the key is a
+   *     `publicKey` lookup, every byte of the candidate credential's
+   *     `publicKey` must match. Length mismatch is an automatic
+   *     miss.
+   *   - **Typed not-found.** Returns a discriminated-union miss
+   *     (`unknown-identity` vs `credential-not-in-chain`) rather than
+   *     throwing. Callers fail closed by treating both miss reasons
+   *     as "not effective at `issued_at`".
+   */
+  lookupHistoricalCredential(
+    identityId: string,
+    key: HistoricalCredentialLookupKey,
+  ): HistoricalCredentialLookupResult {
+    const state = this.identities.get(identityId);
+    if (!state) {
+      return { found: false, reason: 'unknown-identity' };
+    }
+    const matchIndex = state.events.findIndex(e =>
+      matchCredentialByKey(e.newCredential, key),
+    );
+    if (matchIndex === -1) {
+      return { found: false, reason: 'credential-not-in-chain' };
+    }
+    const introducing = state.events[matchIndex]!;
+    // Superseding event = the next event in the append-only chain.
+    // Invariant 13 (§4.7) guarantees retention: no pruning, no
+    // compaction, so `events[matchIndex + 1]` is a stable reference
+    // for the credential's upper window bound.
+    const superseding = state.events[matchIndex + 1];
+    const effectiveFrom = introducing.effectiveAt;
+    // A superseding event that has not yet reached `effective` means
+    // the credential is still authoritative from the verifier's
+    // point of view; only an `effective` superseding event can close
+    // the window.
+    const effectiveUntil = superseding ? superseding.effectiveAt : null;
+    const hit: HistoricalCredentialLookupHit = {
+      found: true,
+      credential: introducing.newCredential,
+      effectiveFrom,
+      effectiveUntil,
+    };
+    return hit;
+  }
+
   // ─── Persistence ──────────────────────────────────────────────────────────
 
   /**
@@ -822,8 +959,16 @@ export class CredentialRotationController {
     },
   ): CredentialRotationController {
     if (snapshot.version !== SNAPSHOT_VERSION) {
+      // §10.1 fail-closed: versions are not silently migrated. v0.1
+      // ships no in-spec migration from SNAPSHOT_VERSION=1 to
+      // SNAPSHOT_VERSION=2; operators holding pre-bump snapshots must
+      // re-incept from a clean root or ship a bespoke migration that
+      // synthesises `effectiveAt = null` for every historical event
+      // and accepts the weaker §Slice D lookup fidelity for that
+      // prefix of the chain.
       throw new Error(
-        `CredentialRotationController: unsupported snapshot version ${snapshot.version}`,
+        `CredentialRotationController.restore: unsupported snapshot version ${snapshot.version} (expected ${SNAPSHOT_VERSION}); ` +
+          `see SOMA-ROTATION-SPEC.md §10.1 — versions are not silently migrated`,
       );
     }
     const controller = new CredentialRotationController({

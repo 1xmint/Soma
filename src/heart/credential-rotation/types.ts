@@ -158,7 +158,84 @@ export interface RotationEvent {
   pulseTreeRoot: string | null;
   /** External witness count (verify-before-revoke, invariant 12). */
   externalWitnessCount: number;
+  /**
+   * Effective-transition timestamp (SOMA-ROTATION-SPEC.md §4.8). Clock
+   * reading at the moment `witnessEvent` first advanced this event to
+   * the `effective` state. `null` while the event is `pending` or
+   * `anchored`; set exactly once on the first witness that transitions
+   * to `effective`; never mutated thereafter (additional witnesses on
+   * an already-`effective` event MAY increment `externalWitnessCount`
+   * but MUST NOT overwrite `effectiveAt`). This is a post-hoc
+   * lifecycle annotation — §4.8 excludes it from the signed
+   * `rotation-sign` / `rotation-pop` inputs and from the
+   * content-addressed event hash, so the hash stays stable across
+   * the anchored→effective transition. It is the reference source of
+   * truth for a credential's effective window, including the
+   * historical-credential lookup required by
+   * `SOMA-DELEGATION-SPEC.md` §Rotation Interaction's Slice D code
+   * contract.
+   */
+  effectiveAt: number | null;
 }
+
+// ─── Historical-credential lookup ───────────────────────────────────────────
+
+/**
+ * Lookup key for `CredentialRotationController.lookupHistoricalCredential`.
+ *
+ * Implements the API shape required by `SOMA-DELEGATION-SPEC.md`
+ * §Rotation Interaction's Slice D code contract: callers identify a
+ * historical credential by either its opaque `credentialId` or by its
+ * raw `publicKey` bytes. Public-key matching is byte-exact.
+ */
+export type HistoricalCredentialLookupKey =
+  | { readonly kind: 'credentialId'; readonly credentialId: string }
+  | { readonly kind: 'publicKey'; readonly publicKey: Uint8Array };
+
+/**
+ * Successful historical-credential lookup result.
+ *
+ * `effectiveFrom` / `effectiveUntil` are computed from §4.8
+ * `effectiveAt` on the introducing event and on the superseding
+ * event, per `SOMA-ROTATION-SPEC.md` §4.8. They are NOT derived from
+ * the stage-time `timestamp` field — using `timestamp` as a proxy
+ * would silently attribute the L3 anchor-before-effect window to the
+ * new credential and admit delegations that `SOMA-DELEGATION-SPEC.md`
+ * §Conforming verifier rule item 3 requires be rejected.
+ *
+ * A `null` `effectiveFrom` means the introducing event is still
+ * `pending` or `anchored` and the credential has never been
+ * authoritative — a delegation verifier MUST reject any delegation
+ * whose `issued_at` falls on a hit with `effectiveFrom = null`.
+ *
+ * A `null` `effectiveUntil` means the credential is still current —
+ * either there is no superseding event yet, or the superseding event
+ * exists but has not itself reached `effective`.
+ */
+export interface HistoricalCredentialLookupHit {
+  readonly found: true;
+  readonly credential: Credential;
+  readonly effectiveFrom: number | null;
+  readonly effectiveUntil: number | null;
+}
+
+/**
+ * Typed not-found result.
+ *
+ * `unknown-identity` — the identity has never been inceptioned under
+ * this controller. `credential-not-in-chain` — the identity exists
+ * but no event in its chain introduces a credential matching the
+ * lookup key. A delegation verifier MUST treat both cases as
+ * "not effective at `issued_at`" and fail closed.
+ */
+export interface HistoricalCredentialLookupMiss {
+  readonly found: false;
+  readonly reason: 'unknown-identity' | 'credential-not-in-chain';
+}
+
+export type HistoricalCredentialLookupResult =
+  | HistoricalCredentialLookupHit
+  | HistoricalCredentialLookupMiss;
 
 // ─── Backend interface ──────────────────────────────────────────────────────
 

@@ -27,7 +27,18 @@ import type {
   RotationEventStatus,
 } from './types.js';
 
-export const SNAPSHOT_VERSION = 1 as const;
+/**
+ * Snapshot wire-format version. v0.1 uses `SNAPSHOT_VERSION = 2`
+ * (SOMA-ROTATION-SPEC.md §10.1). The bump from 1 to 2 accompanies
+ * the addition of the §4.8 `effectiveAt` field to
+ * `RotationEventWire`, which is required by §10.2's completeness
+ * rule and by `SOMA-DELEGATION-SPEC.md` §Rotation Interaction's
+ * Slice D code contract. A conforming v0.1 controller MUST emit
+ * `SNAPSHOT_VERSION = 2` from `snapshot()`, MUST accept only
+ * `SNAPSHOT_VERSION = 2` in `restore()`, and MUST NOT silently
+ * upgrade a `SNAPSHOT_VERSION = 1` snapshot in place — fail closed.
+ */
+export const SNAPSHOT_VERSION = 2 as const;
 
 // ─── Credential wire ────────────────────────────────────────────────────────
 
@@ -96,6 +107,17 @@ export interface RotationEventWire {
   readonly status: RotationEventStatus;
   readonly pulseTreeRoot: string | null;
   readonly externalWitnessCount: number;
+  /**
+   * Effective-transition timestamp (SOMA-ROTATION-SPEC.md §4.8 /
+   * §10.2). `null` while the in-memory event is `pending` or
+   * `anchored`; carries the clock reading of the first
+   * `witnessEvent` call that advanced the event to `effective`
+   * otherwise. §10.2 requires this field so a restored controller
+   * can answer `SOMA-DELEGATION-SPEC.md` §Rotation Interaction's
+   * Slice D historical-credential lookup with the same
+   * `effective`/`revoked` window as the live controller.
+   */
+  readonly effectiveAt: number | null;
 }
 
 export function rotationEventToWire(
@@ -118,6 +140,7 @@ export function rotationEventToWire(
     status: event.status,
     pulseTreeRoot: event.pulseTreeRoot,
     externalWitnessCount: event.externalWitnessCount,
+    effectiveAt: event.effectiveAt,
   };
 }
 
@@ -141,6 +164,7 @@ export function rotationEventFromWire(
     status: wire.status,
     pulseTreeRoot: wire.pulseTreeRoot,
     externalWitnessCount: wire.externalWitnessCount,
+    effectiveAt: wire.effectiveAt,
   };
 }
 
