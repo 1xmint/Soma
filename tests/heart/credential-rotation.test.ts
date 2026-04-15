@@ -709,7 +709,7 @@ describe("CredentialRotationController — persistence (snapshot / restore)", ()
     const snap = controller.snapshot();
     expect(() =>
       CredentialRotationController.restore(
-        { ...snap, version: 99 as unknown as 1 },
+        { ...snap, version: 99 as unknown as 2 },
         { backends: [] },
       ),
     ).toThrow(/unsupported snapshot version/);
