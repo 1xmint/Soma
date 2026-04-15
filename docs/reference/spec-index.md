@@ -14,6 +14,8 @@ This file is the entry point for Soma's normative specifications.
   - Capability structure, caveats, attenuation, and verification
 - `SOMA-ROTATION-SPEC.md`
   - Credential rotation lifecycle, pre-rotation commitment, rollback invariant, and v0.1 single-witness assurance bound (see ADR-0004)
+- `SOMA-HEART-CERTIFICATE-SPEC.md`
+  - Soma Heart certificate primitive, v0.1 profiles, bounded claim/evidence vocabulary, and verifier-policy trust-chain semantics (draft; see ADR-0005)
 
 ## Supporting Reference
 
