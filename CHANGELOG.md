@@ -19,7 +19,7 @@ package-surface stabilisation. Gate 4 (code reconciliation) and Gate 6
 
 ### Breaking
 
-- **`SNAPSHOT_VERSION` bumped `1` → `2`.** `ControllerRotationController.restore()`
+- **`SNAPSHOT_VERSION` bumped `1` → `2`.** `CredentialRotationController.restore()`
   fails closed on any other version per SOMA-ROTATION-SPEC.md §10.1 — versions
   are not silently migrated. Operators persisting `snapshot()` output across
   this upgrade must re-snapshot from a running controller before restoring.

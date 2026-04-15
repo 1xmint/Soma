@@ -96,7 +96,7 @@ drops everything else.
 - **Heartbeat chain** — tamper-evident hash chain recording every computational step
 - **Birth certificates** — co-signed data provenance for hearted-to-hearted flows
 - **Credential vault** — API keys and tool credentials are only accessible through `generate` / `callTool` / `fetchData`
-- **Credential rotation** — 12-invariant controller with KERI pre-rotation and pluggable backends. Historical verifiers call `lookupHistoricalCredential(identityId, key)` to resolve a past `credentialId` or `publicKey` against the retained event chain and receive its `effectiveFrom` / `effectiveUntil` window. `RotationEvent.effectiveAt` annotates when witness made an event effective (post-hoc, excluded from rotation hash/signing). Snapshot persistence is first-class: `SNAPSHOT_VERSION` and `ControllerSnapshot` are exported for durable round-trip, and `restore()` fails closed on any other version. Callers must not mutate credential or event objects returned from controller read methods.
+- **Credential rotation** — 12-invariant controller with KERI pre-rotation and pluggable backends. Historical verifiers call `lookupHistoricalCredential(identityId, key)` to resolve a past `credentialId` or `publicKey` against the retained event chain and receive its `effectiveFrom` / `effectiveUntil` window. `RotationEvent.effectiveAt` annotates when witness made an event effective (post-hoc, excluded from rotation hash/signing). Snapshot persistence is first-class: `SNAPSHOT_VERSION` and `ControllerSnapshot` are exported for durable round-trip, and `restore()` fails closed on any other version.
 - **Session mode** — signed human-consent envelope binding agent ephemeral DID to a human durable DID under a bounded capability envelope
 
 ### Observer (sense)
