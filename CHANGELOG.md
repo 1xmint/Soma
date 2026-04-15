@@ -11,6 +11,52 @@ Entries are grouped by package and dated.
 
 ---
 
+## soma-heart@0.4.0 — 2026-04-15
+
+Slice D / Slice E — credential-rotation semantics reconciliation and
+package-surface stabilisation. Gate 4 (code reconciliation) and Gate 6
+(package surface) of ADR-0004.
+
+### Breaking
+
+- **`SNAPSHOT_VERSION` bumped `1` → `2`.** `CredentialRotationController.restore()`
+  fails closed on any other version per SOMA-ROTATION-SPEC.md §10.1 — versions
+  are not silently migrated. Operators persisting `snapshot()` output across
+  this upgrade must re-snapshot from a running controller before restoring.
+  The wire format adds one nullable field: `RotationEventWire.effectiveAt`.
+
+### Added
+
+- **`CredentialRotationController.lookupHistoricalCredential(identityId, key)`**
+  — pure read over the retained event chain. Resolves a past `credentialId`
+  or `publicKey` (byte-exact match) to its `effectiveFrom` / `effectiveUntil`
+  window. Identity-scoped; typed miss reasons (`unknown-identity`,
+  `credential-not-in-chain`). Never consults the accepted pool. Implements
+  SOMA-DELEGATION-SPEC.md Slice D historical-verifier code contract.
+- **`RotationEvent.effectiveAt: number | null`** — set exactly once at the
+  moment witness makes an event `effective` (post-hoc lifecycle annotation
+  per SOMA-ROTATION-SPEC.md §4.8). Excluded from rotation-sign / rotation-pop
+  / event hash preimages so late annotation cannot retroactively invalidate
+  chains. Round-trips through `snapshot()` / `restore()`.
+- **Top-level re-exports on `soma-heart`** — `SNAPSHOT_VERSION` (value),
+  `ControllerSnapshot` (type), and `HistoricalCredentialLookupHit` /
+  `HistoricalCredentialLookupKey` / `HistoricalCredentialLookupMiss` /
+  `HistoricalCredentialLookupResult` (types). Already available from the
+  `soma-heart/credential-rotation` subpath; now also surfaced at the package
+  root for consumers using the main entry.
+
+### Notes
+
+- Callers must treat `Credential` and `RotationEvent` objects returned by
+  controller read methods (`getCurrentCredential`, `getEvents`,
+  `lookupHistoricalCredential`) as immutable. The controller does not
+  defensively clone return values — mutation is undefined behavior and is
+  not part of the supported surface.
+- SemVer: pre-1.0 minor bump, consistent with the project's stated policy
+  that `0.x.y` minors may include breaking changes until `1.0.0`.
+
+---
+
 ## soma-heart@0.3.0 — 2026-04-11
 
 ### Package restructure

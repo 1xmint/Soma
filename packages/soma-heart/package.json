@@ -1,6 +1,6 @@
 {
   "name": "soma-heart",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "The Soma trust machine for AI agents — one package: execution heart (HMAC, birth certs, heartbeat chain, credential rotation, human-consent session mode) + sensorium (temporal fingerprinting, behavioral landscape, phenotype atlas) + MCP middleware.",
   "type": "module",
   "main": "./dist/heart/index.js",
