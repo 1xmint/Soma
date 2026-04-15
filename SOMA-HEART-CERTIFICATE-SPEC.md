@@ -8,13 +8,13 @@
 > v0.1 is an **accepted normative** certificate contract following
 > ADR-0005. It defines the certificate primitive, v0.1 profiles, the
 > bounded claim and evidence vocabulary, trust-chain semantics,
-> verifier-policy requirements, and the required test-vector
+> verifier-policy requirements, the pinned canonical encoding and
+> certificate identifier construction, and the required test-vector
 > coverage list. It does not ship runtime code, package/API exports,
-> canonical encoding, or any certificate implementation. Gate 5
-> (package surface proposal) and Gate 6 (package surface stabilised)
-> must clear before any implementation is authorised, and Gate 5
-> acceptance is itself blocked on canonical-encoding selection and
-> test-vector-file delivery (see section 19.2 and section 21).
+> or any certificate implementation. Gate 5 (package surface
+> proposal) and Gate 6 (package surface stabilised) must clear
+> before any implementation is authorised. The remaining Gate 5
+> acceptance blocker is test-vector-file delivery (see section 19.2).
 > Credential-rotation semantics remain authoritative in ADR-0004
 > and `SOMA-ROTATION-SPEC.md`; this spec only references rotation
 > state, it does not change it.
@@ -25,18 +25,32 @@ This spec advanced from `Status: Draft` to `Status: accepted` at
 Gate 4 after reviewer approval of every normative section (1-18)
 and the required test-vector coverage list (section 19.1). Gate 4
 scope is deliberately limited to ratifying the normative contract
-and boundary rules. Gate 4 ratifies the canonicalization
-requirements in section 9, but does NOT ratify the final canonical
-byte layout or hash algorithm; those selections are Gate 5
-preconditions per section 21. Gate 4 does NOT ship test vector
-files (section 19.2), does NOT authorise any package, API,
-runtime, or ClawNet work, and does NOT alter credential-rotation
-semantics. Canonical byte layout and hash algorithm selection and
-test-vector-file delivery are classified as Gate 5 preconditions
-per section 21, and no package or API surface is authorised until
-the Gate 5 proposal has itself been accepted. Credential-rotation
-semantics remain authoritative in ADR-0004 and
-`SOMA-ROTATION-SPEC.md` and are not changed by this acceptance.
+and boundary rules. Gate 4 ratified the canonicalization
+requirements in section 9.1. Gate 4 did NOT itself ratify the
+final canonical byte layout or hash algorithm; at Gate 4 those
+selections were classified as Gate 5 preconditions per section 21.
+Gate 4 did NOT ship test vector files (section 19.2), did NOT
+authorise any package, API, runtime, or ClawNet work, and did NOT
+alter credential-rotation semantics.
+
+### Post-Gate-4 amendment: canonical encoding pinned
+
+Subsequent to Gate 4 acceptance, the final canonical byte layout,
+certificate identifier hash, and signature input construction were
+pinned inline in sections 9.2-9.5 as a docs-only amendment under
+the v0.1 contract. The amendment resolves the corresponding Gate 5
+precondition without reopening any Gate 4 decision: sections 1-8,
+10-18, and 19.1 are unchanged, and the pinned rules in sections
+9.2-9.5 are a concrete realisation of the requirements already
+ratified at Gate 4 in section 9.1. Credential-rotation semantics
+remain unchanged; section 15 continues to defer entirely to
+ADR-0004 and `SOMA-ROTATION-SPEC.md`.
+
+After the amendment, the remaining Gate 5 acceptance blocker is
+test-vector-file delivery under section 19.2, authored against
+the canonical encoding pinned in section 9. No package or API
+surface is authorised until the Gate 5 proposal has itself been
+accepted.
 
 RFC 2119 / RFC 8174 key words (`MUST`, `MUST NOT`, `SHOULD`,
 `SHOULD NOT`, `MAY`, `REQUIRED`, `OPTIONAL`) apply throughout this
@@ -324,37 +338,190 @@ evidence kinds but MUST NOT treat them as ratified.
 ## 9. Canonicalization and Identifier Requirements
 
 The certificate identifier is a content-addressed hash of the
-canonicalised certificate. v0.1 does NOT lock the final canonical
-byte layout or hash algorithm; those are spec-level open items
-tracked in section 21. Implementations conforming to v0.1 MUST satisfy
-the following requirements regardless of which encoding is later
-ratified:
+canonicalized certificate. v0.1 pins the canonical byte layout,
+certificate identifier hash, and signature input construction in
+sections 9.2-9.5 below. Section 9.1 states the underlying
+requirements any future canonicalization revision MUST also
+satisfy.
+
+### 9.1 Requirements
+
+Any conforming canonicalization (v0.1 or future) MUST satisfy:
 
 - **Determinism.** Two conforming serializers MUST produce
   byte-identical canonical bytes for the same logical certificate.
 - **Total field coverage.** Canonical bytes MUST cover every
   REQUIRED field and every CONDITIONAL field that is present.
   Optional fields that are absent MUST NOT be silently replaced
-  with defaults during canonicalisation.
+  with defaults during canonicalization.
 - **Signature exclusion.** The `signatures` field MUST be excluded
   from the bytes that are hashed to produce the certificate
-  identifier, but signatures MUST cover those identifier bytes.
-- **Hash commitment.** The hash algorithm selected before Gate 5
-  package-surface acceptance MUST be collision-resistant,
-  deterministic, and replayable by any conforming verifier.
-  Selection of the final canonical byte layout and hash algorithm
-  is a Gate 5 precondition per section 21; Gate 4 ratifies the
-  requirements stated in this section, not the final byte layout
-  or algorithm.
+  identifier, and MUST be omitted from the canonical input
+  entirely rather than emitted as an empty value. Signatures MUST
+  cover those identifier-input bytes.
+- **Hash commitment.** The hash algorithm MUST be
+  collision-resistant, deterministic, and replayable by any
+  conforming verifier.
 - **Identifier stability across rotation.** Rotating an issuer's
   credential MUST NOT change the certificate identifier of any
   previously issued certificate.
-- **Test vectors.** The spec's accepted canonicalisation MUST be
-  accompanied by normative test vectors covering at least one
-  certificate per accepted profile (section 19).
+- **Test vector coverage.** The canonicalization MUST be
+  accompanied by normative test vectors exercising the rules above
+  (section 19).
 
-An implementation MUST NOT ship canonicalisation behaviour that is
+An implementation MUST NOT ship canonicalization behaviour that is
 not covered by a normative test vector.
+
+### 9.2 v0.1 canonical encoding
+
+The v0.1 canonical encoding is **canonical JSON** under the rules
+below. The rules are pinned for v0.1 and are sufficient for
+deterministic vector generation. A canonicalization attempt that
+cannot satisfy every rule below MUST fail closed. A verifier that
+receives bytes violating any rule below MUST raise
+`canonicalisation-divergence` (section 18).
+
+- **Character encoding.** The canonical bytes are the UTF-8
+  encoding of the canonical JSON text. No byte-order mark MUST be
+  emitted. Input that cannot be represented as well-formed UTF-8
+  MUST be rejected at canonicalization time.
+- **Object key ordering.** Object keys MUST be sorted in ascending
+  order by Unicode code point of the key string (code-point
+  order, not UTF-8 byte order). Ties cannot occur because
+  duplicate keys are rejected below.
+- **Duplicate keys.** Duplicate object keys MUST be rejected at
+  canonicalization time. A canonicalization attempt that would
+  produce duplicate keys in an emitted object MUST fail closed.
+- **Whitespace.** No insignificant whitespace. Canonical JSON
+  contains no spaces, tabs, or line terminators outside string
+  values; only structural tokens (`{`, `}`, `[`, `]`, `:`, `,`)
+  and value tokens are emitted, with no padding between them.
+- **Strings.** String values are emitted as JSON strings under
+  RFC 8259 escaping rules, with the following tightenings:
+  - The only allowed escapes are `\"`, `\\`, `\b`, `\f`, `\n`,
+    `\r`, `\t`, and `\uXXXX` for control code points U+0000
+    through U+001F. All other code points MUST be emitted
+    literally in their UTF-8 form. In particular, `/` MUST NOT
+    be escaped, and non-ASCII code points MUST NOT be
+    `\uXXXX`-escaped.
+  - The hex digits in `\uXXXX` escapes MUST be lowercase
+    (`a`-`f`, not `A`-`F`).
+  - String bytes are taken exactly as supplied after UTF-8
+    encoding. v0.1 does NOT perform Unicode normalization;
+    producers SHOULD use NFC and MUST document any deviation.
+- **Numbers.** v0.1 canonical JSON does NOT use JSON floating-
+  point numbers for semantically precise values.
+  - Integer values in the closed range
+    `[-(2^53 - 1), 2^53 - 1]` MAY be emitted as JSON integer
+    literals with no leading zeros, no sign for zero, no
+    exponent, and no fractional part.
+  - Integer values outside that range MUST be emitted as JSON
+    strings containing the decimal integer.
+  - Decimal, fixed-point, or monetary values MUST be emitted as
+    JSON strings containing the decimal representation, never
+    as JSON numbers.
+  - Timestamps MUST be emitted as integer milliseconds since
+    the Unix epoch (UTC), within the
+    `[-(2^53 - 1), 2^53 - 1]` range, as JSON integer literals.
+    Alternate representations MUST NOT be used for time fields
+    in v0.1.
+  - NaN, positive infinity, negative infinity, and undefined
+    MUST be rejected at canonicalization time.
+- **Booleans and null.** The JSON literals `true`, `false`, and
+  `null` MUST be used where applicable. Optional fields that are
+  absent MUST be omitted entirely, not emitted as `null`, unless
+  the field's definition in this spec explicitly allows `null`
+  as a distinct value state.
+- **Arrays.** Array element order MUST be preserved as authored.
+  Canonicalization MUST NOT reorder array elements.
+- **Byte arrays.** Any field whose logical type is a byte string
+  (for example, hash commitments, signature bytes, or public key
+  material that is not already a stable string identifier) MUST
+  be emitted as a JSON string containing the standard base64
+  encoding per RFC 4648 section 4, WITH padding (`=`). v0.1 does
+  NOT use base64url. This matches the byte-encoding pattern used
+  in `SOMA-ROTATION-SPEC.md` section 4.4 for public keys in
+  rotation events.
+
+### 9.3 Certificate identifier hash
+
+The certificate identifier is computed from the canonical bytes
+of the certificate **with the `signatures` field omitted from the
+canonicalization input entirely**. The identifier is:
+
+```
+certificate_id = lowercase_hex( sha256( domain_prefix || canonical_bytes ) )
+```
+
+where:
+
+- `sha256` is SHA-256 as specified in FIPS 180-4, matching the
+  hash algorithm used in `SOMA-ROTATION-SPEC.md` section 4.4
+  and `SOMA-CHECK-SPEC.md` v0.1;
+- `domain_prefix` is the 28-byte ASCII string
+  `soma-heart-certificate:v0.1:`, applied by byte concatenation
+  with no separator;
+- `canonical_bytes` is the UTF-8 canonical JSON byte sequence
+  produced under section 9.2 from the certificate payload with
+  the `signatures` field omitted;
+- `lowercase_hex` is the 64-character lowercase hexadecimal
+  encoding of the 32-byte SHA-256 digest.
+
+The `certificate_id` field carried on the wire MUST equal this
+64-character lowercase hex string. Verifiers MUST reject
+certificates whose declared `certificate_id` does not match a
+reserialization of the payload under section 9.2 (failure mode
+`canonicalisation-divergence`, section 18).
+
+### 9.4 Signature input
+
+Each signature MUST cover the following byte sequence, computed
+independently of the wire representation of the `signatures`
+field:
+
+```
+signature_input = signer_role_prefix || canonical_bytes
+```
+
+where:
+
+- `signer_role_prefix` is the ASCII byte string
+  `soma-heart-certificate:v0.1:<role>:`, where `<role>` is the
+  signer's role drawn from the profile (`issuer`, `counterparty`,
+  `witness`, or `participant`) and the role literal is emitted
+  in lowercase ASCII;
+- `canonical_bytes` is the same UTF-8 canonical JSON byte
+  sequence used to compute the certificate identifier in section
+  9.3 (with the `signatures` field omitted).
+
+This domain-separation pattern matches
+`SOMA-ROTATION-SPEC.md` section 4.3, which namespaces signing
+inputs by `soma/credential-rotation/<role>/v1`. A verifier MUST
+reject a signature whose `signer_role_prefix` does not match the
+profile's declared role for that signer position (failure mode
+`signature-invalid`, section 18).
+
+### 9.5 Crypto-agility
+
+v0.1 pins SHA-256 and the canonical JSON rules above. A future
+hash algorithm or canonical encoding revision MUST:
+
+- be introduced through a spec revision or ADR slice, not through
+  an implementation change;
+- leave the certificate identifiers of already-issued v0.1
+  certificates unchanged (a new algorithm MUST NOT retroactively
+  rehash existing certificates);
+- declare a new domain-separation prefix of the form
+  `soma-heart-certificate:v<major>.<minor>:` so v0.1 identifiers
+  and future-version identifiers cannot collide even under a
+  shared hash family;
+- provide a migration path and normative test vectors for both
+  the outgoing and incoming encodings before any implementation
+  ships the new form.
+
+Section 9 is the authoritative definition of the Soma Heart
+certificate canonical wire shape for v0.1. Gate 5 vector files
+(section 19.2) MUST be authored against the rules pinned here.
 
 ## 10. Signature and Credential Verification
 
@@ -690,10 +857,10 @@ Vector files MUST be reproducible from this spec plus ADR-0004 and
 `SOMA-ROTATION-SPEC.md` alone; they MUST NOT depend on package
 internals, private helpers, or ClawNet runtime. Vector files MUST
 be delivered before the Gate 5 package surface proposal may be
-accepted. Gate 5 acceptance is blocked until the vector set
-satisfies section 19.1 under the canonical encoding selected for
-section 9. Any implementation produced under Gate 5 or Gate 6 MUST
-satisfy the delivered vector set.
+accepted. Vectors MUST be authored against the canonical encoding
+pinned in sections 9.2-9.5 and MUST satisfy section 19.1. Any
+implementation produced under Gate 5 or Gate 6 MUST satisfy the
+delivered vector set.
 
 ## 20. Readiness Gates
 
@@ -705,18 +872,22 @@ This spec participates in the ADR-0005 gate sequence.
 - **Gate 3 - Follow-up spec drafted.** Cleared by the initial
   merge of this document as `Status: Draft`.
 - **Gate 4 - Follow-up spec accepted.** Cleared by the acceptance
-  PR that moves this document to `Status: accepted`. Gate 4 scope
+  PR that moved this document to `Status: accepted`. Gate 4 scope
   is the normative contract and boundary rules in sections 1-18,
   plus the required test-vector coverage list in section 19.1.
-  Gate 4 ratifies the canonicalization requirements in section 9,
-  but does NOT ratify the final canonical byte layout or hash
-  algorithm. Gate 4 does NOT ship test vector files (section 19.2),
-  does NOT authorise any package, API, runtime, or ClawNet work,
-  and does NOT change credential-rotation semantics.
+  Gate 4 ratified the canonicalization requirements in section
+  9.1. The final canonical byte layout and hash algorithm
+  (sections 9.2-9.5) were pinned in a subsequent docs-only
+  amendment under the v0.1 contract, as recorded in the
+  Acceptance note. Gate 4 does NOT ship test vector files
+  (section 19.2), does NOT authorise any package, API, runtime,
+  or ClawNet work, and does NOT change credential-rotation
+  semantics.
 - **Gate 5 - Package surface proposal.** Draftable now that Gate 4
-  is cleared. Gate 5 acceptance is blocked until the final
-  canonical byte layout and hash algorithm (section 21 open item 1)
-  are pinned and the section 19.2 vector files exist and satisfy
+  is cleared. The canonicalization blocker (sections 9.2-9.5) has
+  been resolved by the post-Gate-4 amendment; the remaining Gate 5
+  acceptance blocker is the delivery of section 19.2 vector files
+  authored against the pinned canonical encoding and satisfying
   section 19.1. Out of scope for this PR.
 - **Gate 6 - Package surface stabilised.** Not draftable without
   Gate 5 acceptance. Out of scope for this PR.
@@ -746,7 +917,7 @@ Gate 5 unless a reviewer explicitly promotes them.
 
 | # | Question | Classification |
 |---|---|---|
-| 1 | Canonical encoding and hash algorithm for certificate identifiers (section 9). | Gate 5 precondition |
+| 1 | Canonical encoding and hash algorithm for certificate identifiers (section 9). | Resolved (post-Gate-4 amendment; pinned in sections 9.2-9.5) |
 | 2 | Exact wire representation for verifier policy identifiers: URI, hash, inline object, package version, or another mechanism (section 12). | Gate 5 precondition |
 | 3 | Disclosure-language grammar for private evidence pointers (section 16). | Gate 5 precondition |
 | 4 | Accepted timestamp sources per profile (section 6, section 12). | Gate 5 precondition |
@@ -759,9 +930,13 @@ Gate 5 unless a reviewer explicitly promotes them.
 | 11 | Joint resolution of the `fulfillment-receipt-bound` profile and the `fulfillment_receipt` claim. If resolution alters the claim's meaning beyond ADR-0005 D4, a follow-up ADR slice MUST be opened rather than absorbed into this spec. | Future ADR candidate |
 | 12 | Whether observation log references (section 8) and private evidence pointers (section 8) can be advanced from `open` to `accepted` given the section 16 disclosure-language outcome. | Post-v0.1 (v0.2) |
 
-Item 1 (canonical encoding and hash algorithm) is a hard Gate 5
+Item 1 (canonical encoding and hash algorithm) was a hard Gate 5
 precondition because section 19.2 vector files cannot be authored
-deterministically until it is resolved.
+deterministically until it is resolved. It has been resolved
+post-Gate-4 by pinning the rules in sections 9.2-9.5; vector file
+authoring is therefore unblocked and may proceed against the
+pinned encoding. Gate 5 acceptance is still blocked on the
+delivery of those vector files (section 19.2).
 
 ## 22. Links
 
