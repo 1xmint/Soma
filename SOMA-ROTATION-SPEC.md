@@ -356,6 +356,73 @@ is the historical-credential lookup required by
 `SOMA-DELEGATION-SPEC.md` §Rotation Interaction's Slice D code
 contract, landing under the §15 Gate 4 reconciliation.
 
+### 4.8 Effective-Transition Timestamp (Normative)
+
+Every rotation event MUST carry an `effectiveAt` field of type
+`number | null` (milliseconds since epoch, same clock domain as the
+existing `timestamp` field). The field records the clock reading at
+the moment the event first transitioned to the `effective` state —
+i.e. the moment `witnessEvent` advanced the event to `effective`
+and installed the new credential as `state.current`. In v0.1
+single-witness (§7.1), that is the first `witnessEvent` call on an
+`anchored` event.
+
+`effectiveAt` MUST be populated as follows:
+
+- `null` while the event is `pending` or `anchored`;
+- set exactly once, to the controller's clock reading
+  (`this.clock()` in the reference implementation), on the first
+  `witnessEvent` that advances the event to `effective`;
+- never mutated thereafter. Additional `witnessEvent` calls on an
+  already-`effective` event MUST NOT overwrite `effectiveAt`, even
+  though they MAY continue to increment `externalWitnessCount` for
+  future multi-witness policies (§7.1).
+
+`effectiveAt` is a post-hoc lifecycle annotation. It MUST NOT be
+included in the signed `rotation-sign` / `rotation-pop` inputs
+(§4.3) or in the content-addressed event hash (§4.4). Both of
+those are fixed at stage time, while `effectiveAt` is only knowable
+at witness time; including it in either would either make the event
+hash unstable under normal lifecycle progression or force
+witnessing to re-sign the event. A conforming implementation MUST
+exclude `effectiveAt` from the canonical JSON passed to
+`computeEventHash` and from every `eventSigningInput` role.
+
+This field is the reference source of truth for a credential's
+`effective` window. For any credential `C` introduced by the event
+at chain index `i`:
+
+- `C`'s effective window **begins** at `events[i].effectiveAt`, or
+  is `null` if `events[i]` has not yet reached `effective`;
+- `C`'s effective window **ends** at `events[i+1].effectiveAt`, the
+  moment the superseding event became effective, or remains `null`
+  if `C` is still current (no superseding event exists, or the
+  superseding event has not yet reached `effective`).
+
+The historical-credential lookup required by
+`SOMA-DELEGATION-SPEC.md` §Rotation Interaction's Slice D code
+contract MUST use `effectiveAt` to compute the
+`effective`/`revoked` window it returns, and MUST NOT substitute
+`timestamp` (the stage-time field) for it. A credential whose
+introducing event is still `pending` or `anchored` at a
+delegation's `issued_at` MUST be visible to the lookup with
+`effectiveFrom = null`, so the delegation verifier's "effective at
+`issued_at`" check (per §Conforming verifier rule item 3 in that
+section) rejects it.
+
+Rationale. L3 (§4.2) makes the interval between stage time and
+witness time a first-class unwitnessed window during which the new
+credential is not authoritative. The existing `timestamp` field
+records the former (it is set by `rotate()` at
+`stageNextCredential` call time) and is fixed in the event hash;
+only `effectiveAt` records the latter. Using `timestamp` as a proxy
+for `effectiveAt` would silently attribute that gap to the new
+credential and admit delegations that should have been rejected
+under `SOMA-DELEGATION-SPEC.md` §Rotation Interaction's
+§Conforming verifier rule item 3. The delegation verifier's
+assurance against premature-credential attacks is load-bearing on
+this distinction.
+
 ## 5. Staged Rotation and Rollback
 
 ### 5.1 Stage / Commit / Abort
@@ -662,22 +729,56 @@ policy choices.
 ### 10.1 Snapshot Version
 
 Snapshots carry an explicit `version` field. v0.1 uses
-`SNAPSHOT_VERSION = 1`. A controller loading a snapshot with a
+`SNAPSHOT_VERSION = 2`. A controller loading a snapshot with a
 version it does not support MUST fail closed with a clear error.
 Versions are not silently migrated.
+
+The bump from `SNAPSHOT_VERSION = 1` to `SNAPSHOT_VERSION = 2`
+accompanies the addition of the §4.8 `effectiveAt` field to the
+event wire shape, which is required both by the §10.2 completeness
+rule below and by `SOMA-DELEGATION-SPEC.md` §Rotation Interaction's
+Slice D code contract. A conforming v0.1 controller MUST:
+
+- emit `SNAPSHOT_VERSION = 2` from `snapshot()`;
+- accept only `SNAPSHOT_VERSION = 2` in `restore()`, raising a
+  clear error on any other value;
+- NOT silently upgrade a `SNAPSHOT_VERSION = 1` snapshot in place.
+
+**Operator implication.** Any durable `SNAPSHOT_VERSION = 1`
+snapshot produced before this bump landed cannot be loaded by a
+v0.1-conforming controller built after the bump; `restore()` MUST
+fail closed. Operators holding such snapshots MUST define an
+explicit migration or recovery path before adopting the bumped
+runtime. v0.1 does not ship an in-spec migration function; pre-
+bump deployments are expected to either re-incept from a clean
+root, or ship a bespoke migration that synthesises
+`effectiveAt = null` for every historical event and accepts the
+resulting weaker lookup fidelity for that prefix of the chain
+(historical delegations issued under those events will see
+`effectiveFrom = null` from the §Slice D lookup and MUST be
+handled by the delegation verifier's fail-closed path per
+`SOMA-DELEGATION-SPEC.md` §Conforming verifier rule). Either path
+is a downstream operational decision, not a v0.1 spec deliverable.
 
 ### 10.2 Snapshot Invariants (Normative)
 
 A snapshot MUST preserve everything required for a restored
 controller to keep producing L1/L2/L3-correct events for every
-identity it holds. Specifically, a `ControllerSnapshot` MUST carry:
+identity it holds, AND everything required for a restored
+controller to answer the historical-credential lookup defined in
+`SOMA-DELEGATION-SPEC.md` §Rotation Interaction's Slice D code
+contract with the same results as the live controller. Specifically,
+a `ControllerSnapshot` MUST carry:
 
 - the full `ControllerPolicy`;
-- for every identity: the complete event chain, the current
-  credential id (or `null`), the accepted-pool entries with their
-  grace-until timestamps, the ratchet anchor, the rotation
-  timestamp window used for rate limiting, and the challenge-period
-  unlock timestamp (if set).
+- for every identity: the complete event chain — including each
+  event's `effectiveAt` (§4.8), since the §Slice D lookup's
+  `effective`/`revoked` window is computed from `effectiveAt` and
+  cannot be reconstructed from `timestamp` — the current credential
+  id (or `null`), the accepted-pool entries with their grace-until
+  timestamps, the ratchet anchor, the rotation timestamp window
+  used for rate limiting, and the challenge-period unlock timestamp
+  (if set).
 
 The in-memory shapes hold `Uint8Array` in a few places (public keys).
 The wire format MUST base64-encode those fields so the signed bytes
