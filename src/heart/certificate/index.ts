@@ -21,3 +21,13 @@ export {
   computeSignatureInputHash,
   type SignerRole,
 } from './canonical.js';
+
+export {
+  VectorLoadError,
+  loadManifest,
+  type Manifest,
+  type Vector,
+  type VectorSignatureInput,
+  type VectorVerifierPolicy,
+  type RotationFixtureIdentity,
+} from './vectors.js';
