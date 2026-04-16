@@ -1,74 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import {
   CanonicalisationError,
   canonicalizePayload,
-  computeCertificateId,
   computeSignatureInput,
   computeSignatureInputHash,
   type SignerRole,
 } from '../../../src/heart/certificate/canonical.js';
 
-// -- Vector conformance (spec section 19.2) ----------------------------------
-
-interface SignatureInput {
-  signer_role: SignerRole;
-  input_sha256: string;
-}
-
-interface Vector {
-  id: string;
-  certificate: Record<string, unknown>;
-  canonical_json: string;
-  canonical_utf8_hex: string;
-  expected_certificate_id: string;
-  signature_inputs: SignatureInput[];
-}
-
-interface Manifest {
-  vectors: Vector[];
-}
-
-const manifestPath = resolve(
-  __dirname,
-  '../../../test-vectors/soma-heart-certificate/v0.1/manifest.json',
-);
-const manifest: Manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
-
-describe('vector conformance', () => {
-  for (const vector of manifest.vectors) {
-    describe(vector.id, () => {
-      const canonical = canonicalizePayload(
-        vector.certificate as Record<string, unknown>,
-      );
-
-      it('canonical_json matches', () => {
-        expect(canonical.toString('utf8')).toBe(vector.canonical_json);
-      });
-
-      it('canonical_utf8_hex matches', () => {
-        expect(canonical.toString('hex')).toBe(vector.canonical_utf8_hex);
-      });
-
-      it('expected_certificate_id matches', () => {
-        expect(computeCertificateId(canonical)).toBe(
-          vector.expected_certificate_id,
-        );
-      });
-
-      for (const si of vector.signature_inputs) {
-        it(`signature_input sha256 matches for role ${si.signer_role}`, () => {
-          expect(computeSignatureInputHash(canonical, si.signer_role)).toBe(
-            si.input_sha256,
-          );
-        });
-      }
-    });
-  }
-});
-
-// -- Unit tests for canonicalization rules -----------------------------------
+// Vector conformance tests are in conformance.test.ts (Slice 3).
 
 describe('canonical JSON rules', () => {
   it('sorts object keys by Unicode code point', () => {
