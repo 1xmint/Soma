@@ -1,6 +1,6 @@
 {
   "name": "soma-sense",
-  "version": "0.3.0",
+  "version": "0.2.0",
   "description": "Soma sensorium — observer-side verification for AI agents. Thin re-export of soma-heart/sense.",
   "type": "module",
   "main": "./index.js",
