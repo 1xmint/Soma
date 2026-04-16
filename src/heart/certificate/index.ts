@@ -39,3 +39,11 @@ export {
   type Disposition,
   type VocabularyResult,
 } from './vocabulary.js';
+
+export {
+  FAILURE_MODES,
+  isFailureMode,
+  createFailure,
+  type FailureMode,
+  type CertificateFailure,
+} from './failure-modes.js';
