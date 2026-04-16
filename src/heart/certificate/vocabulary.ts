@@ -1,12 +1,14 @@
 // Vocabulary validators for v0.1 certificate profiles, claims, and evidence.
 // Spec sections 5, 7, and 8. Dispositions: accepted, open, deferred.
 
+import { FAILURE_MODES, type FailureMode } from './failure-modes.js';
+
 export type Disposition = 'accepted' | 'open' | 'deferred';
 
 export interface VocabularyResult {
   valid: boolean;
   disposition: Disposition | 'unknown';
-  failureMode: string | null;
+  failureMode: FailureMode | null;
 }
 
 // -- Profiles (spec section 5) -----------------------------------------------
@@ -27,14 +29,14 @@ export function validateProfile(profile: string): VocabularyResult {
     return {
       valid: false,
       disposition: 'unknown',
-      failureMode: 'profile-not-allowed',
+      failureMode: FAILURE_MODES.PROFILE_NOT_ALLOWED,
     };
   }
   if (disposition === 'deferred') {
-    return { valid: false, disposition, failureMode: 'profile-deferred' };
+    return { valid: false, disposition, failureMode: FAILURE_MODES.PROFILE_DEFERRED };
   }
   if (disposition === 'open') {
-    return { valid: false, disposition, failureMode: 'profile-not-allowed' };
+    return { valid: false, disposition, failureMode: FAILURE_MODES.PROFILE_NOT_ALLOWED };
   }
   return { valid: true, disposition, failureMode: null };
 }
@@ -60,14 +62,14 @@ export function validateClaimKind(kind: string): VocabularyResult {
     return {
       valid: false,
       disposition: 'unknown',
-      failureMode: 'claim-not-allowed',
+      failureMode: FAILURE_MODES.CLAIM_NOT_ALLOWED,
     };
   }
   if (disposition === 'deferred') {
-    return { valid: false, disposition, failureMode: 'claim-deferred' };
+    return { valid: false, disposition, failureMode: FAILURE_MODES.CLAIM_DEFERRED };
   }
   if (disposition === 'open') {
-    return { valid: false, disposition, failureMode: 'claim-not-allowed' };
+    return { valid: false, disposition, failureMode: FAILURE_MODES.CLAIM_NOT_ALLOWED };
   }
   return { valid: true, disposition, failureMode: null };
 }
@@ -95,17 +97,17 @@ export function validateEvidenceKind(kind: string): VocabularyResult {
     return {
       valid: false,
       disposition: 'unknown',
-      failureMode: 'evidence-not-allowed',
+      failureMode: FAILURE_MODES.EVIDENCE_NOT_ALLOWED,
     };
   }
   if (disposition === 'deferred') {
-    return { valid: false, disposition, failureMode: 'evidence-deferred' };
+    return { valid: false, disposition, failureMode: FAILURE_MODES.EVIDENCE_DEFERRED };
   }
   if (disposition === 'open') {
     return {
       valid: false,
       disposition,
-      failureMode: 'evidence-not-allowed',
+      failureMode: FAILURE_MODES.EVIDENCE_NOT_ALLOWED,
     };
   }
   return { valid: true, disposition, failureMode: null };
