@@ -9,8 +9,15 @@
 // (packages/soma-heart/src/certificate/) with the existing build
 // convention (src/heart/<module>/ -> dist/heart/<module>/).
 //
-// No behaviour is implemented yet. Each functional area will be
-// added by a separate future slice per the implementation readiness
-// packet (docs/proposals/soma-heart-certificate-implementation-readiness.md).
+// Each functional area is added by a separate slice per the
+// implementation readiness packet
+// (docs/proposals/soma-heart-certificate-implementation-readiness.md).
 
-export {};
+export {
+  CanonicalisationError,
+  canonicalizePayload,
+  computeCertificateId,
+  computeSignatureInput,
+  computeSignatureInputHash,
+  type SignerRole,
+} from './canonical.js';
