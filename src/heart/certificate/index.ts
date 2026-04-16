@@ -31,3 +31,11 @@ export {
   type VectorVerifierPolicy,
   type RotationFixtureIdentity,
 } from './vectors.js';
+
+export {
+  validateProfile,
+  validateClaimKind,
+  validateEvidenceKind,
+  type Disposition,
+  type VocabularyResult,
+} from './vocabulary.js';
