@@ -59,6 +59,16 @@ export {
 } from './policy.js';
 
 export {
+  bindSomaCheckEvidence,
+  type SomaCheckReceiptInput,
+  type FreshnessClaimBinding,
+  type EvidenceReferenceBinding,
+  type SomaCheckBindingResult,
+  type SomaCheckBindingOk,
+  type SomaCheckBindingFail,
+} from './soma-check-binding.js';
+
+export {
   verifyCertificateSignature,
   type CredentialLookup,
   type CredentialLookupResult,
