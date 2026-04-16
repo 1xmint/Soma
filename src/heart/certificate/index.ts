@@ -49,6 +49,16 @@ export {
 } from './failure-modes.js';
 
 export {
+  evaluatePolicy,
+  type VerifierPolicy,
+  type PolicyCertificateInput,
+  type PolicyViolation,
+  type PolicyEvalResult,
+  type PolicyEvalOk,
+  type PolicyEvalFail,
+} from './policy.js';
+
+export {
   verifyCertificateSignature,
   type CredentialLookup,
   type CredentialLookupResult,
