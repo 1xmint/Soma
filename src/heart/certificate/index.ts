@@ -69,6 +69,16 @@ export {
 } from './soma-check-binding.js';
 
 export {
+  bindPaymentRailEvidence,
+  type PaymentRailReceiptInput,
+  type PaymentClaimBinding,
+  type PaymentEvidenceBinding,
+  type PaymentRailBindingResult,
+  type PaymentRailBindingOk,
+  type PaymentRailBindingFail,
+} from './payment-rail-binding.js';
+
+export {
   verifyCertificateSignature,
   type CredentialLookup,
   type CredentialLookupResult,
