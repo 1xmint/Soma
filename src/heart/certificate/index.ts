@@ -47,3 +47,17 @@ export {
   type FailureMode,
   type CertificateFailure,
 } from './failure-modes.js';
+
+export {
+  verifyCertificateSignature,
+  type CredentialLookup,
+  type CredentialLookupResult,
+  type CredentialLookupHit,
+  type CredentialLookupMiss,
+  type CredentialRotationReference,
+  type CertificateSignatureEntry,
+  type ResolvedCredential,
+  type SignatureVerifyResult,
+  type SignatureVerifyOk,
+  type SignatureVerifyFail,
+} from './signature.js';
