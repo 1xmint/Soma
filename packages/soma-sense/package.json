@@ -14,10 +14,15 @@
       "types": "./index.d.ts",
       "import": "./index.js",
       "default": "./index.js"
+    },
+    "./certificate": {
+      "types": "./certificate.d.ts",
+      "import": "./certificate.js",
+      "default": "./certificate.js"
     }
   },
   "dependencies": {
-    "soma-heart": "^0.3.0"
+    "soma-heart": "^0.4.0"
   },
   "license": "MIT",
   "repository": {
