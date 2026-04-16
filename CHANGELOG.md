@@ -11,6 +11,76 @@ Entries are grouped by package and dated.
 
 ---
 
+## soma-heart@0.5.0 — 2026-04-16
+
+Soma Heart certificate module — Gate 6 stabilisation. Implements the
+certificate primitive described in SOMA-HEART-CERTIFICATE-SPEC.md.
+Implementation readiness packet (PR #54), Slices 1-11 (PRs #55-#65),
+and this Slice 12 release/readiness gate.
+
+### Added
+
+- **`soma-heart/certificate` subpath** — new public subpath export
+  (`./certificate`) exposing the Gate 6 accepted certificate surfaces.
+  The public entry (`public.ts`) exports areas 1-8 and 10-12; area 9
+  (rotation lookup adapter) and signature verification remain
+  internal-only.
+  - Canonicalization helpers: `canonicalizePayload`,
+    `computeCertificateId`, `computeSignatureInput`,
+    `computeSignatureInputHash`, `CanonicalisationError`.
+  - Vector loading and conformance: `loadManifest`, `VectorLoadError`.
+  - Vocabulary validators: `validateProfile`, `validateClaimKind`,
+    `validateEvidenceKind`.
+  - Failure modes: `FAILURE_MODES`, `isFailureMode`, `createFailure`
+    (16 spec-aligned failure identifiers per section 18).
+  - Verifier-policy evaluator: `evaluatePolicy` (fail-closed,
+    profile/claim/evidence allowlist, chain depth check).
+  - Soma Check binding helper: `bindSomaCheckEvidence` (freshness
+    receipt claim + receipt reference + hash commitment evidence).
+  - Payment rail binding interface: `bindPaymentRailEvidence`
+    (rail-agnostic, rail names are metadata-only).
+- **Internal certificate primitives** (not exported via subpath):
+  - Signature verification (`verifyCertificateSignature`) with
+    identity/credential binding, SPKI DER Ed25519 validation,
+    revocation/effectiveness checks.
+  - Credential lookup adapter (`CredentialLookup`) for rotation
+    integration.
+- **`soma-sense/certificate` subpath** — observer-safe re-export of
+  areas 1-7 and 12 from `soma-heart/certificate`. Selective named
+  exports only (no `export *`). Excludes policy evaluator, Soma Check
+  binding, and payment rail binding (full-install-only).
+
+### Changed
+
+- `soma-sense` dependency on `soma-heart` updated from `^0.3.0` to
+  `^0.5.0` (required for the `./certificate` subpath).
+
+### Notes
+
+- Credential-rotation semantics are unchanged. No rotation source,
+  test, or spec files were modified.
+- No downstream ClawNet or Gate 7 work is included in this release.
+- Vector conformance: 100% (375 certificate tests, 1567 total).
+- SemVer: pre-1.0 minor bump, consistent with the project's stated
+  policy that `0.x.y` minors may include breaking changes until `1.0.0`.
+  This release is purely additive with no breaking changes.
+
+---
+
+## soma-sense@0.3.0 — 2026-04-16
+
+### Added
+
+- **`soma-sense/certificate` subpath** — observer-safe re-export of
+  `soma-heart/certificate` areas 1-7 and 12. See `soma-heart@0.5.0`
+  entry for full details.
+
+### Changed
+
+- Dependency on `soma-heart` updated to `^0.5.0`.
+
+---
+
 ## soma-heart@0.4.0 — 2026-04-15
 
 Slice D / Slice E — credential-rotation semantics reconciliation and

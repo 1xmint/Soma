@@ -106,8 +106,8 @@ The `./certificate` subpath re-exports an observer-safe subset of
 
 - Rotation lookup adapter and signature verification (same as soma-heart exclusions)
 
-**Dependency requirement:** `soma-heart >= 0.4.0` (the `./certificate`
-subpath was added in 0.4.0).
+**Dependency requirement:** `soma-heart >= 0.5.0` (the `./certificate`
+subpath ships in 0.5.0; the published 0.4.0 tag predates it).
 
 ## Packaging Rule
 

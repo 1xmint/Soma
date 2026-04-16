@@ -201,7 +201,7 @@ describe('soma-sense/certificate observer-safe surface', () => {
 // ============================================================================
 
 describe('soma-sense dependency version', () => {
-  it('depends on soma-heart >= 0.4.0 (required for ./certificate subpath)', () => {
+  it('depends on soma-heart >= 0.5.0 (required for ./certificate subpath)', () => {
     const pkg = JSON.parse(
       readFileSync(
         resolve(repoRoot, 'packages/soma-sense/package.json'),
@@ -210,8 +210,9 @@ describe('soma-sense dependency version', () => {
     );
     const range = pkg.dependencies?.['soma-heart'] as string;
     expect(range).toBeDefined();
-    // Must not be ^0.3.x which would miss the ./certificate subpath
+    // Must not be ^0.3.x or ^0.4.x which would miss the ./certificate subpath
     expect(range).not.toMatch(/\^0\.3\./);
-    expect(range).toMatch(/0\.4/);
+    expect(range).not.toMatch(/\^0\.4\./);
+    expect(range).toMatch(/0\.5/);
   });
 });
