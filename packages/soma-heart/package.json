@@ -50,6 +50,11 @@
       "import": "./dist/mcp/index.js",
       "default": "./dist/mcp/index.js"
     },
+    "./certificate": {
+      "types": "./dist/heart/certificate/public.d.ts",
+      "import": "./dist/heart/certificate/public.js",
+      "default": "./dist/heart/certificate/public.js"
+    },
     "./signals": {
       "types": "./dist/experiment/signals.d.ts",
       "import": "./dist/experiment/signals.js",
