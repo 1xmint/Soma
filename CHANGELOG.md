@@ -52,8 +52,9 @@ and this Slice 12 release/readiness gate.
 
 ### Changed
 
-- `soma-sense` dependency on `soma-heart` updated from `^0.3.0` to
-  `^0.5.0` (required for the `./certificate` subpath).
+- `soma-sense` in-repo dependency on `soma-heart` updated from `^0.3.0`
+  to `^0.5.0` (required for the `./certificate` subpath). `soma-sense`
+  is not published in this release; see deprecation note below.
 
 ### Notes
 
@@ -67,17 +68,15 @@ and this Slice 12 release/readiness gate.
 
 ---
 
-## soma-sense@0.3.0 — 2026-04-16
+## soma-sense — not published
 
-### Added
+`soma-sense` is not published as part of the `soma-heart@0.5.0` release.
+The publish workflow intentionally covers `soma-heart` only; `soma-sense`
+remains deprecated at `0.1.0` on npm (see `soma-sense@0.1.0` entry below).
 
-- **`soma-sense/certificate` subpath** — observer-safe re-export of
-  `soma-heart/certificate` areas 1-7 and 12. See `soma-heart@0.5.0`
-  entry for full details.
-
-### Changed
-
-- Dependency on `soma-heart` updated to `^0.5.0`.
+The in-repo `soma-sense` package retains a `./certificate` subpath and
+updated `soma-heart` dependency (`^0.5.0`) for local development and
+surface tests. These are not published artifacts.
 
 ---
 

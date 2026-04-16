@@ -68,6 +68,9 @@ in-repo use.
 
 - Thin compatibility re-export
 - Intended for observer-only installs
+- **Not currently published.** Deprecated at `0.1.0` on npm; the publish
+  workflow covers `soma-heart` only. The in-repo package is maintained
+  for local development and surface tests.
 
 #### Subpath exports
 
