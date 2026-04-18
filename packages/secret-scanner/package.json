@@ -1,0 +1,41 @@
+{
+  "name": "@soma/secret-scanner",
+  "version": "0.1.0",
+  "description": "Pre-commit hook that blocks committed secrets — API keys, private key material, common provider tokens.",
+  "type": "module",
+  "bin": {
+    "secret-scanner": "./bin/pre-commit.js"
+  },
+  "exports": {
+    ".": "./src/scanner.js"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "README.md"
+  ],
+  "scripts": {
+    "scan": "node bin/pre-commit.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "secret-scanning",
+    "pre-commit",
+    "security",
+    "git-hooks",
+    "soma"
+  ],
+  "author": "Joshua Fair",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/1xmint/Soma.git",
+    "directory": "packages/secret-scanner"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

@@ -28,7 +28,11 @@
     "generate-synthetic": "tsx src/experiment/generate-synthetic.ts",
     "experiment:agents": "tsx src/experiment/agents/run-agent-experiment.ts",
     "test:heart-live": "tsx src/experiment/heart-live-test.ts",
-    "ci": "npm run lint && npm run format:check && npm run typecheck && npm run test && npm run build:packages"
+    "ci": "npm run lint && npm run format:check && npm run typecheck && npm run test && npm run build:packages",
+    "install:hooks": "simple-git-hooks"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "node packages/secret-scanner/bin/pre-commit.js"
   },
   "engines": {
     "node": ">=18"
@@ -51,7 +55,8 @@
     "tsx": "^4.21.0",
     "typescript": "^6.0.2",
     "typescript-eslint": "^8.0.0",
-    "vitest": "^4.1.4"
+    "vitest": "^4.1.4",
+    "simple-git-hooks": "^2.11.0"
   },
   "pnpm": {
     "overrides": {
