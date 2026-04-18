@@ -146,6 +146,18 @@ export {
   type LogVerification,
 } from './revocation-log.js';
 
+// ─── Reception Receipts (accountability primitive for capability verification) ─
+
+export {
+  signReceipt,
+  verifyReceipt,
+  receiptCanonical,
+  EVIDENCE_SUMMARY_MAX,
+  type ReceiptPayload,
+  type SignedReceipt,
+  type ReceiptOutcome,
+} from './reception-receipt.js';
+
 // ─── Spend Receipts (cryptographic budget enforcement) ──────────────────────
 
 export {
