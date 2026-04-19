@@ -292,11 +292,27 @@ export function verifyDelegationSignature(
 }
 
 /**
+ * Evaluates a custom caveat for a specific invocation context.
+ * Return `{ valid: true }` to accept, `{ valid: false, reason }` to reject.
+ * Callers MUST register a handler for every custom caveat key they issue;
+ * unhandled keys cause `checkCaveats` to fail closed.
+ */
+export type CustomCaveatEvaluator = (
+  caveat: Extract<Caveat, { kind: 'custom' }>,
+  ctx: InvocationContext,
+) => DelegationVerification;
+
+/**
  * Check caveats against an invocation context.
+ *
+ * @param customCaveatEvaluator - Optional handler for `custom` caveat kinds.
+ *   When a `custom` caveat is encountered and no evaluator is provided, the
+ *   check fails closed per SOMA-CAPABILITIES-SPEC §Caveat Types.
  */
 export function checkCaveats(
   del: Delegation,
   ctx: InvocationContext,
+  customCaveatEvaluator?: CustomCaveatEvaluator,
 ): DelegationVerification {
   const now = ctx.now ?? Date.now();
 
@@ -359,7 +375,14 @@ export function checkCaveats(
         }
         break;
       case 'custom':
-        // Custom caveats are opaque — caller must handle
+        if (!customCaveatEvaluator) {
+          return {
+            valid: false,
+            reason: `custom caveat "${cav.key}" not handled — no evaluator provided (fail-closed)`,
+          };
+        }
+        const customResult = customCaveatEvaluator(cav, ctx);
+        if (!customResult.valid) return customResult;
         break;
 
       // ─── soma-capabilities/1.1 ───
@@ -451,6 +474,9 @@ export function checkCaveats(
 
 /**
  * Full verification: signature + caveats + subject matches invoker.
+ *
+ * @param customCaveatEvaluator - Optional handler for `custom` caveat kinds;
+ *   forwarded to {@link checkCaveats}. Unhandled custom caveats fail closed.
  */
 export function verifyDelegation(
   del: Delegation,
@@ -458,6 +484,7 @@ export function verifyDelegation(
   provider?: CryptoProvider,
   registry?: DidMethodRegistry,
   lookup?: HistoricalKeyLookup,
+  customCaveatEvaluator?: CustomCaveatEvaluator,
 ): DelegationVerification {
   const sigCheck = verifyDelegationSignature(del, provider, registry, lookup);
   if (!sigCheck.valid) return sigCheck;
@@ -466,5 +493,5 @@ export function verifyDelegation(
     return { valid: false, reason: 'invoker is not the delegation subject' };
   }
 
-  return checkCaveats(del, ctx);
+  return checkCaveats(del, ctx, customCaveatEvaluator);
 }

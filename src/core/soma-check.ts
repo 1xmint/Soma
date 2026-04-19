@@ -25,6 +25,9 @@
 
 export const SOMA_CHECK_PROTOCOL = 'soma-check/1.0';
 
+/** Minimum length (hex characters) for any hash used in the Soma Check protocol. */
+export const SOMA_CHECK_MIN_HASH_LENGTH = 16;
+
 export const SOMA_CHECK_HEADERS = {
   /** Request header — agent's last-known hash. */
   IF_SOMA_HASH: 'If-Soma-Hash',
@@ -86,17 +89,17 @@ export function buildSomaCheckRequestHeaders(lastKnownHash: string): Record<stri
 /**
  * Extract the `If-Soma-Hash` value from a request's headers.
  * Returns null if header is missing. Headers are read case-insensitively.
+ * Throws if the header is present but the hash is shorter than
+ * {@link SOMA_CHECK_MIN_HASH_LENGTH} hex characters.
  */
 export function extractIfSomaHash(
   headers: Record<string, string> | Headers | undefined | null,
 ): string | null {
   if (!headers) return null;
   const lookup = headerLookup(headers);
-  return (
-    lookup('if-soma-hash') ??
-    lookup('If-Soma-Hash') ??
-    null
-  );
+  const value = lookup('if-soma-hash') ?? lookup('If-Soma-Hash') ?? null;
+  if (value !== null) assertValidHexHash(value, 'If-Soma-Hash');
+  return value;
 }
 
 /**
@@ -179,6 +182,7 @@ export class SomaCheckHashStore {
   }
 
   set(key: string, hash: string): void {
+    assertValidHexHash(hash, 'SomaCheckHashStore.set');
     this.hashes.set(key, hash);
   }
 
@@ -203,7 +207,29 @@ export class SomaCheckHashStore {
   }
 }
 
+// ─── Consistency Utility ─────────────────────────────────────────────────────
+
+/**
+ * Verify that a birth certificate's `dataHash` matches the `X-Soma-Hash`
+ * header value. The spec requires these to be identical — call this after
+ * extracting both values to confirm they are consistent.
+ */
+export function verifyDataHashConsistency(
+  birthCertDataHash: string,
+  xSomaHashHeader: string,
+): boolean {
+  return birthCertDataHash === xSomaHashHeader;
+}
+
 // ─── Internals ──────────────────────────────────────────────────────────────
+
+function assertValidHexHash(hash: string, context: string): void {
+  if (hash.length < SOMA_CHECK_MIN_HASH_LENGTH || !/^[0-9a-fA-F]+$/.test(hash)) {
+    throw new Error(
+      `${context}: hash must be at least ${SOMA_CHECK_MIN_HASH_LENGTH} hex characters (got ${hash.length} chars: "${hash.slice(0, 32)}${hash.length > 32 ? '...' : ''}")`,
+    );
+  }
+}
 
 function headerLookup(
   headers: Record<string, string> | Headers,
