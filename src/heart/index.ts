@@ -206,6 +206,16 @@ export {
   type TtlPolicy,
 } from './credential-rotation/index.js';
 
+// ─── Historical Key Lookup (rotation-aware key validity for verifiers) ──────
+
+export {
+  checkKeyEffective,
+  type HistoricalKeyLookup,
+  type HistoricalKeyLookupHit,
+  type HistoricalKeyLookupMiss,
+  type HistoricalKeyLookupResult,
+} from './historical-key-lookup.js';
+
 // ─── Time Oracle (signed time witnesses + monotonic clocks) ─────────────────
 
 export {

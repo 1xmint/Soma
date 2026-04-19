@@ -53,7 +53,7 @@ Anyone can mint infinite `did:key` identities. Soma has NO built-in sybil defens
 - **DID:web fetcher.** We ship the module but not a network client — operators wire `fetch()` themselves. Intentional (avoids depending on a specific HTTP stack).
 - **Gossip transport.** `InMemoryTransport` is the reference. No libp2p/NATS/Redis adapters shipped. Operators adapt behind the `GossipTransport` interface.
 - **Share refresh.** Shamir shares don't rotate. A compromised shareholder keeps their share valid until the whole key is rotated. Proactive secret sharing is out of scope.
-- **Key-rotation resolution in verifiers.** `key-rotation.ts` builds the chain; individual verifiers don't yet resolve `issuerDid` to the key version current at `issuedAt`. Verifier call sites need to adopt `KeyHistory.currentPublicKey` lookups.
+- **Key-rotation resolution in verifiers.** ~~`key-rotation.ts` builds the chain; individual verifiers don't yet resolve `issuerDid` to the key version current at `issuedAt`.~~ **Resolved.** All four verifier call sites (`delegation.ts`, `revocation.ts`, `birth-certificate.ts`, `selective-disclosure.ts`) now accept an optional `HistoricalKeyLookup` that confirms the signing key was effective at the artifact's timestamp via the rotation subsystem. When provided, verifiers fail closed if the credential is not found, not yet effective, or already rotated out. When omitted, existing behavior is preserved (backward-compatible). See `src/heart/historical-key-lookup.ts` for the interface definition.
 
 ## What We've Decided NOT to Build
 

@@ -24,6 +24,10 @@ import {
   type CryptoProvider,
   type SignKeyPair,
 } from "../core/crypto-provider.js";
+import {
+  checkKeyEffective,
+  type HistoricalKeyLookup,
+} from './historical-key-lookup.js';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -267,15 +271,35 @@ export function birthCertificateFingerprint(
 /**
  * Verify a birth certificate's receiver signature.
  * Confirms the certificate was issued by the claimed receiving heart.
+ *
+ * When `lookup` is provided, additionally confirms that the public key
+ * was effective at the certificate's `bornAt` timestamp via the rotation
+ * subsystem. Fail-closed if the key is not found or was not effective.
+ * When omitted, existing behavior is preserved.
  */
 export function verifyBirthCertificate(
   cert: BirthCertificate,
   publicKey: Uint8Array,
-  provider?: CryptoProvider
+  provider?: CryptoProvider,
+  lookup?: HistoricalKeyLookup,
 ): boolean {
   const p = provider ?? getCryptoProvider();
 
   if (cert.trustTier === "unsigned") return false;
+
+  // Rotation-aware key validity check (opt-in).
+  if (lookup) {
+    let result;
+    try {
+      result = lookup.resolve(publicKey, cert.bornAt);
+    } catch {
+      return false;
+    }
+    const check = checkKeyEffective(result, cert.bornAt);
+    if (!check.effective) {
+      return false;
+    }
+  }
 
   const certContent = canonicalizeCertContent({
     dataHash: cert.dataHash,
@@ -331,11 +355,16 @@ export function verifyDataIntegrity(data: string, cert: BirthCertificate, provid
 /**
  * Verify a chain of birth certificates — hearts all the way down.
  * Each certificate's parent must be verifiable.
+ *
+ * When `lookup` is provided, each certificate's receiver key is checked
+ * against the rotation subsystem for validity at `bornAt`. When omitted,
+ * existing behavior is preserved.
  */
 export function verifyBirthCertificateChain(
   chain: BirthCertificate[],
   publicKeys: Map<string, Uint8Array>,
-  provider?: CryptoProvider
+  provider?: CryptoProvider,
+  lookup?: HistoricalKeyLookup,
 ): { valid: boolean; brokenAt: number; reason: string } {
   const p = provider ?? getCryptoProvider();
 
@@ -352,7 +381,7 @@ export function verifyBirthCertificateChain(
       return { valid: false, brokenAt: i, reason: `Unknown heart DID: ${cert.bornThrough}` };
     }
 
-    if (!verifyBirthCertificate(cert, pubKey, p)) {
+    if (!verifyBirthCertificate(cert, pubKey, p, lookup)) {
       return { valid: false, brokenAt: i, reason: `Invalid receiver signature at index ${i}` };
     }
 
