@@ -39,6 +39,10 @@ import {
   type CryptoProvider,
 } from '../core/crypto-provider.js';
 import { publicKeyToDid } from '../core/genome.js';
+import {
+  checkKeyEffective,
+  type HistoricalKeyLookup,
+} from './historical-key-lookup.js';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -304,6 +308,12 @@ export function verifyDisclosureProof(
     /** Required fields the verifier expects to see. */
     requiredFields?: readonly string[];
     provider?: CryptoProvider;
+    /**
+     * Rotation-aware key validity lookup. When provided, confirms the
+     * issuer's public key was effective at the document's `issuedAt`
+     * timestamp. Fail-closed if not found or not effective.
+     */
+    lookup?: HistoricalKeyLookup;
   } = {},
 ): DisclosureVerification {
   const p = opts.provider ?? getCryptoProvider();
@@ -339,6 +349,20 @@ export function verifyDisclosureProof(
   }
   if (publicKeyToDid(pubKey, p) !== proof.issuerDid) {
     return { valid: false, reason: 'issuer DID/key mismatch' };
+  }
+
+  // Rotation-aware key validity check (opt-in).
+  if (opts.lookup) {
+    let result;
+    try {
+      result = opts.lookup.resolve(pubKey, proof.issuedAt);
+    } catch {
+      return { valid: false, reason: 'key lookup failed: resolver threw' };
+    }
+    const check = checkKeyEffective(result, proof.issuedAt);
+    if (!check.effective) {
+      return { valid: false, reason: check.reason };
+    }
   }
 
   // Recompute commitments for disclosed fields.

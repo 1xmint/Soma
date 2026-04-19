@@ -29,6 +29,10 @@ import {
   verifyDidBinding,
   type DidMethodRegistry,
 } from '../core/did-method.js';
+import {
+  checkKeyEffective,
+  type HistoricalKeyLookup,
+} from './historical-key-lookup.js';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -109,10 +113,19 @@ export type RevocationVerification =
   | { valid: true }
   | { valid: false; reason: string };
 
+/**
+ * Verify a revocation event's signature + integrity.
+ *
+ * When `lookup` is provided, additionally confirms that the issuer's
+ * public key was effective at the revocation's `issuedAt` timestamp
+ * via the rotation subsystem. Fail-closed if the key is not found or
+ * was not effective. When omitted, existing behavior is preserved.
+ */
 export function verifyRevocation(
   rev: RevocationEvent,
   provider?: CryptoProvider,
   registry?: DidMethodRegistry,
+  lookup?: HistoricalKeyLookup,
 ): RevocationVerification {
   const p = provider ?? getCryptoProvider();
   const { signature, ...payload } = rev;
@@ -130,6 +143,20 @@ export function verifyRevocation(
       valid: false,
       reason: `issuerDid does not match issuerPublicKey: ${binding.reason}`,
     };
+  }
+
+  // Rotation-aware key validity check (opt-in).
+  if (lookup) {
+    let result;
+    try {
+      result = lookup.resolve(issuerPubKey, rev.issuedAt);
+    } catch {
+      return { valid: false, reason: 'key lookup failed: resolver threw' };
+    }
+    const check = checkKeyEffective(result, rev.issuedAt);
+    if (!check.effective) {
+      return { valid: false, reason: check.reason };
+    }
   }
 
   return { valid: true };

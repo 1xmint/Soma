@@ -31,6 +31,10 @@ import {
   verifyDidBinding,
   type DidMethodRegistry,
 } from '../core/did-method.js';
+import {
+  checkKeyEffective,
+  type HistoricalKeyLookup,
+} from './historical-key-lookup.js';
 
 // ─── Caveat Types ───────────────────────────────────────────────────────────
 
@@ -239,11 +243,18 @@ export type DelegationVerification =
 
 /**
  * Verify a delegation's signature + integrity (NOT caveats against context).
+ *
+ * When `lookup` is provided, the verifier additionally confirms that the
+ * issuer's public key was effective at the delegation's `issuedAt` timestamp
+ * via the rotation subsystem. If the key is not found or was not effective,
+ * the delegation is rejected (fail-closed). When `lookup` is omitted,
+ * existing behavior is preserved (backward-compatible).
  */
 export function verifyDelegationSignature(
   del: Delegation,
   provider?: CryptoProvider,
   registry?: DidMethodRegistry,
+  lookup?: HistoricalKeyLookup,
 ): DelegationVerification {
   const p = provider ?? getCryptoProvider();
   const { signature, ...payload } = del;
@@ -261,6 +272,20 @@ export function verifyDelegationSignature(
       valid: false,
       reason: `issuerDid does not match issuerPublicKey: ${binding.reason}`,
     };
+  }
+
+  // Rotation-aware key validity check (opt-in).
+  if (lookup) {
+    let result;
+    try {
+      result = lookup.resolve(issuerPubKey, del.issuedAt);
+    } catch {
+      return { valid: false, reason: 'key lookup failed: resolver threw' };
+    }
+    const check = checkKeyEffective(result, del.issuedAt);
+    if (!check.effective) {
+      return { valid: false, reason: check.reason };
+    }
   }
 
   return { valid: true };
@@ -432,8 +457,9 @@ export function verifyDelegation(
   ctx: InvocationContext,
   provider?: CryptoProvider,
   registry?: DidMethodRegistry,
+  lookup?: HistoricalKeyLookup,
 ): DelegationVerification {
-  const sigCheck = verifyDelegationSignature(del, provider, registry);
+  const sigCheck = verifyDelegationSignature(del, provider, registry, lookup);
   if (!sigCheck.valid) return sigCheck;
 
   if (del.subjectDid !== ctx.invokerDid) {
