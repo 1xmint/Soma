@@ -25,6 +25,29 @@ Status: canonical
 | `./certificate` | `dist/heart/certificate/public.js` | Certificate module (Gate 6 public surface) |
 | `./signals` | `dist/experiment/signals.js` | Experimental signal helpers |
 
+#### Top-level exports added in 0.6.0
+
+The following exports are available from the main `soma-heart` entry
+point (`.`) as of 0.6.0. They do not introduce new subpath exports.
+
+**Reception receipts** (accountability primitive for capability
+verification):
+
+- `signReceipt`, `verifyReceipt`, `receiptCanonical` — sign, verify,
+  and canonically serialize a `ReceiptPayload` attesting a verifier's
+  evaluation outcome (pass / fail / inconclusive) against a heart's
+  capability class.
+- `EVIDENCE_SUMMARY_MAX` — constant (512 chars) for evidence summary
+  length cap.
+- Types: `ReceiptPayload`, `SignedReceipt`, `ReceiptOutcome`.
+
+**Historical key lookup** (rotation-aware key validity for verifiers):
+
+- `checkKeyEffective` — checks whether a public key was effective at a
+  given timestamp, bridging verifiers and the rotation subsystem.
+- Types: `HistoricalKeyLookup`, `HistoricalKeyLookupHit`,
+  `HistoricalKeyLookupMiss`, `HistoricalKeyLookupResult`.
+
 #### `soma-heart/certificate` public surface
 
 The `./certificate` subpath exports the Gate 6 accepted public surface
