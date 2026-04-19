@@ -11,6 +11,46 @@ Entries are grouped by package and dated.
 
 ---
 
+## soma-heart@0.6.0 — 2026-04-19
+
+Soma Heart accountability + verifier-gap hardening release.
+
+### Added
+
+- **Reception-receipt accountability primitive** (`signReceipt`,
+  `verifyReceipt`, `receiptCanonical`, `EVIDENCE_SUMMARY_MAX`) — a
+  standalone signed receipt that attests: "verifier V evaluated request R
+  against heart H's capability class C and the outcome was pass / fail /
+  inconclusive." Deterministic canonical serialization (JCS-style sorted
+  keys), Ed25519 signatures, and a 512-char evidence summary cap keep
+  receipts compact. No chain linkage — receipts are standalone atoms;
+  aggregation and transport are out of scope for this primitive.
+  New top-level exports on `soma-heart`: `signReceipt`, `verifyReceipt`,
+  `receiptCanonical`, `EVIDENCE_SUMMARY_MAX`, and types `ReceiptPayload`,
+  `SignedReceipt`, `ReceiptOutcome`.
+
+### Fixed
+
+- **Historical key lookup wired into all verifier call sites** (PR #71,
+  `afbeb61`) — `checkKeyEffective` and the `HistoricalKeyLookup`
+  interface now bridge the gap between verifiers (which know issuerDid +
+  issuerPublicKey + issuedAt) and the rotation subsystem (which tracks
+  credential lifecycles with effectiveFrom / effectiveUntil windows).
+  Verifiers no longer need to interact with identityId, credential
+  chains, or rotation events directly. New top-level exports:
+  `checkKeyEffective`, and types `HistoricalKeyLookup`,
+  `HistoricalKeyLookupHit`, `HistoricalKeyLookupMiss`,
+  `HistoricalKeyLookupResult`.
+
+### Notes
+
+- No breaking changes. Purely additive feature + verifier hardening.
+- Test count: 1617 (97 suites).
+- SemVer: pre-1.0 minor bump, consistent with the project's stated
+  policy that `0.x.y` minors may include breaking changes until `1.0.0`.
+
+---
+
 ## soma-heart@0.5.0 — 2026-04-16
 
 Soma Heart certificate module — Gate 6 stabilisation. Implements the
