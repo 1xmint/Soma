@@ -76,10 +76,10 @@ describe('Caveat: custom — fail-closed behavior', () => {
     const { subject, d } = makeDelegation([
       { kind: 'custom', key: 'test:key', value: 'test-value' },
     ]);
-    let capturedCav: Extract<Caveat, { kind: 'custom' }> | null = null;
+    let capturedCav: { key: string; value: string } | null = null;
     let capturedCtxDid: string | null = null;
     const evaluator: CustomCaveatEvaluator = (cav, ctx) => {
-      capturedCav = cav;
+      capturedCav = { key: cav.key, value: cav.value };
       capturedCtxDid = ctx.invokerDid;
       return { valid: true };
     };
