@@ -84,8 +84,8 @@ describe('Caveat: custom — fail-closed behavior', () => {
       return { valid: true };
     };
     checkCaveats(d, { invokerDid: subject.did, capability: 'tool:search' }, evaluator);
-    expect(capturedCav?.key).toBe('test:key');
-    expect(capturedCav?.value).toBe('test-value');
+    expect(capturedCav!.key).toBe('test:key');
+    expect(capturedCav!.value).toBe('test-value');
     expect(capturedCtxDid).toBe(subject.did);
   });
 
