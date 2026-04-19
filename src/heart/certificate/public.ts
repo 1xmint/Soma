@@ -89,3 +89,41 @@ export {
   type PaymentRailBindingOk,
   type PaymentRailBindingFail,
 } from './payment-rail-binding.js';
+
+// §12: policy_ref shape validator
+export {
+  validatePolicyRef,
+  type PolicyRef,
+  type PolicyRefValidResult,
+  type PolicyRefValidOk,
+  type PolicyRefValidFail,
+} from './policy-ref.js';
+
+// §11.3: Certificate chain evaluator
+export {
+  evaluateChain,
+  type CertificateChainLink,
+  type CertificateChainInput,
+  type CertificateChainResult,
+  type ChainEvalOk,
+  type ChainEvalFail,
+} from './chain.js';
+
+// §16: Disclosure / privacy enforcement
+export {
+  validateDisclosure,
+  type DisclosureField,
+  type DisclosureCertificateInput,
+  type DisclosureValidResult,
+  type DisclosureValidOk,
+  type DisclosureValidFail,
+} from './disclosure.js';
+
+// §5: Heart-to-heart integrated verifier
+export {
+  verifyHeartToHeartSignatures,
+  type HeartToHeartCertificateInput,
+  type HeartToHeartResult,
+  type HeartToHeartOk,
+  type HeartToHeartFail,
+} from './heart-to-heart.js';
