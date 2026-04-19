@@ -11,6 +11,71 @@ Entries are grouped by package and dated.
 
 ---
 
+## soma-heart@0.7.0 — 2026-04-19
+
+Soma Heart delegation chain, certificate spec-gap, and hardening release.
+
+### Added
+
+- **Delegation chain verification** (`verifyDelegationChain`) — walks a
+  delegation chain leaf-to-root, verifying cryptographic signatures,
+  subject-issuer linkage, monotonic capability attenuation, monotonic
+  caveat accumulation, and revocation status at every link. Fails closed
+  on unknown errors, unresolvable parents, and broken invariants.
+  New top-level exports on `soma-heart`: `verifyDelegationChain` and
+  types `ChainVerificationResult`, `ChainVerificationSuccess`,
+  `ChainVerificationFailure`, `ChainVerificationOptions`. (PR #76)
+
+- **Certificate spec-gap implementations** — four new verifiers added
+  to `soma-heart/certificate` (PR #77):
+  - `evaluateChain` — evaluates a chain of certificates where each link
+    is independently verified. Fails closed if any link fails. Never
+    exposes a trust-oracle API (§11.2 prohibition). Types:
+    `CertificateChainLink`, `CertificateChainInput`,
+    `CertificateChainResult`, `ChainEvalOk`, `ChainEvalFail`.
+  - `validateDisclosure` — enforces §16 disclosure requirements: when a
+    certificate contains `private_evidence_pointer` evidence, the
+    `disclosure` field must be present. Types: `DisclosureField`,
+    `DisclosureCertificateInput`, `DisclosureValidResult`,
+    `DisclosureValidOk`, `DisclosureValidFail`.
+  - `verifyHeartToHeartSignatures` — for `heart-to-heart` profile
+    certificates, enforces that both issuer and counterparty signatures
+    are present and individually valid (§5). Types:
+    `HeartToHeartCertificateInput`, `HeartToHeartResult`,
+    `HeartToHeartOk`, `HeartToHeartFail`.
+  - `validatePolicyRef` — validates the runtime shape of a §12 verifier
+    policy reference object (`policy_id` required, `policy_hash`
+    optional 64-char lowercase SHA-256 hex). Types: `PolicyRef`,
+    `PolicyRefValidResult`, `PolicyRefValidOk`, `PolicyRefValidFail`.
+
+### Fixed
+
+- **Custom caveat fail-closed** (PR #78) — `checkCaveats()` and
+  `verifyDelegation()` accept an optional `CustomCaveatEvaluator`
+  callback. Unhandled `custom` caveats now fail closed by default
+  (spec-required). `CustomCaveatEvaluator` is now a top-level export
+  on `soma-heart`.
+
+- **Hash length validation** (PR #78) — `SomaCheckHashStore.set()` and
+  `extractIfSomaHash()` now reject hashes shorter than 16 hex chars.
+  New constant `SOMA_CHECK_MIN_HASH_LENGTH` (16) exported from
+  `soma-heart`.
+
+- **dataHash / X-Soma-Hash consistency** (PR #78) — new utility
+  `verifyDataHashConsistency(birthCertDataHash, xSomaHashHeader)` for
+  checking birth-certificate ↔ header hash consistency. Exported from
+  `soma-heart`.
+
+### Notes
+
+- No breaking changes. Purely additive features and spec-required
+  hardening.
+- Test count: 1727 (106 suites).
+- SemVer: pre-1.0 minor bump, consistent with the project's stated
+  policy that `0.x.y` minors may include breaking changes until `1.0.0`.
+
+---
+
 ## soma-heart@0.6.0 — 2026-04-19
 
 Soma Heart accountability + verifier-gap hardening release.

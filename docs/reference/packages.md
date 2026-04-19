@@ -25,6 +25,28 @@ Status: canonical
 | `./certificate` | `dist/heart/certificate/public.js` | Certificate module (Gate 6 public surface) |
 | `./signals` | `dist/experiment/signals.js` | Experimental signal helpers |
 
+#### Top-level exports added in 0.7.0
+
+**Delegation chain** (PR #76):
+
+- `verifyDelegationChain` — walks a delegation chain leaf-to-root,
+  verifying signatures, subject-issuer linkage, monotonic capability
+  attenuation, monotonic caveat accumulation, and revocation at each link.
+- Types: `ChainVerificationResult`, `ChainVerificationSuccess`,
+  `ChainVerificationFailure`, `ChainVerificationOptions`.
+
+**Custom caveat evaluator** (PR #78):
+
+- `CustomCaveatEvaluator` — type for a callback passed to `checkCaveats()`
+  and `verifyDelegation()`. Unhandled `custom` caveats fail closed without it.
+
+**Soma Check hardening** (PR #78):
+
+- `SOMA_CHECK_MIN_HASH_LENGTH` — constant (16 hex chars) for minimum
+  acceptable hash length.
+- `verifyDataHashConsistency` — compares a birth-certificate `dataHash`
+  against an `X-Soma-Hash` header value.
+
 #### Top-level exports added in 0.6.0
 
 The following exports are available from the main `soma-heart` entry
@@ -81,6 +103,18 @@ in-repo use.
   `PaymentRailBindingFail`
 - **Area 12** - Failure modes: `FAILURE_MODES`, `isFailureMode`,
   `createFailure`, `FailureMode`, `CertificateFailure`
+
+- **§12** - policy_ref shape validator: `validatePolicyRef`, `PolicyRef`,
+  `PolicyRefValidResult`, `PolicyRefValidOk`, `PolicyRefValidFail`
+- **§11.3** - Certificate chain evaluator: `evaluateChain`,
+  `CertificateChainLink`, `CertificateChainInput`, `CertificateChainResult`,
+  `ChainEvalOk`, `ChainEvalFail`
+- **§16** - Disclosure / privacy enforcement: `validateDisclosure`,
+  `DisclosureField`, `DisclosureCertificateInput`, `DisclosureValidResult`,
+  `DisclosureValidOk`, `DisclosureValidFail`
+- **§5** - Heart-to-heart integrated verifier: `verifyHeartToHeartSignatures`,
+  `HeartToHeartCertificateInput`, `HeartToHeartResult`, `HeartToHeartOk`,
+  `HeartToHeartFail`
 
 **Not exported (internal-only):**
 

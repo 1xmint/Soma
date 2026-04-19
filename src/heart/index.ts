@@ -66,6 +66,7 @@ export {
   type Caveat,
   type InvocationContext,
   type DelegationVerification,
+  type CustomCaveatEvaluator,
 } from './delegation.js';
 
 // ─── Delegation Chain (SOMA-CAPABILITIES-SPEC steps 6-7) ────────────────────
@@ -478,6 +479,7 @@ export {
 export {
   SOMA_CHECK_PROTOCOL,
   SOMA_CHECK_HEADERS,
+  SOMA_CHECK_MIN_HASH_LENGTH,
   buildSomaCheckResponseHeaders,
   buildSomaCheckRequestHeaders,
   extractIfSomaHash,
@@ -485,6 +487,7 @@ export {
   isSomaCheckResponse,
   shouldRespondUnchanged,
   buildUnchangedResponse,
+  verifyDataHashConsistency,
   SomaCheckHashStore,
   type UnchangedResponse,
   type CheckMetadata,
