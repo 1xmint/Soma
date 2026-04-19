@@ -28,6 +28,7 @@ import {
   checkKeyEffective,
   type HistoricalKeyLookup,
 } from './historical-key-lookup.js';
+import type { PackageProvenance } from '../supply-chain/update-certificate.js';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -81,6 +82,13 @@ export interface BirthCertificate {
   sourceSignature: string | null;
   /** Trust tier based on signature coverage. */
   trustTier: TrustTier;
+  /**
+   * Optional supply-chain provenance for the code running in the heart
+   * that issued this certificate. When present, counterparties can verify
+   * the heart is running an official, ceremony-gated release. When absent,
+   * the certificate is still valid but unverified for code provenance.
+   */
+  packageProvenance?: PackageProvenance;
 }
 
 // ─── Co-signing Protocol ─────────────────────────────────────────────────────
@@ -155,7 +163,8 @@ export function createBirthCertificate(
   parentCertificates: string[] = [],
   provider?: CryptoProvider,
   sourceSignature?: string | null,
-  bornAt?: number
+  bornAt?: number,
+  packageProvenance?: PackageProvenance,
 ): BirthCertificate {
   const p = provider ?? getCryptoProvider();
   const dataHash = sha256(data, p);
@@ -167,10 +176,9 @@ export function createBirthCertificate(
   if (source.heartVerified && resolvedSourceSig !== null) {
     trustTier = "dual-signed";
   } else if (source.heartVerified || resolvedSourceSig !== null) {
-    // Source claims to be hearted but no co-signature — treat as single-signed
     trustTier = "single-signed";
   } else {
-    trustTier = "single-signed"; // Receiver's heart always signs
+    trustTier = "single-signed";
   }
 
   const certContent = canonicalizeCertContent({
@@ -181,15 +189,15 @@ export function createBirthCertificate(
     bornInSession: sessionId,
     parentCertificates,
     trustTier,
+    packageProvenance,
   });
 
-  // Receiver signs
   const contentBytes = new TextEncoder().encode(certContent);
   const receiverSignature = p.encoding.encodeBase64(
     p.signing.sign(contentBytes, signingKeyPair.secretKey)
   );
 
-  return {
+  const cert: BirthCertificate = {
     dataHash,
     source,
     bornAt: resolvedBornAt,
@@ -200,6 +208,10 @@ export function createBirthCertificate(
     sourceSignature: resolvedSourceSig,
     trustTier,
   };
+  if (packageProvenance) {
+    cert.packageProvenance = packageProvenance;
+  }
+  return cert;
 }
 
 /**
@@ -258,6 +270,7 @@ export function birthCertificateFingerprint(
     bornInSession: cert.bornInSession,
     parentCertificates: cert.parentCertificates,
     trustTier: cert.trustTier,
+    packageProvenance: cert.packageProvenance,
   });
   // Newline separators are not ambiguous because canonicalizeCertContent
   // emits compact JSON with no literal newlines, and base64 signatures
@@ -309,6 +322,7 @@ export function verifyBirthCertificate(
     bornInSession: cert.bornInSession,
     parentCertificates: cert.parentCertificates,
     trustTier: cert.trustTier,
+    packageProvenance: cert.packageProvenance,
   });
 
   const contentBytes = new TextEncoder().encode(certContent);
@@ -430,8 +444,9 @@ function canonicalizeCertContent(content: {
   bornInSession: string;
   parentCertificates: string[];
   trustTier: TrustTier;
+  packageProvenance?: PackageProvenance;
 }): string {
-  return JSON.stringify({
+  const obj: Record<string, unknown> = {
     bornAt: content.bornAt,
     bornInSession: content.bornInSession,
     bornThrough: content.bornThrough,
@@ -443,7 +458,18 @@ function canonicalizeCertContent(content: {
       type: content.source.type,
     },
     trustTier: content.trustTier,
-  });
+  };
+  if (content.packageProvenance) {
+    obj.packageProvenance = {
+      ceremonyTier: content.packageProvenance.ceremonyTier,
+      package: content.packageProvenance.package,
+      releaseLogSequence: content.packageProvenance.releaseLogSequence,
+      tarballSha256: content.packageProvenance.tarballSha256,
+      updateCertificateHash: content.packageProvenance.updateCertificateHash,
+      version: content.packageProvenance.version,
+    };
+  }
+  return JSON.stringify(obj);
 }
 
 /** Deterministic serialization of provenance payload for co-signing. */

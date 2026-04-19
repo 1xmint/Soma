@@ -16,3 +16,18 @@ export {
   type ReleaseForkProof,
   type InstallVerification,
 } from "./release-log.js";
+
+export {
+  createUpdateCertificate,
+  addAuthorization,
+  verifyUpdateCertificate,
+  computeUpdateCertificateSigningInput,
+  computeUpdateCertificateHash,
+  verifyPackageProvenance,
+  type UpdateCertificate,
+  type UpdateAuthorization,
+  type AuthorizerRole,
+  type UpdateCertificateVerification,
+  type PackageProvenance,
+  type PackageProvenanceVerification,
+} from "./update-certificate.js";
