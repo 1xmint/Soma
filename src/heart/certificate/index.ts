@@ -91,3 +91,37 @@ export {
   type SignatureVerifyOk,
   type SignatureVerifyFail,
 } from './signature.js';
+
+export {
+  validatePolicyRef,
+  type PolicyRef,
+  type PolicyRefValidResult,
+  type PolicyRefValidOk,
+  type PolicyRefValidFail,
+} from './policy-ref.js';
+
+export {
+  evaluateChain,
+  type CertificateChainLink,
+  type CertificateChainInput,
+  type CertificateChainResult,
+  type ChainEvalOk,
+  type ChainEvalFail,
+} from './chain.js';
+
+export {
+  validateDisclosure,
+  type DisclosureField,
+  type DisclosureCertificateInput,
+  type DisclosureValidResult,
+  type DisclosureValidOk,
+  type DisclosureValidFail,
+} from './disclosure.js';
+
+export {
+  verifyHeartToHeartSignatures,
+  type HeartToHeartCertificateInput,
+  type HeartToHeartResult,
+  type HeartToHeartOk,
+  type HeartToHeartFail,
+} from './heart-to-heart.js';
