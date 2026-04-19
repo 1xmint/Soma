@@ -68,6 +68,16 @@ export {
   type DelegationVerification,
 } from './delegation.js';
 
+// ─── Delegation Chain (SOMA-CAPABILITIES-SPEC steps 6-7) ────────────────────
+
+export {
+  verifyDelegationChain,
+  type ChainVerificationResult,
+  type ChainVerificationSuccess,
+  type ChainVerificationFailure,
+  type ChainVerificationOptions,
+} from './delegation-chain.js';
+
 // ─── Human Delegation (session-scoped human→agent consent) ─────────────────
 
 export {
