@@ -406,6 +406,8 @@ export {
   type TrustTier,
 } from './birth-certificate.js';
 
+export type { PackageProvenance } from '../supply-chain/update-certificate.js';
+
 // ─── Credential Vault (internal — not for direct use) ───────────────────────
 // The vault is intentionally NOT exported. Credentials are only accessible
 // through the heart's generate/callTool/fetchData methods. Exporting the

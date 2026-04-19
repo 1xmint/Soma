@@ -42,7 +42,9 @@ export type HeartbeatEventType =
   | "delegation_revoked"  // this heart revoked a delegation
   // Human consent ceremony (see human-delegation.ts)
   | "consent_required"    // heart asked a human authenticator to approve a session
-  | "consent_granted";    // human authenticator returned a signed HumanDelegation
+  | "consent_granted"     // human authenticator returned a signed HumanDelegation
+  // Supply-chain provenance (see update-certificate.ts)
+  | "self_verification";  // heart verified its own package provenance on startup
 
 /** A single heartbeat — one link in the hash chain. */
 export interface Heartbeat {
