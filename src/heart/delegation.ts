@@ -374,7 +374,7 @@ export function checkCaveats(
           if (!hasWc) return { valid: false, reason: `caveat narrows capability: ${ctx.capability} not allowed` };
         }
         break;
-      case 'custom':
+      case 'custom': {
         if (!customCaveatEvaluator) {
           return {
             valid: false,
@@ -384,6 +384,7 @@ export function checkCaveats(
         const customResult = customCaveatEvaluator(cav, ctx);
         if (!customResult.valid) return customResult;
         break;
+      }
 
       // ─── soma-capabilities/1.1 ───
 
