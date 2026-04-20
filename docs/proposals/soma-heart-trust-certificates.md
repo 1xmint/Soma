@@ -1,4 +1,4 @@
-Status: proposed
+Status: accepted
 
 # Soma Heart Trust Certificates and Evidence-Bound Trust Chains
 

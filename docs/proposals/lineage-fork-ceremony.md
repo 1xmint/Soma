@@ -1,4 +1,4 @@
-Status: proposed
+Status: implemented
 
 # Lineage Fork Ceremony — Cross-Repo Heart Parentage
 

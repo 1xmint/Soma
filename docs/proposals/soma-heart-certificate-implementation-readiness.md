@@ -1,6 +1,6 @@
 # Soma Heart Certificate Implementation Readiness
 
-Status: proposed
+Status: implemented
 
 > Docs-only planning packet for the post-Gate-6 implementation
 > slices of the Soma Heart certificate package surface. This
