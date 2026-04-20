@@ -24,6 +24,7 @@ Status: canonical
 | `./mcp` | `dist/mcp/index.js` | MCP middleware |
 | `./certificate` | `dist/heart/certificate/public.js` | Certificate module (Gate 6 public surface) |
 | `./signals` | `dist/experiment/signals.js` | Experimental signal helpers |
+| `./supply-chain` | `dist/supply-chain/index.js` | Release log, update certificates |
 
 #### Top-level exports added in 0.7.0
 
