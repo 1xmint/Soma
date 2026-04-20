@@ -76,6 +76,8 @@ export default tseslint.config(
         },
       ],
       '@typescript-eslint/ban-ts-comment': 'off',
+      'no-useless-assignment': 'warn',
+      'preserve-caught-error': 'warn',
     },
   },
 );
