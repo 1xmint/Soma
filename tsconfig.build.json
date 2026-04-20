@@ -20,7 +20,8 @@
     "src/heart/**/*",
     "src/sensorium/**/*",
     "src/mcp/**/*",
-    "src/experiment/signals.ts"
+    "src/experiment/signals.ts",
+    "src/supply-chain/**/*"
   ],
   "exclude": ["node_modules", "dist"]
 }
