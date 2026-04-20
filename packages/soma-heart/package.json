@@ -5,6 +5,9 @@
   "type": "module",
   "main": "./dist/heart/index.js",
   "types": "./dist/heart/index.d.ts",
+  "bin": {
+    "soma-heart-fork": "./dist/heart/bin/soma-heart-fork.js"
+  },
   "publishConfig": {
     "access": "public",
     "provenance": true
