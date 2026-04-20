@@ -1,7 +1,7 @@
 # Soma Rotation — Credential Rotation Protocol
 
 **Version:** `soma-rotation/0.1`
-**Status:** Draft
+**Status:** Accepted
 **Author:** Joshua Fair (`1xmint`)
 **Repository:** [github.com/1xmint/Soma](https://github.com/1xmint/Soma)
 
