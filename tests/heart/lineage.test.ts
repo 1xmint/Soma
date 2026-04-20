@@ -12,6 +12,10 @@ import {
   hasCapability,
   type HeartLineage,
 } from "../../src/heart/lineage.js";
+import type {
+  HistoricalKeyLookup,
+  HistoricalKeyLookupResult,
+} from "../../src/heart/historical-key-lookup.js";
 
 const crypto = getCryptoProvider();
 
@@ -184,5 +188,151 @@ describe("Capability resolution", () => {
     };
     const caps = effectiveCapabilities(lineage);
     expect(caps).toEqual(["tool:search", "tool:db"]);
+  });
+});
+
+// ─── HistoricalKeyLookup integration ───────────────────────────────────────
+
+const mockLookup = (returnValue: HistoricalKeyLookupResult): HistoricalKeyLookup => ({
+  resolve(_publicKey: Uint8Array, _timestamp: number) {
+    return returnValue;
+  },
+});
+
+describe("HistoricalKeyLookup integration", () => {
+  it("verifyLineageCertificate with lookup — valid key at issuedAt", () => {
+    const parent = makeCommitment();
+    const child = makeCommitment();
+    const cert = createLineageCertificate({
+      parent: parent.commitment,
+      parentSigningKey: parent.kp.secretKey,
+      child: child.commitment,
+    });
+    const lookup = mockLookup({
+      found: true,
+      effectiveFrom: cert.issuedAt - 1000,
+      effectiveUntil: null,
+    });
+    const check = verifyLineageCertificate(cert, undefined, lookup);
+    expect(check.valid).toBe(true);
+  });
+
+  it("verifyLineageCertificate with lookup — rotated-out key", () => {
+    const parent = makeCommitment();
+    const child = makeCommitment();
+    const cert = createLineageCertificate({
+      parent: parent.commitment,
+      parentSigningKey: parent.kp.secretKey,
+      child: child.commitment,
+    });
+    const lookup = mockLookup({
+      found: true,
+      effectiveFrom: cert.issuedAt - 10000,
+      effectiveUntil: cert.issuedAt - 5000,
+    });
+    const check = verifyLineageCertificate(cert, undefined, lookup);
+    expect(check.valid).toBe(false);
+    if (!check.valid) expect(check.reason).toContain("rotated out");
+  });
+
+  it("verifyLineageCertificate with lookup — key not found", () => {
+    const parent = makeCommitment();
+    const child = makeCommitment();
+    const cert = createLineageCertificate({
+      parent: parent.commitment,
+      parentSigningKey: parent.kp.secretKey,
+      child: child.commitment,
+    });
+    const lookup = mockLookup({
+      found: false,
+      reason: "credential-not-in-chain",
+    });
+    const check = verifyLineageCertificate(cert, undefined, lookup);
+    expect(check.valid).toBe(false);
+  });
+
+  it("verifyLineageCertificate with lookup — resolve throws", () => {
+    const parent = makeCommitment();
+    const child = makeCommitment();
+    const cert = createLineageCertificate({
+      parent: parent.commitment,
+      parentSigningKey: parent.kp.secretKey,
+      child: child.commitment,
+    });
+    const lookup: HistoricalKeyLookup = {
+      resolve() {
+        throw new Error("lookup explosion");
+      },
+    };
+    const check = verifyLineageCertificate(cert, undefined, lookup);
+    expect(check.valid).toBe(false);
+    if (!check.valid) expect(check.reason).toBe("key lookup failed");
+  });
+
+  it("verifyLineageChain with lookup — valid chain", () => {
+    const root = makeCommitment();
+    const child = makeCommitment();
+    const cert = createLineageCertificate({
+      parent: root.commitment,
+      parentSigningKey: root.kp.secretKey,
+      child: child.commitment,
+    });
+    const lineage: HeartLineage = {
+      did: child.commitment.did,
+      rootDid: root.commitment.did,
+      chain: [cert],
+    };
+    const lookup = mockLookup({
+      found: true,
+      effectiveFrom: cert.issuedAt - 1000,
+      effectiveUntil: null,
+    });
+    const check = verifyLineageChain(lineage, undefined, lookup);
+    expect(check.valid).toBe(true);
+  });
+
+  it("verifyLineageChain with lookup — one cert has rotated key", () => {
+    const a = makeCommitment();
+    const b = makeCommitment();
+    const c = makeCommitment();
+
+    const cert1 = createLineageCertificate({
+      parent: a.commitment,
+      parentSigningKey: a.kp.secretKey,
+      child: b.commitment,
+    });
+    const cert2 = createLineageCertificate({
+      parent: b.commitment,
+      parentSigningKey: b.kp.secretKey,
+      child: c.commitment,
+    });
+
+    const lineage: HeartLineage = {
+      did: c.commitment.did,
+      rootDid: a.commitment.did,
+      chain: [cert1, cert2],
+    };
+
+    const lookup: HistoricalKeyLookup = {
+      resolve(_publicKey: Uint8Array, _timestamp: number) {
+        const pubKeyBase64 = crypto.encoding.encodeBase64(_publicKey);
+        if (pubKeyBase64 === a.commitment.publicKey) {
+          return {
+            found: true,
+            effectiveFrom: cert1.issuedAt - 1000,
+            effectiveUntil: null,
+          };
+        }
+        return {
+          found: true,
+          effectiveFrom: cert2.issuedAt - 10000,
+          effectiveUntil: cert2.issuedAt - 5000,
+        };
+      },
+    };
+
+    const check = verifyLineageChain(lineage, undefined, lookup);
+    expect(check.valid).toBe(false);
+    if (!check.valid) expect(check.reason).toContain("chain[1]");
   });
 });

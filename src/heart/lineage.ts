@@ -28,6 +28,10 @@ import {
   type GenomeCommitment,
   publicKeyToDid,
 } from '../core/genome.js';
+import {
+  type HistoricalKeyLookup,
+  checkKeyEffective,
+} from './historical-key-lookup.js';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -120,10 +124,16 @@ export type LineageVerification =
 /**
  * Verify a single lineage certificate — signature + expiry + well-formedness.
  * Does NOT check revocation (that's the caller's responsibility).
+ *
+ * @param lookup — optional rotation-aware key validity resolver. When
+ *   provided, confirms parentPublicKey was effective at issuedAt via
+ *   the rotation subsystem. When omitted, existing self-contained
+ *   verification is preserved. Follows the verifyBirthCertificate pattern.
  */
 export function verifyLineageCertificate(
   cert: LineageCertificate,
   provider?: CryptoProvider,
+  lookup?: HistoricalKeyLookup,
 ): LineageVerification {
   const p = provider ?? getCryptoProvider();
 
@@ -132,6 +142,20 @@ export function verifyLineageCertificate(
   const signingInput = domainSigningInput(LINEAGE_DOMAIN, payload);
   const sigBytes = p.encoding.decodeBase64(signature);
   const parentPubKey = p.encoding.decodeBase64(cert.parentPublicKey);
+
+  // Rotation-aware key validity check (opt-in).
+  if (lookup) {
+    let result;
+    try {
+      result = lookup.resolve(parentPubKey, cert.issuedAt);
+    } catch {
+      return { valid: false, reason: 'key lookup failed' };
+    }
+    const check = checkKeyEffective(result, cert.issuedAt);
+    if (!check.effective) {
+      return { valid: false, reason: check.reason };
+    }
+  }
 
   if (!p.signing.verify(signingInput, sigBytes, parentPubKey)) {
     return { valid: false, reason: 'invalid signature' };
@@ -157,10 +181,16 @@ export function verifyLineageCertificate(
 /**
  * Verify an entire lineage chain — every cert must validate AND each parent
  * must be the previous cert's child. The first cert's parentDid is the root.
+ *
+ * @param lookup — optional rotation-aware key validity resolver. When
+ *   provided, confirms parentPublicKey was effective at issuedAt via
+ *   the rotation subsystem. When omitted, existing self-contained
+ *   verification is preserved. Follows the verifyBirthCertificate pattern.
  */
 export function verifyLineageChain(
   lineage: HeartLineage,
   provider?: CryptoProvider,
+  lookup?: HistoricalKeyLookup,
 ): LineageVerification {
   if (lineage.chain.length === 0) {
     return { valid: false, reason: 'empty chain' };
@@ -173,7 +203,7 @@ export function verifyLineageChain(
 
   for (let i = 0; i < lineage.chain.length; i++) {
     const cert = lineage.chain[i];
-    const check = verifyLineageCertificate(cert, provider);
+    const check = verifyLineageCertificate(cert, provider, lookup);
     if (!check.valid) {
       return { valid: false, reason: `chain[${i}]: ${check.reason}` };
     }
