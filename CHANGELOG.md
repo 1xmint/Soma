@@ -11,6 +11,48 @@ Entries are grouped by package and dated.
 
 ---
 
+## soma-heart@0.8.0 — 2026-04-20
+
+Lineage fork ceremony release — offline provisioning of cross-repo
+heart parentage.
+
+### Added
+
+- **Fork ceremony library** (`forkCeremony`) — orchestrates offline
+  lineage provisioning between two independently-deployed hearts.
+  Decrypts parent and child blobs, creates a lineage certificate
+  binding parent→child, patches the child's HeartState with the
+  full lineage chain, and re-encrypts. Supports multi-level
+  chains (A→B→C) and capability attenuation. New exports:
+  `forkCeremony`, `ForkCeremonyOptions`, `ForkCeremonyResult`.
+  (PR #82)
+
+- **CLI tool** (`soma-heart-fork`) — command-line interface for the
+  fork ceremony. Reads secrets from environment variables (never
+  CLI arguments), validates inputs, runs the ceremony, writes the
+  patched child blob. New bin entry in package.json. (PR #82)
+
+- **HistoricalKeyLookup for lineage verification** —
+  `verifyLineageCertificate` and `verifyLineageChain` now accept
+  an optional `HistoricalKeyLookup` parameter for rotation-aware
+  key validity checking, matching the pattern used by
+  `verifyBirthCertificate`. When omitted, existing behavior is
+  preserved (non-breaking). (PR #82)
+
+### Documentation
+
+- **Lineage fork ceremony proposal** — full design document at
+  `docs/proposals/lineage-fork-ceremony.md` covering ceremony
+  protocol, CLI interface, key rotation interaction, security
+  requirements, and scope boundaries. (PR #80)
+
+- **ADR-0006** — ratifies the lineage fork ceremony design with
+  9 decision rows (D1-D9) covering offline ceremony model, CLI
+  interface, opt-in lineage, HistoricalKeyLookup integration,
+  ceremony library exports, and scope boundaries. (PR #81)
+
+---
+
 ## soma-heart@0.7.0 — 2026-04-19
 
 Soma Heart delegation chain, certificate spec-gap, and hardening release.
