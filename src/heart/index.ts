@@ -54,6 +54,14 @@ export {
   type LineageVerification,
 } from './lineage.js';
 
+// ─── Fork Ceremony (offline lineage provisioning) ───────────────────────────
+
+export {
+  forkCeremony,
+  type ForkCeremonyOptions,
+  type ForkCeremonyResult,
+} from './fork-ceremony.js';
+
 // ─── Delegation (macaroons-style capability tokens) ─────────────────────────
 
 export {
