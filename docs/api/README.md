@@ -77,7 +77,90 @@ entry point for agent operators.
 | `confirmSession` | `(accept, init, keyPair) => SessionConfirm` | Confirm a mutual session handshake |
 | `buildSomaCheckResponseHeaders` | `(data, keyStore) => Headers` | Build Soma Check response headers for conditional payment |
 | `verifyDataHashConsistency` | `(cert, header) => boolean` | Compare a birth-certificate dataHash against X-Soma-Hash header |
-| `evaluateLadder` | `(input, ladder?) => CeremonyTier` | Evaluate a tier ladder against provided factors |
+| `evaluateLadder` | `(input: TierEvalInput, ladder?: TierLadder) => CeremonyTier` | Evaluate a tier ladder against provided factors |
+| `effectiveCapabilities` | `(lineage: HeartLineage) => string[] \| null` | Compute effective capabilities from a lineage chain |
+| `hasCapability` | `(granted: string[], requested: string) => boolean` | Check if a capability set grants a specific capability |
+| `verifyDelegationSignature` | `(d: Delegation, pk: Uint8Array) => boolean` | Verify only the cryptographic signature on a delegation |
+| `createHumanDelegation` | `(opts: { ... }) => HumanDelegation` | Create a session-scoped human→agent consent delegation |
+| `verifyHumanDelegation` | `(delegation, pk, verifier?) => HumanDelegationVerification` | Verify a human delegation attestation and signature |
+| `computeChallengeHash` | `(challenge: string, nonce: string) => string` | Hash a human-delegation challenge with a nonce |
+| `createCeremonyPolicy` | `(opts?: PolicyOverrides) => CeremonyPolicy` | Create a ceremony tier policy from defaults + overrides |
+| `DEFAULT_CEREMONY_POLICY` | `PolicyMap` | Default action→tier mapping for ceremony policy |
+| `HumanSessionRegistry` | `class` | Registry for active human approval sessions |
+| `verifyMutualSession` | `(opts: { ... }) => SessionVerification` | Verify a completed mutual session handshake |
+| `computeTranscriptHash` | `(init, accept, confirm) => string` | Hash the full mutual-session transcript |
+| `RevocationRegistry` | `class` | In-memory registry of revocation events |
+| `RevocationLog` | `class` | Append-only, tamper-evident revocation log chain |
+| `SpendLog` | `class` | Cryptographic spend-budget enforcement log |
+| `signSpendHead` | `(opts: { ... }) => SpendHead` | Sign the current head of a spend log |
+| `verifySpendHead` | `(head, pk) => SpendVerification` | Verify a signed spend-log head |
+| `detectDoubleSpend` | `(receipts: SpendReceipt[]) => DoubleSpendProof \| null` | Detect conflicting spend receipts |
+| `verifyShares` | `(shares: SecretShare[], k: number) => boolean` | Verify that shares are consistent |
+| `verifyAllSubsetsReconstruct` | `(shares, k, expected) => boolean` | Verify all k-subsets reconstruct to the same secret |
+| `outputToInt` | `(output: Uint8Array, bound: number) => number` | Convert VRF output to a bounded integer |
+| `combineBeacon` | `(outputs: VrfOutput[]) => Uint8Array` | Combine multiple VRF outputs into a single beacon |
+| `createAttestationDocument` | `(opts: { ... }) => AttestationDocument` | Create a TEE attestation document |
+| `verifyAttestationDocument` | `(doc, verifier, policy?) => Promise<AttestationVerification>` | Verify a TEE attestation document |
+| `NoopVerifier` | `class` | No-op TEE verifier (always passes) |
+| `MockTeeVerifier` | `class` | Mock TEE verifier for testing |
+| `InProcessBackend` | `class` | In-process signing backend (keys in memory) |
+| `DelegatedBackend` | `class` | Delegated signing backend (HSM / hardware wallet) |
+| `BackendRegistry` | `class` | Registry of available signing backends |
+| `handleToDid` | `(handle: SigningKeyHandle) => string` | Convert a signing key handle to a DID |
+| `shareExistingKey` | `(opts: ShareExistingKeyOpts) => ThresholdKeyPair` | Split an existing secret key into threshold shares |
+| `verifyThresholdSignature` | `(sig, message, pk) => boolean` | Verify a threshold signature against a public key |
+| `SigningCeremony` | `class` | Orchestrator for M-of-N threshold signing ceremonies |
+| `AlgorithmRegistry` | `class` | Registry of hybrid signing algorithms |
+| `verifyHybridSignature` | `(sig, message, keyPair, policy?) => HybridVerification` | Verify a hybrid (multi-algorithm) signature |
+| `hybridPublicKeys` | `(keyPair: HybridKeyPair) => Record<string, Uint8Array>` | Extract public keys from a hybrid key pair |
+| `hybridFingerprint` | `(keyPair: HybridKeyPair) => string` | Compute a fingerprint of a hybrid key pair |
+| `verifySeedInfluence` | `(prompt, seed, output) => boolean` | Verify that a seed influenced the output |
+| `deriveHmacKey` | `(sessionKey: Uint8Array) => Uint8Array` | Derive an HMAC key from a session key |
+| `computeTokenHmac` | `(key, token, index) => string` | Compute HMAC for a single token |
+| `verifyTokenHmac` | `(key, token, index, expected) => boolean` | Verify a token HMAC |
+| `HeartbeatChain` | `class` | Tamper-evident hash chain of heartbeat events |
+| `createUnsignedBirthCertificate` | `(data, sources, opts?) => BirthCertificate` | Create an unsigned birth certificate (no key pair needed) |
+| `createDataProvenance` | `(opts: { ... }) => DataProvenance` | Create a data provenance record |
+| `signDataProvenance` | `(provenance, keyPair) => DataProvenance` | Sign a data provenance record |
+| `verifyDataProvenance` | `(provenance, pk) => boolean` | Verify a data provenance signature |
+| `verifySourceSignature` | `(source, cert) => boolean` | Verify an individual source signature on a birth certificate |
+| `verifyDataIntegrity` | `(data: string, cert: BirthCertificate) => boolean` | Verify data integrity against a birth certificate hash |
+| `verifyBirthCertificateChain` | `(chain: BirthCertificate[]) => boolean` | Verify a chain of linked birth certificates |
+| `FactorRegistry` | `class` | Registry of authentication factors bound to DIDs |
+| `WELL_KNOWN_FACTOR_TYPES` | `const` | Well-known factor type identifiers (password, totp, webauthn, etc.) |
+| `StepUpService` | `class` | Service for live human approval of high-risk delegations |
+| `FactorVerifierRegistry` | `class` | Registry of factor assertion verifiers |
+| `verifyChallengeSignature` | `(challenge, sig, pk) => boolean` | Verify a step-up challenge response signature |
+| `verifyStepUpAttestation` | `(attestation, pk, verifiers) => StepUpVerification` | Verify a complete step-up attestation |
+| `computeActionDigest` | `(action: object) => string` | Compute a digest of the action being approved |
+| `BaseStepUpOracle` | `class` | Base class for step-up delivery oracles |
+| `CliPromptOracle` | `class` | CLI-based step-up oracle (interactive terminal prompt) |
+| `OracleChain` | `class` | Chain of oracles — tries each in order until one succeeds |
+| `checkPredicate` | `(predicate: TierPredicate, input: TierEvalInput) => boolean` | Evaluate a single tier predicate |
+| `evaluateLadderDetailed` | `(input, ladder?) => { tier, matchedRule, allResults }` | Evaluate tier ladder with full diagnostic output |
+| `DEFAULT_LADDER` | `TierLadder` | Default tier ladder (recommended starting point) |
+| `PARANOID_LADDER` | `TierLadder` | High-security tier ladder |
+| `createAttestation` | `(opts: { ... }) => IdentityAttestation` | Create an identity attestation for sybil resistance |
+| `verifyAttestation` | `(attestation, pk) => AttestationVerification` | Verify an identity attestation signature |
+| `AttestationRegistry` | `class` | Registry of identity attestations and reputation scores |
+| `createDisclosableDocument` | `(opts: { ... }) => DisclosableDocument` | Create a document with selective disclosure support |
+| `verifyDisclosableDocument` | `(doc, pk) => DisclosureVerification` | Verify a disclosable document's root signature |
+| `createDisclosureProof` | `(doc, fields: string[]) => DisclosureProof` | Create a proof revealing only selected fields |
+| `verifyDisclosureProof` | `(proof, pk) => DisclosureVerification` | Verify a selective disclosure proof |
+| `SystemTimeSource` | `class` | System clock time source |
+| `MonotonicTimeSource` | `class` | Monotonic clock time source (never goes backward) |
+| `verifyWitnessQuorum` | `(witnesses, threshold, opts?) => QuorumVerification` | Verify a quorum of time witnesses |
+| `InMemoryTransport` | `class` | In-memory gossip transport for testing |
+| `GossipPeer` | `class` | Gossip peer for bounded revocation propagation |
+| `SOMA_CHECK_PROTOCOL` | `const` | Protocol identifier: `"soma-check/1.0"` |
+| `SOMA_CHECK_HEADERS` | `const` | Header name constants for Soma Check |
+| `buildSomaCheckRequestHeaders` | `(lastKnownHash: string) => Record<string, string>` | Build Soma Check request headers (client side) |
+| `extractIfSomaHash` | `(headers) => string \| undefined` | Extract If-Soma-Hash from request headers |
+| `extractSomaHash` | `(headers) => string \| undefined` | Extract X-Soma-Hash from response headers |
+| `isSomaCheckResponse` | `(headers) => boolean` | Check if response headers indicate a Soma Check response |
+| `shouldRespondUnchanged` | `(requestHash, currentHash) => boolean` | Check if data is unchanged (hashes match) |
+| `buildUnchangedResponse` | `(hash) => UnchangedResponse` | Build a 304-like unchanged response |
+| `SomaCheckHashStore` | `class` | Server-side hash store for Soma Check protocol |
 
 
 ### Key Types
@@ -231,6 +314,7 @@ user-facing rotation API.
 | `DEFAULT_POLICY` | `ControllerPolicy` | Default rotation policy (recommended starting point) |
 | `DEFAULT_TTL_POLICY` | `TtlPolicy` | Default TTL policy for credential expiry |
 | `POLICY_FLOORS` | `object` | Minimum enforced values for policy parameters |
+| `SNAPSHOT_VERSION` | `number` | Current version of the controller snapshot format |
 
 ### Error Classes
 
@@ -251,6 +335,9 @@ user-facing rotation API.
 | `RotationEvent` | A single rotation step in the append-only event log |
 | `AlgorithmSuite` | `"ed25519"` or other registered algorithm identifier |
 | `HistoricalCredentialLookupResult` | Result of looking up a credential effective at a past timestamp |
+| `ControllerSnapshot` | Serializable snapshot of controller state |
+| `CredentialClass` | Classification of a credential (e.g. identity, signing, encryption) |
+| `RotationEventStatus` | Status of a rotation event (e.g. staged, committed, revoked) |
 
 ### Usage Examples
 
@@ -286,6 +373,8 @@ algorithms by providing a custom `CryptoProvider`.
 |---|---|---|
 | `getCryptoProvider` | `() => CryptoProvider` | Get the currently active global crypto provider |
 | `setCryptoProvider` | `(provider: CryptoProvider) => void` | Replace the global provider (affects all subsequent calls) |
+| `resetCryptoProvider` | `() => void` | Reset the global provider to the default NaCl/SHA-256 suite |
+| `DEFAULT_PROVIDER` | `CryptoProvider` | The default provider: Ed25519 + X25519 + XSalsa20-Poly1305 + SHA-256 |
 
 ### Key Interfaces
 
@@ -298,6 +387,7 @@ algorithms by providing a custom `CryptoProvider`.
 | `HashingProvider` | `hash()`, `deriveKey()` (HKDF) |
 | `HmacProvider` | `compute()`, `verify()` |
 | `EncodingProvider` | `encodeBase64()`, `decodeBase64()`, `encodeUTF8()`, `decodeUTF8()` |
+| `RandomProvider` | `randomBytes(length)` — cryptographically secure random bytes |
 | `SignKeyPair` | `{ publicKey: Uint8Array, secretKey: Uint8Array }` |
 | `BoxKeyPair` | `{ publicKey: Uint8Array, secretKey: Uint8Array }` (key-exchange pair) |
 
@@ -680,9 +770,11 @@ structural layout, temporal streaming stats — rather than what it says.
 |---|---|---|
 | `extractCognitiveSignals` | `(text: string) => CognitiveSignals` | Count hedge, certainty, disclaimer, and empathy markers |
 | `extractStructuralSignals` | `(text: string) => StructuralSignals` | Extract layout metrics: word count, list ratio, header count, etc. |
-| `extractTemporalSignalsLegacy` | `(trace: StreamingTrace) => TemporalSignals` | Extract streaming timing metrics from a raw trace |
-| `extractErrorSignals` | `(text: string) => ErrorSignals` | Detect refusals, uncertainty admissions, self-corrections |
-| `extractPhenotypicSignals` | `(text, trace?, senses?) => PhenotypicSignals` | Full signal extraction: cognitive + structural + temporal + error + optional senses |
+| `extractTemporalSignals` | `(trace: StreamingTrace) => TemporalSignals` | Extract streaming timing metrics from a raw trace |
+| `extractErrorSignals` | `(text: string, probeCategory: string) => ErrorSignals` | Detect refusals, uncertainty admissions, self-corrections |
+| `extractAllSignals` | `(responseText: string, trace: StreamingTrace, probeCategory: string) => PhenotypicSignals` | Full signal extraction: cognitive + structural + temporal + error + senses |
+| `signalsToFeatureVector` | `(signals: PhenotypicSignals) => number[]` | Flatten phenotypic signals into a numeric feature vector for ML classification |
+| `FEATURE_NAMES` | `string[]` | Feature names corresponding to `signalsToFeatureVector` output |
 
 ### Key Types
 
