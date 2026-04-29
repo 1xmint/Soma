@@ -72,6 +72,10 @@ export const observationRecordSchema = observationItemSchema.extend({
   repo_path: z.string(),
   /** Commit hash for git_commit observations — used for dedup */
   commit_hash: z.string().optional(),
+  /** ISO 8601 timestamp when this observation was successfully submitted to vera-knowledge */
+  submitted_at: z.string().optional(),
+  /** Batch ID returned by vera-knowledge when this observation was submitted */
+  submission_batch_id: z.string().optional(),
 });
 
 export type ObservationRecord = z.infer<typeof observationRecordSchema>;

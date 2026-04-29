@@ -7,13 +7,15 @@
  *
  * Schema:
  *   observations(
- *     id TEXT PRIMARY KEY,          -- UUID
- *     type TEXT NOT NULL,           -- observation type e.g. "git_commit"
- *     content TEXT NOT NULL,        -- JSON string
- *     observed_at TEXT NOT NULL,    -- ISO 8601 (from the observation)
- *     created_at TEXT NOT NULL,     -- ISO 8601 (when we stored it)
- *     repo_path TEXT NOT NULL,      -- absolute path to source repo
- *     commit_hash TEXT              -- for git_commit dedup; NULL for other types
+ *     id TEXT PRIMARY KEY,              -- UUID
+ *     type TEXT NOT NULL,               -- observation type e.g. "git_commit"
+ *     content TEXT NOT NULL,            -- JSON string
+ *     observed_at TEXT NOT NULL,        -- ISO 8601 (from the observation)
+ *     created_at TEXT NOT NULL,         -- ISO 8601 (when we stored it)
+ *     repo_path TEXT NOT NULL,          -- absolute path to source repo
+ *     commit_hash TEXT,                 -- for git_commit dedup; NULL for other types
+ *     submitted_at TEXT,                -- ISO 8601 when submitted to vera-knowledge
+ *     submission_batch_id TEXT          -- batch ID returned by vera-knowledge
  *   )
  *
  * NOTE: sql.js is an in-memory database. Call save() (or close()) to persist
@@ -28,13 +30,15 @@ import type { ObservationItem, ObservationRecord } from './types.js';
 
 const CREATE_TABLE_SQL = `
 CREATE TABLE IF NOT EXISTS observations (
-  id          TEXT PRIMARY KEY,
-  type        TEXT NOT NULL,
-  content     TEXT NOT NULL,
-  observed_at TEXT NOT NULL,
-  created_at  TEXT NOT NULL,
-  repo_path   TEXT NOT NULL,
-  commit_hash TEXT,
+  id                  TEXT PRIMARY KEY,
+  type                TEXT NOT NULL,
+  content             TEXT NOT NULL,
+  observed_at         TEXT NOT NULL,
+  created_at          TEXT NOT NULL,
+  repo_path           TEXT NOT NULL,
+  commit_hash         TEXT,
+  submitted_at        TEXT,
+  submission_batch_id TEXT,
   UNIQUE(commit_hash)
 );
 
@@ -44,6 +48,12 @@ CREATE INDEX IF NOT EXISTS idx_observations_repo_path
 CREATE INDEX IF NOT EXISTS idx_observations_observed_at
   ON observations (observed_at);
 `;
+
+// Column migrations for schema evolution (safe to re-run — wrapped in try/catch).
+const MIGRATE_SQL_STEPS = [
+  `ALTER TABLE observations ADD COLUMN submitted_at TEXT`,
+  `ALTER TABLE observations ADD COLUMN submission_batch_id TEXT`,
+];
 
 export interface QueryOptions {
   repoPath?: string;
@@ -76,6 +86,17 @@ export class ObservationStore {
     }
 
     db.run(CREATE_TABLE_SQL);
+
+    // Schema evolution: add new columns if they don't exist yet.
+    // Each step is safe to re-run — the catch swallows "duplicate column" errors.
+    for (const step of MIGRATE_SQL_STEPS) {
+      try {
+        db.run(step);
+      } catch {
+        // Column already exists — this is expected on re-open of an existing db.
+      }
+    }
+
     const store = new ObservationStore(db, dbPath);
     store.save();
     return store;
@@ -115,6 +136,8 @@ export class ObservationStore {
       created_at: createdAt,
       repo_path: repoPath,
       commit_hash: commitHash,
+      submitted_at: undefined,
+      submission_batch_id: undefined,
     };
   }
 
@@ -189,7 +212,8 @@ export class ObservationStore {
 
     const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
     const sql = `
-      SELECT id, type, content, observed_at, created_at, repo_path, commit_hash
+      SELECT id, type, content, observed_at, created_at, repo_path, commit_hash,
+             submitted_at, submission_batch_id
       FROM observations
       ${where}
       ORDER BY observed_at DESC
@@ -200,7 +224,48 @@ export class ObservationStore {
     const result = this.db.exec(sql, params);
     if (result.length === 0 || !result[0]) return [];
 
-    const { columns, values } = result[0];
+    return this.rowsToRecords(result[0]);
+  }
+
+  /**
+   * Return observations that have not yet been submitted (submitted_at IS NULL).
+   * Ordered by observed_at ASC (oldest first). Default limit 50.
+   */
+  getUnsubmitted(limit = 50): ObservationRecord[] {
+    const sql = `
+      SELECT id, type, content, observed_at, created_at, repo_path, commit_hash,
+             submitted_at, submission_batch_id
+      FROM observations
+      WHERE submitted_at IS NULL
+      ORDER BY observed_at ASC
+      LIMIT ?
+    `;
+    const result = this.db.exec(sql, [limit]);
+    if (result.length === 0 || !result[0]) return [];
+    return this.rowsToRecords(result[0]);
+  }
+
+  /**
+   * Mark a set of observations (identified by commit_hash) as submitted.
+   * Updates submitted_at and submission_batch_id, then persists to disk.
+   */
+  markSubmitted(commitHashes: string[], batchId: string): void {
+    if (commitHashes.length === 0) return;
+    const submittedAt = new Date().toISOString();
+    for (const hash of commitHashes) {
+      this.db.run(
+        `UPDATE observations SET submitted_at = ?, submission_batch_id = ?
+         WHERE commit_hash = ?`,
+        [submittedAt, batchId, hash]
+      );
+    }
+    this.save();
+  }
+
+  // ---- Private helpers ----
+
+  private rowsToRecords(resultRow: { columns: string[]; values: unknown[][] }): ObservationRecord[] {
+    const { columns, values } = resultRow;
     return values.map((row) => {
       const r: Record<string, unknown> = {};
       columns.forEach((col, i) => { r[col] = row[i]; });
@@ -212,6 +277,8 @@ export class ObservationStore {
         created_at: r['created_at'] as string,
         repo_path: r['repo_path'] as string,
         commit_hash: r['commit_hash'] != null ? r['commit_hash'] as string : undefined,
+        submitted_at: r['submitted_at'] != null ? r['submitted_at'] as string : undefined,
+        submission_batch_id: r['submission_batch_id'] != null ? r['submission_batch_id'] as string : undefined,
       };
     });
   }

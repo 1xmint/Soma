@@ -27,8 +27,9 @@ submits signed pattern summaries to vera-knowledge.
 
 ## Dependencies
 
-- `better-sqlite3` — local observation store (synchronous, no server needed)
+- `sql.js` — local observation store (pure-JS SQLite, in-memory + persisted to disk)
 - `zod` — schema validation
+- `soma-heart` — Soma cryptographic provider (Ed25519 signing for submission)
 - `git` CLI — reading commits via child_process (no npm git packages)
 - Node.js >= 22.12.0
 
@@ -45,7 +46,8 @@ See `src/lib/types.ts` for the full type definitions and Zod schemas.
 
 - TypeScript (Node.js, ESM)
 - Zod — schema validation
-- better-sqlite3 — local store
+- sql.js — local store (pure-JS SQLite, no native compilation)
+- soma-heart — Ed25519 signing (Soma crypto provider)
 - Node.js built-in test runner
 
 ## Week 1 Scope

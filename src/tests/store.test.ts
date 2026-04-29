@@ -124,3 +124,84 @@ describe('ObservationStore', () => {
     assert.equal((found.content as Record<string, unknown>)['commit_hash'], hash);
   });
 });
+
+// ---- Submission tracking tests ----
+
+describe('ObservationStore — submission tracking', () => {
+  let tmpDir: string;
+  let store: ObservationStore;
+
+  before(async () => {
+    tmpDir = mkdtempSync(join(tmpdir(), 'vera-observer-submit-test-'));
+    store = await ObservationStore.open(join(tmpDir, 'submit-test.db'));
+
+    // Insert 4 observations with distinct dates and hashes
+    store.insert(makeGitCommitItem('1'.repeat(40), '2024-03-01T00:00:00Z'), '/repo');
+    store.insert(makeGitCommitItem('2'.repeat(40), '2024-03-02T00:00:00Z'), '/repo');
+    store.insert(makeGitCommitItem('3'.repeat(40), '2024-03-03T00:00:00Z'), '/repo');
+    store.insert(makeGitCommitItem('4'.repeat(40), '2024-03-04T00:00:00Z'), '/repo');
+  });
+
+  after(() => {
+    store.close();
+    rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  test('getUnsubmitted returns all observations when none submitted', () => {
+    const unsubmitted = store.getUnsubmitted();
+    assert.equal(unsubmitted.length, 4, 'All 4 records should be unsubmitted');
+    // Confirm submitted_at is undefined/null for all
+    for (const r of unsubmitted) {
+      assert.ok(r.submitted_at === undefined || r.submitted_at === null,
+        'submitted_at should be null/undefined before submission');
+    }
+  });
+
+  test('getUnsubmitted respects the limit parameter', () => {
+    const limited = store.getUnsubmitted(2);
+    assert.equal(limited.length, 2, 'Should return at most limit=2 records');
+  });
+
+  test('markSubmitted updates correct rows', () => {
+    const batchId = 'test-batch-abc';
+    store.markSubmitted(['1'.repeat(40), '2'.repeat(40)], batchId);
+
+    // Check that those two rows now have submission data
+    const all = store.query();
+    const hash1 = all.find((r) => r.commit_hash === '1'.repeat(40));
+    const hash2 = all.find((r) => r.commit_hash === '2'.repeat(40));
+    const hash3 = all.find((r) => r.commit_hash === '3'.repeat(40));
+
+    assert.ok(hash1?.submitted_at, 'hash1 should have submitted_at set');
+    assert.equal(hash1?.submission_batch_id, batchId, 'hash1 should have the correct batch id');
+
+    assert.ok(hash2?.submitted_at, 'hash2 should have submitted_at set');
+    assert.equal(hash2?.submission_batch_id, batchId, 'hash2 should have the correct batch id');
+
+    // hash3 was not submitted — should still be unsubmitted
+    assert.ok(!hash3?.submitted_at, 'hash3 should NOT have submitted_at set');
+  });
+
+  test('after markSubmitted, getUnsubmitted excludes submitted observations', () => {
+    // hashes 1 and 2 were marked in the previous test
+    const remaining = store.getUnsubmitted();
+    assert.equal(remaining.length, 2, 'Only hashes 3 and 4 should remain unsubmitted');
+    for (const r of remaining) {
+      assert.ok(
+        r.commit_hash === '3'.repeat(40) || r.commit_hash === '4'.repeat(40),
+        `Unexpected hash in unsubmitted: ${r.commit_hash ?? 'null'}`
+      );
+    }
+  });
+
+  test('getUnsubmitted returns observations ordered by observed_at ASC', () => {
+    const unsubmitted = store.getUnsubmitted();
+    assert.ok(unsubmitted.length >= 2, 'Need at least 2 records to check ordering');
+    for (let i = 1; i < unsubmitted.length; i++) {
+      assert.ok(
+        (unsubmitted[i]?.observed_at ?? '') >= (unsubmitted[i - 1]?.observed_at ?? ''),
+        'Records should be ordered ASC by observed_at'
+      );
+    }
+  });
+});
