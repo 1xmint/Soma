@@ -1,0 +1,24 @@
+{
+  "name": "vera-observer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "vera-observer — local daemon that captures developer work and produces structured observation records",
+  "scripts": {
+    "build": "tsc",
+    "test": "tsc && node --test dist/tests/**/*.test.js",
+    "test:run": "node --test dist/tests/**/*.test.js"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "dependencies": {
+    "sql.js": "^1.14.1",
+    "zod": "^3.24.3"
+  },
+  "devDependencies": {
+    "@types/node": "*",
+    "@types/sql.js": "^1.4.11",
+    "typescript": "~5.7"
+  }
+}
