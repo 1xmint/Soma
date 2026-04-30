@@ -8,7 +8,8 @@
     "build": "tsc",
     "test": "tsc && node --test dist/tests/**/*.test.js",
     "test:run": "node --test dist/tests/**/*.test.js",
-    "test:integration": "tsc && node --test dist/tests/integration-live.test.js"
+    "test:integration": "tsc && node --test dist/tests/integration-live.test.js",
+    "observe": "node dist/bin/observe.js"
   },
   "engines": {
     "node": ">=22.12.0"
