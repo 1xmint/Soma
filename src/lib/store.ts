@@ -53,6 +53,7 @@ CREATE INDEX IF NOT EXISTS idx_observations_observed_at
 const MIGRATE_SQL_STEPS = [
   `ALTER TABLE observations ADD COLUMN submitted_at TEXT`,
   `ALTER TABLE observations ADD COLUMN submission_batch_id TEXT`,
+  `ALTER TABLE observations ADD COLUMN artifact_status TEXT`,
 ];
 
 export interface QueryOptions {
@@ -228,7 +229,8 @@ export class ObservationStore {
   }
 
   /**
-   * Return observations that have not yet been submitted (submitted_at IS NULL).
+   * Return observations that have not yet been submitted (submitted_at IS NULL)
+   * and have not entered the artifact lifecycle (artifact_status IS NULL).
    * Ordered by observed_at ASC (oldest first). Default limit 50.
    */
   getUnsubmitted(limit = 50): ObservationRecord[] {
@@ -236,13 +238,73 @@ export class ObservationStore {
       SELECT id, type, content, observed_at, created_at, repo_path, commit_hash,
              submitted_at, submission_batch_id
       FROM observations
-      WHERE submitted_at IS NULL
+      WHERE submitted_at IS NULL AND artifact_status IS NULL
       ORDER BY observed_at ASC
       LIMIT ?
     `;
     const result = this.db.exec(sql, [limit]);
     if (result.length === 0 || !result[0]) return [];
     return this.rowsToRecords(result[0]);
+  }
+
+  /**
+   * Return observations that have not yet been evaluated for artifact extraction
+   * (artifact_status IS NULL). Ordered by observed_at ASC (oldest first).
+   * Default limit 50.
+   */
+  getUnextracted(limit = 50): ObservationRecord[] {
+    const sql = `
+      SELECT id, type, content, observed_at, created_at, repo_path, commit_hash,
+             submitted_at, submission_batch_id
+      FROM observations
+      WHERE artifact_status IS NULL
+      ORDER BY observed_at ASC
+      LIMIT ?
+    `;
+    const result = this.db.exec(sql, [limit]);
+    if (result.length === 0 || !result[0]) return [];
+    return this.rowsToRecords(result[0]);
+  }
+
+  /**
+   * Return observations awaiting artifact submission (artifact_status = 'pending').
+   * Ordered by observed_at ASC (oldest first). Default limit 50.
+   */
+  getPending(limit = 50): ObservationRecord[] {
+    const sql = `
+      SELECT id, type, content, observed_at, created_at, repo_path, commit_hash,
+             submitted_at, submission_batch_id
+      FROM observations
+      WHERE artifact_status = 'pending'
+      ORDER BY observed_at ASC
+      LIMIT ?
+    `;
+    const result = this.db.exec(sql, [limit]);
+    if (result.length === 0 || !result[0]) return [];
+    return this.rowsToRecords(result[0]);
+  }
+
+  /**
+   * Set artifact_status for a set of observations (by commit_hash).
+   * Persists to disk after all updates.
+   *
+   * Lifecycle:
+   *   NULL → 'no_signal'  (evaluated, no artifact match — terminal)
+   *   NULL → 'pending'    (artifact derived — awaiting submission)
+   *   'pending' → 'submitted' (successfully submitted — terminal)
+   */
+  setArtifactStatus(
+    commitHashes: string[],
+    status: 'no_signal' | 'pending' | 'submitted',
+  ): void {
+    if (commitHashes.length === 0) return;
+    for (const hash of commitHashes) {
+      this.db.run(
+        `UPDATE observations SET artifact_status = ? WHERE commit_hash = ?`,
+        [status, hash],
+      );
+    }
+    this.save();
   }
 
   /**

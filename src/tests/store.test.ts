@@ -205,3 +205,104 @@ describe('ObservationStore — submission tracking', () => {
     }
   });
 });
+
+// ---- Artifact lifecycle tests ----
+
+describe('ObservationStore — artifact lifecycle', () => {
+  let tmpDir: string;
+  let store: ObservationStore;
+
+  // Hashes used across the tests in this suite
+  const hashA = 'a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0';
+  const hashB = 'b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0';
+  const hashC = 'c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0';
+  const hashD = 'd0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0';
+
+  before(async () => {
+    tmpDir = mkdtempSync(join(tmpdir(), 'vera-artifact-test-'));
+    store = await ObservationStore.open(join(tmpDir, 'artifact-test.db'));
+
+    // Insert 4 observations — all with artifact_status NULL (default)
+    store.insert(makeGitCommitItem(hashA, '2024-05-01T00:00:00Z'), '/repo');
+    store.insert(makeGitCommitItem(hashB, '2024-05-02T00:00:00Z'), '/repo');
+    store.insert(makeGitCommitItem(hashC, '2024-05-03T00:00:00Z'), '/repo');
+    store.insert(makeGitCommitItem(hashD, '2024-05-04T00:00:00Z'), '/repo');
+  });
+
+  after(() => {
+    store.close();
+    rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  test('getUnextracted returns all rows when artifact_status IS NULL', () => {
+    const rows = store.getUnextracted();
+    assert.equal(rows.length, 4, 'All 4 rows should be unextracted initially');
+  });
+
+  test('getUnsubmitted backward compat: rows with NULL artifact_status are returned', () => {
+    const rows = store.getUnsubmitted();
+    assert.equal(rows.length, 4, 'Rows with NULL artifact_status count as unsubmitted');
+  });
+
+  test("setArtifactStatus('no_signal') makes row invisible to getUnextracted and getUnsubmitted", () => {
+    store.setArtifactStatus([hashA], 'no_signal');
+
+    const unextracted = store.getUnextracted();
+    assert.ok(
+      unextracted.every((r) => r.commit_hash !== hashA),
+      'no_signal row should not appear in getUnextracted()',
+    );
+
+    const unsubmitted = store.getUnsubmitted();
+    assert.ok(
+      unsubmitted.every((r) => r.commit_hash !== hashA),
+      'no_signal row should not appear in getUnsubmitted()',
+    );
+  });
+
+  test("setArtifactStatus('pending') makes row invisible to getUnextracted and getUnsubmitted, visible to getPending", () => {
+    store.setArtifactStatus([hashB], 'pending');
+
+    const unextracted = store.getUnextracted();
+    assert.ok(
+      unextracted.every((r) => r.commit_hash !== hashB),
+      'pending row should not appear in getUnextracted()',
+    );
+
+    const unsubmitted = store.getUnsubmitted();
+    assert.ok(
+      unsubmitted.every((r) => r.commit_hash !== hashB),
+      'pending row should not appear in getUnsubmitted()',
+    );
+
+    const pending = store.getPending();
+    assert.ok(
+      pending.some((r) => r.commit_hash === hashB),
+      'pending row should appear in getPending()',
+    );
+  });
+
+  test("setArtifactStatus('submitted') makes row invisible to all queries", () => {
+    store.setArtifactStatus([hashC], 'submitted');
+
+    const unextracted = store.getUnextracted();
+    assert.ok(unextracted.every((r) => r.commit_hash !== hashC), 'not in getUnextracted()');
+
+    const unsubmitted = store.getUnsubmitted();
+    assert.ok(unsubmitted.every((r) => r.commit_hash !== hashC), 'not in getUnsubmitted()');
+
+    const pending = store.getPending();
+    assert.ok(pending.every((r) => r.commit_hash !== hashC), 'not in getPending()');
+  });
+
+  test('after lifecycle transitions, only hashD remains in getUnextracted and getUnsubmitted', () => {
+    // hashA=no_signal, hashB=pending, hashC=submitted, hashD=NULL
+    const unextracted = store.getUnextracted();
+    assert.equal(unextracted.length, 1, 'Only hashD should remain unextracted');
+    assert.equal(unextracted[0]?.commit_hash, hashD);
+
+    const unsubmitted = store.getUnsubmitted();
+    assert.equal(unsubmitted.length, 1, 'Only hashD should remain unsubmitted');
+    assert.equal(unsubmitted[0]?.commit_hash, hashD);
+  });
+});

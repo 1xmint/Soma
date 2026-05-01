@@ -79,3 +79,34 @@ export const observationRecordSchema = observationItemSchema.extend({
 });
 
 export type ObservationRecord = z.infer<typeof observationRecordSchema>;
+
+// ---- Candidate Artifact types ----
+
+export const testBackedResolutionSchema = z.object({
+  artifact_type: z.literal('test_backed_resolution'),
+  resolution_summary: z.string().min(1),
+  test_files: z.array(z.string()),
+  source_files: z.array(z.string()),
+  commit_hash: z.string().length(40),
+  stats: z.object({
+    total_additions: z.number().int().min(0),
+    total_deletions: z.number().int().min(0),
+  }),
+});
+
+export const failureToFixJourneySchema = z.object({
+  artifact_type: z.literal('failure_to_fix_journey'),
+  journey_summary: z.string().min(1),
+  attempt_hashes: z.array(z.string().length(40)),
+  target_files: z.array(z.string()),
+  signal: z.enum(['revert', 'retry', 'wip_fix']),
+});
+
+export const candidateArtifactSchema = z.discriminatedUnion('artifact_type', [
+  testBackedResolutionSchema,
+  failureToFixJourneySchema,
+]);
+
+export type CandidateArtifact = z.infer<typeof candidateArtifactSchema>;
+export type TestBackedResolution = z.infer<typeof testBackedResolutionSchema>;
+export type FailureToFixJourney = z.infer<typeof failureToFixJourneySchema>;
