@@ -295,7 +295,6 @@ export function observeGitCommits(options: GitObserverOptions): GitObserverResul
     'log',
     `--max-count=${limit}`,
     `--format=format:${LOG_FORMAT}${RECORD_SEPARATOR}`,
-    '--no-walk=unsorted',
     'HEAD',
   ]);
 
