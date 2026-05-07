@@ -174,6 +174,34 @@ function makeReadmeOnlyOperatorItem(hash: string): ObservationItem {
   };
 }
 
+/** A CLI-heavy operator workflow commit outside the src/routes pattern. */
+function makeCliOperatorWorkflowItem(hash: string): ObservationItem {
+  return {
+    type: 'git_commit',
+    content: {
+      commit_hash: hash,
+      author_name: 'Test',
+      author_email: 'test@example.com',
+      author_date: '2026-01-06T00:00:00Z',
+      committer_name: 'Test',
+      committer_email: 'test@example.com',
+      committer_date: '2026-01-06T00:00:00Z',
+      message: 'feat: make status point to the next action',
+      message_subject: 'feat: make status point to the next action',
+      parent_hashes: [],
+      is_merge: false,
+      files_changed: [
+        { path: 'src/commands.js', status: 'modified', additions: 25, deletions: 1 },
+        { path: 'src/formatters.js', status: 'modified', additions: 14, deletions: 1 },
+        { path: 'test/cli.test.js', status: 'modified', additions: 18, deletions: 0 },
+      ],
+      stats: { total_files_changed: 3, total_additions: 57, total_deletions: 2 },
+      repo_path: '/repo',
+    },
+    observed_at: '2026-01-06T00:00:00Z',
+  };
+}
+
 function makeJsonResponse(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -360,6 +388,7 @@ describe('extractCandidateArtifacts', () => {
   const normalHash = '9'.repeat(40);
   const operatorHash = '7'.repeat(40);
   const readmeOnlyHash = '6'.repeat(40);
+  const cliOperatorHash = '5'.repeat(40);
 
   test('commit with test file + fix message → test_backed_resolution artifact', () => {
     const { matching, nonMatchingHashes } = extractCandidateArtifacts([
@@ -467,6 +496,34 @@ describe('extractCandidateArtifacts', () => {
     assert.equal(matching.length, 0, 'README-only workflow changes should not mint operator lessons');
     assert.equal(nonMatchingHashes.length, 1, 'README-only workflow commit should be treated as no signal');
     assert.equal(nonMatchingHashes[0], readmeOnlyHash);
+  });
+
+  test('CLI-heavy status workflow commit produces operator_workflow_improvement artifact', () => {
+    const { matching, nonMatchingHashes } = extractCandidateArtifacts([
+      makeCliOperatorWorkflowItem(cliOperatorHash),
+    ]);
+
+    assert.equal(matching.length, 1, 'CLI operator workflow changes should mint one operator artifact');
+    assert.equal(nonMatchingHashes.length, 0, 'CLI operator workflow commit should not be treated as no signal');
+
+    const m = matching[0]!;
+    assert.equal(m.sourceHash, cliOperatorHash);
+    assert.equal(m.artifact.artifact_type, 'operator_workflow_improvement');
+
+    const art = m.artifact as import('../lib/types.js').OperatorWorkflowImprovement;
+    assert.equal(art.improvement_summary, 'feat: make status point to the next action');
+    assert.ok(
+      art.surface_files.includes('src/commands.js'),
+      'surface_files should include CLI command surfaces',
+    );
+    assert.ok(
+      art.surface_files.includes('src/formatters.js'),
+      'surface_files should include CLI formatter surfaces',
+    );
+    assert.ok(
+      art.verification_files.includes('test/cli.test.js'),
+      'verification_files should include CLI verification tests',
+    );
   });
 });
 

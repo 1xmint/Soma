@@ -58,9 +58,9 @@ const FIX_MESSAGE_RE = /fix|resolve|repair|correct/i;
 const FAILURE_MESSAGE_RE = /revert|retry|attempt|wip.*fix/i;
 const RETRY_ATTEMPT_RE = /retry|attempt/i;
 const OPERATOR_MESSAGE_RE =
-  /operator|onboarding|inspect|catalog|govern|registration|register|workflow|review guidance/i;
+  /operator|onboarding|inspect|catalog|govern|registration|register|workflow|review guidance|status|next action|replay|agent|contribution/i;
 const PRIMARY_OPERATOR_SURFACE_RE =
-  /^(src\/commands\/|src\/routes\/(catalog|inspect|govern|register|status|agents|contributions))/i;
+  /^(src\/(cli|commands|formatters)\.(js|ts)|src\/commands\/|src\/routes\/(catalog|inspect|govern|register|status|agents|contributions))/i;
 const SUPPLEMENTAL_OPERATOR_SURFACE_RE = /^(docs\/|README\.md$)/i;
 
 /**
