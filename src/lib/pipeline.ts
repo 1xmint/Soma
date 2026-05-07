@@ -59,8 +59,9 @@ const FAILURE_MESSAGE_RE = /revert|retry|attempt|wip.*fix/i;
 const RETRY_ATTEMPT_RE = /retry|attempt/i;
 const OPERATOR_MESSAGE_RE =
   /operator|onboarding|inspect|catalog|govern|registration|register|workflow|review guidance/i;
-const OPERATOR_SURFACE_RE =
-  /^(src\/commands\/|src\/routes\/(catalog|inspect|govern|register|status|agents|contributions)|docs\/|README\.md$)/i;
+const PRIMARY_OPERATOR_SURFACE_RE =
+  /^(src\/commands\/|src\/routes\/(catalog|inspect|govern|register|status|agents|contributions))/i;
+const SUPPLEMENTAL_OPERATOR_SURFACE_RE = /^(docs\/|README\.md$)/i;
 
 /**
  * Evaluate a batch of observations and extract candidate artifacts.
@@ -125,12 +126,18 @@ export function extractCandidateArtifacts(
     }
 
     // Priority 1.5: operator_workflow_improvement
-    // Requires: operator-facing surfaces touched AND workflow-oriented message.
+    // Requires: a primary operator-facing surface touched AND workflow-oriented message.
+    // README/docs-only changes are treated as supporting context, not as live operator lessons.
     const operatorSurfaceFiles = filesChanged
-      .filter((f) => OPERATOR_SURFACE_RE.test(f.path))
+      .filter(
+        (f) => PRIMARY_OPERATOR_SURFACE_RE.test(f.path) || SUPPLEMENTAL_OPERATOR_SURFACE_RE.test(f.path),
+      )
+      .map((f) => f.path);
+    const primaryOperatorSurfaceFiles = filesChanged
+      .filter((f) => PRIMARY_OPERATOR_SURFACE_RE.test(f.path))
       .map((f) => f.path);
 
-    if (operatorSurfaceFiles.length > 0 && OPERATOR_MESSAGE_RE.test(message)) {
+    if (primaryOperatorSurfaceFiles.length > 0 && OPERATOR_MESSAGE_RE.test(message)) {
       matching.push({
         artifact: {
           artifact_type: 'operator_workflow_improvement',

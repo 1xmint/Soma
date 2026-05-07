@@ -147,6 +147,33 @@ function makeOperatorWorkflowItem(hash: string): ObservationItem {
   };
 }
 
+/** A git_commit with workflow language but only README/docs surfaces. */
+function makeReadmeOnlyOperatorItem(hash: string): ObservationItem {
+  return {
+    type: 'git_commit',
+    content: {
+      commit_hash: hash,
+      author_name: 'Test',
+      author_email: 'test@example.com',
+      author_date: '2026-01-05T00:00:00Z',
+      committer_name: 'Test',
+      committer_email: 'test@example.com',
+      committer_date: '2026-01-05T00:00:00Z',
+      message: 'feat: add onboarding workflow notes',
+      message_subject: 'feat: add onboarding workflow notes',
+      parent_hashes: [],
+      is_merge: false,
+      files_changed: [
+        { path: 'README.md', status: 'modified', additions: 12, deletions: 1 },
+        { path: 'docs/onboarding.md', status: 'modified', additions: 9, deletions: 0 },
+      ],
+      stats: { total_files_changed: 2, total_additions: 21, total_deletions: 1 },
+      repo_path: '/repo',
+    },
+    observed_at: '2026-01-05T00:00:00Z',
+  };
+}
+
 function makeJsonResponse(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -332,6 +359,7 @@ describe('extractCandidateArtifacts', () => {
   const revertHash = 'e'.repeat(40);
   const normalHash = '9'.repeat(40);
   const operatorHash = '7'.repeat(40);
+  const readmeOnlyHash = '6'.repeat(40);
 
   test('commit with test file + fix message → test_backed_resolution artifact', () => {
     const { matching, nonMatchingHashes } = extractCandidateArtifacts([
@@ -429,6 +457,16 @@ describe('extractCandidateArtifacts', () => {
     assert.equal(art.commit_hash, operatorHash);
     assert.equal(art.stats.total_additions, 40);
     assert.equal(art.stats.total_deletions, 7);
+  });
+
+  test('README-only workflow commit does not produce operator_workflow_improvement artifact', () => {
+    const { matching, nonMatchingHashes } = extractCandidateArtifacts([
+      makeReadmeOnlyOperatorItem(readmeOnlyHash),
+    ]);
+
+    assert.equal(matching.length, 0, 'README-only workflow changes should not mint operator lessons');
+    assert.equal(nonMatchingHashes.length, 1, 'README-only workflow commit should be treated as no signal');
+    assert.equal(nonMatchingHashes[0], readmeOnlyHash);
   });
 });
 
