@@ -102,11 +102,25 @@ export const failureToFixJourneySchema = z.object({
   signal: z.enum(['revert', 'retry', 'wip_fix']),
 });
 
+export const operatorWorkflowImprovementSchema = z.object({
+  artifact_type: z.literal('operator_workflow_improvement'),
+  improvement_summary: z.string().min(1),
+  surface_files: z.array(z.string()),
+  verification_files: z.array(z.string()),
+  commit_hash: z.string().length(40),
+  stats: z.object({
+    total_additions: z.number().int().min(0),
+    total_deletions: z.number().int().min(0),
+  }),
+});
+
 export const candidateArtifactSchema = z.discriminatedUnion('artifact_type', [
   testBackedResolutionSchema,
   failureToFixJourneySchema,
+  operatorWorkflowImprovementSchema,
 ]);
 
 export type CandidateArtifact = z.infer<typeof candidateArtifactSchema>;
 export type TestBackedResolution = z.infer<typeof testBackedResolutionSchema>;
 export type FailureToFixJourney = z.infer<typeof failureToFixJourneySchema>;
+export type OperatorWorkflowImprovement = z.infer<typeof operatorWorkflowImprovementSchema>;

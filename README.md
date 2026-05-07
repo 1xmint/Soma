@@ -28,9 +28,9 @@ npm test
 
 ## Architecture
 
-Raw observation data stays local. Only extracted patterns will eventually
-leave the machine (future weeks). See `AGENTS.md` for full architecture
-and workflow rules.
+Raw observation data stays local. Extracted candidate artifacts can leave the
+machine as bounded contributions, and those artifacts can then be promoted into
+live Vera lessons. See `AGENTS.md` for full architecture and workflow rules.
 
 ## Stack
 

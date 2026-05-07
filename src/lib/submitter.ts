@@ -22,6 +22,7 @@ import type { SomaIdentity } from './identity.js';
 export interface SubmitterConfig {
   veraKnowledgeUrl: string;
   identity: SomaIdentity;
+  sourceType?: string;
 }
 
 export interface SubmitSuccess {
@@ -66,7 +67,7 @@ export async function submitObservations(
   }
 
   const provider = getCryptoProvider();
-  const { identity, veraKnowledgeUrl } = config;
+  const { identity, veraKnowledgeUrl, sourceType = 'git' } = config;
 
   // Sign exactly: JSON.stringify(observations) — the array, not the full body
   const signedPayload = JSON.stringify(observations);
@@ -76,7 +77,7 @@ export async function submitObservations(
 
   const body = {
     soma_did: identity.somaDid,
-    source_type: 'git',
+    source_type: sourceType,
     signature,
     observations,
   };

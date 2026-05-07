@@ -119,6 +119,34 @@ function makeNormalItem(hash: string): ObservationItem {
   };
 }
 
+/** A git_commit that matches operator_workflow_improvement. */
+function makeOperatorWorkflowItem(hash: string): ObservationItem {
+  return {
+    type: 'git_commit',
+    content: {
+      commit_hash: hash,
+      author_name: 'Test',
+      author_email: 'test@example.com',
+      author_date: '2026-01-04T00:00:00Z',
+      committer_name: 'Test',
+      committer_email: 'test@example.com',
+      committer_date: '2026-01-04T00:00:00Z',
+      message: 'feat: add review guidance to catalog and inspect workflow',
+      message_subject: 'feat: add review guidance to catalog and inspect workflow',
+      parent_hashes: [],
+      is_merge: false,
+      files_changed: [
+        { path: 'src/routes/catalog.ts', status: 'modified', additions: 20, deletions: 4 },
+        { path: 'src/routes/inspect.ts', status: 'modified', additions: 12, deletions: 2 },
+        { path: 'src/tests/catalog.test.ts', status: 'modified', additions: 8, deletions: 1 },
+      ],
+      stats: { total_files_changed: 3, total_additions: 40, total_deletions: 7 },
+      repo_path: '/repo',
+    },
+    observed_at: '2026-01-04T00:00:00Z',
+  };
+}
+
 function makeJsonResponse(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -303,6 +331,7 @@ describe('extractCandidateArtifacts', () => {
   const fixHash = 'f'.repeat(40);
   const revertHash = 'e'.repeat(40);
   const normalHash = '9'.repeat(40);
+  const operatorHash = '7'.repeat(40);
 
   test('commit with test file + fix message → test_backed_resolution artifact', () => {
     const { matching, nonMatchingHashes } = extractCandidateArtifacts([
@@ -358,21 +387,52 @@ describe('extractCandidateArtifacts', () => {
     const { matching, nonMatchingHashes } = extractCandidateArtifacts([
       makeFixWithTestItem(fixHash),
       makeRevertItem(revertHash),
+      makeOperatorWorkflowItem(operatorHash),
       makeNormalItem(normalHash),
     ]);
 
-    assert.equal(matching.length, 2);
+    assert.equal(matching.length, 3);
     assert.equal(nonMatchingHashes.length, 1);
     assert.equal(nonMatchingHashes[0], normalHash);
 
     const types = matching.map((m) => m.artifact.artifact_type);
     assert.ok(types.includes('test_backed_resolution'));
     assert.ok(types.includes('failure_to_fix_journey'));
+    assert.ok(types.includes('operator_workflow_improvement'));
+  });
+
+  test('operator-facing workflow commit produces operator_workflow_improvement artifact', () => {
+    const { matching, nonMatchingHashes } = extractCandidateArtifacts([
+      makeOperatorWorkflowItem(operatorHash),
+    ]);
+
+    assert.equal(matching.length, 1, 'Should produce one matching artifact');
+    assert.equal(nonMatchingHashes.length, 0, 'No non-matching hashes');
+
+    const m = matching[0]!;
+    assert.equal(m.sourceHash, operatorHash);
+    assert.equal(m.artifact.artifact_type, 'operator_workflow_improvement');
+
+    const art = m.artifact as import('../lib/types.js').OperatorWorkflowImprovement;
+    assert.equal(
+      art.improvement_summary,
+      'feat: add review guidance to catalog and inspect workflow',
+    );
+    assert.ok(
+      art.surface_files.includes('src/routes/catalog.ts'),
+      'surface_files should include operator-facing route files',
+    );
+    assert.ok(
+      art.verification_files.includes('src/tests/catalog.test.ts'),
+      'verification_files should include test coverage when present',
+    );
+    assert.equal(art.commit_hash, operatorHash);
+    assert.equal(art.stats.total_additions, 40);
+    assert.equal(art.stats.total_deletions, 7);
   });
 });
 
 // ---- runArtifactPipeline tests ----
-
 describe('runArtifactPipeline', () => {
   const fixHash = '1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a';
   const revertHash = '2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b';
