@@ -66,6 +66,42 @@ import {
   signKeyPairToJson,
   type HeartState,
 } from "./persistence.js";
+import {
+  HumanSessionRegistry,
+  type HumanSession,
+  type InvokeRequest,
+  type InvokeResult,
+} from "./human-session.js";
+import type {
+  AttestationVerifier,
+  HumanDelegation,
+} from "./human-delegation.js";
+import type { CeremonyPolicy } from "./ceremony-policy.js";
+import type { DidMethodRegistry } from "../core/did-method.js";
+import {
+  issueProductSession,
+  issueAdapterBridgeSession,
+  elevateProductSession,
+  decayProductSession,
+  deriveProductTokenKey,
+  mintProductSessionToken,
+  validateProductSessionToken,
+  matchTokenToSession,
+  DEFAULT_PRODUCT_SESSION_TTL_MS,
+  type ProductSession,
+  type DeviceBinding,
+  type IssueProductSessionResult,
+  type StepUpElevationResult,
+  type ValidateTokenResult,
+  type MatchTokenResult,
+  type ProductSessionTokenClaims,
+} from "./product-session.js";
+import {
+  verifyLoginVerificationSignature,
+  type LoginVerification,
+} from "./login-challenge.js";
+import { ProductSessionStore } from "./product-session-store.js";
+import type { CeremonyTier } from "./human-delegation.js";
 
 // --- Types ---
 
@@ -85,6 +121,23 @@ export interface DataSourceConfig {
   name: string;
   url: string;
   headers?: Record<string, string>;
+}
+
+/**
+ * Configuration for human session support. When provided on HeartConfig,
+ * the runtime creates an internal HumanSessionRegistry and exposes
+ * `createHumanSession` / `invokeHumanSession` / `revokeHumanSession`.
+ *
+ * Hearts that only serve agent-to-agent sessions can omit this — calling
+ * any human session method on a heart without this config throws clearly.
+ */
+export interface HumanSessionConfig {
+  /** Pluggable attestation verifier — Soma stays authenticator-agnostic. */
+  attestationVerifier: AttestationVerifier;
+  /** Optional ceremony policy override (defaults to DEFAULT_CEREMONY_POLICY). */
+  ceremonyPolicy?: CeremonyPolicy;
+  /** Optional DID method registry for multi-method humanDid resolution. */
+  didRegistry?: DidMethodRegistry;
 }
 
 export interface HeartConfig {
@@ -141,6 +194,12 @@ export interface HeartConfig {
    * and treated as not-found on any read — caps unbounded Map growth.
    */
   sessionTtlMs?: number;
+
+  /**
+   * Human session support. When set, enables `createHumanSession` and
+   * related methods. Omit for agent-only hearts.
+   */
+  humanSessionConfig?: HumanSessionConfig;
 }
 
 export interface GenerationInput {
@@ -222,6 +281,8 @@ export class HeartRuntime {
   private readonly _lineage?: HeartLineage;
   private readonly _effectiveCaps: string[] | null;
   private readonly revocations: RevocationRegistry;
+  private readonly humanSessionRegistry: HumanSessionRegistry | null;
+  private readonly _productSessionStore: ProductSessionStore;
   private alive: boolean = true;
 
   constructor(config: HeartConfig) {
@@ -242,9 +303,51 @@ export class HeartRuntime {
       ? effectiveCapabilities(config.lineage)
       : null;
     this.revocations = new RevocationRegistry({ provider: this.provider });
-    if (config.revocations) {
-      this.revocations.import(config.revocations);
+
+    // Register lineage authorities so regular import() accepts lineage
+    // revocations from the parent — the parent DID is the legitimate
+    // authority for each lineage certificate it signed.
+    // Also register the immediate parent as authority for this heart's
+    // own DID, so heart-level revocations (targetKind: 'heart') are
+    // accepted via the regular import() path.
+    if (config.lineage) {
+      for (const cert of config.lineage.chain) {
+        this.revocations.registerAuthority(cert.id, cert.parentDid);
+      }
+      // The last cert in the chain is the immediate parent → child link.
+      // Register the parent as authority for this heart's DID so the
+      // parent can revoke the child heart directly.
+      const immediateCert = config.lineage.chain[config.lineage.chain.length - 1];
+      this.revocations.registerAuthority(this.did, immediateCert.parentDid);
     }
+
+    if (config.revocations) {
+      if (config.restoreCredentials) {
+        // Restore path (loadSomaHeart): revocations were already authority-
+        // checked before serialization. Use importTrusted to skip authority
+        // re-verification since not all authorities can be reconstructed
+        // (e.g. delegation issuers from prior runtime).
+        this.revocations.importTrusted(config.revocations);
+      } else {
+        // Direct construction path: require authority verification.
+        // Lineage authorities were registered above; delegation/heart
+        // revocations must come from a known authority.
+        this.revocations.import(config.revocations);
+      }
+    }
+
+    // Human session support — opt-in via humanSessionConfig
+    this.humanSessionRegistry = config.humanSessionConfig
+      ? new HumanSessionRegistry({
+          attestationVerifier: config.humanSessionConfig.attestationVerifier,
+          policy: config.humanSessionConfig.ceremonyPolicy,
+          provider: this.provider,
+          didRegistry: config.humanSessionConfig.didRegistry,
+        })
+      : null;
+
+    // Product session store — always available (lightweight Map)
+    this._productSessionStore = new ProductSessionStore();
 
     // Store all credentials in the vault — encrypted at rest
     this.vault = new CredentialVault(config.signingKeyPair.secretKey, this.provider);
@@ -454,6 +557,7 @@ export class HeartRuntime {
     childLineage: HeartLineage;
   } {
     this.ensureAlive();
+    this.ensureLineageValid();
 
     // Enforce: a forked child cannot have capabilities the parent lacks.
     if (opts.capabilities && this._effectiveCaps !== null) {
@@ -530,6 +634,7 @@ export class HeartRuntime {
     parentId?: string | null;
   }): Delegation {
     this.ensureAlive();
+    this.ensureLineageValid();
 
     // Enforce: can't delegate what we don't have.
     if (this._effectiveCaps !== null) {
@@ -776,6 +881,642 @@ export class HeartRuntime {
     return purged;
   }
 
+  // ─── Human Session Management (Soma-native consent path) ───────────────
+
+  /**
+   * Open a human session from a signed HumanDelegation.
+   *
+   * This is the runtime bridge (PR-B.5) that takes a verified-or-verifiable
+   * HumanDelegation and opens a runtime-managed session. The delegation is
+   * verified end-to-end by the internal HumanSessionRegistry (signature,
+   * DID binding, attestation, time window, challenge hash). On success a
+   * `consent_granted` heartbeat is recorded; on failure a
+   * `consent_rejected` heartbeat captures the reason.
+   *
+   * Requires `humanSessionConfig` in HeartConfig — throws if the heart
+   * was not configured for human sessions.
+   *
+   * Idempotent by `delegation.sessionId`: re-opening an already-active
+   * session returns the existing handle without double-counting the
+   * envelope.
+   *
+   * @param delegation  The signed HumanDelegation payload.
+   * @param now         Timestamp for verification (defaults to Date.now()).
+   * @returns           InvokeResult — ok + session handle, or failure reason.
+   */
+  createHumanSession(delegation: HumanDelegation, now?: number): InvokeResult {
+    this.ensureAlive();
+    this.ensureHumanSessionSupport();
+
+    const ts = now ?? Date.now();
+    const result = this.humanSessionRegistry!.open(delegation, ts);
+
+    if (result.ok) {
+      this.heartbeatChain.record(
+        "consent_granted",
+        JSON.stringify({
+          sessionId: delegation.sessionId,
+          humanDid: delegation.humanDid,
+          agentEphemeralDid: delegation.agentEphemeralDid,
+          tier: result.session.tier,
+          expiresAt: delegation.expiresAt,
+        }),
+      );
+    } else {
+      this.heartbeatChain.record(
+        "consent_rejected",
+        JSON.stringify({
+          sessionId: delegation.sessionId,
+          humanDid: delegation.humanDid,
+          reason: result.reason,
+        }),
+      );
+    }
+
+    return result;
+  }
+
+  /**
+   * Get a human session by ID. Returns undefined if not found or not
+   * active.
+   */
+  getHumanSession(sessionId: string): HumanSession | undefined {
+    this.ensureAlive();
+    return this.humanSessionRegistry?.get(sessionId);
+  }
+
+  /**
+   * Attempt an in-session action against a human session. Walks envelope
+   * caveats + ceremony policy, drains budget/invocations on success, and
+   * records a heartbeat for the outcome.
+   */
+  invokeHumanSession(sessionId: string, req: InvokeRequest): InvokeResult {
+    this.ensureAlive();
+    this.ensureHumanSessionSupport();
+
+    const result = this.humanSessionRegistry!.invoke(sessionId, req);
+
+    this.heartbeatChain.record(
+      result.ok ? "human_session_invoke" : "human_session_invoke_denied",
+      JSON.stringify({
+        sessionId,
+        actionClass: req.actionClass,
+        ok: result.ok,
+        ...(!result.ok && { reason: (result as { reason: string }).reason }),
+        status: result.session.status,
+      }),
+    );
+
+    return result;
+  }
+
+  /**
+   * Revoke a human session. Returns true if the session existed and was
+   * revoked, false if it was not found.
+   */
+  revokeHumanSession(sessionId: string): boolean {
+    this.ensureAlive();
+    this.ensureHumanSessionSupport();
+
+    const revoked = this.humanSessionRegistry!.revoke(sessionId);
+    if (revoked) {
+      this.heartbeatChain.record(
+        "human_session_revoked",
+        JSON.stringify({ sessionId }),
+      );
+    }
+    return revoked;
+  }
+
+  /**
+   * Prune terminated / expired human sessions. Returns the number
+   * of sessions removed. Call from a periodic sweep.
+   */
+  pruneHumanSessions(now?: number): number {
+    this.ensureAlive();
+    if (!this.humanSessionRegistry) return 0;
+    return this.humanSessionRegistry.prune(now ?? Date.now());
+  }
+
+  // ─── Product Session Issuance (Mode A — Soma-direct) ────────────────────
+
+  /**
+   * Issue a Mode A (soma-direct) ProductSession from a runtime-managed
+   * HumanSession.
+   *
+   * This is the runtime convenience method that:
+   *   1. Looks up the HumanSession by `humanSessionId`
+   *   2. Delegates to the pure `issueProductSession` factory
+   *   3. Records a heartbeat (`product_session_issued` or
+   *      `product_session_denied`)
+   *
+   * Requires `humanSessionConfig` in HeartConfig.
+   *
+   * @param humanSessionId  The Soma-layer session ID (from createHumanSession).
+   * @param accountId       Product account ID (e.g. HeyVera account).
+   * @param opts            Optional device binding, TTL, session ID overrides.
+   */
+  issueProductSession(
+    humanSessionId: string,
+    accountId: string,
+    opts?: {
+      deviceBinding?: DeviceBinding | null;
+      sessionTtlMs?: number;
+      sessionId?: string;
+      now?: number;
+    },
+  ): IssueProductSessionResult {
+    this.ensureAlive();
+    this.ensureHumanSessionSupport();
+
+    const now = opts?.now ?? Date.now();
+    const humanSession = this.humanSessionRegistry!.get(humanSessionId);
+
+    if (!humanSession) {
+      const reason = `human session not found: ${humanSessionId}`;
+      this.heartbeatChain.record(
+        "product_session_denied",
+        JSON.stringify({ humanSessionId, accountId, reason }),
+      );
+      return { ok: false, reason };
+    }
+
+    const result = issueProductSession({
+      accountId,
+      humanSession,
+      deviceBinding: opts?.deviceBinding,
+      sessionTtlMs: opts?.sessionTtlMs,
+      sessionId: opts?.sessionId,
+      now,
+    });
+
+    if (result.ok) {
+      this._productSessionStore.put(result.session);
+      this.heartbeatChain.record(
+        "product_session_issued",
+        JSON.stringify({
+          productSessionId: result.session.sessionId,
+          humanSessionId,
+          accountId,
+          somaIdentityBinding: result.session.somaIdentityBinding,
+          authOrigin: result.session.authOrigin,
+          tier: result.session.currentAuthorityTier,
+          expiresAt: result.session.expiresAt,
+        }),
+      );
+    } else {
+      this.heartbeatChain.record(
+        "product_session_denied",
+        JSON.stringify({
+          humanSessionId,
+          accountId,
+          reason: result.reason,
+        }),
+      );
+    }
+
+    return result;
+  }
+
+  // ─── Product Session Issuance (Mode B — Adapter-bridge) ─────────────────
+
+  /**
+   * Issue a Mode B (adapter-bridge) ProductSession.
+   *
+   * This path does NOT require `humanSessionConfig` — adapter-bridge
+   * sessions bypass HumanDelegation entirely. The adapter's auth
+   * assertion is verified externally by the product server; this method
+   * takes the verified result and produces a tagged, capped
+   * ProductSession.
+   *
+   * Authority is capped at L1 (Decision 7). The `authOrigin` is always
+   * `'adapter-bridge'`. If the product account has a Soma identity
+   * binding, it is carried honestly; if not, `somaIdentityBinding` is
+   * null.
+   *
+   * Records an `adapter_session_issued` heartbeat.
+   *
+   * @param accountId            Product account ID.
+   * @param opts                 Soma binding, requested tier, TTL, session ID.
+   */
+  issueAdapterBridgeSession(
+    accountId: string,
+    opts?: {
+      somaIdentityBinding?: string | null;
+      requestedTier?: CeremonyTier;
+      sessionTtlMs?: number;
+      sessionId?: string;
+      now?: number;
+    },
+  ): IssueProductSessionResult {
+    this.ensureAlive();
+
+    const result = issueAdapterBridgeSession({
+      accountId,
+      somaIdentityBinding: opts?.somaIdentityBinding,
+      requestedTier: opts?.requestedTier,
+      sessionTtlMs: opts?.sessionTtlMs,
+      sessionId: opts?.sessionId,
+      now: opts?.now,
+    });
+
+    if (result.ok) {
+      this._productSessionStore.put(result.session);
+      this.heartbeatChain.record(
+        "adapter_session_issued",
+        JSON.stringify({
+          productSessionId: result.session.sessionId,
+          accountId,
+          authOrigin: result.session.authOrigin,
+          tier: result.session.currentAuthorityTier,
+          hasSomaBinding: result.session.somaIdentityBinding !== null,
+          expiresAt: result.session.expiresAt,
+        }),
+      );
+    }
+
+    return result;
+  }
+
+  // ─── Product Session from Login Verification (Mode A shortcut) ──────────
+
+  /**
+   * Issue a Mode A (soma-direct) ProductSession from a signed
+   * LoginVerification.
+   *
+   * This is the browser login convenience path. After the product server
+   * verifies a login through `LoginChallengeService.verifyLogin`, it
+   * passes the resulting `LoginVerification` here to get a ProductSession
+   * without going through the HumanDelegation → HumanSession indirection.
+   *
+   * The method verifies the LoginVerification's signature against this
+   * heart's public key, then constructs a soma-direct ProductSession.
+   *
+   * Does NOT require `humanSessionConfig` — this is a standalone login
+   * path independent of agent-to-human delegation.
+   *
+   * Records `product_session_issued` heartbeat on success,
+   * `product_session_denied` on failure.
+   *
+   * @param verification  Signed LoginVerification from LoginChallengeService.
+   * @param accountId     Product account ID (e.g. HeyVera account).
+   * @param opts          Optional device binding, TTL, session ID overrides.
+   */
+  issueProductSessionFromLogin(
+    verification: LoginVerification,
+    accountId: string,
+    opts?: {
+      deviceBinding?: DeviceBinding | null;
+      sessionTtlMs?: number;
+      sessionId?: string;
+      now?: number;
+    },
+  ): IssueProductSessionResult {
+    this.ensureAlive();
+    const now = opts?.now ?? Date.now();
+
+    // ── Verify the LoginVerification signature ────────────────────────
+    const sigCheck = verifyLoginVerificationSignature(verification, {
+      trustedHeartPublicKeys: [this.genome.publicKey],
+      maxAgeMs: 300_000, // 5 minutes
+      now,
+      provider: this.provider,
+    });
+
+    if (!sigCheck.valid) {
+      const reason = `login verification rejected: ${sigCheck.reason}`;
+      this.heartbeatChain.record(
+        "product_session_denied",
+        JSON.stringify({ accountId, reason }),
+      );
+      return { ok: false, reason };
+    }
+
+    // ── Construct soma-direct ProductSession ──────────────────────────
+    const sessionTtl = opts?.sessionTtlMs ?? DEFAULT_PRODUCT_SESSION_TTL_MS;
+    const sessionId = opts?.sessionId ?? crypto.randomUUID();
+
+    const session: ProductSession = {
+      sessionId,
+      accountId,
+      somaIdentityBinding: verification.subjectDid,
+      baseAuthorityTier: verification.tierAchieved,
+      currentAuthorityTier: verification.tierAchieved,
+      authOrigin: 'soma-direct',
+      deviceBinding: opts?.deviceBinding ?? null,
+      issuedAt: now,
+      expiresAt: now + sessionTtl,
+      lastStepUpAt: null,
+      stepUpWindowExpiresAt: null,
+      revocationState: 'active',
+    };
+
+    this._productSessionStore.put(session);
+    this.heartbeatChain.record(
+      "product_session_issued",
+      JSON.stringify({
+        productSessionId: session.sessionId,
+        accountId,
+        somaIdentityBinding: session.somaIdentityBinding,
+        authOrigin: session.authOrigin,
+        tier: session.currentAuthorityTier,
+        loginChallengeId: verification.challengeId,
+        expiresAt: session.expiresAt,
+      }),
+    );
+
+    return { ok: true, session };
+  }
+
+  // ─── Product Session Step-Up (Decision 8) ───────────────────────────────
+
+  /**
+   * Elevate a ProductSession's authority tier through a verified step-up
+   * ceremony.
+   *
+   * This is the runtime convenience method that wraps the pure
+   * `elevateProductSession` factory with heartbeat recording. The caller
+   * is responsible for verifying the step-up attestation (via
+   * `StepUpService.submitAttestation`) BEFORE calling this.
+   *
+   * Does NOT require `humanSessionConfig` — step-up operates on
+   * ProductSessions regardless of their auth origin.
+   *
+   * Records `product_session_elevated` on success,
+   * `product_session_elevation_denied` on failure.
+   *
+   * @param session       The ProductSession to elevate.
+   * @param tierAchieved  Numeric tier from StepUpAttestation (0-3).
+   * @param opts          Optional device binding, window duration, timestamp.
+   */
+  elevateProductSession(
+    session: ProductSession,
+    tierAchieved: number,
+    opts?: {
+      deviceBinding?: DeviceBinding | null;
+      windowMs?: number;
+      now?: number;
+    },
+  ): StepUpElevationResult {
+    this.ensureAlive();
+
+    const result = elevateProductSession({
+      session,
+      tierAchieved,
+      deviceBinding: opts?.deviceBinding,
+      windowMs: opts?.windowMs,
+      now: opts?.now,
+    });
+
+    if (result.ok) {
+      this._productSessionStore.update(result.session);
+      this.heartbeatChain.record(
+        "product_session_elevated",
+        JSON.stringify({
+          productSessionId: result.session.sessionId,
+          fromTier: session.currentAuthorityTier,
+          toTier: result.session.currentAuthorityTier,
+          authOrigin: result.session.authOrigin,
+          windowExpiresAt: result.session.stepUpWindowExpiresAt,
+        }),
+      );
+    } else {
+      this.heartbeatChain.record(
+        "product_session_elevation_denied",
+        JSON.stringify({
+          productSessionId: session.sessionId,
+          tierAchieved,
+          currentTier: session.currentAuthorityTier,
+          reason: result.reason,
+        }),
+      );
+    }
+
+    return result;
+  }
+
+  // ─── Product Session Tokens (opaque transport references) ──────────────
+
+  /** Cached token key — derived once from the signing key via HKDF. */
+  private _productTokenKey: Uint8Array | null = null;
+
+  /** Get or derive the product session token HMAC key. */
+  private getProductTokenKey(): Uint8Array {
+    if (!this._productTokenKey) {
+      this._productTokenKey = deriveProductTokenKey(
+        this.signingKeyPair.secretKey,
+        this.provider,
+      );
+    }
+    return this._productTokenKey;
+  }
+
+  /**
+   * Mint an opaque transport token for a ProductSession.
+   *
+   * The token is a transport carrier — not the session truth. It embeds
+   * only sessionId, accountId, mint time, and session expiry, bound by
+   * an HMAC derived from this heart's signing key.
+   *
+   * Records a `product_session_token_minted` heartbeat.
+   *
+   * @param session  The ProductSession to mint a token for.
+   * @param opts     Optional: override mint timestamp.
+   */
+  mintProductSessionToken(
+    session: ProductSession,
+    opts?: { now?: number },
+  ): string {
+    this.ensureAlive();
+
+    const token = mintProductSessionToken(session, this.getProductTokenKey(), {
+      now: opts?.now,
+      provider: this.provider,
+    });
+
+    this.heartbeatChain.record(
+      "product_session_token_minted",
+      JSON.stringify({
+        productSessionId: session.sessionId,
+        accountId: session.accountId,
+        authOrigin: session.authOrigin,
+        expiresAt: session.expiresAt,
+      }),
+    );
+
+    return token;
+  }
+
+  /**
+   * Validate an opaque product session token (structure + MAC + expiry).
+   *
+   * This is the first gate — checks the token itself without needing
+   * the session store. On success, returns the embedded claims so the
+   * caller can look up the ProductSession by `claims.sid`.
+   *
+   * Does NOT record a heartbeat on success (read path). Records
+   * `product_session_token_rejected` on failure.
+   *
+   * @param token  The opaque token string.
+   * @param opts   Optional: override current time.
+   */
+  validateProductSessionToken(
+    token: string,
+    opts?: { now?: number },
+  ): ValidateTokenResult {
+    this.ensureAlive();
+
+    const result = validateProductSessionToken(token, this.getProductTokenKey(), {
+      now: opts?.now,
+      provider: this.provider,
+    });
+
+    if (!result.ok) {
+      this.heartbeatChain.record(
+        "product_session_token_rejected",
+        JSON.stringify({ reason: result.reason }),
+      );
+    }
+
+    return result;
+  }
+
+  /**
+   * Validate a token AND match it against a live ProductSession in one
+   * call. Convenience for the common server-side flow:
+   *   receive token → validate → match to session → proceed or reject.
+   *
+   * Records `product_session_token_rejected` if either gate fails.
+   *
+   * @param token    The opaque token string.
+   * @param session  The live ProductSession from the session store.
+   * @param opts     Optional: override current time.
+   */
+  validateAndMatchProductSessionToken(
+    token: string,
+    session: ProductSession,
+    opts?: { now?: number },
+  ): MatchTokenResult {
+    this.ensureAlive();
+    const now = opts?.now ?? Date.now();
+
+    // Gate 1: structure + MAC + expiry
+    const vr = validateProductSessionToken(token, this.getProductTokenKey(), {
+      now,
+      provider: this.provider,
+    });
+
+    if (!vr.ok) {
+      this.heartbeatChain.record(
+        "product_session_token_rejected",
+        JSON.stringify({ reason: vr.reason }),
+      );
+      return { ok: false, reason: vr.reason };
+    }
+
+    // Gate 2: cross-check claims against live session
+    const mr = matchTokenToSession(vr.claims, session, { now });
+
+    if (!mr.ok) {
+      this.heartbeatChain.record(
+        "product_session_token_rejected",
+        JSON.stringify({
+          productSessionId: session.sessionId,
+          reason: mr.reason,
+        }),
+      );
+    }
+
+    return mr;
+  }
+
+  // ─── Product Session Store ─────────────────────────────────────────────
+
+  /** The product session store backing this heart. */
+  get productSessionStore(): ProductSessionStore {
+    return this._productSessionStore;
+  }
+
+  /**
+   * Resolve an opaque product session token to a live ProductSession
+   * in one call: validate MAC/expiry → look up in store → match.
+   *
+   * This is the primary server-side entry point for token-bearing
+   * requests. Returns the validated, active ProductSession on success
+   * or a rejection reason on failure.
+   *
+   * Applies step-up decay automatically before returning — the caller
+   * always gets the current-authority-tier truth.
+   *
+   * Records `product_session_token_rejected` heartbeat on any failure.
+   *
+   * @param token  The opaque token string from the client.
+   * @param opts   Optional: override current time.
+   */
+  resolveProductSessionToken(
+    token: string,
+    opts?: { now?: number },
+  ): MatchTokenResult {
+    this.ensureAlive();
+    const now = opts?.now ?? Date.now();
+
+    // Gate 1: structure + MAC + expiry
+    const vr = validateProductSessionToken(token, this.getProductTokenKey(), {
+      now,
+      provider: this.provider,
+    });
+
+    if (!vr.ok) {
+      this.heartbeatChain.record(
+        "product_session_token_rejected",
+        JSON.stringify({ reason: vr.reason }),
+      );
+      return { ok: false, reason: vr.reason };
+    }
+
+    // Gate 2: store lookup
+    const stored = this._productSessionStore.get(vr.claims.sid);
+    if (!stored) {
+      const reason = `session not found: ${vr.claims.sid}`;
+      this.heartbeatChain.record(
+        "product_session_token_rejected",
+        JSON.stringify({ reason }),
+      );
+      return { ok: false, reason };
+    }
+
+    // Apply step-up decay before matching — authority may have expired
+    const decayed = decayProductSession(stored, now);
+    if (decayed !== stored) {
+      // Decay happened — update store with decayed state
+      this._productSessionStore.update(decayed);
+    }
+
+    // Gate 3: match claims against live session
+    const mr = matchTokenToSession(vr.claims, decayed, { now });
+
+    if (!mr.ok) {
+      this.heartbeatChain.record(
+        "product_session_token_rejected",
+        JSON.stringify({
+          productSessionId: decayed.sessionId,
+          reason: mr.reason,
+        }),
+      );
+    }
+
+    return mr;
+  }
+
+  /** Throw if human session support was not configured. */
+  private ensureHumanSessionSupport(): void {
+    if (!this.humanSessionRegistry) {
+      throw new Error(
+        "Heart was not configured for human sessions — provide humanSessionConfig in HeartConfig",
+      );
+    }
+  }
+
   // --- The ONLY Way to Generate ---
 
   async *generate(
@@ -783,6 +1524,7 @@ export class HeartRuntime {
     sessionId?: string
   ): AsyncGenerator<HeartbeatToken> {
     this.ensureAlive();
+    this.ensureLineageValid();
 
     const session = sessionId ? this.activeSession(sessionId) : undefined;
     const chain = session?.heartbeatChain ?? this.heartbeatChain;
@@ -896,6 +1638,7 @@ export class HeartRuntime {
     sessionId?: string
   ): Promise<HeartbeatResult> {
     this.ensureAlive();
+    this.ensureLineageValid();
 
     // Lineage-based capability enforcement
     if (!this.can(`tool:${name}`)) {
@@ -972,6 +1715,7 @@ export class HeartRuntime {
     sessionId?: string
   ): Promise<HeartbeatData> {
     this.ensureAlive();
+    this.ensureLineageValid();
 
     // Lineage-based capability enforcement
     if (!this.can(`data:${sourceName}`)) {
@@ -1048,6 +1792,35 @@ export class HeartRuntime {
   private ensureAlive(): void {
     if (!this.alive) {
       throw new Error("Heart has been destroyed — agent cannot compute");
+    }
+  }
+
+  /**
+   * Check that this heart's authority is still valid:
+   *   1. No certificate in the lineage chain has been revoked.
+   *   2. The heart itself has not been revoked (targetKind: 'heart').
+   *
+   * Called on every hot-path operation (generate, callTool, fetchData,
+   * fork, delegate) so revocations are enforced promptly.
+   */
+  private ensureLineageValid(): void {
+    // Heart-level revocation check — a parent can revoke a child heart
+    // directly via targetKind: 'heart', targetId: childDid.
+    if (this.revocations.isRevoked(this.did)) {
+      this.alive = false;
+      throw new Error(
+        `Heart ${this.did} has been revoked — no longer authorized`,
+      );
+    }
+
+    if (!this._lineage) return;
+    for (const cert of this._lineage.chain) {
+      if (this.revocations.isRevoked(cert.id)) {
+        this.alive = false;
+        throw new Error(
+          `Lineage certificate ${cert.id} has been revoked — heart is no longer authorized`,
+        );
+      }
     }
   }
 }

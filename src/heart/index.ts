@@ -31,6 +31,7 @@ export {
   createSomaHeart,
   loadSomaHeart,
   type HeartConfig,
+  type HumanSessionConfig,
   type GenerationInput,
   type HeartbeatToken,
   type HeartbeatResult,
@@ -467,6 +468,63 @@ export {
   type DeliveryResult,
   type AssertionCallback,
 } from './stepup-oracle.js';
+
+// ─── Product Session (Soma-backed product authority carrier) ───────────────
+
+export {
+  issueProductSession,
+  issueAdapterBridgeSession,
+  elevateProductSession,
+  decayProductSession,
+  deriveProductTokenKey,
+  mintProductSessionToken,
+  validateProductSessionToken,
+  matchTokenToSession,
+  DEFAULT_PRODUCT_SESSION_TTL_MS,
+  DEFAULT_STEP_UP_WINDOW_MS,
+  ADAPTER_AUTHORITY_CAP,
+  type ProductSession,
+  type AuthOrigin,
+  type DeviceTrustLevel,
+  type DeviceBinding,
+  type RevocationState,
+  type IssueProductSessionInput,
+  type IssueAdapterBridgeSessionInput,
+  type IssueProductSessionResult,
+  type StepUpElevationInput,
+  type StepUpElevationResult,
+  type ProductSessionTokenClaims,
+  type ValidateTokenResult,
+  type MatchTokenResult,
+} from './product-session.js';
+
+// ─── Product Session Store (in-memory server-side truth) ─────────────────
+
+export { ProductSessionStore } from './product-session-store.js';
+
+// ─── Product Account Binding (canonical account ↔ identity link) ─────────
+
+export {
+  ProductAccountBindingStore,
+  type ProductAccountBinding,
+  type BindingType,
+} from './product-account-binding.js';
+
+// ─── Login Challenge (Soma-native initial authentication) ────────────────
+
+export {
+  LoginChallengeService,
+  LoginFactorVerifierRegistry,
+  verifyLoginChallengeSignature,
+  verifyLoginVerificationSignature,
+  type LoginChallenge,
+  type LoginAssertion,
+  type LoginVerification,
+  type LoginFactorVerifier,
+  type LoginFactorVerificationResult,
+  type LoginChallengeServiceConfig,
+  type LoginChallengeVerification,
+} from './login-challenge.js';
 
 // ─── Tier Ladder (deployment-configurable factor → tier policy) ────────────
 
