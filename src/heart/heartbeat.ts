@@ -60,6 +60,8 @@ export type HeartbeatEventType =
   // Adapter-to-direct migration (see runtime.ts migrateAdapterToSomaDirect)
   | "adapter_migration_completed"  // adapter session migrated to soma-direct
   | "adapter_migration_denied"     // adapter migration rejected (binding conflict, etc.)
+  // Binding lifecycle (see runtime.ts unbindAccountAndRevokeSessions)
+  | "account_binding_unbound"      // account binding dissolved + sessions revoked
   // Supply-chain provenance (see update-certificate.ts)
   | "self_verification";  // heart verified its own package provenance on startup
 

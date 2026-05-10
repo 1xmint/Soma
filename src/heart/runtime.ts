@@ -1643,6 +1643,94 @@ export class HeartRuntime {
   }
 
   /**
+   * Resolve a ProductSession by sessionId with full lifecycle enforcement.
+   *
+   * This is the request-safe entry point for callers who hold a sessionId
+   * directly (not via an opaque token). Applies the same enforcement as
+   * `resolveProductSessionToken`:
+   *   - Looks up the session in the store
+   *   - Applies step-up decay (Decision 8)
+   *   - Checks revocation state
+   *   - Checks expiry
+   *
+   * The caller always gets the current-authority-tier truth. Expired or
+   * revoked sessions return a clear rejection — no silent stale data.
+   */
+  resolveProductSession(
+    sessionId: string,
+    opts?: { now?: number },
+  ): MatchTokenResult {
+    this.ensureAlive();
+    const now = opts?.now ?? Date.now();
+
+    const stored = this._productSessionStore.get(sessionId);
+    if (!stored) {
+      return { ok: false, reason: `session not found: ${sessionId}` };
+    }
+
+    const decayed = decayProductSession(stored, now);
+    if (decayed !== stored) {
+      this._productSessionStore.update(decayed);
+    }
+
+    if (decayed.revocationState !== 'active') {
+      return { ok: false, reason: 'session is revoked' };
+    }
+
+    if (now >= decayed.expiresAt) {
+      return { ok: false, reason: 'session has expired' };
+    }
+
+    return { ok: true, session: decayed };
+  }
+
+  // ─── Binding-Unbind Revocation Cascade ────────────────────────────────
+
+  /**
+   * Unbind a product account and revoke all active sessions for that
+   * account in one atomic operation.
+   *
+   * This is the safe way to dissolve a binding — sessions that carry
+   * the account's authority are revoked immediately, not left dangling.
+   *
+   * The binding store is caller-owned (durable, cross-session). The
+   * session store is runtime-owned (ephemeral, in-memory). Both are
+   * updated.
+   *
+   * Records `account_binding_unbound` heartbeat with revocation count.
+   *
+   * @param accountId     The product account to unbind.
+   * @param bindingStore  The caller-owned binding store.
+   * @param opts          Optional: timestamp override.
+   * @returns The number of sessions revoked, or false if no active binding.
+   */
+  unbindAccountAndRevokeSessions(
+    accountId: string,
+    bindingStore: ProductAccountBindingStore,
+    opts?: { now?: number },
+  ): { unbound: boolean; sessionsRevoked: number } {
+    this.ensureAlive();
+    const now = opts?.now ?? Date.now();
+
+    const binding = bindingStore.getActive(accountId);
+    const unbound = bindingStore.unbind(accountId, now);
+    const sessionsRevoked = this._productSessionStore.revokeByAccount(accountId);
+
+    this.heartbeatChain.record(
+      "account_binding_unbound",
+      JSON.stringify({
+        accountId,
+        somaIdentityDid: binding?.somaIdentityDid ?? null,
+        unbound,
+        sessionsRevoked,
+        at: now,
+      }),
+    );
+
+    return { unbound, sessionsRevoked };
+  }
+
+  /**
    * Resolve an opaque product session token to a live ProductSession
    * in one call: validate MAC/expiry → look up in store → match.
    *
