@@ -90,6 +90,7 @@ import {
   DEFAULT_PRODUCT_SESSION_TTL_MS,
   type ProductSession,
   type DeviceBinding,
+  type DeviceTrustLevel,
   type IssueProductSessionResult,
   type StepUpElevationResult,
   type ValidateTokenResult,
@@ -99,9 +100,42 @@ import {
 import {
   verifyLoginVerificationSignature,
   type LoginVerification,
+  type LoginCeremonyEvidence,
+  type LoginDeviceTrust,
 } from "./login-challenge.js";
 import { ProductSessionStore } from "./product-session-store.js";
 import type { CeremonyTier } from "./human-delegation.js";
+
+// ─── Evidence → DeviceBinding derivation ───────────────────────────────────
+
+const LOGIN_TRUST_TO_DEVICE_TRUST: Record<LoginDeviceTrust, DeviceTrustLevel> = {
+  'hardware-attested': 'hardware-attested',
+  'platform': 'platform',
+  'software': 'software',
+};
+
+const DEVICE_TRUST_RANK: Record<DeviceTrustLevel, number> = {
+  'hardware-attested': 3,
+  'platform': 2,
+  'software': 1,
+  'adapter': 0,
+};
+
+function deriveDeviceBindingFromEvidence(
+  evidence: LoginCeremonyEvidence,
+): DeviceBinding | null {
+  if (evidence.provenFactors.length === 0) return null;
+  const strongest = evidence.provenFactors.reduce((best, f) => {
+    const bestRank = DEVICE_TRUST_RANK[LOGIN_TRUST_TO_DEVICE_TRUST[best.deviceTrust]];
+    const fRank = DEVICE_TRUST_RANK[LOGIN_TRUST_TO_DEVICE_TRUST[f.deviceTrust]];
+    return fRank > bestRank ? f : best;
+  });
+  return {
+    factorId: strongest.factorId,
+    factorType: strongest.factorType,
+    deviceTrustLevel: LOGIN_TRUST_TO_DEVICE_TRUST[strongest.deviceTrust],
+  };
+}
 
 // --- Types ---
 
@@ -1160,13 +1194,12 @@ export class HeartRuntime {
    *
    * @param verification  Signed LoginVerification from LoginChallengeService.
    * @param accountId     Product account ID (e.g. HeyVera account).
-   * @param opts          Optional device binding, TTL, session ID overrides.
+   * @param opts          Optional TTL, session ID overrides.
    */
   issueProductSessionFromLogin(
     verification: LoginVerification,
     accountId: string,
     opts?: {
-      deviceBinding?: DeviceBinding | null;
       sessionTtlMs?: number;
       sessionId?: string;
       now?: number;
@@ -1192,6 +1225,9 @@ export class HeartRuntime {
       return { ok: false, reason };
     }
 
+    // ── Derive device binding from ceremony evidence ─────────────────
+    const deviceBinding = deriveDeviceBindingFromEvidence(verification.evidence);
+
     // ── Construct soma-direct ProductSession ──────────────────────────
     const sessionTtl = opts?.sessionTtlMs ?? DEFAULT_PRODUCT_SESSION_TTL_MS;
     const sessionId = opts?.sessionId ?? crypto.randomUUID();
@@ -1203,7 +1239,7 @@ export class HeartRuntime {
       baseAuthorityTier: verification.tierAchieved,
       currentAuthorityTier: verification.tierAchieved,
       authOrigin: 'soma-direct',
-      deviceBinding: opts?.deviceBinding ?? null,
+      deviceBinding,
       issuedAt: now,
       expiresAt: now + sessionTtl,
       lastStepUpAt: null,
@@ -1220,6 +1256,7 @@ export class HeartRuntime {
         somaIdentityBinding: session.somaIdentityBinding,
         authOrigin: session.authOrigin,
         tier: session.currentAuthorityTier,
+        deviceTrust: deviceBinding?.deviceTrustLevel ?? null,
         loginChallengeId: verification.challengeId,
         expiresAt: session.expiresAt,
       }),

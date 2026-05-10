@@ -36,6 +36,7 @@ import {
 } from '../core/crypto-provider.js';
 import { FactorRegistry } from './factor-registry.js';
 import type { CeremonyTier } from './human-delegation.js';
+import { evaluateLadder, type TierLadder, type TierEvalInput } from './tier-ladder.js';
 
 // ─── Tier helpers ────────────────────────────────────────────────────────────
 
@@ -58,6 +59,104 @@ const TIER_FROM_NUMBER: Record<number, CeremonyTier | undefined> = {
  * has recovery factors cannot log in; they must recover first.
  */
 const RECOVERY_ONLY_TYPES = new Set<string>(['recovery-seed']);
+
+// ─── Login Ceremony Evidence ────────────────────────────────────────────────
+
+/**
+ * Device trust level as reported by the login factor verifier.
+ * Parallel to `DeviceTrustLevel` in product-session.ts but scoped to login
+ * context — no 'adapter' value since adapters don't go through login challenge.
+ */
+export type LoginDeviceTrust = 'hardware-attested' | 'platform' | 'software';
+
+const DEVICE_TRUST_RANK: Record<LoginDeviceTrust, number> = {
+  'hardware-attested': 2,
+  'platform': 1,
+  'software': 0,
+};
+
+/**
+ * A factor that was actually proven during a login ceremony.
+ * Built from the verifier's result + the registered factor's metadata.
+ * Only factors that passed verification appear here — enrolled-but-unused
+ * factors do NOT.
+ */
+export interface ProvenFactor {
+  factorId: string;
+  factorType: string;
+  verifierTierClaim: number;
+  hasUserVerification: boolean;
+  hasHardwareAttestation: boolean;
+  deviceId: string | null;
+  deviceTrust: LoginDeviceTrust;
+}
+
+/**
+ * Structured evidence of what was actually proven during the login ceremony.
+ * Tier evaluation and device binding are derived from this evidence, not
+ * from factor registry inventory.
+ */
+export interface LoginCeremonyEvidence {
+  provenFactors: ProvenFactor[];
+}
+
+function deriveDeviceTrust(
+  result: LoginFactorVerificationResult,
+  factorType: string,
+): LoginDeviceTrust {
+  if (result.deviceTrust) return result.deviceTrust;
+  if (result.hasHardwareAttestation) return 'hardware-attested';
+  if (
+    factorType === 'webauthn-platform' ||
+    factorType === 'apple-app-attest' ||
+    factorType === 'android-key-attest'
+  ) return 'platform';
+  return 'software';
+}
+
+function buildProvenFactor(
+  assertion: LoginAssertion,
+  result: LoginFactorVerificationResult,
+  registeredMetadata: Record<string, string>,
+): ProvenFactor {
+  return {
+    factorId: assertion.factorId,
+    factorType: assertion.factorType,
+    verifierTierClaim: result.tierAchieved ?? 0,
+    hasUserVerification: result.hasUserVerification ?? false,
+    hasHardwareAttestation: result.hasHardwareAttestation ?? false,
+    deviceId: registeredMetadata.deviceId ?? null,
+    deviceTrust: deriveDeviceTrust(result, assertion.factorType),
+  };
+}
+
+function pickStrongestFactor(factors: ProvenFactor[]): ProvenFactor {
+  return factors.reduce((best, f) =>
+    f.verifierTierClaim > best.verifierTierClaim ||
+    (f.verifierTierClaim === best.verifierTierClaim &&
+      DEVICE_TRUST_RANK[f.deviceTrust] > DEVICE_TRUST_RANK[best.deviceTrust])
+      ? f : best,
+  );
+}
+
+function evidenceToTierInput(
+  evidence: LoginCeremonyEvidence,
+  subjectDid: string,
+): TierEvalInput {
+  const primary = pickStrongestFactor(evidence.provenFactors);
+  return {
+    factorType: primary.factorType,
+    factorTier: primary.verifierTierClaim,
+    subjectDid,
+    hasUserVerification: evidence.provenFactors.some(f => f.hasUserVerification),
+    hasHardwareAttestation: evidence.provenFactors.some(f => f.hasHardwareAttestation),
+    registeredActive: evidence.provenFactors.map(f => ({
+      factorType: f.factorType,
+      factorId: f.factorId,
+      metadata: f.deviceId ? { deviceId: f.deviceId } : {} as Record<string, string>,
+    })),
+  };
+}
 
 // ─── Login Challenge ─────────────────────────────────────────────────────────
 
@@ -116,6 +215,10 @@ export interface LoginAssertion {
 /**
  * A signed record the server returns after successful login verification.
  * Used to issue a ProductSession via `HeartRuntime.issueProductSessionFromLogin`.
+ *
+ * The `evidence` field carries what was actually proven in the ceremony.
+ * Tier and device binding on the resulting ProductSession are derived from
+ * this evidence, not from factor registry inventory.
  */
 export interface LoginVerification {
   protocol: 'soma-login/1';
@@ -123,12 +226,14 @@ export interface LoginVerification {
   challengeId: string;
   /** The authenticated Soma identity DID. */
   subjectDid: string;
-  /** Factor type that was used. */
+  /** Primary factor type (strongest proven factor). */
   factorType: string;
-  /** Factor ID that was used. */
+  /** Primary factor ID (strongest proven factor). */
   factorId: string;
-  /** Ceremony tier achieved by the factor. */
+  /** Ceremony tier achieved, evaluated from evidence via tier ladder. */
   tierAchieved: CeremonyTier;
+  /** Structured evidence of what was actually proven. */
+  evidence: LoginCeremonyEvidence;
   /** Unix ms when the factor produced its assertion. */
   assertedAt: number;
   /** Unix ms when the server verified and accepted the assertion. */
@@ -145,13 +250,25 @@ export interface LoginVerification {
 
 /**
  * Result of verifying a factor-produced assertion against a login
- * challenge. `tierAchieved` is the factor's claim about its strength.
+ * challenge. Includes both the validity verdict and structured evidence
+ * about what the factor actually proved.
+ *
+ * The evidence fields are optional for backward compatibility — verifiers
+ * that don't report them get safe defaults (false / null / 'software').
  */
 export interface LoginFactorVerificationResult {
   valid: boolean;
   reason?: string;
   /** Numeric tier (0-3) the factor claims to support. */
   tierAchieved?: number;
+  /** True if the assertion included a user-verification (biometric/PIN) flag. */
+  hasUserVerification?: boolean;
+  /** True if the factor has a verified hardware attestation (FIDO2 AAGUID, etc.). */
+  hasHardwareAttestation?: boolean;
+  /** Device identifier from the assertion, if available. */
+  deviceId?: string | null;
+  /** Device trust level. Derived from factor type if not reported. */
+  deviceTrust?: LoginDeviceTrust;
 }
 
 /**
@@ -198,13 +315,14 @@ export interface LoginChallengeServiceConfig {
   heartSigningKey: Uint8Array;
   factorRegistry: FactorRegistry;
   verifiers: LoginFactorVerifierRegistry;
-  /** Tier ladder evaluator — receives the verifier's tier, returns the
-   *  policy-adjusted tier. */
-  evaluateTier?: (input: {
-    factorType: string;
-    factorTier: number;
-    subjectDid: string;
-  }) => number;
+  /**
+   * Tier ladder for evaluating login ceremony evidence. The ladder's
+   * `TierEvalInput.registeredActive` is populated from proven factors
+   * only — enrolled-but-unused factors do not inflate the tier.
+   *
+   * If omitted, the tier defaults to the verifier's `tierAchieved` claim.
+   */
+  tierLadder?: TierLadder;
   /** Clock override for tests. */
   now?: () => number;
   /** Default challenge TTL in ms. Defaults to 120 000 (2 minutes). */
@@ -282,12 +400,11 @@ export class LoginChallengeService {
   }
 
   /**
-   * Verify a login assertion against an outstanding challenge.
+   * Verify a single login assertion against an outstanding challenge.
    *
    * On success, the challenge is consumed (single use) and a signed
-   * `LoginVerification` is returned. On failure, the challenge remains
-   * outstanding (the user can retry with a different factor or fix
-   * the assertion).
+   * `LoginVerification` is returned with ceremony evidence. On failure,
+   * the challenge remains outstanding (the user can retry).
    */
   async verifyLogin(
     assertion: LoginAssertion,
@@ -295,90 +412,133 @@ export class LoginChallengeService {
     | { ok: true; verification: LoginVerification }
     | { ok: false; reason: string }
   > {
+    return this.verifyMultiFactorLogin([assertion]);
+  }
+
+  /**
+   * Verify one or more login assertions against the same outstanding
+   * challenge. All assertions must reference the same challengeId. The
+   * tier is evaluated from the combined ceremony evidence — only factors
+   * that actually pass verification contribute to the tier.
+   *
+   * On success, the challenge is consumed and a signed `LoginVerification`
+   * is returned. On failure, the challenge stays outstanding.
+   */
+  async verifyMultiFactorLogin(
+    assertions: LoginAssertion[],
+  ): Promise<
+    | { ok: true; verification: LoginVerification }
+    | { ok: false; reason: string }
+  > {
+    if (assertions.length === 0) {
+      return { ok: false, reason: 'no assertions provided' };
+    }
+
     const p = this.opts.provider ?? getCryptoProvider();
     const now = (this.opts.now ?? Date.now)();
 
+    // ── All assertions must reference the same challenge ─────────────
+    const challengeId = assertions[0].challengeId;
+    if (assertions.some(a => a.challengeId !== challengeId)) {
+      return { ok: false, reason: 'all assertions must reference the same challenge' };
+    }
+
+    // ── No duplicate factor IDs ──────────────────────────────────────
+    const factorIds = new Set(assertions.map(a => a.factorId));
+    if (factorIds.size !== assertions.length) {
+      return { ok: false, reason: 'duplicate factor ID in assertions' };
+    }
+
     // ── Replay prevention ────────────────────────────────────────────
-    if (this.consumed.has(assertion.challengeId)) {
+    if (this.consumed.has(challengeId)) {
       return { ok: false, reason: 'challenge already consumed' };
     }
 
     // ── Challenge lookup ─────────────────────────────────────────────
-    const challenge = this.outstanding.get(assertion.challengeId);
+    const challenge = this.outstanding.get(challengeId);
     if (!challenge) {
       return { ok: false, reason: 'unknown challenge id' };
     }
 
     // ── Challenge expiry ─────────────────────────────────────────────
     if (now > challenge.expiresAt) {
-      this.outstanding.delete(assertion.challengeId);
+      this.outstanding.delete(challengeId);
       return { ok: false, reason: 'challenge expired' };
     }
 
-    // ── Assertion timing ─────────────────────────────────────────────
-    if (assertion.assertedAt < challenge.issuedAt) {
-      return { ok: false, reason: 'assertion predates challenge' };
-    }
-    if (assertion.assertedAt > now + 60_000) {
-      // Allow 60s clock skew, reject obviously-future assertions
-      return { ok: false, reason: 'assertion timestamp is in the future' };
+    // ── Verify each assertion and build proven factors ────────────────
+    const provenFactors: ProvenFactor[] = [];
+
+    for (const assertion of assertions) {
+      // ── Assertion timing ─────────────────────────────────────────
+      if (assertion.assertedAt < challenge.issuedAt) {
+        return { ok: false, reason: 'assertion predates challenge' };
+      }
+      if (assertion.assertedAt > now + 60_000) {
+        return { ok: false, reason: 'assertion timestamp is in the future' };
+      }
+
+      // ── Factor registration ──────────────────────────────────────
+      const registered = this.opts.factorRegistry.get(
+        challenge.subjectDid,
+        assertion.factorId,
+      );
+      if (!registered) {
+        return { ok: false, reason: 'factor not registered for subject' };
+      }
+      if (registered.revokedAt !== null) {
+        return { ok: false, reason: 'factor is revoked' };
+      }
+      if (registered.factorType !== assertion.factorType) {
+        return { ok: false, reason: 'factor type mismatch with registered entry' };
+      }
+
+      // ── Pluggable factor verification ────────────────────────────
+      const verifier = this.opts.verifiers.get(assertion.factorType);
+      if (!verifier) {
+        return {
+          ok: false,
+          reason: `no verifier registered for factor type ${assertion.factorType}`,
+        };
+      }
+
+      const result = await verifier({
+        challenge,
+        assertion,
+        registered: {
+          publicMaterial: registered.publicMaterial,
+          attestation: registered.attestation,
+          metadata: registered.metadata,
+        },
+      });
+
+      if (!result.valid) {
+        return { ok: false, reason: result.reason ?? 'factor assertion invalid' };
+      }
+
+      provenFactors.push(
+        buildProvenFactor(assertion, result, registered.metadata),
+      );
     }
 
-    // ── Factor registration ──────────────────────────────────────────
-    const registered = this.opts.factorRegistry.get(
-      challenge.subjectDid,
-      assertion.factorId,
-    );
-    if (!registered) {
-      return { ok: false, reason: 'factor not registered for subject' };
-    }
-    if (registered.revokedAt !== null) {
-      return { ok: false, reason: 'factor is revoked' };
-    }
-    if (registered.factorType !== assertion.factorType) {
-      return { ok: false, reason: 'factor type mismatch with registered entry' };
-    }
+    // ── Build ceremony evidence ──────────────────────────────────────
+    const evidence: LoginCeremonyEvidence = { provenFactors };
+    const primary = pickStrongestFactor(provenFactors);
 
-    // ── Pluggable factor verification ────────────────────────────────
-    const verifier = this.opts.verifiers.get(assertion.factorType);
-    if (!verifier) {
-      return {
-        ok: false,
-        reason: `no verifier registered for factor type ${assertion.factorType}`,
-      };
+    // ── Tier evaluation from evidence ────────────────────────────────
+    let tierNum: number;
+    if (this.opts.tierLadder) {
+      const tierInput = evidenceToTierInput(evidence, challenge.subjectDid);
+      tierNum = evaluateLadder(this.opts.tierLadder, tierInput);
+    } else {
+      tierNum = primary.verifierTierClaim;
     }
-
-    const result = await verifier({
-      challenge,
-      assertion,
-      registered: {
-        publicMaterial: registered.publicMaterial,
-        attestation: registered.attestation,
-        metadata: registered.metadata,
-      },
-    });
-
-    if (!result.valid) {
-      return { ok: false, reason: result.reason ?? 'factor assertion invalid' };
-    }
-
-    // ── Tier evaluation ──────────────────────────────────────────────
-    const rawTier = result.tierAchieved ?? 0;
-    const policyTier = this.opts.evaluateTier
-      ? this.opts.evaluateTier({
-          factorType: assertion.factorType,
-          factorTier: rawTier,
-          subjectDid: challenge.subjectDid,
-        })
-      : rawTier;
-    // Policy can lower but never raise above what the factor proved
-    const tierNum = Math.min(policyTier, rawTier);
 
     const tierAchieved = TIER_FROM_NUMBER[tierNum];
     if (!tierAchieved) {
       return {
         ok: false,
-        reason: `invalid tier ${tierNum} from factor verifier`,
+        reason: `invalid tier ${tierNum} from evaluation`,
       };
     }
 
@@ -390,14 +550,19 @@ export class LoginChallengeService {
     }
 
     // ── Mint signed verification ─────────────────────────────────────
+    const latestAssertion = assertions.reduce((latest, a) =>
+      a.assertedAt > latest.assertedAt ? a : latest,
+    );
+
     const verificationPayload = {
       protocol: 'soma-login/1' as const,
       challengeId: challenge.id,
       subjectDid: challenge.subjectDid,
-      factorType: assertion.factorType,
-      factorId: assertion.factorId,
+      factorType: primary.factorType,
+      factorId: primary.factorId,
       tierAchieved,
-      assertedAt: assertion.assertedAt,
+      evidence,
+      assertedAt: latestAssertion.assertedAt,
       verifiedAt: now,
       heartDid: this.opts.heartDid,
       heartPublicKey: this.opts.heartPublicKey,
@@ -413,14 +578,16 @@ export class LoginChallengeService {
       signature: p.encoding.encodeBase64(sig),
     };
 
-    // ── Consume challenge + mark factor used ─────────────────────────
+    // ── Consume challenge + mark all proven factors used ─────────────
     this.outstanding.delete(challenge.id);
     this.consumed.add(challenge.id);
-    this.opts.factorRegistry.markUsed(
-      challenge.subjectDid,
-      assertion.factorId,
-      now,
-    );
+    for (const pf of provenFactors) {
+      this.opts.factorRegistry.markUsed(
+        challenge.subjectDid,
+        pf.factorId,
+        now,
+      );
+    }
 
     return { ok: true, verification };
   }

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { getCryptoProvider } from '../../src/core/crypto-provider.js';
 import { FactorRegistry } from '../../src/heart/factor-registry.js';
 import {
@@ -9,6 +9,7 @@ import {
   type LoginAssertion,
   type LoginFactorVerifier,
 } from '../../src/heart/login-challenge.js';
+import type { TierLadder } from '../../src/heart/tier-ladder.js';
 
 // ─── Test helpers ───────────────────────────────────────────────────────────
 
@@ -21,11 +22,7 @@ function makeKeyPair() {
 function makeService(overrides?: {
   now?: () => number;
   defaultTtlMs?: number;
-  evaluateTier?: (input: {
-    factorType: string;
-    factorTier: number;
-    subjectDid: string;
-  }) => number;
+  tierLadder?: TierLadder;
 }) {
   const keyPair = makeKeyPair();
   const heartDid = 'did:key:z6MkheartTest';
@@ -42,13 +39,15 @@ function makeService(overrides?: {
     publicMaterial: 'mockPublicKey',
     attestation: null,
     isSecret: false,
-    metadata: { device: 'test-device' },
+    metadata: { device: 'test-device', deviceId: 'device-1' },
   });
 
   // Register a mock verifier that always succeeds with tier 1
   const mockVerifier: LoginFactorVerifier = () => ({
     valid: true,
     tierAchieved: 1,
+    hasUserVerification: true,
+    hasHardwareAttestation: false,
   });
   verifiers.register('webauthn-platform', mockVerifier);
 
@@ -61,7 +60,7 @@ function makeService(overrides?: {
     provider,
     now: overrides?.now,
     defaultTtlMs: overrides?.defaultTtlMs,
-    evaluateTier: overrides?.evaluateTier,
+    tierLadder: overrides?.tierLadder,
   });
 
   return {
@@ -182,7 +181,7 @@ describe('LoginChallengeService', () => {
   });
 
   describe('verifyLogin — happy path', () => {
-    it('verifies a valid login assertion and returns a signed verification', async () => {
+    it('verifies a valid login assertion and returns a signed verification with evidence', async () => {
       const nowMs = 100_000;
       const { service, heartDid } = makeService({ now: () => nowMs });
 
@@ -208,6 +207,17 @@ describe('LoginChallengeService', () => {
       expect(result.verification.verifiedAt).toBe(nowMs);
       expect(result.verification.heartDid).toBe(heartDid);
       expect(result.verification.signature).toBeTruthy();
+
+      // Evidence must be present and reflect what was proven
+      expect(result.verification.evidence).toBeDefined();
+      expect(result.verification.evidence.provenFactors).toHaveLength(1);
+      const pf = result.verification.evidence.provenFactors[0];
+      expect(pf.factorId).toBe('factor-1');
+      expect(pf.factorType).toBe('webauthn-platform');
+      expect(pf.hasUserVerification).toBe(true);
+      expect(pf.hasHardwareAttestation).toBe(false);
+      expect(pf.deviceId).toBe('device-1');
+      expect(pf.deviceTrust).toBe('platform');
     });
 
     it('verification signature is valid', async () => {
@@ -228,6 +238,28 @@ describe('LoginChallengeService', () => {
         },
       );
       expect(sigCheck.valid).toBe(true);
+    });
+
+    it('evidence is covered by signature (tamper-proof)', async () => {
+      const { service } = makeService();
+      const challenge = service.createChallenge({
+        subjectDid: 'did:key:z6MktestSubject',
+      });
+      const result = await service.verifyLogin(makeAssertion(challenge.id));
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+
+      const tampered = {
+        ...result.verification,
+        evidence: {
+          provenFactors: [{
+            ...result.verification.evidence.provenFactors[0],
+            hasHardwareAttestation: true,
+          }],
+        },
+      };
+      const check = verifyLoginVerificationSignature(tampered, { provider });
+      expect(check.valid).toBe(false);
     });
 
     it('consumes the challenge (single use)', async () => {
@@ -378,7 +410,7 @@ describe('LoginChallengeService', () => {
     });
 
     it('rejects when no verifier registered for factor type', async () => {
-      const { service, factorRegistry, verifiers } = makeService();
+      const { service, factorRegistry } = makeService();
 
       factorRegistry.register({
         factorId: 'totp-1',
@@ -438,14 +470,17 @@ describe('LoginChallengeService', () => {
       if (!result.ok) expect(result.reason).toContain('tier achieved L0 < required L1');
     });
 
-    it('applies tier policy evaluator (policy can lower tier)', async () => {
-      const { service, verifiers } = makeService({
-        evaluateTier: ({ factorTier }) => Math.min(factorTier, 0),
-      });
-      // Verifier says tier 1, but policy caps at 0
+    it('tier ladder evaluation can lower tier below requested', async () => {
+      // Ladder that grants tier 0 for everything
+      const ladder: TierLadder = [
+        { tier: 0, label: 'always-zero', when: { kind: 'or', of: [] } },
+      ];
+      const { service, verifiers } = makeService({ tierLadder: ladder });
+      // Verifier says tier 1, but ladder returns 0
       verifiers.register('webauthn-platform', () => ({
         valid: true,
         tierAchieved: 1,
+        hasUserVerification: true,
       }));
 
       const challenge = service.createChallenge({
@@ -462,7 +497,7 @@ describe('LoginChallengeService', () => {
       const { service, verifiers } = makeService();
       verifiers.register('webauthn-platform', async () => {
         await new Promise((r) => setTimeout(r, 1));
-        return { valid: true, tierAchieved: 1 };
+        return { valid: true, tierAchieved: 1, hasUserVerification: true };
       });
 
       const challenge = service.createChallenge({
@@ -471,6 +506,423 @@ describe('LoginChallengeService', () => {
       const assertion = makeAssertion(challenge.id);
       const result = await service.verifyLogin(assertion);
       expect(result.ok).toBe(true);
+    });
+  });
+
+  // ─── Evidence-driven tier (no inflation from enrolled-but-unused factors) ──
+
+  describe('evidence-driven tier evaluation', () => {
+    it('enrolled-but-unused factors do NOT inflate tier', async () => {
+      const ladder: TierLadder = [
+        {
+          tier: 2,
+          label: 'two-devices',
+          when: { kind: 'distinct-device-count', count: 2 },
+        },
+        {
+          tier: 1,
+          label: 'one-uv',
+          when: { kind: 'user-verification' },
+        },
+      ];
+
+      const { service, factorRegistry, verifiers } = makeService({ tierLadder: ladder });
+
+      // Enroll 3 additional factors (total 4 enrolled)
+      factorRegistry.register({
+        factorId: 'factor-2',
+        factorType: 'webauthn-roaming',
+        subjectDid: 'did:key:z6MktestSubject',
+        publicMaterial: 'mockKey2',
+        attestation: null,
+        isSecret: false,
+        metadata: { deviceId: 'device-2' },
+      });
+      factorRegistry.register({
+        factorId: 'factor-3',
+        factorType: 'totp',
+        subjectDid: 'did:key:z6MktestSubject',
+        publicMaterial: 'totpKey',
+        attestation: null,
+        isSecret: true,
+        metadata: { deviceId: 'device-3' },
+      });
+      factorRegistry.register({
+        factorId: 'factor-4',
+        factorType: 'webauthn-platform',
+        subjectDid: 'did:key:z6MktestSubject',
+        publicMaterial: 'mockKey4',
+        attestation: null,
+        isSecret: false,
+        metadata: { deviceId: 'device-4' },
+      });
+
+      verifiers.register('webauthn-platform', () => ({
+        valid: true,
+        tierAchieved: 1,
+        hasUserVerification: true,
+      }));
+
+      // Despite 4 enrolled factors across 4 devices, proving only 1
+      // should give tier 1 (one UV), NOT tier 2 (two devices)
+      const challenge = service.createChallenge({
+        subjectDid: 'did:key:z6MktestSubject',
+        requestedTier: 'L0',
+      });
+      const result = await service.verifyLogin(
+        makeAssertion(challenge.id, { assertedAt: Date.now() }),
+      );
+
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.verification.tierAchieved).toBe('L1');
+      expect(result.verification.evidence.provenFactors).toHaveLength(1);
+    });
+
+    it('multi-factor login achieves higher tier when both factors are proven', async () => {
+      const ladder: TierLadder = [
+        {
+          tier: 2,
+          label: 'two-devices-with-uv',
+          when: {
+            kind: 'and',
+            of: [
+              { kind: 'user-verification' },
+              { kind: 'distinct-device-count', count: 2 },
+            ],
+          },
+        },
+        {
+          tier: 1,
+          label: 'single-uv',
+          when: { kind: 'user-verification' },
+        },
+      ];
+
+      const { service, factorRegistry, verifiers } = makeService({ tierLadder: ladder });
+
+      // Enroll a second factor on a different device
+      factorRegistry.register({
+        factorId: 'factor-hw',
+        factorType: 'webauthn-roaming',
+        subjectDid: 'did:key:z6MktestSubject',
+        publicMaterial: 'hwKey',
+        attestation: 'hw-attest',
+        isSecret: false,
+        metadata: { deviceId: 'device-hw' },
+      });
+
+      verifiers.register('webauthn-platform', () => ({
+        valid: true,
+        tierAchieved: 1,
+        hasUserVerification: true,
+      }));
+      verifiers.register('webauthn-roaming', () => ({
+        valid: true,
+        tierAchieved: 2,
+        hasUserVerification: true,
+        hasHardwareAttestation: true,
+        deviceTrust: 'hardware-attested' as const,
+      }));
+
+      const challenge = service.createChallenge({
+        subjectDid: 'did:key:z6MktestSubject',
+        requestedTier: 'L0',
+      });
+
+      const result = await service.verifyMultiFactorLogin([
+        makeAssertion(challenge.id, {
+          factorId: 'factor-1',
+          factorType: 'webauthn-platform',
+          assertedAt: Date.now(),
+        }),
+        makeAssertion(challenge.id, {
+          factorId: 'factor-hw',
+          factorType: 'webauthn-roaming',
+          assertedAt: Date.now(),
+        }),
+      ]);
+
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.verification.tierAchieved).toBe('L2');
+      expect(result.verification.evidence.provenFactors).toHaveLength(2);
+      // Primary factor should be the stronger one
+      expect(result.verification.factorType).toBe('webauthn-roaming');
+    });
+
+    it('single factor from multi-enrolled registry only achieves single-factor tier', async () => {
+      const ladder: TierLadder = [
+        {
+          tier: 2,
+          label: 'multi-device',
+          when: { kind: 'distinct-device-count', count: 2 },
+        },
+        {
+          tier: 1,
+          label: 'any-uv',
+          when: { kind: 'user-verification' },
+        },
+      ];
+
+      const { service, factorRegistry, verifiers } = makeService({ tierLadder: ladder });
+
+      factorRegistry.register({
+        factorId: 'factor-2',
+        factorType: 'webauthn-roaming',
+        subjectDid: 'did:key:z6MktestSubject',
+        publicMaterial: 'key2',
+        attestation: null,
+        isSecret: false,
+        metadata: { deviceId: 'device-2' },
+      });
+
+      verifiers.register('webauthn-platform', () => ({
+        valid: true,
+        tierAchieved: 1,
+        hasUserVerification: true,
+      }));
+
+      // Only prove one factor despite two enrolled
+      const challenge = service.createChallenge({
+        subjectDid: 'did:key:z6MktestSubject',
+        requestedTier: 'L0',
+      });
+      const result = await service.verifyLogin(
+        makeAssertion(challenge.id, { assertedAt: Date.now() }),
+      );
+
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      // distinct-device-count = 1 (only proved 1), so tier = 1 not 2
+      expect(result.verification.tierAchieved).toBe('L1');
+    });
+
+    it('without tier ladder, falls back to verifier tier claim', async () => {
+      // No tier ladder
+      const { service, verifiers } = makeService();
+      verifiers.register('webauthn-platform', () => ({
+        valid: true,
+        tierAchieved: 2,
+        hasUserVerification: true,
+        hasHardwareAttestation: true,
+      }));
+
+      const challenge = service.createChallenge({
+        subjectDid: 'did:key:z6MktestSubject',
+        requestedTier: 'L0',
+      });
+      const result = await service.verifyLogin(
+        makeAssertion(challenge.id, { assertedAt: Date.now() }),
+      );
+
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.verification.tierAchieved).toBe('L2');
+    });
+
+    it('evidence carries deviceId from registered factor metadata', async () => {
+      const { service } = makeService();
+      const challenge = service.createChallenge({
+        subjectDid: 'did:key:z6MktestSubject',
+      });
+      const result = await service.verifyLogin(
+        makeAssertion(challenge.id, { assertedAt: Date.now() }),
+      );
+
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.verification.evidence.provenFactors[0].deviceId).toBe('device-1');
+    });
+
+    it('evidence deviceId is null when factor has no deviceId in metadata', async () => {
+      const { service, factorRegistry, verifiers } = makeService();
+
+      factorRegistry.register({
+        factorId: 'totp-1',
+        factorType: 'totp',
+        subjectDid: 'did:key:z6MktestSubject',
+        publicMaterial: 'totpKey',
+        attestation: null,
+        isSecret: true,
+        metadata: {},
+      });
+      verifiers.register('totp', () => ({
+        valid: true,
+        tierAchieved: 0,
+      }));
+
+      const challenge = service.createChallenge({
+        subjectDid: 'did:key:z6MktestSubject',
+        requestedTier: 'L0',
+      });
+      const result = await service.verifyLogin(
+        makeAssertion(challenge.id, {
+          factorId: 'totp-1',
+          factorType: 'totp',
+          assertedAt: Date.now(),
+        }),
+      );
+
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.verification.evidence.provenFactors[0].deviceId).toBeNull();
+      expect(result.verification.evidence.provenFactors[0].deviceTrust).toBe('software');
+    });
+
+    it('derives hardware-attested device trust from verifier evidence', async () => {
+      const { service, verifiers } = makeService();
+      verifiers.register('webauthn-platform', () => ({
+        valid: true,
+        tierAchieved: 2,
+        hasUserVerification: true,
+        hasHardwareAttestation: true,
+      }));
+
+      const challenge = service.createChallenge({
+        subjectDid: 'did:key:z6MktestSubject',
+      });
+      const result = await service.verifyLogin(
+        makeAssertion(challenge.id, { assertedAt: Date.now() }),
+      );
+
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.verification.evidence.provenFactors[0].deviceTrust).toBe('hardware-attested');
+    });
+
+    it('uses verifier-reported deviceTrust when provided', async () => {
+      const { service, verifiers } = makeService();
+      verifiers.register('webauthn-platform', () => ({
+        valid: true,
+        tierAchieved: 1,
+        hasUserVerification: true,
+        hasHardwareAttestation: false,
+        deviceTrust: 'software' as const,
+      }));
+
+      const challenge = service.createChallenge({
+        subjectDid: 'did:key:z6MktestSubject',
+      });
+      const result = await service.verifyLogin(
+        makeAssertion(challenge.id, { assertedAt: Date.now() }),
+      );
+
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.verification.evidence.provenFactors[0].deviceTrust).toBe('software');
+    });
+  });
+
+  // ─── Multi-factor login ───────────────────────────────────────────────────
+
+  describe('verifyMultiFactorLogin', () => {
+    it('rejects empty assertions array', async () => {
+      const { service } = makeService();
+      const result = await service.verifyMultiFactorLogin([]);
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.reason).toBe('no assertions provided');
+    });
+
+    it('rejects assertions referencing different challenges', async () => {
+      const { service } = makeService();
+      const result = await service.verifyMultiFactorLogin([
+        makeAssertion('challenge-1'),
+        makeAssertion('challenge-2'),
+      ]);
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.reason).toBe('all assertions must reference the same challenge');
+    });
+
+    it('rejects duplicate factor IDs', async () => {
+      const { service } = makeService();
+      const challenge = service.createChallenge({
+        subjectDid: 'did:key:z6MktestSubject',
+      });
+      const result = await service.verifyMultiFactorLogin([
+        makeAssertion(challenge.id, { factorId: 'factor-1' }),
+        makeAssertion(challenge.id, { factorId: 'factor-1' }),
+      ]);
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.reason).toBe('duplicate factor ID in assertions');
+    });
+
+    it('marks all proven factors as used', async () => {
+      const nowMs = 100_000;
+      const { service, factorRegistry, verifiers } = makeService({ now: () => nowMs });
+
+      factorRegistry.register({
+        factorId: 'factor-2',
+        factorType: 'totp',
+        subjectDid: 'did:key:z6MktestSubject',
+        publicMaterial: 'totpKey',
+        attestation: null,
+        isSecret: true,
+        metadata: {},
+      });
+      verifiers.register('totp', () => ({
+        valid: true,
+        tierAchieved: 0,
+      }));
+
+      const challenge = service.createChallenge({
+        subjectDid: 'did:key:z6MktestSubject',
+      });
+      const result = await service.verifyMultiFactorLogin([
+        makeAssertion(challenge.id, {
+          factorId: 'factor-1',
+          factorType: 'webauthn-platform',
+          assertedAt: nowMs,
+        }),
+        makeAssertion(challenge.id, {
+          factorId: 'factor-2',
+          factorType: 'totp',
+          assertedAt: nowMs,
+        }),
+      ]);
+
+      expect(result.ok).toBe(true);
+      expect(factorRegistry.get('did:key:z6MktestSubject', 'factor-1')!.lastUsedAt).toBe(nowMs);
+      expect(factorRegistry.get('did:key:z6MktestSubject', 'factor-2')!.lastUsedAt).toBe(nowMs);
+    });
+
+    it('fails if any single assertion is invalid', async () => {
+      const { service, factorRegistry, verifiers } = makeService();
+
+      factorRegistry.register({
+        factorId: 'factor-2',
+        factorType: 'totp',
+        subjectDid: 'did:key:z6MktestSubject',
+        publicMaterial: 'totpKey',
+        attestation: null,
+        isSecret: true,
+        metadata: {},
+      });
+      verifiers.register('totp', () => ({
+        valid: false,
+        reason: 'wrong TOTP code',
+      }));
+
+      const challenge = service.createChallenge({
+        subjectDid: 'did:key:z6MktestSubject',
+      });
+      const result = await service.verifyMultiFactorLogin([
+        makeAssertion(challenge.id, {
+          factorId: 'factor-1',
+          factorType: 'webauthn-platform',
+          assertedAt: Date.now(),
+        }),
+        makeAssertion(challenge.id, {
+          factorId: 'factor-2',
+          factorType: 'totp',
+          assertedAt: Date.now(),
+        }),
+      ]);
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.reason).toBe('wrong TOTP code');
+      // Challenge should remain outstanding since verification failed
+      expect(service.outstandingCount()).toBe(1);
     });
   });
 

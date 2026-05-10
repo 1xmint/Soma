@@ -524,6 +524,9 @@ export {
   type LoginFactorVerificationResult,
   type LoginChallengeServiceConfig,
   type LoginChallengeVerification,
+  type LoginCeremonyEvidence,
+  type ProvenFactor,
+  type LoginDeviceTrust,
 } from './login-challenge.js';
 
 // ─── Tier Ladder (deployment-configurable factor → tier policy) ────────────
