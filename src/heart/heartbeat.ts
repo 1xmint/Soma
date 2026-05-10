@@ -72,7 +72,10 @@ export type HeartbeatEventType =
   | "identity_frozen"               // identity frozen — sessions invalidated, authority halted
   | "recovery_initiated"            // recovery evidence submitted, time-lock started
   | "recovery_cancelled"            // pending recovery cancelled (original auth surfaced, operator cancel)
+  | "recovery_verifying"            // time-lock expired, advanced to verifying — authenticator re-enrollment in progress
   | "recovery_completed"            // recovery finished — identity returned to nominal
+  // Guardian recovery (see guardian-recovery-ceremony.ts)
+  | "guardian_approval_received"    // a guardian submitted a valid approval for recovery
   // Supply-chain provenance (see update-certificate.ts)
   | "self_verification";  // heart verified its own package provenance on startup
 

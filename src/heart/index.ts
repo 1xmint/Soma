@@ -578,3 +578,35 @@ export {
   type FreezeResult,
   type RecoveryStatusResult,
 } from './recovery-coordinator.js';
+
+// ─── Recovery Seed Ceremony (offline seed evidence + ceremony orchestration) ─
+
+export {
+  RecoverySeedCeremonyService,
+  type RecoveryChallenge,
+  type RecoverySeedEvidence,
+  type RecoverySeedCeremonyConfig,
+  type InitiateRecoveryResult,
+  type AdvanceToVerifyingResult,
+  type CompleteRecoveryResult,
+  type CeremonyEventEmitter,
+} from './recovery-seed-ceremony.js';
+
+// ─── Guardian Recovery Ceremony (M-of-N guardian quorum recovery) ──────────
+
+export {
+  GuardianRecoveryCeremonyService,
+  type GuardianChallenge,
+  type GuardianApproval,
+  type GuardianRecoveryCeremonyConfig,
+  type SubmitApprovalResult,
+  type GuardianInitiateResult,
+} from './guardian-recovery-ceremony.js';
+
+// ─── Guardian Config (pre-registered guardian metadata) ────────────────────
+
+export {
+  validateGuardianConfig,
+  type GuardianConfig,
+  type GuardianEntry,
+} from './factor-registry.js';
