@@ -1233,7 +1233,9 @@ export class HeartRuntime {
   ): IssueProductSessionResult {
     this.ensureAlive();
 
-    const frozenReason = this.checkNotFrozen(opts?.somaIdentityBinding);
+    const frozenReason =
+      this.checkNotFrozen(opts?.somaIdentityBinding) ??
+      this.checkAccountNotFrozen(accountId);
     if (frozenReason) {
       this.heartbeatChain.record(
         "adapter_session_denied",
@@ -1974,9 +1976,13 @@ export class HeartRuntime {
 
     const now = opts?.now ?? Date.now();
 
+    // Collect bound account IDs BEFORE invalidation unbinds them.
+    const boundAccounts = bindingStore.getByIdentity(somaIdentityDid);
+    const accountIds = boundAccounts.map((b) => b.accountId);
+
     const { ceremonyId } = this._recoveryCoordinator.freezeIdentity(
       somaIdentityDid,
-      { now },
+      { now, accountIds },
     );
 
     const invalidation = this.invalidateIdentitySessions(
@@ -2083,6 +2089,19 @@ export class HeartRuntime {
     if (!identityDid || !this._recoveryCoordinator) return null;
     if (this._recoveryCoordinator.isFrozen(identityDid)) {
       return `identity ${identityDid} is frozen — recovery in progress`;
+    }
+    return null;
+  }
+
+  /**
+   * Returns a rejection reason if the account was bound to a frozen
+   * identity at freeze time, or null if the account is not frozen.
+   * Prevents adapter-bridge re-entry during recovery.
+   */
+  private checkAccountNotFrozen(accountId: string): string | null {
+    if (!this._recoveryCoordinator) return null;
+    if (this._recoveryCoordinator.isAccountFrozen(accountId)) {
+      return `account ${accountId} is frozen — associated identity is in recovery`;
     }
     return null;
   }

@@ -297,6 +297,7 @@ describe("IdentityRecoveryCoordinator", () => {
         identityDid: DID,
         state: "frozen",
         frozenAt: T0,
+        frozenAccountIds: [],
         initiatedAt: null,
         evidenceType: null,
         timeLockExpiresAt: null,
@@ -322,6 +323,63 @@ describe("IdentityRecoveryCoordinator", () => {
       const c = new IdentityRecoveryCoordinator(customStore);
       c.freezeIdentity(DID);
       expect(c.isFrozen(DID)).toBe(true);
+    });
+  });
+
+  // ─── Account-Level Freeze ──────────────────────────────────────────────────
+
+  describe("isAccountFrozen", () => {
+    it("returns false when no accounts are frozen", () => {
+      expect(coord.isAccountFrozen("acct-1")).toBe(false);
+    });
+
+    it("returns true for accounts associated with a frozen identity", () => {
+      coord.freezeIdentity(DID, { now: T0, accountIds: ["acct-1", "acct-2"] });
+      expect(coord.isAccountFrozen("acct-1")).toBe(true);
+      expect(coord.isAccountFrozen("acct-2")).toBe(true);
+      expect(coord.isAccountFrozen("acct-3")).toBe(false);
+    });
+
+    it("returns false after recovery completes", () => {
+      coord.freezeIdentity(DID, { now: T0, accountIds: ["acct-1"] });
+      coord.initiatePending(DID, "recovery-seed", 0, { now: T0 });
+      coord.advanceToVerifying(DID, { now: T0 + 1 });
+      coord.completeRecovery(DID, { now: T0 + 2 });
+      expect(coord.isAccountFrozen("acct-1")).toBe(false);
+    });
+
+    it("remains true through pending and verifying states", () => {
+      coord.freezeIdentity(DID, { now: T0, accountIds: ["acct-1"] });
+      expect(coord.isAccountFrozen("acct-1")).toBe(true);
+
+      coord.initiatePending(DID, "recovery-seed", 1000, { now: T0 });
+      expect(coord.isAccountFrozen("acct-1")).toBe(true);
+
+      // Cancel → still frozen
+      coord.cancelRecovery(DID, { now: T0 + 100 });
+      expect(coord.isAccountFrozen("acct-1")).toBe(true);
+
+      // Re-initiate → verify → still frozen
+      coord.initiatePending(DID, "recovery-seed", 0, { now: T0 + 200 });
+      coord.advanceToVerifying(DID, { now: T0 + 201 });
+      expect(coord.isAccountFrozen("acct-1")).toBe(true);
+    });
+
+    it("tracks accounts across multiple frozen identities", () => {
+      const DID2 = "did:key:z6MkOtherIdentity";
+      coord.freezeIdentity(DID, { now: T0, accountIds: ["acct-1"] });
+      coord.freezeIdentity(DID2, { now: T0, accountIds: ["acct-2"] });
+
+      expect(coord.isAccountFrozen("acct-1")).toBe(true);
+      expect(coord.isAccountFrozen("acct-2")).toBe(true);
+
+      // Complete recovery for DID only
+      coord.initiatePending(DID, "recovery-seed", 0, { now: T0 });
+      coord.advanceToVerifying(DID, { now: T0 + 1 });
+      coord.completeRecovery(DID, { now: T0 + 2 });
+
+      expect(coord.isAccountFrozen("acct-1")).toBe(false);
+      expect(coord.isAccountFrozen("acct-2")).toBe(true);
     });
   });
 });

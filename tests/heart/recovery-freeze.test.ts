@@ -225,14 +225,27 @@ describe('freeze blocks authority-establishing flows', () => {
     if (!result.ok) expect(result.reason).toContain('frozen');
   });
 
-  it('allows issueAdapterBridgeSession without somaIdentityBinding', async () => {
+  it('allows issueAdapterBridgeSession for unrelated account with null binding', async () => {
     await setupFrozen();
 
-    // Adapter session with null identity binding should be allowed
+    // A genuinely new/unrelated account with null binding is allowed
     const result = heart.issueAdapterBridgeSession('acct-new', {
       somaIdentityBinding: null,
     });
     expect(result.ok).toBe(true);
+  });
+
+  it('blocks issueAdapterBridgeSession for previously-bound account with null binding', async () => {
+    await setupFrozen();
+
+    // acct-1 was bound to the frozen identity at freeze time.
+    // Even with null somaIdentityBinding, the account-level freeze
+    // prevents re-entry during recovery.
+    const result = heart.issueAdapterBridgeSession('acct-1', {
+      somaIdentityBinding: null,
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toContain('frozen');
   });
 
   it('blocks elevateProductSession for frozen identity', async () => {

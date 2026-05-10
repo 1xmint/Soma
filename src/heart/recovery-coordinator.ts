@@ -25,6 +25,14 @@ export interface RecoveryCeremony {
   readonly identityDid: string;
   state: RecoveryCeremonyState;
   readonly frozenAt: number;
+  /**
+   * Account IDs that were bound to this identity at freeze time.
+   * These accounts are blocked from fresh session issuance (including
+   * adapter-bridge with null identity binding) until recovery completes.
+   * Populated by the caller (HeartRuntime.freezeIdentity) from the
+   * binding store — the coordinator does not know about bindings.
+   */
+  readonly frozenAccountIds: readonly string[];
   /** When recovery evidence was first submitted (null while frozen). */
   initiatedAt: number | null;
   /** The recovery evidence type (null while frozen). */
@@ -96,6 +104,8 @@ export interface RecoveryStatusResult {
 export class IdentityRecoveryCoordinator {
   private readonly store: RecoveryStore;
   private readonly clock: () => number;
+  /** Reverse index: accountId → identityDid for frozen accounts. */
+  private readonly accountToIdentity = new Map<string, string>();
 
   constructor(
     store: RecoveryStore,
@@ -114,6 +124,15 @@ export class IdentityRecoveryCoordinator {
    */
   isFrozen(identityDid: string): boolean {
     return this.store.get(identityDid) !== undefined;
+  }
+
+  /**
+   * Returns true if the account ID belongs to an identity that is
+   * currently in recovery. Prevents adapter-bridge re-entry for
+   * accounts that were bound to a frozen identity at freeze time.
+   */
+  isAccountFrozen(accountId: string): boolean {
+    return this.accountToIdentity.has(accountId);
   }
 
   // ─── Status Query ────────────────────────────────────────────────────────
@@ -142,7 +161,10 @@ export class IdentityRecoveryCoordinator {
    *
    * @throws if the identity is already frozen.
    */
-  freezeIdentity(identityDid: string, opts?: { now?: number }): FreezeResult {
+  freezeIdentity(
+    identityDid: string,
+    opts?: { now?: number; accountIds?: string[] },
+  ): FreezeResult {
     const existing = this.store.get(identityDid);
     if (existing) {
       throw new Error(
@@ -153,17 +175,24 @@ export class IdentityRecoveryCoordinator {
     const now = opts?.now ?? this.clock();
     const ceremonyId = `recovery-${now}-${identityDid.slice(-8)}`;
 
+    const accountIds = opts?.accountIds ?? [];
+
     this.store.put({
       id: ceremonyId,
       identityDid,
       state: 'frozen',
       frozenAt: now,
+      frozenAccountIds: accountIds,
       initiatedAt: null,
       evidenceType: null,
       timeLockExpiresAt: null,
       cancelledAt: null,
       completedAt: null,
     });
+
+    for (const acctId of accountIds) {
+      this.accountToIdentity.set(acctId, identityDid);
+    }
 
     return { ceremonyId };
   }
@@ -284,6 +313,10 @@ export class IdentityRecoveryCoordinator {
       ...c,
       completedAt: now,
     };
+
+    for (const acctId of c.frozenAccountIds) {
+      this.accountToIdentity.delete(acctId);
+    }
 
     this.store.delete(identityDid);
     return snapshot;
