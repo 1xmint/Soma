@@ -814,6 +814,91 @@ describe('GuardianRecoveryCeremonyService', () => {
       );
       expect(result.ok).toBe(true);
     });
+
+    it('invalidates outstanding challenges on cancellation (stale challenge rejected)', () => {
+      const T0 = 1_700_000_000_000;
+      const { identity, guardians, coordinator, ceremony } = setup({
+        now: () => T0,
+        threshold: 2,
+      });
+      coordinator.freezeIdentity(identity.did, { now: T0 });
+
+      // Issue challenges to two guardians
+      const ch1 = ceremony.createGuardianChallenge(
+        identity.did,
+        guardians[0].did,
+      );
+      const ch2 = ceremony.createGuardianChallenge(
+        identity.did,
+        guardians[1].did,
+      );
+      expect(ceremony.outstandingCount()).toBe(2);
+
+      // Guardian 0 approves, reaching partial quorum
+      ceremony.submitGuardianApproval(
+        makeApproval(ch1, guardians[0].kp.secretKey),
+        60_000,
+        { now: T0 },
+      );
+
+      // Need quorum to cancel (pending state required)
+      // Issue and approve for guardian 1 to reach quorum
+      const ch1b = ceremony.createGuardianChallenge(
+        identity.did,
+        guardians[1].did,
+      );
+      ceremony.submitGuardianApproval(
+        makeApproval(ch1b, guardians[1].kp.secretKey),
+        60_000,
+        { now: T0 },
+      );
+
+      // Cancel recovery — reverts to frozen, should invalidate ch2
+      ceremony.cancelRecovery(identity.did, { now: T0 + 1000 });
+      expect(coordinator.getStatus(identity.did)?.state).toBe('frozen');
+
+      // ch2 was issued before cancellation — must be rejected
+      const staleResult = ceremony.submitGuardianApproval(
+        makeApproval(ch2, guardians[1].kp.secretKey),
+        60_000,
+        { now: T0 + 2000 },
+      );
+
+      expect(staleResult.ok).toBe(false);
+      if (!staleResult.ok)
+        expect(staleResult.reason).toContain('already consumed');
+    });
+
+    it('outstanding count drops to zero after cancellation', () => {
+      const T0 = 1_700_000_000_000;
+      const { identity, guardians, coordinator, ceremony } = setup({
+        now: () => T0,
+        threshold: 1,
+      });
+      coordinator.freezeIdentity(identity.did, { now: T0 });
+
+      // Issue challenges but don't approve them all
+      ceremony.createGuardianChallenge(identity.did, guardians[0].did);
+      ceremony.createGuardianChallenge(identity.did, guardians[1].did);
+
+      // Need to reach pending to cancel — approve one (threshold=1)
+      const ch3 = ceremony.createGuardianChallenge(
+        identity.did,
+        guardians[2].did,
+      );
+      ceremony.submitGuardianApproval(
+        makeApproval(ch3, guardians[2].kp.secretKey),
+        60_000,
+        { now: T0 },
+      );
+
+      // Two outstanding remain (guardians 0 and 1)
+      expect(ceremony.outstandingCount()).toBe(2);
+
+      ceremony.cancelRecovery(identity.did, { now: T0 + 1000 });
+
+      expect(ceremony.outstandingCount()).toBe(0);
+    });
   });
 
   // ─── advanceToVerifying ─────────────────────────────────────────────────

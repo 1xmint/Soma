@@ -363,6 +363,7 @@ export class GuardianRecoveryCeremonyService {
 
     if (result) {
       this.quorums.delete(identityDid);
+      this.invalidateOutstandingForIdentity(identityDid);
       this.emit('recovery_cancelled', { identityDid, at: now });
     }
 
@@ -493,6 +494,15 @@ export class GuardianRecoveryCeremonyService {
   }
 
   // ─── Internals ───────────────────────────────────────────────────────────
+
+  private invalidateOutstandingForIdentity(identityDid: string): void {
+    for (const [id, ch] of this.outstanding) {
+      if (ch.identityDid === identityDid) {
+        this.outstanding.delete(id);
+        this.consumed.add(id);
+      }
+    }
+  }
 
   private emit(
     eventType: HeartbeatEventType,
