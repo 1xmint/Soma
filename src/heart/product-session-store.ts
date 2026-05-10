@@ -161,6 +161,27 @@ export class ProductSessionStore {
   }
 
   /**
+   * Revoke all active sessions whose `somaIdentityBinding` matches the
+   * given DID. Catches sessions that carry an identity reference but may
+   * not have a formal account binding in the binding store.
+   *
+   * Returns the number of sessions revoked.
+   */
+  revokeByIdentity(somaIdentityDid: string): number {
+    let count = 0;
+    for (const [id, session] of this.sessions) {
+      if (
+        session.somaIdentityBinding === somaIdentityDid &&
+        session.revocationState !== 'revoked'
+      ) {
+        this.sessions.set(id, { ...session, revocationState: 'revoked' });
+        count += 1;
+      }
+    }
+    return count;
+  }
+
+  /**
    * Get all active (non-revoked, non-expired) sessions for an account.
    *
    * Useful for session management UIs ("you have 3 active sessions").

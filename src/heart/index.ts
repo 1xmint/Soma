@@ -43,6 +43,7 @@ export {
   type AdapterMigrationResult,
   type AdapterMigrationSuccess,
   type AdapterMigrationFailure,
+  type IdentityInvalidationResult,
 } from './runtime.js';
 
 // ─── Lineage (parent-child hearts) ──────────────────────────────────────────

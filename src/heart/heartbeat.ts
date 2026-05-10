@@ -64,6 +64,8 @@ export type HeartbeatEventType =
   | "account_binding_unbound"      // account binding dissolved + sessions revoked
   // Factor invalidation (see runtime.ts invalidateFactorSessions)
   | "factor_sessions_invalidated"  // sessions revoked because backing factor was invalidated
+  // Identity-level invalidation (see runtime.ts invalidateIdentitySessions)
+  | "identity_sessions_invalidated" // sessions revoked because Soma identity was suspended/compromised/rotated
   // Supply-chain provenance (see update-certificate.ts)
   | "self_verification";  // heart verified its own package provenance on startup
 

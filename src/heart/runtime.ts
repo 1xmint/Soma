@@ -159,6 +159,13 @@ export interface AdapterMigrationFailure {
   reason: string;
 }
 
+// ─── Identity Invalidation Result ─────────────────────────────────────────
+
+export interface IdentityInvalidationResult {
+  accountsUnbound: number;
+  sessionsRevoked: number;
+}
+
 // --- Types ---
 
 /**
@@ -1766,6 +1773,72 @@ export class HeartRuntime {
     );
 
     return { sessionsRevoked };
+  }
+
+  // ─── Identity-Level Invalidation ─────────────────────────────────────
+
+  /**
+   * Revoke all ProductSessions associated with a Soma identity and
+   * unbind all accounts bound to it.
+   *
+   * This is the canonical identity-event → session invalidation path.
+   * Call it when the Soma identity is suspended, compromised, or
+   * undergoes a credential rotation that warrants session invalidation.
+   *
+   * The method does NOT decide *when* to invalidate — the caller makes
+   * that judgment based on the identity event. The method only executes
+   * the invalidation cleanly:
+   *
+   *   1. Look up all accounts bound to the identity via the binding store.
+   *   2. For each bound account: revoke all sessions, then unbind.
+   *   3. Belt-and-suspenders: revoke any remaining sessions that carry
+   *      `somaIdentityBinding === somaIdentityDid` (catches sessions
+   *      without a formal binding record, e.g. adapter sessions with
+   *      an optional identity reference).
+   *   4. Record `identity_sessions_invalidated` heartbeat.
+   *
+   * Sessions for unrelated accounts and identities are never touched.
+   * Adapter-bridge sessions with `somaIdentityBinding === null` are
+   * never matched.
+   *
+   * @param somaIdentityDid  The Soma root identity DID to invalidate.
+   * @param bindingStore     The caller-owned binding store.
+   * @param opts             Optional: timestamp override.
+   */
+  invalidateIdentitySessions(
+    somaIdentityDid: string,
+    bindingStore: ProductAccountBindingStore,
+    opts?: { now?: number },
+  ): IdentityInvalidationResult {
+    this.ensureAlive();
+    const now = opts?.now ?? Date.now();
+
+    const bindings = bindingStore.getByIdentity(somaIdentityDid);
+
+    let accountsUnbound = 0;
+    let sessionsRevoked = 0;
+
+    for (const binding of bindings) {
+      sessionsRevoked += this._productSessionStore.revokeByAccount(binding.accountId);
+      if (bindingStore.unbind(binding.accountId, now)) {
+        accountsUnbound += 1;
+      }
+    }
+
+    // Catch sessions with somaIdentityBinding but no formal binding record
+    sessionsRevoked += this._productSessionStore.revokeByIdentity(somaIdentityDid);
+
+    this.heartbeatChain.record(
+      "identity_sessions_invalidated",
+      JSON.stringify({
+        somaIdentityDid,
+        accountsUnbound,
+        sessionsRevoked,
+        at: now,
+      }),
+    );
+
+    return { accountsUnbound, sessionsRevoked };
   }
 
   /**
