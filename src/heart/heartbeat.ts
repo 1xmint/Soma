@@ -43,6 +43,23 @@ export type HeartbeatEventType =
   // Human consent ceremony (see human-delegation.ts)
   | "consent_required"    // heart asked a human authenticator to approve a session
   | "consent_granted"     // human authenticator returned a signed HumanDelegation
+  | "consent_rejected"    // delegation verification failed (bad sig, attestation, expiry)
+  // Human session lifecycle (see runtime.ts createHumanSession)
+  | "human_session_invoke"         // in-session action authorized by ceremony policy
+  | "human_session_invoke_denied"  // in-session action denied (policy, budget, expiry)
+  | "human_session_revoked"        // human session explicitly revoked
+  // Product session issuance (see runtime.ts issueProductSession)
+  | "product_session_issued"       // Mode A product session issued from a HumanSession
+  | "product_session_denied"       // product session issuance rejected (inactive, expired, etc.)
+  | "adapter_session_issued"       // Mode B adapter-bridge session issued
+  | "product_session_elevated"     // authority tier elevated via step-up ceremony
+  | "product_session_elevation_denied" // step-up elevation rejected
+  // Product session token lifecycle (see product-session.ts opaque token)
+  | "product_session_token_minted"    // opaque transport token minted for a ProductSession
+  | "product_session_token_rejected"  // token validation or session match failed
+  // Adapter-to-direct migration (see runtime.ts migrateAdapterToSomaDirect)
+  | "adapter_migration_completed"  // adapter session migrated to soma-direct
+  | "adapter_migration_denied"     // adapter migration rejected (binding conflict, etc.)
   // Supply-chain provenance (see update-certificate.ts)
   | "self_verification";  // heart verified its own package provenance on startup
 

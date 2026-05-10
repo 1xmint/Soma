@@ -103,6 +103,10 @@ import {
   type LoginCeremonyEvidence,
   type LoginDeviceTrust,
 } from "./login-challenge.js";
+import {
+  ProductAccountBindingStore,
+  type ProductAccountBinding,
+} from "./product-account-binding.js";
 import { ProductSessionStore } from "./product-session-store.js";
 import type { CeremonyTier } from "./human-delegation.js";
 
@@ -135,6 +139,24 @@ function deriveDeviceBindingFromEvidence(
     factorType: strongest.factorType,
     deviceTrustLevel: LOGIN_TRUST_TO_DEVICE_TRUST[strongest.deviceTrust],
   };
+}
+
+// ─── Adapter Migration Result ──────────────────────────────────────────────
+
+export type AdapterMigrationResult =
+  | AdapterMigrationSuccess
+  | AdapterMigrationFailure;
+
+export interface AdapterMigrationSuccess {
+  ok: true;
+  newSession: ProductSession;
+  revokedSessionId: string;
+  binding: ProductAccountBinding;
+}
+
+export interface AdapterMigrationFailure {
+  ok: false;
+  reason: string;
 }
 
 // --- Types ---
@@ -1263,6 +1285,152 @@ export class HeartRuntime {
     );
 
     return { ok: true, session };
+  }
+
+  // ─── Adapter-to-Direct Migration Ceremony ──────────────────────────────
+
+  /**
+   * Migrate an adapter-bridge session to soma-direct by binding the
+   * account to a Soma identity and issuing a new ProductSession.
+   *
+   * This is the canonical adapter sunset path (Decision 7). The flow:
+   *   1. Verify the adapter session is valid and active
+   *   2. Verify the LoginVerification signature
+   *   3. Create or validate the ProductAccountBinding
+   *   4. Issue a NEW soma-direct ProductSession with evidence-derived tier/device
+   *   5. Revoke the old adapter session
+   *   6. Record the transition in the heartbeat chain
+   *
+   * The old adapter session's authOrigin is never mutated. Provenance
+   * is preserved: old session = adapter-bridge (revoked), new session =
+   * soma-direct (active).
+   *
+   * Records `adapter_migration_completed` heartbeat on success,
+   * `adapter_migration_denied` on failure.
+   */
+  migrateAdapterToSomaDirect(
+    input: {
+      /** The active adapter-bridge ProductSession to migrate from. */
+      adapterSession: ProductSession;
+      /** Signed LoginVerification proving the user's Soma identity. */
+      verification: LoginVerification;
+      /** Product account binding store — caller-owned, durable. */
+      bindingStore: ProductAccountBindingStore;
+    },
+    opts?: {
+      sessionTtlMs?: number;
+      sessionId?: string;
+      now?: number;
+    },
+  ): AdapterMigrationResult {
+    this.ensureAlive();
+    const now = opts?.now ?? Date.now();
+    const { adapterSession, verification, bindingStore } = input;
+    const accountId = adapterSession.accountId;
+
+    // ── Validate adapter session is active and adapter-bridged ────────
+    if (adapterSession.authOrigin !== 'adapter-bridge') {
+      return this.denyMigration(accountId, 'session is not adapter-bridge');
+    }
+    if (adapterSession.revocationState !== 'active') {
+      return this.denyMigration(accountId, 'adapter session is revoked');
+    }
+    if (now >= adapterSession.expiresAt) {
+      return this.denyMigration(accountId, 'adapter session has expired');
+    }
+
+    // ── Verify the LoginVerification signature ───────────────────────
+    const sigCheck = verifyLoginVerificationSignature(verification, {
+      trustedHeartPublicKeys: [this.genome.publicKey],
+      maxAgeMs: 300_000,
+      now,
+      provider: this.provider,
+    });
+    if (!sigCheck.valid) {
+      return this.denyMigration(
+        accountId,
+        `login verification rejected: ${sigCheck.reason}`,
+      );
+    }
+
+    // ── Binding authorization ────────────────────────────────────────
+    const existingBinding = bindingStore.getActive(accountId);
+    if (existingBinding) {
+      // Account already bound — verify it's bound to the same identity
+      if (existingBinding.somaIdentityDid !== verification.subjectDid) {
+        return this.denyMigration(
+          accountId,
+          `account already bound to ${existingBinding.somaIdentityDid}, cannot rebind to ${verification.subjectDid}`,
+        );
+      }
+      // Same identity — binding already correct, proceed to session issuance
+    } else {
+      // No binding yet — create one
+      bindingStore.bind({
+        accountId,
+        somaIdentityDid: verification.subjectDid,
+        bindingType: 'primary',
+      }, now);
+    }
+
+    // ── Derive device binding from ceremony evidence ─────────────────
+    const deviceBinding = deriveDeviceBindingFromEvidence(verification.evidence);
+
+    // ── Issue new soma-direct ProductSession ─────────────────────────
+    const sessionTtl = opts?.sessionTtlMs ?? DEFAULT_PRODUCT_SESSION_TTL_MS;
+    const sessionId = opts?.sessionId ?? crypto.randomUUID();
+
+    const newSession: ProductSession = {
+      sessionId,
+      accountId,
+      somaIdentityBinding: verification.subjectDid,
+      baseAuthorityTier: verification.tierAchieved,
+      currentAuthorityTier: verification.tierAchieved,
+      authOrigin: 'soma-direct',
+      deviceBinding,
+      issuedAt: now,
+      expiresAt: now + sessionTtl,
+      lastStepUpAt: null,
+      stepUpWindowExpiresAt: null,
+      revocationState: 'active',
+    };
+
+    this._productSessionStore.put(newSession);
+
+    // ── Revoke the old adapter session ───────────────────────────────
+    this._productSessionStore.revoke(adapterSession.sessionId);
+
+    // ── Heartbeat trail ─────────────────────────────────────────────
+    this.heartbeatChain.record(
+      "adapter_migration_completed",
+      JSON.stringify({
+        accountId,
+        oldSessionId: adapterSession.sessionId,
+        oldAuthOrigin: adapterSession.authOrigin,
+        newSessionId: newSession.sessionId,
+        newAuthOrigin: newSession.authOrigin,
+        somaIdentityBinding: newSession.somaIdentityBinding,
+        tier: newSession.currentAuthorityTier,
+        deviceTrust: deviceBinding?.deviceTrustLevel ?? null,
+        loginChallengeId: verification.challengeId,
+        migratedAt: now,
+      }),
+    );
+
+    return {
+      ok: true,
+      newSession,
+      revokedSessionId: adapterSession.sessionId,
+      binding: bindingStore.getActive(accountId)!,
+    };
+  }
+
+  private denyMigration(accountId: string, reason: string): AdapterMigrationFailure {
+    this.heartbeatChain.record(
+      "adapter_migration_denied",
+      JSON.stringify({ accountId, reason }),
+    );
+    return { ok: false, reason };
   }
 
   // ─── Product Session Step-Up (Decision 8) ───────────────────────────────

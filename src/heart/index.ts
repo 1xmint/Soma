@@ -40,6 +40,9 @@ export {
   type DataSourceConfig,
   type ToolProgressEmitter,
   type ToolExecutor,
+  type AdapterMigrationResult,
+  type AdapterMigrationSuccess,
+  type AdapterMigrationFailure,
 } from './runtime.js';
 
 // ─── Lineage (parent-child hearts) ──────────────────────────────────────────
