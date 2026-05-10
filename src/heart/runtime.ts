@@ -1730,6 +1730,44 @@ export class HeartRuntime {
     return { unbound, sessionsRevoked };
   }
 
+  // ─── Direct Factor Invalidation ──────────────────────────────────────
+
+  /**
+   * Revoke all active ProductSessions whose `deviceBinding.factorId`
+   * matches the given factorId.
+   *
+   * This is the direct-invalidation primitive: when a factor is
+   * compromised, deregistered, or otherwise revoked, every session
+   * that currently derives authority from that factor is revoked.
+   *
+   * Sessions with no deviceBinding (e.g. adapter-bridge) are never
+   * matched. Sessions bound to a *different* factor are unaffected —
+   * this is NOT a blanket "any factor revoked → kill all sessions".
+   *
+   * Records `factor_sessions_invalidated` heartbeat with the factorId
+   * and count of revoked sessions.
+   */
+  invalidateFactorSessions(
+    factorId: string,
+    opts?: { now?: number },
+  ): { sessionsRevoked: number } {
+    this.ensureAlive();
+    const now = opts?.now ?? Date.now();
+
+    const sessionsRevoked = this._productSessionStore.revokeByFactor(factorId);
+
+    this.heartbeatChain.record(
+      "factor_sessions_invalidated",
+      JSON.stringify({
+        factorId,
+        sessionsRevoked,
+        at: now,
+      }),
+    );
+
+    return { sessionsRevoked };
+  }
+
   /**
    * Resolve an opaque product session token to a live ProductSession
    * in one call: validate MAC/expiry → look up in store → match.

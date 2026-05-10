@@ -62,6 +62,8 @@ export type HeartbeatEventType =
   | "adapter_migration_denied"     // adapter migration rejected (binding conflict, etc.)
   // Binding lifecycle (see runtime.ts unbindAccountAndRevokeSessions)
   | "account_binding_unbound"      // account binding dissolved + sessions revoked
+  // Factor invalidation (see runtime.ts invalidateFactorSessions)
+  | "factor_sessions_invalidated"  // sessions revoked because backing factor was invalidated
   // Supply-chain provenance (see update-certificate.ts)
   | "self_verification";  // heart verified its own package provenance on startup
 
