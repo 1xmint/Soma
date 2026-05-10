@@ -328,6 +328,12 @@ export interface LoginChallengeServiceConfig {
   /** Default challenge TTL in ms. Defaults to 120 000 (2 minutes). */
   defaultTtlMs?: number;
   provider?: CryptoProvider;
+  /**
+   * Optional freeze check. When provided, `createChallenge` rejects for
+   * frozen identities. The function receives a subject DID and returns
+   * true if the identity is frozen.
+   */
+  isFrozen?: (subjectDid: string) => boolean;
 }
 
 // ─── Login Challenge Service ────────────────────────────────────────────────
@@ -358,6 +364,12 @@ export class LoginChallengeService {
     requestedTier?: CeremonyTier;
     ttlMs?: number;
   }): LoginChallenge {
+    if (this.opts.isFrozen?.(input.subjectDid)) {
+      throw new Error(
+        `identity ${input.subjectDid} is frozen — cannot create login challenge during recovery`,
+      );
+    }
+
     const p = this.opts.provider ?? getCryptoProvider();
     const now = (this.opts.now ?? Date.now)();
     const ttl = input.ttlMs ?? this.opts.defaultTtlMs ?? 120_000;

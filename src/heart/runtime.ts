@@ -108,6 +108,10 @@ import {
   type ProductAccountBinding,
 } from "./product-account-binding.js";
 import { ProductSessionStore } from "./product-session-store.js";
+import {
+  IdentityRecoveryCoordinator,
+  type RecoveryCeremony,
+} from "./recovery-coordinator.js";
 import type { CeremonyTier } from "./human-delegation.js";
 
 // ─── Evidence → DeviceBinding derivation ───────────────────────────────────
@@ -162,6 +166,12 @@ export interface AdapterMigrationFailure {
 // ─── Identity Invalidation Result ─────────────────────────────────────────
 
 export interface IdentityInvalidationResult {
+  accountsUnbound: number;
+  sessionsRevoked: number;
+}
+
+export interface FreezeIdentityResult {
+  ceremonyId: string;
   accountsUnbound: number;
   sessionsRevoked: number;
 }
@@ -263,6 +273,14 @@ export interface HeartConfig {
    * related methods. Omit for agent-only hearts.
    */
   humanSessionConfig?: HumanSessionConfig;
+
+  /**
+   * Recovery coordinator — manages identity freeze and recovery ceremony
+   * state. When set, authority-establishing flows check `isFrozen` before
+   * proceeding. Caller-owned: a single coordinator may be shared across
+   * multiple HeartRuntime instances.
+   */
+  recoveryCoordinator?: IdentityRecoveryCoordinator;
 }
 
 export interface GenerationInput {
@@ -346,6 +364,7 @@ export class HeartRuntime {
   private readonly revocations: RevocationRegistry;
   private readonly humanSessionRegistry: HumanSessionRegistry | null;
   private readonly _productSessionStore: ProductSessionStore;
+  private readonly _recoveryCoordinator: IdentityRecoveryCoordinator | null;
   private alive: boolean = true;
 
   constructor(config: HeartConfig) {
@@ -411,6 +430,9 @@ export class HeartRuntime {
 
     // Product session store — always available (lightweight Map)
     this._productSessionStore = new ProductSessionStore();
+
+    // Recovery coordinator — opt-in via config
+    this._recoveryCoordinator = config.recoveryCoordinator ?? null;
 
     // Store all credentials in the vault — encrypted at rest
     this.vault = new CredentialVault(config.signingKeyPair.secretKey, this.provider);
@@ -971,6 +993,34 @@ export class HeartRuntime {
     this.ensureAlive();
     this.ensureHumanSessionSupport();
 
+    const frozenReason = this.checkNotFrozen(delegation.humanDid);
+    if (frozenReason) {
+      this.heartbeatChain.record(
+        "consent_rejected",
+        JSON.stringify({
+          sessionId: delegation.sessionId,
+          humanDid: delegation.humanDid,
+          reason: frozenReason,
+        }),
+      );
+      return {
+        ok: false,
+        reason: frozenReason,
+        session: {
+          sessionId: delegation.sessionId,
+          humanDid: delegation.humanDid,
+          agentEphemeralDid: delegation.agentEphemeralDid,
+          tier: 'L0' as const,
+          status: 'revoked' as const,
+          startedAt: now ?? Date.now(),
+          expiresAt: 0,
+          remainingCredits: 0,
+          remainingInvocations: 0,
+          delegation,
+        },
+      };
+    }
+
     const ts = now ?? Date.now();
     const result = this.humanSessionRegistry!.open(delegation, ts);
 
@@ -1104,6 +1154,15 @@ export class HeartRuntime {
       return { ok: false, reason };
     }
 
+    const frozenReason = this.checkNotFrozen(humanSession.humanDid);
+    if (frozenReason) {
+      this.heartbeatChain.record(
+        "product_session_denied",
+        JSON.stringify({ humanSessionId, accountId, reason: frozenReason }),
+      );
+      return { ok: false, reason: frozenReason };
+    }
+
     const result = issueProductSession({
       accountId,
       humanSession,
@@ -1174,6 +1233,15 @@ export class HeartRuntime {
   ): IssueProductSessionResult {
     this.ensureAlive();
 
+    const frozenReason = this.checkNotFrozen(opts?.somaIdentityBinding);
+    if (frozenReason) {
+      this.heartbeatChain.record(
+        "adapter_session_denied",
+        JSON.stringify({ accountId, reason: frozenReason }),
+      );
+      return { ok: false, reason: frozenReason };
+    }
+
     const result = issueAdapterBridgeSession({
       accountId,
       somaIdentityBinding: opts?.somaIdentityBinding,
@@ -1236,6 +1304,15 @@ export class HeartRuntime {
   ): IssueProductSessionResult {
     this.ensureAlive();
     const now = opts?.now ?? Date.now();
+
+    const frozenReason = this.checkNotFrozen(verification.subjectDid);
+    if (frozenReason) {
+      this.heartbeatChain.record(
+        "product_session_denied",
+        JSON.stringify({ accountId, reason: frozenReason }),
+      );
+      return { ok: false, reason: frozenReason };
+    }
 
     // ── Verify the LoginVerification signature ────────────────────────
     const sigCheck = verifyLoginVerificationSignature(verification, {
@@ -1334,6 +1411,11 @@ export class HeartRuntime {
     const now = opts?.now ?? Date.now();
     const { adapterSession, verification, bindingStore } = input;
     const accountId = adapterSession.accountId;
+
+    const frozenReason = this.checkNotFrozen(verification.subjectDid);
+    if (frozenReason) {
+      return this.denyMigration(accountId, frozenReason);
+    }
 
     // ── Validate adapter session is active and adapter-bridged ────────
     if (adapterSession.authOrigin !== 'adapter-bridge') {
@@ -1471,6 +1553,20 @@ export class HeartRuntime {
     },
   ): StepUpElevationResult {
     this.ensureAlive();
+
+    const frozenReason = this.checkNotFrozen(session.somaIdentityBinding);
+    if (frozenReason) {
+      this.heartbeatChain.record(
+        "product_session_elevation_denied",
+        JSON.stringify({
+          productSessionId: session.sessionId,
+          tierAchieved,
+          currentTier: session.currentAuthorityTier,
+          reason: frozenReason,
+        }),
+      );
+      return { ok: false, reason: frozenReason };
+    }
 
     const result = elevateProductSession({
       session,
@@ -1841,6 +1937,72 @@ export class HeartRuntime {
     return { accountsUnbound, sessionsRevoked };
   }
 
+  // ─── Identity Freeze (recovery entry point) ───────────────────────────────
+
+  /**
+   * Freeze an identity: register frozen state + invalidate all sessions
+   * and account bindings in one atomic operation.
+   *
+   * After freeze:
+   *   - All existing sessions for this identity are revoked
+   *   - All account bindings are dissolved
+   *   - All authority-establishing flows reject for this identity
+   *   - The identity remains frozen until recovery completes
+   *
+   * Requires a recovery coordinator on HeartConfig. No arbitrary
+   * unfreeze path — the only way out is through recovery completion
+   * on the coordinator.
+   *
+   * @param somaIdentityDid  The Soma root identity DID to freeze.
+   * @param bindingStore     The caller-owned binding store.
+   * @param opts             Optional: timestamp override.
+   * @throws if no recovery coordinator is configured, or identity is
+   *         already frozen.
+   */
+  freezeIdentity(
+    somaIdentityDid: string,
+    bindingStore: ProductAccountBindingStore,
+    opts?: { now?: number },
+  ): FreezeIdentityResult {
+    this.ensureAlive();
+
+    if (!this._recoveryCoordinator) {
+      throw new Error(
+        "Heart was not configured with a recovery coordinator — provide recoveryCoordinator in HeartConfig",
+      );
+    }
+
+    const now = opts?.now ?? Date.now();
+
+    const { ceremonyId } = this._recoveryCoordinator.freezeIdentity(
+      somaIdentityDid,
+      { now },
+    );
+
+    const invalidation = this.invalidateIdentitySessions(
+      somaIdentityDid,
+      bindingStore,
+      { now },
+    );
+
+    this.heartbeatChain.record(
+      "identity_frozen",
+      JSON.stringify({
+        somaIdentityDid,
+        ceremonyId,
+        accountsUnbound: invalidation.accountsUnbound,
+        sessionsRevoked: invalidation.sessionsRevoked,
+        at: now,
+      }),
+    );
+
+    return {
+      ceremonyId,
+      accountsUnbound: invalidation.accountsUnbound,
+      sessionsRevoked: invalidation.sessionsRevoked,
+    };
+  }
+
   /**
    * Resolve an opaque product session token to a live ProductSession
    * in one call: validate MAC/expiry → look up in store → match.
@@ -1913,6 +2075,23 @@ export class HeartRuntime {
   }
 
   /** Throw if human session support was not configured. */
+  /**
+   * Returns a rejection reason if the identity is frozen, or null if nominal.
+   * Gating is skipped when no recovery coordinator is configured.
+   */
+  private checkNotFrozen(identityDid: string | null | undefined): string | null {
+    if (!identityDid || !this._recoveryCoordinator) return null;
+    if (this._recoveryCoordinator.isFrozen(identityDid)) {
+      return `identity ${identityDid} is frozen — recovery in progress`;
+    }
+    return null;
+  }
+
+  /** Public read-only accessor for the recovery coordinator. */
+  get recoveryCoordinator(): IdentityRecoveryCoordinator | null {
+    return this._recoveryCoordinator;
+  }
+
   private ensureHumanSessionSupport(): void {
     if (!this.humanSessionRegistry) {
       throw new Error(

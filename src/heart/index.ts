@@ -44,6 +44,7 @@ export {
   type AdapterMigrationSuccess,
   type AdapterMigrationFailure,
   type IdentityInvalidationResult,
+  type FreezeIdentityResult,
 } from './runtime.js';
 
 // ─── Lineage (parent-child hearts) ──────────────────────────────────────────
@@ -565,3 +566,15 @@ export {
   type UnchangedResponse,
   type CheckMetadata,
 } from '../core/soma-check.js';
+
+// ─── Recovery Coordinator (identity freeze + recovery state machine) ──────
+
+export {
+  IdentityRecoveryCoordinator,
+  InMemoryRecoveryStore,
+  type RecoveryCeremony,
+  type RecoveryCeremonyState,
+  type RecoveryStore,
+  type FreezeResult,
+  type RecoveryStatusResult,
+} from './recovery-coordinator.js';

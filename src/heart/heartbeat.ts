@@ -66,6 +66,13 @@ export type HeartbeatEventType =
   | "factor_sessions_invalidated"  // sessions revoked because backing factor was invalidated
   // Identity-level invalidation (see runtime.ts invalidateIdentitySessions)
   | "identity_sessions_invalidated" // sessions revoked because Soma identity was suspended/compromised/rotated
+  // Adapter session denial (see runtime.ts issueAdapterBridgeSession)
+  | "adapter_session_denied"        // adapter session issuance rejected (frozen identity, etc.)
+  // Recovery ceremony lifecycle (see recovery-coordinator.ts)
+  | "identity_frozen"               // identity frozen — sessions invalidated, authority halted
+  | "recovery_initiated"            // recovery evidence submitted, time-lock started
+  | "recovery_cancelled"            // pending recovery cancelled (original auth surfaced, operator cancel)
+  | "recovery_completed"            // recovery finished — identity returned to nominal
   // Supply-chain provenance (see update-certificate.ts)
   | "self_verification";  // heart verified its own package provenance on startup
 
