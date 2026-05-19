@@ -1,15 +1,33 @@
+# Rust
+/target/
+Cargo.lock
+
+# Node (archive/SDK)
 node_modules/
 dist/
+*.tsbuildinfo
+packages/**/*.tgz
+
+# Environment
 .env
 .env.*
 !.env.example
 .envrc
 secrets/
 .secrets/
+
+# Results
 results/raw/*
 !results/raw/.gitkeep
 results/analysis/*
 !results/analysis/.gitkeep
 results/*.log
-packages/**/*.tgz
-*.tsbuildinfo
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db

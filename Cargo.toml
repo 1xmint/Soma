@@ -1,0 +1,30 @@
+[package]
+name = "soma"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "Soma protocol — cryptographic identity, delegation, heartbeats, and spend tracking for the agent-native internet"
+repository = "https://github.com/hey-vera/Soma"
+keywords = ["identity", "delegation", "cryptography", "agents", "did"]
+categories = ["authentication", "cryptography"]
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+ed25519-dalek = { version = "2", features = ["rand_core"] }
+sha2 = "0.10"
+hmac = "0.12"
+rand = "0.8"
+base64 = "0.22"
+hex = "0.4"
+dirs-next = "2"
+
+[[bin]]
+name = "soma-ceremony"
+path = "src/bin/ceremony.rs"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
