@@ -1,0 +1,123 @@
+{
+  "schema_version": "somavera.soma-release-manifest.v1",
+  "release_version": "0.1.0",
+  "generated_from": "clean-reference-source",
+  "excluded_paths": [
+    ".git",
+    "coverage",
+    "node_modules",
+    "release/manifest.json"
+  ],
+  "files": [
+    {
+      "path": ".gitignore",
+      "bytes": 73,
+      "sha256": "9ad0e97c7f6488a10d6461938f3d5f9e411e327aa0d7764489d01c0e47e76461"
+    },
+    {
+      "path": "IMPLEMENTATION-STATUS.md",
+      "bytes": 2096,
+      "sha256": "e4aa3e70d4243d0d118aa362595384fe62188cf87b6bbd999851d6959ab754da"
+    },
+    {
+      "path": "LICENSE",
+      "bytes": 11351,
+      "sha256": "dab8b60750a4c10944d4181dfaa715e535ce9410cef4abffe4b76e753dfb142b"
+    },
+    {
+      "path": "NOTICE",
+      "bytes": 105,
+      "sha256": "b2a9fafacfcd085ac15fc11b1c3b6138847517c3b54fe9ae76c6db74d93b201e"
+    },
+    {
+      "path": "README.md",
+      "bytes": 1476,
+      "sha256": "dcf4f744edae4eb2da02dc76f689e99bbb826dd36e2fc8154d5b4f28b75e81a0"
+    },
+    {
+      "path": "SECURITY.md",
+      "bytes": 565,
+      "sha256": "c1be396daf3681fcf37b84d60bfe0592f71690a27541d25c754704446600cff6"
+    },
+    {
+      "path": "bin/soma.mjs",
+      "bytes": 145,
+      "sha256": "036b65741c9cd67bf9963aae942a66c697562d5b8fb4aaa7e69b8d4a0728998f"
+    },
+    {
+      "path": "defaults/policy.json",
+      "bytes": 231,
+      "sha256": "b2bb43e5595d83096fcbd20ce02f77db7cfd7a8f61c3e4256e7593a962d5cdd4"
+    },
+    {
+      "path": "package-lock.json",
+      "bytes": 336,
+      "sha256": "defe274a8fb561b0e6406bd8c536e92d3141773d0440e824ec41bfa0a3823186"
+    },
+    {
+      "path": "package.json",
+      "bytes": 551,
+      "sha256": "b52decdfc8d6faed37a7daa008e62181405bb4488565cc8cdc9649d2cc556004"
+    },
+    {
+      "path": "scripts/build-release-manifest.mjs",
+      "bytes": 510,
+      "sha256": "afe81a4918cf4807054e6e0003ca8cb27d4ee0c5d4c0667a32916598bda423dc"
+    },
+    {
+      "path": "scripts/verify-release.mjs",
+      "bytes": 188,
+      "sha256": "1a13491766522becce056348874466c0435b0e00af7d44cfd55a25dc399bc1fc"
+    },
+    {
+      "path": "src/cli.mjs",
+      "bytes": 4805,
+      "sha256": "5f0a4444f9dcaee8a52b8e25a7d2d510c775c11e658648970ab28a5b541d26c9"
+    },
+    {
+      "path": "src/constants.mjs",
+      "bytes": 1022,
+      "sha256": "210ba51270a5fd547229bb0d59b333ade1d5a4ece69ad7f811bce8698cc13ae0"
+    },
+    {
+      "path": "src/crypto.mjs",
+      "bytes": 2679,
+      "sha256": "a259457760ed767248adee784d5e76a0cb4030b97f8b604b4671331c1ed18ac4"
+    },
+    {
+      "path": "src/errors.mjs",
+      "bytes": 496,
+      "sha256": "d354a6bdfc843c8997c4ed2153d45350cb022590520ee5de9fa9dbbe72d4ee6f"
+    },
+    {
+      "path": "src/keystore.mjs",
+      "bytes": 2726,
+      "sha256": "3462b8fde9dc9608f12f915c728b57e0ecb7d76b6b1a29b0e1ba551c5320adad"
+    },
+    {
+      "path": "src/platform.mjs",
+      "bytes": 3569,
+      "sha256": "cd5ad52794aaa95aff5110cf234805b4585e5cb778d45c0816b204bb030af030"
+    },
+    {
+      "path": "src/release.mjs",
+      "bytes": 3277,
+      "sha256": "601b24e5b5a2fe8de022f1464fffb7ff8a1987fa4332a805dd8778be32b5bd84"
+    },
+    {
+      "path": "src/state.mjs",
+      "bytes": 13285,
+      "sha256": "473228948296c6ed60b62558a602a1e7885aef6ea73ca166a16bc914199c60d8"
+    },
+    {
+      "path": "test/cli.test.mjs",
+      "bytes": 8742,
+      "sha256": "03b56f48de0ccc2fbe47ebd0c5c0752433ad12b177dbcb0d902f121a168dbcb0"
+    },
+    {
+      "path": "test/no-network-preload.mjs",
+      "bytes": 916,
+      "sha256": "87a8dd84f0f7378b1612fb7f76da1050522924153742199794f51b9ffb1685c1"
+    }
+  ]
+}
