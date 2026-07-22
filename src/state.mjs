@@ -9,6 +9,7 @@ import { inspectStateRootPermissions, restrictStateRoot } from "./platform.mjs";
 import { verifyRelease } from "./release.mjs";
 import { canonicalize } from "./canonicalize.mjs";
 import { createInitialEvidenceHead, verifyEvidenceLedger } from "./evidence.mjs";
+import { verifyHostPinStore } from "./host.mjs";
 
 const CONTROL = /[\u0000-\u001f\u007f]/;
 
@@ -232,8 +233,9 @@ export async function inspectState(requestedHome, { verifyReleaseFirst = true, v
   if (config.schema_version !== "somavera.soma-local-config.v1" || config.observer?.status !== "off" || config.telemetry !== false || config.background_watchers !== false) {
     throw new SomaError("local configuration violates the observer-off baseline", 7, "OBSERVER_OFF_BASELINE_INVALID");
   }
-  if (config.connected_hosts !== 0 || (await listImmediateFiles(path.join(home, "hosts"))).length !== 0 || (await listImmediateFiles(path.join(home, "consent", "grants"))).length !== 0 || (await listImmediateFiles(path.join(home, "queue"))).length !== 0) {
-    throw new SomaError("fresh baseline contains remote authority or queued work", 7, "FRESH_BASELINE_NOT_EMPTY");
+  const hostPins = await verifyHostPinStore(home, identity);
+  if (config.connected_hosts !== 0 || (await listImmediateFiles(path.join(home, "consent", "grants"))).length !== 0 || (await listImmediateFiles(path.join(home, "queue"))).length !== 0) {
+    throw new SomaError("baseline contains connected authority, consent, or queued work", 7, "REMOTE_AUTHORITY_BASELINE_INVALID");
   }
   if (identity.schema_version !== "somavera.soma-local-identity.v1" || !Array.isArray(identity.keys) || identity.keys.length !== 4) {
     throw new SomaError("public identity has an invalid shape", 7, "IDENTITY_SHAPE_INVALID");
@@ -265,6 +267,7 @@ export async function inspectState(requestedHome, { verifyReleaseFirst = true, v
     enforcement_mode: config.enforcement_mode,
     observer: config.observer,
     connected_hosts: 0,
+    pinned_hosts: hostPins.length,
     active_grants: 0,
     queued_items: 0,
     evidence_head: evidenceVerification?.head ?? null,

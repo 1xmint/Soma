@@ -15,6 +15,9 @@ soma doctor
 soma status
 soma evidence record --input C:\absolute\event.json
 soma evidence verify
+soma host status
+soma host verify --descriptor C:\absolute\host.json --expect-origin https://vera.example --expect-host-did DID --expect-network NETWORK --expect-context CONTEXT
+soma host pin --descriptor C:\absolute\host.json --expect-origin https://vera.example --expect-host-did DID --expect-network NETWORK --expect-context CONTEXT --expect-key-hash HASH
 soma observe status
 soma observe preview --artifact C:\absolute\public.txt --policy C:\absolute\policy.json
 soma observe preview --evidence EVIDENCE_ID --policy C:\absolute\policy.json
@@ -34,6 +37,14 @@ The implemented evidence ledger is a provisional pre-network profile. It signs
 minimized local attribution, not truth or reputation; independent receipts and
 external rollback anchors remain unavailable. See `EVIDENCE-PROFILE.md` for the
 exact domains, input contract, crash behavior, and limits.
+
+## Offline Vera Host pinning
+
+A local host descriptor can be schema-checked, signature-verified, and pinned
+only with exact independently supplied identity, network, context, and signing-key
+expectations. Pins are controller-signed but inert: they create no connection,
+consent, or send authority. Changed descriptors fail closed because the rotation
+proof is not yet ratified. See `HOST-PIN-PROFILE.md`.
 
 ## Consent-preview boundary
 

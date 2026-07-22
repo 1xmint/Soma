@@ -1,9 +1,10 @@
-import { createHash, createPrivateKey, createPublicKey, generateKeyPairSync, randomBytes, sign, verify } from "node:crypto";
+import { createHash, createPrivateKey, createPublicKey, diffieHellman, generateKeyPairSync, randomBytes, sign, verify } from "node:crypto";
 import { SomaError } from "./errors.mjs";
 
 const BASE58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 const MULTICODEC = Object.freeze({ Ed25519: Buffer.from([0xed, 0x01]), X25519: Buffer.from([0xec, 0x01]) });
 const ED25519_SPKI_PREFIX = Buffer.from("302a300506032b6570032100", "hex");
+const X25519_SPKI_PREFIX = Buffer.from("302a300506032b656e032100", "hex");
 
 function base58btc(bytes) {
   let value = BigInt(`0x${Buffer.from(bytes).toString("hex") || "0"}`);
@@ -118,6 +119,31 @@ export function verifyEd25519(publicKeyMultibase, message, signatureBase64) {
     const signature = Buffer.from(signatureBase64, "base64");
     if (signature.length !== 64 || signature.toString("base64") !== signatureBase64) return false;
     return verify(null, Buffer.from(message), publicKey, signature);
+  } catch {
+    return false;
+  }
+}
+
+export function verifyEd25519RawBase64(publicKeyBase64, message, signatureBase64) {
+  try {
+    const raw = Buffer.from(publicKeyBase64, "base64");
+    const signature = Buffer.from(signatureBase64, "base64");
+    if (raw.length !== 32 || raw.toString("base64") !== publicKeyBase64 || signature.length !== 64 || signature.toString("base64") !== signatureBase64) return false;
+    const publicKey = createPublicKey({ key: Buffer.concat([ED25519_SPKI_PREFIX, raw]), format: "der", type: "spki" });
+    return verify(null, Buffer.from(message), publicKey, signature);
+  } catch {
+    return false;
+  }
+}
+
+export function validateX25519RawBase64(publicKeyBase64) {
+  try {
+    const raw = Buffer.from(publicKeyBase64, "base64");
+    if (raw.length !== 32 || raw.toString("base64") !== publicKeyBase64) return false;
+    const publicKey = createPublicKey({ key: Buffer.concat([X25519_SPKI_PREFIX, raw]), format: "der", type: "spki" });
+    const ephemeral = generateKeyPairSync("x25519");
+    const shared = diffieHellman({ privateKey: ephemeral.privateKey, publicKey });
+    return shared.length === 32 && !shared.equals(Buffer.alloc(32));
   } catch {
     return false;
   }

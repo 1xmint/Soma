@@ -17,7 +17,7 @@ Release status: **early Windows-first slice; not protocol-conforming or producti
 - Windows ACL restricted to the current user and SYSTEM, recursively verified
   across every state path by `doctor`.
 - Observer off, telemetry off, automatic updates/retries off, no watchers, no
-  hosts, no grants, no queued work, no wallet, and no token state.
+  connected hosts, no grants, no queued work, no wallet, and no token state.
 - Provisional pre-network signed evidence events, hash-chained canonical JSONL,
   controller-signed heads, strict key-window verification, and explicit
   `local_only_unanchored` rollback limits.
@@ -26,6 +26,9 @@ Release status: **early Windows-first slice; not protocol-conforming or producti
   proposed DID/origin destinations, exact replication targets, deterministic
   commitments, controller rights attestation, secret/identity canary blocking,
   and redacted denial records.
+- Offline Vera Host descriptor schema/semantic/signature verification and
+  controller-signed inert pinning with exact out-of-band bindings; descriptor
+  changes and overlap/rotation keys fail closed.
 - Dynamic zero-egress sentinel and static production network-import scan.
 - Idempotent initialization and observer-tamper rejection.
 
@@ -33,7 +36,8 @@ Release status: **early Windows-first slice; not protocol-conforming or producti
 
 - Ratified portable network evidence, independent receipts, external head
   anchors, and any reputation computation.
-- Host discovery, connection, encrypted query/response, or contribution flows.
+- Network host discovery, authenticated TLS connection/challenge, descriptor
+  rotation proof, application encryption, query/response, or contribution flows.
 - Signed consent grants, sends, withdrawals, deletion, acknowledgements, or
   tombstone tracking.
 - Sovereign Vera export/import/search.
