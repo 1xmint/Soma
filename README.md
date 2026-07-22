@@ -13,6 +13,8 @@ Implemented commands:
 soma init --recovery none
 soma doctor
 soma status
+soma evidence record --input C:\absolute\event.json
+soma evidence verify
 ```
 
 Current production-profile support is Windows 11 with current-user DPAPI. An
@@ -22,6 +24,13 @@ back to a plaintext production key file.
 For development on an unsupported platform, an unmistakably insecure mode may
 be selected with `--dev-insecure-file-keystore`. It is test-only, reports a
 security degradation, and must never be used with private data or a network.
+
+## Evidence boundary
+
+The implemented evidence ledger is a provisional pre-network profile. It signs
+minimized local attribution, not truth or reputation; independent receipts and
+external rollback anchors remain unavailable. See `EVIDENCE-PROFILE.md` for the
+exact domains, input contract, crash behavior, and limits.
 
 ## Development
 

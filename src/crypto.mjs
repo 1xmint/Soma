@@ -1,7 +1,9 @@
-import { createHash, generateKeyPairSync, randomBytes } from "node:crypto";
+import { createHash, createPrivateKey, createPublicKey, generateKeyPairSync, randomBytes, sign, verify } from "node:crypto";
+import { SomaError } from "./errors.mjs";
 
 const BASE58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 const MULTICODEC = Object.freeze({ Ed25519: Buffer.from([0xed, 0x01]), X25519: Buffer.from([0xec, 0x01]) });
+const ED25519_SPKI_PREFIX = Buffer.from("302a300506032b6570032100", "hex");
 
 function base58btc(bytes) {
   let value = BigInt(`0x${Buffer.from(bytes).toString("hex") || "0"}`);
@@ -13,9 +15,31 @@ function base58btc(bytes) {
   }
   for (const byte of bytes) {
     if (byte !== 0) break;
-    encoded = "1" + encoded;
+    encoded = `1${encoded}`;
   }
   return encoded || "1";
+}
+
+function base58btcDecode(value) {
+  if (typeof value !== "string" || !value.startsWith("z") || value.length < 2) {
+    throw new SomaError("public key multibase is invalid", 7, "PUBLIC_KEY_MULTIBASE_INVALID");
+  }
+  let number = 0n;
+  for (const character of value.slice(1)) {
+    const digit = BASE58.indexOf(character);
+    if (digit < 0) throw new SomaError("public key multibase is invalid", 7, "PUBLIC_KEY_MULTIBASE_INVALID");
+    number = number * 58n + BigInt(digit);
+  }
+  let hex = number.toString(16);
+  if (hex.length % 2) hex = `0${hex}`;
+  let bytes = number === 0n ? Buffer.alloc(0) : Buffer.from(hex, "hex");
+  let zeroes = 0;
+  for (const character of value.slice(1)) {
+    if (character !== "1") break;
+    zeroes += 1;
+  }
+  if (zeroes) bytes = Buffer.concat([Buffer.alloc(zeroes), bytes]);
+  return bytes;
 }
 
 function rawPublicKey(publicKey) {
@@ -53,16 +77,13 @@ export function createInitialKeyMaterial(createdAt) {
     createRole("vera_private_reply_encryption", "X25519")
   ];
   const publicRoles = Object.fromEntries(roles.map((entry) => [entry.publicRecord.role, entry.publicRecord]));
-  const controllerDid = publicRoles.controller_signing.did;
-  const agentDid = publicRoles.agent_signing.did;
-  const observerDid = publicRoles.observer_signing.did;
   return {
     publicIdentity: {
       schema_version: "somavera.soma-local-identity.v1",
       created_at: createdAt,
-      controller_did: controllerDid,
-      agent_did: agentDid,
-      observer_did: observerDid,
+      controller_did: publicRoles.controller_signing.did,
+      agent_did: publicRoles.agent_signing.did,
+      observer_did: publicRoles.observer_signing.did,
       assurance: "self_controlled_device_key_uncredentialed",
       keys: roles.map((entry) => entry.publicRecord)
     },
@@ -77,4 +98,35 @@ export function createInitialKeyMaterial(createdAt) {
 
 export function sha256(bytes) {
   return createHash("sha256").update(bytes).digest("hex");
+}
+
+export function signEd25519(privateKeyBase64, message) {
+  const der = Buffer.from(privateKeyBase64, "base64");
+  try {
+    const privateKey = createPrivateKey({ key: der, format: "der", type: "pkcs8" });
+    return sign(null, Buffer.from(message), privateKey).toString("base64");
+  } finally {
+    der.fill(0);
+  }
+}
+
+export function verifyEd25519(publicKeyMultibase, message, signatureBase64) {
+  try {
+    const decoded = base58btcDecode(publicKeyMultibase);
+    if (decoded.length !== 34 || !decoded.subarray(0, 2).equals(MULTICODEC.Ed25519)) return false;
+    const publicKey = createPublicKey({ key: Buffer.concat([ED25519_SPKI_PREFIX, decoded.subarray(2)]), format: "der", type: "spki" });
+    const signature = Buffer.from(signatureBase64, "base64");
+    if (signature.length !== 64 || signature.toString("base64") !== signatureBase64) return false;
+    return verify(null, Buffer.from(message), publicKey, signature);
+  } catch {
+    return false;
+  }
+}
+
+export function privateKeyForRole(secretBundle, role) {
+  const record = secretBundle.private_keys?.find((entry) => entry.role === role);
+  if (!record || typeof record.private_key_pkcs8_base64 !== "string") {
+    throw new SomaError(`keystore lacks required ${role} key`, 7, "SIGNING_KEY_UNAVAILABLE");
+  }
+  return record;
 }

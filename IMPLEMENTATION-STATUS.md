@@ -6,7 +6,8 @@ Release status: **early Windows-first slice; not protocol-conforming or producti
 
 ## Implemented in this slice
 
-- Dependency-free Node 22 CLI with `init`, `doctor`, and `status`.
+- Dependency-free Node 22 CLI with `init`, `doctor`, `status`, and provisional
+  `evidence record` / `evidence verify` commands.
 - Offline release file-set and SHA-256 verification before state creation.
 - Honest `self_manifest_integrity_only_untrusted` authenticity label.
 - Atomic fresh-home creation with rollback after failed post-rename validation.
@@ -17,14 +18,17 @@ Release status: **early Windows-first slice; not protocol-conforming or producti
   across every state path by `doctor`.
 - Observer off, telemetry off, automatic updates/retries off, no watchers, no
   hosts, no grants, no queued work, no wallet, and no token state.
-- Empty evidence ledger and public-only identity/key-history records.
+- Provisional pre-network signed evidence events, hash-chained canonical JSONL,
+  controller-signed heads, strict key-window verification, and explicit
+  `local_only_unanchored` rollback limits.
 - Explicit `none` recovery choice; unratified offline recovery fails closed.
 - Dynamic zero-egress sentinel and static production network-import scan.
 - Idempotent initialization and observer-tamper rejection.
 
 ## Not implemented
 
-- Signed evidence append/verification and independent receipts.
+- Ratified portable network evidence, independent receipts, external head
+  anchors, and any reputation computation.
 - Host discovery, connection, encrypted query/response, or contribution flows.
 - Consent preview, grants, withdrawals, deletion, or tombstone tracking.
 - Sovereign Vera export/import/search.

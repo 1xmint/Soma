@@ -3,6 +3,7 @@ import { stdin, stdout } from "node:process";
 import { VERSION } from "./constants.mjs";
 import { asSomaError, SomaError } from "./errors.mjs";
 import { initialize, inspectState, resolveHome } from "./state.mjs";
+import { recordEvidence, verifyAndRepairEvidence } from "./evidence.mjs";
 
 function parse(argv) {
   const result = { command: null, options: {}, positionals: [] };
@@ -16,7 +17,7 @@ function parse(argv) {
       result.options[token.slice(2).replaceAll("-", "_")] = true;
       continue;
     }
-    if (["--home", "--label", "--recovery"].includes(token)) {
+    if (["--home", "--label", "--recovery", "--input"].includes(token)) {
       const value = argv[index + 1];
       if (value === undefined || value.startsWith("--")) throw new SomaError(`${token} requires a value`, 2, "OPTION_VALUE_REQUIRED");
       result.options[token.slice(2)] = value;
@@ -32,7 +33,7 @@ function parse(argv) {
 }
 
 function help() {
-  return `Soma reference ${VERSION}\n\nUsage:\n  soma init [--home PATH] [--label TEXT] --recovery none [--json]\n  soma doctor [--home PATH] [--network] [--json]\n  soma status [--home PATH] [--json]\n\nObserver, telemetry, updates, retries, watchers, wallet, and token features are absent/off.`;
+  return `Soma reference ${VERSION}\n\nUsage:\n  soma init [--home PATH] [--label TEXT] --recovery none [--json]\n  soma doctor [--home PATH] [--network] [--json]\n  soma status [--home PATH] [--json]\n  soma evidence record --input ABSOLUTE_EVENT.json [--home PATH] [--json]\n  soma evidence verify [--home PATH] [--json]\n\nEvidence is provisional, pre-network, self-signed attribution only. It is not truth, reputation, or independent rollback proof.\nObserver, telemetry, updates, retries, watchers, wallet, and token features are absent/off.`;
 }
 
 function print(value, json) {
@@ -65,9 +66,9 @@ export async function runCli(argv) {
       print(help(), parsed.options.json);
       return 0;
     }
-    if (parsed.positionals.length) throw new SomaError("unexpected positional arguments", 2, "POSITIONAL_ARGUMENT_UNEXPECTED");
     const home = resolveHome(parsed.options.home);
     if (parsed.command === "init") {
+      if (parsed.positionals.length) throw new SomaError("unexpected positional arguments", 2, "POSITIONAL_ARGUMENT_UNEXPECTED");
       const result = await initialize({
         home,
         label: parsed.options.label ?? null,
@@ -78,14 +79,14 @@ export async function runCli(argv) {
       return 0;
     }
     if (parsed.command === "doctor") {
+      if (parsed.positionals.length) throw new SomaError("unexpected positional arguments", 2, "POSITIONAL_ARGUMENT_UNEXPECTED");
       const result = await inspectState(home);
-      const destinations = [];
       print({
         ok: true,
         command: "doctor",
         offline: parsed.options.network !== true,
         network_requested: parsed.options.network === true,
-        network_destinations: destinations,
+        network_destinations: [],
         network_checks_performed: 0,
         home: result.home,
         release: result.release,
@@ -97,8 +98,24 @@ export async function runCli(argv) {
       return 0;
     }
     if (parsed.command === "status") {
+      if (parsed.positionals.length) throw new SomaError("unexpected positional arguments", 2, "POSITIONAL_ARGUMENT_UNEXPECTED");
       const result = await inspectState(home);
       print({ ok: true, command: "status", home: result.home, release_version: result.release.release_version, ...result.summary }, parsed.options.json);
+      return 0;
+    }
+    if (parsed.command === "evidence") {
+      const action = parsed.positionals[0];
+      if (!action || parsed.positionals.length !== 1 || !["record", "verify"].includes(action)) throw new SomaError("evidence requires exactly one action: record or verify", 2, "EVIDENCE_ACTION_INVALID");
+      await inspectState(home, { verifyEvidence: false });
+      if (action === "record") {
+        if (!parsed.options.input) throw new SomaError("evidence record requires --input", 2, "EVIDENCE_INPUT_REQUIRED");
+        const result = await recordEvidence(home, parsed.options.input);
+        print({ ok: true, command: "evidence record", home, ...result }, parsed.options.json);
+      } else {
+        if (parsed.options.input) throw new SomaError("evidence verify does not accept --input", 2, "OPTION_NOT_ALLOWED");
+        const result = await verifyAndRepairEvidence(home);
+        print({ ok: true, command: "evidence verify", home, local_mutation: result.head_repaired || result.recovered_incomplete_tail_bytes > 0, remote_mutation: false, ...result }, parsed.options.json);
+      }
       return 0;
     }
     throw new SomaError(`unknown command: ${parsed.command}`, 2, "COMMAND_UNKNOWN");

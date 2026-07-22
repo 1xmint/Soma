@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:somavera:soma:local-evidence-entry:provisional-v1",
+  "title": "Soma local evidence ledger entry provisional v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "sequence", "previous_entry_hash", "evidence_event", "recorded_at", "signer_key_id", "entry_hash", "signature"],
+  "properties": {
+    "schema_version": { "const": "soma.local-evidence-entry.provisional-v1" },
+    "sequence": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+    "previous_entry_hash": { "$ref": "#/$defs/hash" },
+    "evidence_event": { "$ref": "local-evidence-event.provisional.schema.json" },
+    "recorded_at": { "type": "string", "format": "date-time" },
+    "signer_key_id": { "type": "string", "minLength": 3 },
+    "entry_hash": { "$ref": "#/$defs/hash" },
+    "signature": { "$ref": "#/$defs/signature" }
+  },
+  "$defs": {
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "signature": {
+      "type": "object", "additionalProperties": false, "required": ["suite", "key_id", "value"],
+      "properties": { "suite": { "const": "Ed25519-v1" }, "key_id": { "type": "string", "minLength": 3 }, "value": { "type": "string", "contentEncoding": "base64" } }
+    }
+  }
+}

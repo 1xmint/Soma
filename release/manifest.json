@@ -15,9 +15,14 @@
       "sha256": "9ad0e97c7f6488a10d6461938f3d5f9e411e327aa0d7764489d01c0e47e76461"
     },
     {
+      "path": "EVIDENCE-PROFILE.md",
+      "bytes": 4303,
+      "sha256": "38dca9673dba3e7714a5763584b18d7aa8d96d5cbecab2b9288a17fa06b62198"
+    },
+    {
       "path": "IMPLEMENTATION-STATUS.md",
-      "bytes": 2096,
-      "sha256": "e4aa3e70d4243d0d118aa362595384fe62188cf87b6bbd999851d6959ab754da"
+      "bytes": 2336,
+      "sha256": "583fdebc090d83e7ae24a964cba9f27f94ed091f1cb2f529aae277f42cdca2ae"
     },
     {
       "path": "LICENSE",
@@ -31,8 +36,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 1476,
-      "sha256": "dcf4f744edae4eb2da02dc76f689e99bbb826dd36e2fc8154d5b4f28b75e81a0"
+      "bytes": 1869,
+      "sha256": "cafee6fc13de6a1f89161442f5b3d7f0b34a39cc4118526d762095b10f19c149"
     },
     {
       "path": "SECURITY.md",
@@ -43,6 +48,21 @@
       "path": "bin/soma.mjs",
       "bytes": 145,
       "sha256": "036b65741c9cd67bf9963aae942a66c697562d5b8fb4aaa7e69b8d4a0728998f"
+    },
+    {
+      "path": "conformance/canonicalization-v1.json",
+      "bytes": 841,
+      "sha256": "ad7490e576594ab7b98262b19732e03bbe6a9ccb186561cc44cde981129673fb"
+    },
+    {
+      "path": "conformance/ed25519-rfc8032-v1.json",
+      "bytes": 456,
+      "sha256": "f73380f6beceffb821debbb725f0010a51d4b89f95852f9f011a0316418bb09f"
+    },
+    {
+      "path": "conformance/local-evidence-entry-provisional-v1.json",
+      "bytes": 3631,
+      "sha256": "1b5f32e712234a5c21c09aa8af97a42585a56298b2cd2b45a5af0e59b263ed72"
     },
     {
       "path": "defaults/policy.json",
@@ -56,8 +76,28 @@
     },
     {
       "path": "package.json",
-      "bytes": 551,
-      "sha256": "b52decdfc8d6faed37a7daa008e62181405bb4488565cc8cdc9649d2cc556004"
+      "bytes": 574,
+      "sha256": "8efd5ee45a849ac23961f7b51eee5619fb467f50a3285194999f5ab8584bcc02"
+    },
+    {
+      "path": "schemas/evidence-head.provisional.schema.json",
+      "bytes": 1388,
+      "sha256": "ea43f435be128245f43bb480b911d6fe9b30070d1508919a4679fc3eb5cb3dc7"
+    },
+    {
+      "path": "schemas/local-evidence-entry.provisional.schema.json",
+      "bytes": 1300,
+      "sha256": "87a231769def045b2a4d909ea5047744ffddd4cc710e9d75e27638a51629f7f0"
+    },
+    {
+      "path": "schemas/local-evidence-event.provisional.schema.json",
+      "bytes": 2224,
+      "sha256": "547638058bf1ae63f08ef396d0152bf5ff2484255118f704f37f8d727bd57933"
+    },
+    {
+      "path": "schemas/local-evidence-input.provisional.schema.json",
+      "bytes": 1338,
+      "sha256": "656a26d050f8d98a7c376f93ffcd8639664aede22b658048e830637f27e81e67"
     },
     {
       "path": "scripts/build-release-manifest.mjs",
@@ -65,14 +105,24 @@
       "sha256": "afe81a4918cf4807054e6e0003ca8cb27d4ee0c5d4c0667a32916598bda423dc"
     },
     {
+      "path": "scripts/generate-evidence-vector.mjs",
+      "bytes": 3066,
+      "sha256": "7306b653075d32cb77bfc2e3f150ed4d3dfe633a21333ca0d68ed8536ba9afc5"
+    },
+    {
       "path": "scripts/verify-release.mjs",
       "bytes": 188,
       "sha256": "1a13491766522becce056348874466c0435b0e00af7d44cfd55a25dc399bc1fc"
     },
     {
+      "path": "src/canonicalize.mjs",
+      "bytes": 2454,
+      "sha256": "1275feefe38e336fc029b3ce5f37b19e641a983687c22cefb4df024ac22d50bf"
+    },
+    {
       "path": "src/cli.mjs",
-      "bytes": 4805,
-      "sha256": "5f0a4444f9dcaee8a52b8e25a7d2d510c775c11e658648970ab28a5b541d26c9"
+      "bytes": 6465,
+      "sha256": "a91802bd3a319ed87ecf9ab89dc1c1bdc0d56f74b6f5f637c1e2112ff54ee01c"
     },
     {
       "path": "src/constants.mjs",
@@ -81,13 +131,18 @@
     },
     {
       "path": "src/crypto.mjs",
-      "bytes": 2679,
-      "sha256": "a259457760ed767248adee784d5e76a0cb4030b97f8b604b4671331c1ed18ac4"
+      "bytes": 4863,
+      "sha256": "9efd60cb99c324dc9b99a4168fc2fd8e89875541e55b33e99c40e66d0be567c9"
     },
     {
       "path": "src/errors.mjs",
       "bytes": 496,
       "sha256": "d354a6bdfc843c8997c4ed2153d45350cb022590520ee5de9fa9dbbe72d4ee6f"
+    },
+    {
+      "path": "src/evidence.mjs",
+      "bytes": 23929,
+      "sha256": "d367298061f9515711cf712f804320dda6421049f64fc6f0293a22d773beb3c2"
     },
     {
       "path": "src/keystore.mjs",
@@ -106,13 +161,18 @@
     },
     {
       "path": "src/state.mjs",
-      "bytes": 13285,
-      "sha256": "473228948296c6ed60b62558a602a1e7885aef6ea73ca166a16bc914199c60d8"
+      "bytes": 13804,
+      "sha256": "522d05b31c95b7c99aa73ebd675bc3dcbbc368f3575bcd754827ba292d97d631"
     },
     {
       "path": "test/cli.test.mjs",
       "bytes": 8742,
       "sha256": "03b56f48de0ccc2fbe47ebd0c5c0752433ad12b177dbcb0d902f121a168dbcb0"
+    },
+    {
+      "path": "test/evidence.test.mjs",
+      "bytes": 12618,
+      "sha256": "a2a88eaf07a113f09e0d921c4655e25eb20f6eff6d23fbe827f1c09033756a58"
     },
     {
       "path": "test/no-network-preload.mjs",

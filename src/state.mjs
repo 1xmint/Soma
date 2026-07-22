@@ -2,13 +2,22 @@ import { randomBytes } from "node:crypto";
 import { open, mkdir, readFile, readdir, rename, rm, stat, statfs, lstat, realpath } from "node:fs/promises";
 import path from "node:path";
 import { createInitialKeyMaterial } from "./crypto.mjs";
-import { defaultSomaHome, EMPTY_HASH, RELEASE_ROOT, STATE_DIRECTORIES, VERSION } from "./constants.mjs";
+import { defaultSomaHome, RELEASE_ROOT, STATE_DIRECTORIES, VERSION } from "./constants.mjs";
 import { SomaError } from "./errors.mjs";
 import { protectSecretBundle, unprotectSecretBundle } from "./keystore.mjs";
 import { inspectStateRootPermissions, restrictStateRoot } from "./platform.mjs";
 import { verifyRelease } from "./release.mjs";
+import { canonicalize } from "./canonicalize.mjs";
+import { createInitialEvidenceHead, verifyEvidenceLedger } from "./evidence.mjs";
 
 const CONTROL = /[\u0000-\u001f\u007f]/;
+
+function eraseSecretBundle(bundle) {
+  if (!bundle) return;
+  for (const key of bundle.private_keys || []) key.private_key_pkcs8_base64 = "";
+  if (Array.isArray(bundle.private_keys)) bundle.private_keys.length = 0;
+  bundle.root_store_key_base64 = "";
+}
 
 function comparable(value) {
   const resolved = path.resolve(value);
@@ -118,9 +127,13 @@ export async function initialize({ home: requestedHome, label = null, recovery, 
     for (const relative of STATE_DIRECTORIES) await mkdir(path.join(stage, ...relative.split("/")), { recursive: true, mode: 0o700 });
     const createdAt = new Date().toISOString();
     const { publicIdentity, secretBundle } = createInitialKeyMaterial(createdAt);
-    const protectedBundle = protectSecretBundle(secretBundle, allowInsecureDevelopment);
-    secretBundle.root_store_key_base64 = "";
-    secretBundle.private_keys.length = 0;
+    const initialEvidenceHead = createInitialEvidenceHead(secretBundle, createdAt);
+    let protectedBundle;
+    try {
+      protectedBundle = protectSecretBundle(secretBundle, allowInsecureDevelopment);
+    } finally {
+      eraseSecretBundle(secretBundle);
+    }
 
     const config = {
       schema_version: "somavera.soma-local-config.v1",
@@ -163,12 +176,7 @@ export async function initialize({ home: requestedHome, label = null, recovery, 
       warning: "Loss of this device key material creates a new identity; continuity is not recoverable."
     });
     await writeDurable(path.join(stage, "evidence", "ledger.jsonl"), "", 0o600);
-    await writeJson(path.join(stage, "evidence", "head.json"), {
-      schema_version: "somavera.soma-evidence-head.v1",
-      sequence: 0,
-      entry_hash: EMPTY_HASH,
-      assurance: "local_only_unanchored"
-    });
+    await writeDurable(path.join(stage, "evidence", "head.json"), `${canonicalize(initialEvidenceHead)}\n`, 0o600);
     await writeDurable(path.join(stage, "logs", "security.jsonl"), "", 0o600);
     await rename(stage, home);
     stageCreated = false;
@@ -206,18 +214,17 @@ async function scanProhibited(home) {
   return matches;
 }
 
-export async function inspectState(requestedHome, { verifyReleaseFirst = true } = {}) {
+export async function inspectState(requestedHome, { verifyReleaseFirst = true, verifyEvidence = true } = {}) {
   const home = resolveHome(requestedHome);
   const release = verifyReleaseFirst ? await verifyRelease() : null;
   await assertSafeParent(home);
   await assertNoPathIndirection(home);
   if (!(await exists(home))) throw new SomaError("SOMA_HOME is not initialized", 7, "HOME_NOT_INITIALIZED");
-  const [config, identity, history, recoveryPolicy, evidenceHead, permissions, prohibited, disk] = await Promise.all([
+  const [config, identity, history, recoveryPolicy, permissions, prohibited, disk] = await Promise.all([
     readJson(path.join(home, "config", "config.json"), "CONFIG_INVALID"),
     readJson(path.join(home, "identity", "identity.json"), "IDENTITY_INVALID"),
     readJson(path.join(home, "identity", "public-key-history.json"), "KEY_HISTORY_INVALID"),
     readJson(path.join(home, "identity", "recovery-policy.json"), "RECOVERY_POLICY_INVALID"),
-    readJson(path.join(home, "evidence", "head.json"), "EVIDENCE_HEAD_INVALID"),
     Promise.resolve(inspectStateRootPermissions(home)),
     scanProhibited(home),
     statfs(home)
@@ -231,8 +238,8 @@ export async function inspectState(requestedHome, { verifyReleaseFirst = true } 
   if (identity.schema_version !== "somavera.soma-local-identity.v1" || !Array.isArray(identity.keys) || identity.keys.length !== 4) {
     throw new SomaError("public identity has an invalid shape", 7, "IDENTITY_SHAPE_INVALID");
   }
-  if (history.entries?.length !== 4 || recoveryPolicy.mode !== "none" || evidenceHead.sequence !== 0 || evidenceHead.entry_hash !== EMPTY_HASH) {
-    throw new SomaError("initial state invariants do not hold", 7, "INITIAL_STATE_INVARIANT_INVALID");
+  if (history.entries?.length !== 4 || recoveryPolicy.mode !== "none") {
+    throw new SomaError("identity or recovery invariants do not hold", 7, "STATE_INVARIANT_INVALID");
   }
   if (!permissions.protected || permissions.owner_matches !== true || permissions.unauthorized_allow_count !== 0 || permissions.unsafe_path_count !== 0) {
     throw new SomaError("state permissions are not owner-only", 7, "STATE_PERMISSIONS_UNSAFE", permissions);
@@ -240,11 +247,10 @@ export async function inspectState(requestedHome, { verifyReleaseFirst = true } 
   if (prohibited.length) throw new SomaError("prohibited files exist in SOMA_HOME", 7, "PROHIBITED_STATE_FILE", { matches: prohibited });
   const blob = await readFile(path.join(home, "config", "keystore.blob"));
   const secretBundle = unprotectSecretBundle(config.keystore.backend, blob);
-  if (secretBundle.schema_version !== "somavera.soma-secret-bundle.v1" || secretBundle.private_keys?.length !== 4 || Buffer.from(secretBundle.root_store_key_base64 || "", "base64").length !== 32) {
-    throw new SomaError("keystore contents failed integrity checks", 7, "KEYSTORE_CONTENT_INVALID");
-  }
-  secretBundle.root_store_key_base64 = "";
-  secretBundle.private_keys.length = 0;
+  const secretBundleValid = secretBundle.schema_version === "somavera.soma-secret-bundle.v1" && secretBundle.private_keys?.length === 4 && Buffer.from(secretBundle.root_store_key_base64 || "", "base64").length === 32;
+  eraseSecretBundle(secretBundle);
+  if (!secretBundleValid) throw new SomaError("keystore contents failed integrity checks", 7, "KEYSTORE_CONTENT_INVALID");
+  const evidenceVerification = verifyEvidence ? await verifyEvidenceLedger(home) : null;
   const freeBytes = Number(disk.bavail) * Number(disk.bsize);
   if (!Number.isFinite(freeBytes) || freeBytes < 50 * 1024 * 1024) throw new SomaError("insufficient disk headroom", 7, "DISK_HEADROOM_LOW");
   if (Date.now() < Date.parse("2025-01-01T00:00:00Z")) throw new SomaError("system clock is implausibly old", 7, "CLOCK_IMPLAUSIBLE");
@@ -261,7 +267,10 @@ export async function inspectState(requestedHome, { verifyReleaseFirst = true } 
     connected_hosts: 0,
     active_grants: 0,
     queued_items: 0,
-    evidence_head: evidenceHead,
+    evidence_head: evidenceVerification?.head ?? null,
+    evidence_entries: evidenceVerification?.entries ?? null,
+    evidence_assurance: evidenceVerification?.assurance ?? "verification_deferred_for_repair",
+    independent_truncation_detection: false,
     recovery_mode: recoveryPolicy.mode,
     keystore_backend: config.keystore.backend,
     security_degradations: config.security_degradations
