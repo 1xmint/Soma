@@ -1,6 +1,6 @@
 # Soma Reference Implementation Status
 
-Date: 2026-07-16
+Date: 2026-07-22
 Contract source: Somavera Origin local commit `bdc7fb2`
 Release status: **early Windows-first slice; not protocol-conforming or production-ready**
 
@@ -22,6 +22,10 @@ Release status: **early Windows-first slice; not protocol-conforming or producti
   controller-signed heads, strict key-window verification, and explicit
   `local_only_unanchored` rollback limits.
 - Explicit `none` recovery choice; unratified offline recovery fails closed.
+- Offline consent preview with exact field projection, lifecycle consistency,
+  proposed DID/origin destinations, exact replication targets, deterministic
+  commitments, controller rights attestation, secret/identity canary blocking,
+  and redacted denial records.
 - Dynamic zero-egress sentinel and static production network-import scan.
 - Idempotent initialization and observer-tamper rejection.
 
@@ -30,14 +34,17 @@ Release status: **early Windows-first slice; not protocol-conforming or producti
 - Ratified portable network evidence, independent receipts, external head
   anchors, and any reputation computation.
 - Host discovery, connection, encrypted query/response, or contribution flows.
-- Consent preview, grants, withdrawals, deletion, or tombstone tracking.
+- Signed consent grants, sends, withdrawals, deletion, acknowledgements, or
+  tombstone tracking.
 - Sovereign Vera export/import/search.
 - Identity recovery or encrypted owner-state backup/restore.
 - macOS or Linux production keystore support.
 - Signed release authenticity, SBOM, provenance, or reproducible binary bundle.
 - Vera Host, replication, learning, reputation, ledger, wallet, or token logic.
 
-The root store key is provisioned but no sensitive content body exists in this
-slice. Therefore this release demonstrates protected authority secrets and the
+The root store key is provisioned but no sensitive content body is accepted in
+this slice. Artifact preview is limited to bytes attested as already public, and
+evidence preview is limited to the minimized local ledger projection. Therefore
+this release demonstrates protected authority secrets and the
 future encryption-key boundary; it does not yet claim a complete encrypted
 local content store.

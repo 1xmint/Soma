@@ -15,6 +15,9 @@ soma doctor
 soma status
 soma evidence record --input C:\absolute\event.json
 soma evidence verify
+soma observe status
+soma observe preview --artifact C:\absolute\public.txt --policy C:\absolute\policy.json
+soma observe preview --evidence EVIDENCE_ID --policy C:\absolute\policy.json
 ```
 
 Current production-profile support is Windows 11 with current-user DPAPI. An
@@ -31,6 +34,13 @@ The implemented evidence ledger is a provisional pre-network profile. It signs
 minimized local attribution, not truth or reputation; independent receipts and
 external rollback anchors remain unavailable. See `EVIDENCE-PROFILE.md` for the
 exact domains, input contract, crash behavior, and limits.
+
+## Consent-preview boundary
+
+Observation preview is local and offline. It supports only controller-attested
+public UTF-8 artifacts and minimized signed-evidence projections. It creates no
+grant or send authority, and its scanner is explicitly not proof that content
+lacks private or regulated meaning. See `CONSENT-PREVIEW-PROFILE.md`.
 
 ## Development
 

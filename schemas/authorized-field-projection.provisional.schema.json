@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:somavera:soma:authorized-field-projection:provisional-v1",
+  "title": "Soma authorized field projection provisional v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "source_kind", "data_class", "system_fields", "authorized_fields"],
+  "properties": {
+    "schema_version": { "const": "soma.authorized-field-projection.provisional-v1" },
+    "source_kind": { "enum": ["artifact", "evidence"] },
+    "data_class": { "enum": ["public_artifact", "work_summary"] },
+    "system_fields": {
+      "const": ["data_class", "fields", "schema_version", "source_id", "source_kind", "subject_did"]
+    },
+    "authorized_fields": {
+      "type": "array", "minItems": 1, "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^[a-z][a-z0-9_]{1,63}$" }
+    }
+  }
+}

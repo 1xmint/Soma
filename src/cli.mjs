@@ -4,6 +4,7 @@ import { VERSION } from "./constants.mjs";
 import { asSomaError, SomaError } from "./errors.mjs";
 import { initialize, inspectState, resolveHome } from "./state.mjs";
 import { recordEvidence, verifyAndRepairEvidence } from "./evidence.mjs";
+import { observeStatus, previewObservation } from "./membrane.mjs";
 
 function parse(argv) {
   const result = { command: null, options: {}, positionals: [] };
@@ -17,7 +18,7 @@ function parse(argv) {
       result.options[token.slice(2).replaceAll("-", "_")] = true;
       continue;
     }
-    if (["--home", "--label", "--recovery", "--input"].includes(token)) {
+    if (["--home", "--label", "--recovery", "--input", "--artifact", "--evidence", "--policy"].includes(token)) {
       const value = argv[index + 1];
       if (value === undefined || value.startsWith("--")) throw new SomaError(`${token} requires a value`, 2, "OPTION_VALUE_REQUIRED");
       result.options[token.slice(2)] = value;
@@ -33,7 +34,7 @@ function parse(argv) {
 }
 
 function help() {
-  return `Soma reference ${VERSION}\n\nUsage:\n  soma init [--home PATH] [--label TEXT] --recovery none [--json]\n  soma doctor [--home PATH] [--network] [--json]\n  soma status [--home PATH] [--json]\n  soma evidence record --input ABSOLUTE_EVENT.json [--home PATH] [--json]\n  soma evidence verify [--home PATH] [--json]\n\nEvidence is provisional, pre-network, self-signed attribution only. It is not truth, reputation, or independent rollback proof.\nObserver, telemetry, updates, retries, watchers, wallet, and token features are absent/off.`;
+  return `Soma reference ${VERSION}\n\nUsage:\n  soma init [--home PATH] [--label TEXT] --recovery none [--json]\n  soma doctor [--home PATH] [--network] [--json]\n  soma status [--home PATH] [--json]\n  soma evidence record --input ABSOLUTE_EVENT.json [--home PATH] [--json]\n  soma evidence verify [--home PATH] [--json]\n  soma observe status [--home PATH] [--json]\n  soma observe preview (--artifact ABSOLUTE_PATH | --evidence EVIDENCE_ID) --policy ABSOLUTE_POLICY.json [--home PATH] [--json]\n\nObservation preview is offline and creates no grant or send authority.\nEvidence is provisional, pre-network, self-signed attribution only. It is not truth, reputation, or independent rollback proof.\nObserver, telemetry, updates, retries, watchers, wallet, and token features are absent/off.`;
 }
 
 function print(value, json) {
@@ -118,6 +119,20 @@ export async function runCli(argv) {
       }
       return 0;
     }
+    if (parsed.command === "observe") {
+      const action = parsed.positionals[0];
+      if (!action || parsed.positionals.length !== 1 || !["status", "preview"].includes(action)) throw new SomaError("observe requires exactly one action: status or preview", 2, "OBSERVE_ACTION_INVALID");
+      await inspectState(home);
+      if (action === "status") {
+        if (parsed.options.artifact || parsed.options.evidence || parsed.options.policy) throw new SomaError("observe status does not accept preview options", 2, "OPTION_NOT_ALLOWED");
+        print({ ok: true, command: "observe status", home, ...(await observeStatus(home)), local_mutation: false, remote_mutation: false }, parsed.options.json);
+      } else {
+        if (!parsed.options.policy) throw new SomaError("observe preview requires --policy", 2, "PREVIEW_POLICY_REQUIRED");
+        const result = await previewObservation(home, { policyFile: parsed.options.policy, artifactFile: parsed.options.artifact ?? null, evidenceId: parsed.options.evidence ?? null });
+        print({ ok: true, command: "observe preview", home, ...result }, parsed.options.json);
+      }
+      return 0;
+    }
     throw new SomaError(`unknown command: ${parsed.command}`, 2, "COMMAND_UNKNOWN");
   } catch (error) {
     const failure = asSomaError(error);
@@ -125,8 +140,8 @@ export async function runCli(argv) {
       ok: false,
       error: failure.code,
       message: failure.message,
-      local_mutation: false,
-      remote_mutation: false,
+      local_mutation: failure.details?.local_mutation === true,
+      remote_mutation: failure.details?.remote_mutation === true,
       ...(failure.details ? { details: failure.details } : {})
     };
     if (parsed?.options?.json) process.stdout.write(`${JSON.stringify(payload)}\n`);

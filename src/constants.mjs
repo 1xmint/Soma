@@ -25,6 +25,7 @@ export const STATE_DIRECTORIES = Object.freeze([
   "consent/grants",
   "consent/withdrawals",
   "consent/previews",
+  "consent/denials",
   "evidence/anchors",
   "intelligence/queries",
   "intelligence/sources",

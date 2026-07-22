@@ -15,14 +15,19 @@
       "sha256": "9ad0e97c7f6488a10d6461938f3d5f9e411e327aa0d7764489d01c0e47e76461"
     },
     {
+      "path": "CONSENT-PREVIEW-PROFILE.md",
+      "bytes": 7171,
+      "sha256": "9812d6c55a8ecd673a8b8873aa0d821cbeced380e6c190307c6ec181b15d3882"
+    },
+    {
       "path": "EVIDENCE-PROFILE.md",
       "bytes": 4303,
       "sha256": "38dca9673dba3e7714a5763584b18d7aa8d96d5cbecab2b9288a17fa06b62198"
     },
     {
       "path": "IMPLEMENTATION-STATUS.md",
-      "bytes": 2336,
-      "sha256": "583fdebc090d83e7ae24a964cba9f27f94ed091f1cb2f529aae277f42cdca2ae"
+      "bytes": 2770,
+      "sha256": "181cefdf7df87ccb7048ef290994f83e2415ea7ea17869f22c80929ed4e43215"
     },
     {
       "path": "LICENSE",
@@ -36,8 +41,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 1869,
-      "sha256": "cafee6fc13de6a1f89161442f5b3d7f0b34a39cc4118526d762095b10f19c149"
+      "bytes": 2391,
+      "sha256": "da7ba9c2fd6a85bafc078dfeba3fc90f9d81d0d7b26c63ca6d99f812d5838c00"
     },
     {
       "path": "SECURITY.md",
@@ -65,6 +70,11 @@
       "sha256": "1b5f32e712234a5c21c09aa8af97a42585a56298b2cd2b45a5af0e59b263ed72"
     },
     {
+      "path": "conformance/observation-preview-provisional-v1.json",
+      "bytes": 5238,
+      "sha256": "d1ca17da7f48da329c73da9b537005b5c5fba48be90c330c25df65fd6c5c82d2"
+    },
+    {
       "path": "defaults/policy.json",
       "bytes": 231,
       "sha256": "b2bb43e5595d83096fcbd20ce02f77db7cfd7a8f61c3e4256e7593a962d5cdd4"
@@ -76,8 +86,13 @@
     },
     {
       "path": "package.json",
-      "bytes": 574,
-      "sha256": "8efd5ee45a849ac23961f7b51eee5619fb467f50a3285194999f5ab8584bcc02"
+      "bytes": 597,
+      "sha256": "0029448462feb44c1cb89899be8da4b53413737d86a4609d15410c80504beacc"
+    },
+    {
+      "path": "schemas/authorized-field-projection.provisional.schema.json",
+      "bytes": 882,
+      "sha256": "c8b1d2904fa528bd51606a90dc22d0e02968dfbc17e7274b0cca045a902fc3d7"
     },
     {
       "path": "schemas/evidence-head.provisional.schema.json",
@@ -100,6 +115,26 @@
       "sha256": "656a26d050f8d98a7c376f93ffcd8639664aede22b658048e830637f27e81e67"
     },
     {
+      "path": "schemas/observation-payload.provisional.schema.json",
+      "bytes": 4166,
+      "sha256": "c314001a730693fd0534f2c3d743410dd16c79490f3de4dc0b0e0871a3e61a2a"
+    },
+    {
+      "path": "schemas/observation-preview-decision.provisional.schema.json",
+      "bytes": 8592,
+      "sha256": "e0ebe98f952b69e77bdce1cc938f7f524f61d25ddf37fffe18b9518a23d4f4eb"
+    },
+    {
+      "path": "schemas/observation-preview-denial.provisional.schema.json",
+      "bytes": 2075,
+      "sha256": "c5fdf37d0a3d898baaf441766766bdc83f0029e22e9b8dd2cc3e9af65a41c6fd"
+    },
+    {
+      "path": "schemas/observation-preview-policy.provisional.schema.json",
+      "bytes": 8984,
+      "sha256": "0580083ea12cd332d81f8555e9cad43c4c6afade51439035da29361873284eeb"
+    },
+    {
       "path": "scripts/build-release-manifest.mjs",
       "bytes": 510,
       "sha256": "afe81a4918cf4807054e6e0003ca8cb27d4ee0c5d4c0667a32916598bda423dc"
@@ -108,6 +143,11 @@
       "path": "scripts/generate-evidence-vector.mjs",
       "bytes": 3066,
       "sha256": "7306b653075d32cb77bfc2e3f150ed4d3dfe633a21333ca0d68ed8536ba9afc5"
+    },
+    {
+      "path": "scripts/generate-preview-vector.mjs",
+      "bytes": 4422,
+      "sha256": "ff052e1b5fe92eabad7ea3f4a6a1a6f8483a1525ac4046bdd1728e91881d5c56"
     },
     {
       "path": "scripts/verify-release.mjs",
@@ -121,13 +161,13 @@
     },
     {
       "path": "src/cli.mjs",
-      "bytes": 6465,
-      "sha256": "a91802bd3a319ed87ecf9ab89dc1c1bdc0d56f74b6f5f637c1e2112ff54ee01c"
+      "bytes": 8042,
+      "sha256": "d3e50468a9f41846594783dd4a0cbc2f8e0fdc2bcc191f1662c8ed50fc0ce1c9"
     },
     {
       "path": "src/constants.mjs",
-      "bytes": 1022,
-      "sha256": "210ba51270a5fd547229bb0d59b333ade1d5a4ece69ad7f811bce8698cc13ae0"
+      "bytes": 1043,
+      "sha256": "716fef23a61a97d1e4c26337bd5b9fb90fef7ebfd49a6466db238a5864906248"
     },
     {
       "path": "src/crypto.mjs",
@@ -148,6 +188,11 @@
       "path": "src/keystore.mjs",
       "bytes": 2726,
       "sha256": "3462b8fde9dc9608f12f915c728b57e0ecb7d76b6b1a29b0e1ba551c5320adad"
+    },
+    {
+      "path": "src/membrane.mjs",
+      "bytes": 24655,
+      "sha256": "e44d4e27c4688c55c0bbf52ddbf22a46c8430d2904e89139661c9d94fe267531"
     },
     {
       "path": "src/platform.mjs",
@@ -173,6 +218,11 @@
       "path": "test/evidence.test.mjs",
       "bytes": 12618,
       "sha256": "a2a88eaf07a113f09e0d921c4655e25eb20f6eff6d23fbe827f1c09033756a58"
+    },
+    {
+      "path": "test/membrane.test.mjs",
+      "bytes": 17656,
+      "sha256": "68e2b03a8a9e6498b3e2c118d3ebe22ec062c13a0601f86b44d197160f4e54c6"
     },
     {
       "path": "test/no-network-preload.mjs",
