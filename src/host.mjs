@@ -58,7 +58,7 @@ function validateExpectationShape(expected, requireKeyHash) {
   if (requireKeyHash && expected.active_signing_key_sha256 === null) throw new SomaError("pinning requires an out-of-band active signing-key SHA-256", 8, "HOST_PIN_KEY_HASH_REQUIRED");
 }
 
-async function readCanonicalFile(file, maximum, code, label) {
+export async function readCanonicalFile(file, maximum, code, label) {
   if (!path.isAbsolute(file)) throw new SomaError(`${label} path must be absolute`, 2, `${code}_PATH_RELATIVE`);
   const handle = await open(file, "r");
   try {
@@ -84,7 +84,7 @@ function lifecycle(key, at, label) {
   const revoked = key.lifecycle.status === "revoked";
   if (revoked !== (key.lifecycle.revoked_at !== null && key.lifecycle.revocation_reference !== null)) throw new SomaError(`${label} revocation fields and status disagree`, 7, "HOST_KEY_REVOCATION_INVALID");
   if (!revoked && (key.lifecycle.revoked_at !== null || key.lifecycle.revocation_reference !== null)) throw new SomaError(`${label} non-revoked key has revocation metadata`, 7, "HOST_KEY_REVOCATION_INVALID");
-  if (key.lifecycle.status === "overlap") throw new SomaError("overlap keys are blocked until the rotation-policy proof is ratified", 8, "HOST_KEY_OVERLAP_UNSUPPORTED");
+  if (key.lifecycle.status === "overlap" && (until - from) / 1000 > key.maximum_overlap_seconds) throw new SomaError("overlap key exceeds the descriptor rotation-policy window", 8, "HOST_KEY_OVERLAP_WINDOW_INVALID");
   if (revoked) exactIso(key.lifecycle.revoked_at, "HOST_KEY_REVOCATION_INVALID", `${label}.revoked_at`);
   return { activeNow: key.lifecycle.status === "active" && from <= at && at < until, from, until };
 }
@@ -139,7 +139,7 @@ export async function verifyHostDescriptor(descriptor, expected, { validationTim
     const publicHash = sha256(raw);
     if (signingPublic.has(publicHash)) throw new SomaError("host signing public keys are duplicated", 8, "HOST_SIGNING_KEY_DUPLICATE");
     signingPublic.add(publicHash);
-    const window = lifecycle(key, validationTime, `host_signing_keys[${index}].lifecycle`);
+    const window = lifecycle({ ...key, maximum_overlap_seconds: descriptor.rotation_policy.maximum_overlap_seconds }, validationTime, `host_signing_keys[${index}].lifecycle`);
     if (key.key_id === descriptor.active_host_signing_key_id) {
       if (activeSigning || !window.activeNow || issuedAt < window.from || expiresAt > window.until) throw new SomaError("active host signing key is not uniquely time-valid", 8, "HOST_ACTIVE_SIGNING_KEY_INVALID");
       activeSigning = key;
@@ -156,12 +156,13 @@ export async function verifyHostDescriptor(descriptor, expected, { validationTim
     const publicHash = sha256(raw);
     if (ingestionPublic.has(publicHash) || signingPublic.has(publicHash)) throw new SomaError("signing and ingestion public-key sets are not disjoint", 8, "HOST_KEY_ROLE_REUSE");
     ingestionPublic.add(publicHash);
-    const window = lifecycle(key, validationTime, `ingestion_encryption_keys[${index}].lifecycle`);
+    const window = lifecycle({ ...key, maximum_overlap_seconds: descriptor.rotation_policy.maximum_overlap_seconds }, validationTime, `ingestion_encryption_keys[${index}].lifecycle`);
     if (key.key_id === descriptor.active_ingestion_key_id) {
       if (activeIngestion || !window.activeNow || issuedAt < window.from || expiresAt > window.until) throw new SomaError("active ingestion key is not uniquely time-valid", 8, "HOST_ACTIVE_INGESTION_KEY_INVALID");
       activeIngestion = key;
     }
   }
+  if (descriptor.host_signing_keys.filter((key) => key.lifecycle.status === "active").length !== 1 || descriptor.ingestion_encryption_keys.filter((key) => key.lifecycle.status === "active").length !== 1) throw new SomaError("descriptor must contain exactly one active key per role", 8, "HOST_ACTIVE_KEY_AMBIGUOUS");
   if (!activeSigning || !activeIngestion || descriptor.signature.key_id !== activeSigning.key_id) throw new SomaError("descriptor active-key bindings are incomplete or inconsistent", 8, "HOST_ACTIVE_KEY_BINDING_INVALID");
   const computedId = sha256(Buffer.from(`somavera:vera-host-descriptor:v1\n${canonicalize(descriptorCore(descriptor))}`));
   if (computedId !== descriptor.descriptor_id) throw new SomaError("host descriptor identifier does not match its semantic core", 8, "HOST_DESCRIPTOR_ID_MISMATCH");
@@ -195,33 +196,33 @@ export async function verifyHostDescriptorFile(file, expected) {
   return { local_mutation: false, remote_mutation: false, ...(await verifyHostDescriptor(descriptor, expected)), descriptor_jcs: canonicalize(descriptor) };
 }
 
-async function publicIdentity(home) {
+export async function publicIdentity(home) {
   return JSON.parse(await readFile(path.join(home, "identity", "identity.json"), "utf8"));
 }
 
-function eraseSecretBundle(bundle) {
+export function eraseSecretBundle(bundle) {
   if (!bundle) return;
   for (const key of bundle.private_keys || []) key.private_key_pkcs8_base64 = "";
   if (Array.isArray(bundle.private_keys)) bundle.private_keys.length = 0;
   bundle.root_store_key_base64 = "";
 }
 
-async function controllerSecret(home) {
+export async function controllerSecret(home) {
   const config = JSON.parse(await readFile(path.join(home, "config", "config.json"), "utf8"));
   return unprotectSecretBundle(config.keystore.backend, await readFile(path.join(home, "config", "keystore.blob")));
 }
 
-function hostFile(home, hostDid) {
+export function hostFile(home, hostDid) {
   const name = sha256(Buffer.from(`soma:host-pin-file:provisional-v1\n${hostDid}`));
   return path.join(home, "hosts", `${name}.json`);
 }
 
-async function durableFile(file, body) {
+export async function durableFile(file, body) {
   const handle = await open(file, "wx", 0o600);
   try { await handle.writeFile(body); await handle.sync(); } finally { await handle.close(); }
 }
 
-async function verifyPinRecord(record, identity, { currentTime = Date.now() } = {}) {
+export async function verifyPinRecord(record, identity, { currentTime = Date.now() } = {}) {
   exactObject(record, PIN_FIELDS, "HOST_PIN_SHAPE_INVALID", "host pin");
   exactObject(record.expected, EXPECTED_FIELDS, "HOST_PIN_EXPECTATION_INVALID", "host pin expectation");
   exactObject(record.signature, SIGNATURE_FIELDS, "HOST_PIN_SIGNATURE_INVALID", "host pin signature");
@@ -291,11 +292,20 @@ export async function pinHostDescriptor(home, file, expected) {
   } finally { eraseSecretBundle(secretBundle); }
 }
 
+export async function verifiedHostPinForDid(home, hostDid, identity = null) {
+  const localIdentity = identity || await publicIdentity(home);
+  const record = await existingPin(hostFile(home, hostDid), localIdentity);
+  if (!record) throw new SomaError("no pinned prior descriptor exists for this host", 8, "HOST_PRIOR_PIN_NOT_FOUND");
+  const summary = await verifyPinRecord(record, localIdentity);
+  return { record, summary, identity: localIdentity };
+}
+
 export async function verifyHostPinStore(home, identity = null) {
   const localIdentity = identity || await publicIdentity(home);
   const entries = await readdir(path.join(home, "hosts"), { withFileTypes: true });
   const results = [];
   for (const entry of entries) {
+    if (entry.isDirectory() && entry.name === "candidates") continue;
     if (!entry.isFile() || !/^[a-f0-9]{64}\.json$/.test(entry.name)) throw new SomaError("host store contains an unsupported entry", 7, "HOST_STORE_ENTRY_INVALID", { entry: entry.name });
     const file = path.join(home, "hosts", entry.name);
     const record = parseCanonicalJson(await readFile(file, "utf8"), "stored host pin");

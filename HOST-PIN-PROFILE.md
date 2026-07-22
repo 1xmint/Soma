@@ -54,7 +54,7 @@ invariants that JSON Schema cannot express:
 - agreement between duplicated query, retention, and size limits;
 - declared regions for every subprocessor and unique processor identifiers;
 - explicit operator-memory and traffic-metadata disclosures; and
-- zero overlap-key acceptance until a rotation-policy proof is ratified.
+- bounded overlap keys are accepted only as inert precommitments; they are never active routing authority.
 
 The current host and HPKE profiles remain marked `freeze_blocking_draft` by the
 Origin contract. A pin is therefore preparation for later interoperability, not
@@ -98,11 +98,11 @@ test key only.
 ## Rotation and descriptor changes
 
 Automatic replacement is forbidden. Re-pinning the identical descriptor and
-expectations is idempotent. Any changed descriptor IDâ€”including a new signing
+expectations is idempotent. Any changed descriptor ID--including a new signing
 key, ingestion key, origin, region, subprocessor, policy, disclosure, release,
-limit, or expiryâ€”fails with `HOST_DESCRIPTOR_CHANGE_UNSUPPORTED`.
+limit, or expiry--fails with `HOST_DESCRIPTOR_CHANGE_UNSUPPORTED`.
 
-This is deliberate. Origin commit `07a4e89` now defines and tests a freeze-blocking ordinary-succession proof, but this reference slice does not ingest that proof, persist a candidate successor, display a change diff, or obtain the separate controller confirmation. Therefore even a cryptographically valid succession proof remains non-authoritative here. A later bounded implementation must add that complete state machine and its no-network/no-consent tests before descriptor replacement can be enabled; emergency compromise recovery remains separately unsupported.
+This is deliberate. `soma host succession-preview` now ingests the Origin proof and may persist a controller-signed inert candidate, but it does not display a confirmation ceremony or replace the pin. Therefore even a cryptographically valid succession proof remains non-authoritative for routing. See `HOST-SUCCESSION-PROFILE.md`. A later bounded implementation must add the exact candidate-confirmation and atomic replacement state machine before descriptor replacement can be enabled; emergency compromise recovery remains separately unsupported.
 
 ## Security limits
 

@@ -10,6 +10,7 @@ import { verifyRelease } from "./release.mjs";
 import { canonicalize } from "./canonicalize.mjs";
 import { createInitialEvidenceHead, verifyEvidenceLedger } from "./evidence.mjs";
 import { verifyHostPinStore } from "./host.mjs";
+import { verifyHostSuccessionCandidateStore } from "./host-succession.mjs";
 
 const CONTROL = /[\u0000-\u001f\u007f]/;
 
@@ -234,6 +235,7 @@ export async function inspectState(requestedHome, { verifyReleaseFirst = true, v
     throw new SomaError("local configuration violates the observer-off baseline", 7, "OBSERVER_OFF_BASELINE_INVALID");
   }
   const hostPins = await verifyHostPinStore(home, identity);
+  const hostCandidates = await verifyHostSuccessionCandidateStore(home, identity);
   if (config.connected_hosts !== 0 || (await listImmediateFiles(path.join(home, "consent", "grants"))).length !== 0 || (await listImmediateFiles(path.join(home, "queue"))).length !== 0) {
     throw new SomaError("baseline contains connected authority, consent, or queued work", 7, "REMOTE_AUTHORITY_BASELINE_INVALID");
   }
@@ -268,6 +270,7 @@ export async function inspectState(requestedHome, { verifyReleaseFirst = true, v
     observer: config.observer,
     connected_hosts: 0,
     pinned_hosts: hostPins.length,
+    pending_host_successions: hostCandidates.length,
     active_grants: 0,
     queued_items: 0,
     evidence_head: evidenceVerification?.head ?? null,

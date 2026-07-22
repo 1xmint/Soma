@@ -19,10 +19,10 @@ function resolveLocal(root, reference) {
   return reference.slice(2).split("/").reduce((value, token) => value[token.replaceAll("~1", "/").replaceAll("~0", "~")], root);
 }
 
-export function assertJsonSchema(value, schema, { code = "JSON_SCHEMA_INVALID", label = "value" } = {}) {
+export function assertJsonSchema(value, schema, { code = "JSON_SCHEMA_INVALID", label = "value", exitCode = 2 } = {}) {
   const root = schema;
   function reject(pointer, reason) {
-    throw new SomaError(`${label} violates its closed schema at ${pointer}: ${reason}`, 2, code, { pointer, reason });
+    throw new SomaError(`${label} violates its closed schema at ${pointer}: ${reason}`, exitCode, code, { pointer, reason });
   }
   function visit(current, rule, pointer) {
     if (!rule || typeof rule !== "object") reject(pointer, "schema rule is invalid");

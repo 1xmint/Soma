@@ -18,6 +18,7 @@ soma evidence verify
 soma host status
 soma host verify --descriptor C:\absolute\host.json --expect-origin https://vera.example --expect-host-did DID --expect-network NETWORK --expect-context CONTEXT
 soma host pin --descriptor C:\absolute\host.json --expect-origin https://vera.example --expect-host-did DID --expect-network NETWORK --expect-context CONTEXT --expect-key-hash HASH
+soma host succession-preview --successor C:\absolute\successor.json --proof C:\absolute\proof.json
 soma observe status
 soma observe preview --artifact C:\absolute\public.txt --policy C:\absolute\policy.json
 soma observe preview --evidence EVIDENCE_ID --policy C:\absolute\policy.json
@@ -43,8 +44,10 @@ exact domains, input contract, crash behavior, and limits.
 A local host descriptor can be schema-checked, signature-verified, and pinned
 only with exact independently supplied identity, network, context, and signing-key
 expectations. Pins are controller-signed but inert: they create no connection,
-consent, or send authority. Changed descriptors fail closed because the rotation
-proof is not yet ratified. See `HOST-PIN-PROFILE.md`.
+consent, or send authority. Direct changed-descriptor replacement fails closed.
+An Origin ordinary-succession proof may be verified and stored only as a
+controller-signed inert candidate; confirmation and pin replacement remain
+absent. See `HOST-PIN-PROFILE.md` and `HOST-SUCCESSION-PROFILE.md`.
 
 ## Consent-preview boundary
 

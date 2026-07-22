@@ -1,13 +1,13 @@
 # Soma Reference Implementation Status
 
 Date: 2026-07-22
-Contract source: Somavera Origin local commit `bdc7fb2`
+Contract source: Somavera Origin local commit `07a4e89`
 Release status: **early Windows-first slice; not protocol-conforming or production-ready**
 
 ## Implemented in this slice
 
-- Dependency-free Node 22 CLI with `init`, `doctor`, `status`, and provisional
-  `evidence record` / `evidence verify` commands.
+- Dependency-free Node 22 CLI with local state, evidence, consent-preview,
+  host-pin, and inert host-succession-preview commands.
 - Offline release file-set and SHA-256 verification before state creation.
 - Honest `self_manifest_integrity_only_untrusted` authenticity label.
 - Atomic fresh-home creation with rollback after failed post-rename validation.
@@ -27,8 +27,10 @@ Release status: **early Windows-first slice; not protocol-conforming or producti
   commitments, controller rights attestation, secret/identity canary blocking,
   and redacted denial records.
 - Offline Vera Host descriptor schema/semantic/signature verification and
-  controller-signed inert pinning with exact out-of-band bindings; descriptor
-  changes and overlap/rotation keys fail closed.
+  controller-signed inert pinning with exact out-of-band bindings.
+- Bounded overlap keys as non-authoritative precommitments plus verification and
+  controller-signed storage of one inert ordinary-succession candidate per host;
+  no candidate can replace a pin, connect, consent, disclose, or send.
 - Dynamic zero-egress sentinel and static production network-import scan.
 - Idempotent initialization and observer-tamper rejection.
 
@@ -36,8 +38,10 @@ Release status: **early Windows-first slice; not protocol-conforming or producti
 
 - Ratified portable network evidence, independent receipts, external head
   anchors, and any reputation computation.
-- Network host discovery, authenticated TLS connection/challenge, descriptor
-  rotation proof, application encryption, query/response, or contribution flows.
+- Network host discovery, authenticated TLS connection/challenge, application
+  encryption, query/response, or contribution flows.
+- Controller-confirmed succession, atomic pin replacement/history, candidate
+  consumption, and emergency host recovery.
 - Signed consent grants, sends, withdrawals, deletion, acknowledgements, or
   tombstone tracking.
 - Sovereign Vera export/import/search.

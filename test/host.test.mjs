@@ -156,7 +156,8 @@ test("offline descriptor verification is non-authoritative and pinning requires 
   const verification = JSON.parse(verified.stdout);
   assert.equal(verification.pin_eligible, false);
   assert.equal(verification.authority, "verification_only_no_pin_no_connection_no_consent_no_send");
-  assert.equal((await readdir(path.join(home, "hosts"))).length, 0);
+  const hostEntries = await readdir(path.join(home, "hosts"), { withFileTypes: true });
+  assert.deepEqual(hostEntries.map((entry) => [entry.name, entry.isDirectory()]), [["candidates", true]]);
   const refused = execute(args("pin", home, file, expected, false), trace);
   assert.equal(refused.status, 8, refused.stderr || refused.stdout);
   assert.equal(JSON.parse(refused.stdout).error, "HOST_PIN_KEY_HASH_REQUIRED");
@@ -261,7 +262,7 @@ test("identity substitutions, signature mutation, downgrade, expiry, and semanti
   overlap.host_signing_keys[0].lifecycle.status = "overlap";
   await writeDescriptor(file, resignDescriptor(overlap, base.signingPair.privateKey));
   rejected = execute(args("verify", home, file, base.expected), trace);
-  assert.equal(JSON.parse(rejected.stdout).error, "HOST_KEY_OVERLAP_UNSUPPORTED");
+  assert.equal(JSON.parse(rejected.stdout).error, "HOST_ACTIVE_SIGNING_KEY_INVALID");
   const outlivesKey = structuredClone(base.descriptor);
   outlivesKey.expires_at = new Date(Date.parse(base.descriptor.host_signing_keys[0].lifecycle.valid_until) + 1000).toISOString();
   await writeDescriptor(file, resignDescriptor(outlivesKey, base.signingPair.privateKey));
@@ -290,9 +291,9 @@ test("descriptor changes and local pin tampering cannot silently replace trust",
   const refused = execute(args("pin", home, file, changed.expected), trace);
   assert.equal(refused.status, 8, refused.stderr || refused.stdout);
   assert.equal(JSON.parse(refused.stdout).error, "HOST_DESCRIPTOR_CHANGE_UNSUPPORTED");
-  const hostFiles = await readdir(path.join(home, "hosts"));
+  const hostFiles = (await readdir(path.join(home, "hosts"), { withFileTypes: true })).filter((entry) => entry.isFile());
   assert.equal(hostFiles.length, 1);
-  const pinFile = path.join(home, "hosts", hostFiles[0]);
+  const pinFile = path.join(home, "hosts", hostFiles[0].name);
   const record = JSON.parse(await readFile(pinFile, "utf8"));
   record.authority = "connected_and_authorized";
   await writeFile(pinFile, `${canonicalize(record)}\n`, "utf8");

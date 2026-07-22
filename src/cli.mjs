@@ -6,6 +6,7 @@ import { initialize, inspectState, resolveHome } from "./state.mjs";
 import { recordEvidence, verifyAndRepairEvidence } from "./evidence.mjs";
 import { observeStatus, previewObservation } from "./membrane.mjs";
 import { expectedHostBindings, hostStatus, pinHostDescriptor, verifyHostDescriptorFile } from "./host.mjs";
+import { hostSuccessionStatus, previewHostSuccession } from "./host-succession.mjs";
 
 function parse(argv) {
   const result = { command: null, options: {}, positionals: [] };
@@ -19,7 +20,7 @@ function parse(argv) {
       result.options[token.slice(2).replaceAll("-", "_")] = true;
       continue;
     }
-    if (["--home", "--label", "--recovery", "--input", "--artifact", "--evidence", "--policy", "--descriptor", "--expect-origin", "--expect-host-did", "--expect-network", "--expect-context", "--expect-key-hash"].includes(token)) {
+    if (["--home", "--label", "--recovery", "--input", "--artifact", "--evidence", "--policy", "--descriptor", "--expect-origin", "--expect-host-did", "--expect-network", "--expect-context", "--expect-key-hash", "--successor", "--proof"].includes(token)) {
       const value = argv[index + 1];
       if (value === undefined || value.startsWith("--")) throw new SomaError(`${token} requires a value`, 2, "OPTION_VALUE_REQUIRED");
       result.options[token.slice(2).replaceAll("-", "_")] = value;
@@ -35,7 +36,7 @@ function parse(argv) {
 }
 
 function help() {
-  return `Soma reference ${VERSION}\n\nUsage:\n  soma init [--home PATH] [--label TEXT] --recovery none [--json]\n  soma doctor [--home PATH] [--network] [--json]\n  soma status [--home PATH] [--json]\n  soma evidence record --input ABSOLUTE_EVENT.json [--home PATH] [--json]\n  soma evidence verify [--home PATH] [--json]\n  soma host status [--home PATH] [--json]\n  soma host verify --descriptor ABSOLUTE_DESCRIPTOR.json --expect-origin ORIGIN --expect-host-did DID --expect-network NETWORK --expect-context CONTEXT [--expect-key-hash HASH] [--home PATH] [--json]\n  soma host pin --descriptor ABSOLUTE_DESCRIPTOR.json --expect-origin ORIGIN --expect-host-did DID --expect-network NETWORK --expect-context CONTEXT --expect-key-hash HASH [--home PATH] [--json]\n  soma observe status [--home PATH] [--json]\n  soma observe preview (--artifact ABSOLUTE_PATH | --evidence EVIDENCE_ID) --policy ABSOLUTE_POLICY.json [--home PATH] [--json]\n\nObservation preview is offline and creates no grant or send authority.\nEvidence is provisional, pre-network, self-signed attribution only. It is not truth, reputation, or independent rollback proof.\nObserver, telemetry, updates, retries, watchers, wallet, and token features are absent/off.`;
+  return `Soma reference ${VERSION}\n\nUsage:\n  soma init [--home PATH] [--label TEXT] --recovery none [--json]\n  soma doctor [--home PATH] [--network] [--json]\n  soma status [--home PATH] [--json]\n  soma evidence record --input ABSOLUTE_EVENT.json [--home PATH] [--json]\n  soma evidence verify [--home PATH] [--json]\n  soma host status [--home PATH] [--json]\n  soma host verify --descriptor ABSOLUTE_DESCRIPTOR.json --expect-origin ORIGIN --expect-host-did DID --expect-network NETWORK --expect-context CONTEXT [--expect-key-hash HASH] [--home PATH] [--json]\n  soma host pin --descriptor ABSOLUTE_DESCRIPTOR.json --expect-origin ORIGIN --expect-host-did DID --expect-network NETWORK --expect-context CONTEXT --expect-key-hash HASH [--home PATH] [--json]\n  soma host succession-preview --successor ABSOLUTE_DESCRIPTOR.json --proof ABSOLUTE_PROOF.json [--home PATH] [--json]\n  soma observe status [--home PATH] [--json]\n  soma observe preview (--artifact ABSOLUTE_PATH | --evidence EVIDENCE_ID) --policy ABSOLUTE_POLICY.json [--home PATH] [--json]\n\nObservation preview is offline and creates no grant or send authority.\nEvidence is provisional, pre-network, self-signed attribution only. It is not truth, reputation, or independent rollback proof.\nObserver, telemetry, updates, retries, watchers, wallet, and token features are absent/off.`;
 }
 
 function print(value, json) {
@@ -122,12 +123,17 @@ export async function runCli(argv) {
     }
     if (parsed.command === "host") {
       const action = parsed.positionals[0];
-      if (!action || parsed.positionals.length !== 1 || !["status", "verify", "pin"].includes(action)) throw new SomaError("host requires exactly one action: status, verify, or pin", 2, "HOST_ACTION_INVALID");
+      if (!action || parsed.positionals.length !== 1 || !["status", "verify", "pin", "succession-preview"].includes(action)) throw new SomaError("host requires exactly one action: status, verify, pin, or succession-preview", 2, "HOST_ACTION_INVALID");
       await inspectState(home);
       if (action === "status") {
-        if (parsed.options.descriptor || parsed.options.expect_origin || parsed.options.expect_host_did || parsed.options.expect_network || parsed.options.expect_context || parsed.options.expect_key_hash) throw new SomaError("host status does not accept verification options", 2, "OPTION_NOT_ALLOWED");
-        print({ ok: true, command: "host status", home, ...(await hostStatus(home)) }, parsed.options.json);
+        if (parsed.options.descriptor || parsed.options.successor || parsed.options.proof || parsed.options.expect_origin || parsed.options.expect_host_did || parsed.options.expect_network || parsed.options.expect_context || parsed.options.expect_key_hash) throw new SomaError("host status does not accept verification options", 2, "OPTION_NOT_ALLOWED");
+        print({ ok: true, command: "host status", home, ...(await hostStatus(home)), ...(await hostSuccessionStatus(home)) }, parsed.options.json);
+      } else if (action === "succession-preview") {
+        if (parsed.options.descriptor || parsed.options.expect_origin || parsed.options.expect_host_did || parsed.options.expect_network || parsed.options.expect_context || parsed.options.expect_key_hash) throw new SomaError("host succession-preview accepts only --successor and --proof", 2, "OPTION_NOT_ALLOWED");
+        if (!parsed.options.successor || !parsed.options.proof) throw new SomaError("host succession-preview requires --successor and --proof", 2, "HOST_SUCCESSION_INPUT_REQUIRED");
+        print({ ok: true, command: "host succession-preview", home, ...(await previewHostSuccession(home, parsed.options.successor, parsed.options.proof)) }, parsed.options.json);
       } else {
+        if (parsed.options.successor || parsed.options.proof) throw new SomaError(`host ${action} does not accept succession options`, 2, "OPTION_NOT_ALLOWED");
         if (!parsed.options.descriptor) throw new SomaError(`host ${action} requires --descriptor`, 2, "HOST_DESCRIPTOR_REQUIRED");
         const expected = expectedHostBindings(parsed.options);
         const result = action === "verify" ? await verifyHostDescriptorFile(parsed.options.descriptor, expected) : await pinHostDescriptor(home, parsed.options.descriptor, expected);
