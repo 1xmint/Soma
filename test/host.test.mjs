@@ -13,7 +13,7 @@ import { verifyHostDescriptor } from "../src/host.mjs";
 const root = path.resolve(fileURLToPath(new URL("../", import.meta.url)));
 const cli = path.join(root, "bin", "soma.mjs");
 const preload = pathToFileURL(path.join(root, "test", "no-network-preload.mjs")).href;
-const capsule = "afaf365d2704d9fddb62371819fa2ce5a48f3d8323f5d9dcd8277b095517deda";
+const capsule = "ee8bb4f2a851ecd103a84db988e24eb2241ec702c9f0743045a2e83008f89e7d";
 
 function execute(args, trace) {
   return spawnSync(process.execPath, [cli, ...args], {
@@ -54,6 +54,18 @@ function fixture(overrides = {}) {
   const core = {
     schema_version: "somavera.vera-host-descriptor.v1",
     profile_status: "freeze_blocking_draft",
+    descriptor_sequence: 0,
+    previous_descriptor_id: null,
+    rotation_policy: {
+      ordinary_succession: "precommitted_overlap_dual_signature_v1",
+      successor_key_precommitment: "required_in_prior_descriptor",
+      requires_prior_and_successor_signatures: true,
+      requires_controller_confirmation: true,
+      emergency_compromise_recovery: "blocked_until_recovery_authority_profile",
+      maximum_overlap_seconds: 86400,
+      maximum_descriptor_lifetime_seconds: 86400,
+      allowed_change_scopes: ["renewal_only", "signing_key_rotation", "ingestion_key_rotation", "signing_and_ingestion_key_rotation"]
+    },
     network_lineage_id: `somavera:network:v1:${"b".repeat(64)}`,
     execution_context_id: `somavera:context:v1:${"a".repeat(64)}`,
     host_did: hostDid,
@@ -211,6 +223,19 @@ test("identity substitutions, signature mutation, downgrade, expiry, and semanti
   await writeDescriptor(file, wrongCapsule.descriptor);
   rejected = execute(args("verify", home, file, wrongCapsule.expected), trace);
   assert.equal(JSON.parse(rejected.stdout).error, "HOST_ORIGIN_CAPSULE_MISMATCH");
+  const invalidGenesisLink = fixture({ core: { previous_descriptor_id: "1".repeat(64) } });
+  await writeDescriptor(file, invalidGenesisLink.descriptor);
+  rejected = execute(args("verify", home, file, invalidGenesisLink.expected), trace);
+  assert.equal(JSON.parse(rejected.stdout).error, "HOST_DESCRIPTOR_SCHEMA_INVALID");
+  const invalidSuccessorLink = fixture({ core: { descriptor_sequence: 1, previous_descriptor_id: null } });
+  await writeDescriptor(file, invalidSuccessorLink.descriptor);
+  rejected = execute(args("verify", home, file, invalidSuccessorLink.expected), trace);
+  assert.equal(JSON.parse(rejected.stdout).error, "HOST_DESCRIPTOR_SCHEMA_INVALID");
+  const excessiveLifetime = structuredClone(base.descriptor);
+  excessiveLifetime.rotation_policy.maximum_descriptor_lifetime_seconds = 900;
+  await writeDescriptor(file, resignDescriptor(excessiveLifetime, base.signingPair.privateKey));
+  rejected = execute(args("verify", home, file, base.expected), trace);
+  assert.equal(JSON.parse(rejected.stdout).error, "HOST_DESCRIPTOR_LIFETIME_INVALID");
   const reused = fixture({ ingestionPublic: base.signingPublic, signingPair: base.signingPair });
   await writeDescriptor(file, reused.descriptor);
   rejected = execute(args("verify", home, file, reused.expected), trace);

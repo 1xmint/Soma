@@ -9,6 +9,9 @@
     "schema_version",
     "profile_status",
     "descriptor_id",
+    "descriptor_sequence",
+    "previous_descriptor_id",
+    "rotation_policy",
     "network_lineage_id",
     "execution_context_id",
     "host_did",
@@ -41,6 +44,44 @@
     "schema_version": { "const": "somavera.vera-host-descriptor.v1" },
     "profile_status": { "const": "freeze_blocking_draft" },
     "descriptor_id": { "$ref": "#/$defs/hash" },
+    "descriptor_sequence": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+    "previous_descriptor_id": {
+      "oneOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/hash" }
+      ]
+    },
+    "rotation_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ordinary_succession",
+        "successor_key_precommitment",
+        "requires_prior_and_successor_signatures",
+        "requires_controller_confirmation",
+        "emergency_compromise_recovery",
+        "maximum_overlap_seconds",
+        "maximum_descriptor_lifetime_seconds",
+        "allowed_change_scopes"
+      ],
+      "properties": {
+        "ordinary_succession": { "const": "precommitted_overlap_dual_signature_v1" },
+        "successor_key_precommitment": { "const": "required_in_prior_descriptor" },
+        "requires_prior_and_successor_signatures": { "const": true },
+        "requires_controller_confirmation": { "const": true },
+        "emergency_compromise_recovery": { "const": "blocked_until_recovery_authority_profile" },
+        "maximum_overlap_seconds": { "type": "integer", "minimum": 300, "maximum": 604800 },
+        "maximum_descriptor_lifetime_seconds": { "type": "integer", "minimum": 900, "maximum": 31536000 },
+        "allowed_change_scopes": {
+          "const": [
+            "renewal_only",
+            "signing_key_rotation",
+            "ingestion_key_rotation",
+            "signing_and_ingestion_key_rotation"
+          ]
+        }
+      }
+    },
     "network_lineage_id": { "$ref": "#/$defs/network" },
     "execution_context_id": { "$ref": "#/$defs/context" },
     "host_did": { "$ref": "#/$defs/did" },
@@ -306,6 +347,22 @@
     "expires_at": { "type": "string", "format": "date-time" },
     "signature": { "$ref": "#/$defs/signature" }
   },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "descriptor_sequence": { "const": 0 } },
+        "required": ["descriptor_sequence"]
+      },
+      "then": { "properties": { "previous_descriptor_id": { "type": "null" } } }
+    },
+    {
+      "if": {
+        "properties": { "descriptor_sequence": { "type": "integer", "minimum": 1 } },
+        "required": ["descriptor_sequence"]
+      },
+      "then": { "properties": { "previous_descriptor_id": { "$ref": "#/$defs/hash" } } }
+    }
+  ],
   "$defs": {
     "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
     "network": { "type": "string", "pattern": "^somavera:network:v1:[a-f0-9]{64}$" },

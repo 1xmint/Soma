@@ -8,7 +8,7 @@ import { assertJsonSchema } from "./json-schema.mjs";
 import { unprotectSecretBundle } from "./keystore.mjs";
 import { RELEASE_ROOT } from "./constants.mjs";
 
-const ORIGIN_CAPSULE_HASH = "afaf365d2704d9fddb62371819fa2ce5a48f3d8323f5d9dcd8277b095517deda";
+const ORIGIN_CAPSULE_HASH = "ee8bb4f2a851ecd103a84db988e24eb2241ec702c9f0743045a2e83008f89e7d";
 const HASH = /^[a-f0-9]{64}$/;
 const DID = /^did:[a-z0-9]+:(?:[A-Za-z0-9._-]|%[0-9A-Fa-f]{2})+(?::(?:[A-Za-z0-9._-]|%[0-9A-Fa-f]{2})+)*$/;
 const NETWORK = /^somavera:network:v1:[a-f0-9]{64}$/;
@@ -110,6 +110,7 @@ export async function verifyHostDescriptor(descriptor, expected, { validationTim
   const issuedAt = exactIso(descriptor.issued_at, "HOST_DESCRIPTOR_TIME_INVALID", "descriptor issued_at");
   const expiresAt = exactIso(descriptor.expires_at, "HOST_DESCRIPTOR_TIME_INVALID", "descriptor expires_at");
   if (issuedAt >= expiresAt || issuedAt > validationTime || (requireCurrent && validationTime >= expiresAt)) throw new SomaError("host descriptor is not currently valid", 8, "HOST_DESCRIPTOR_TIME_INVALID");
+  if ((expiresAt - issuedAt) / 1000 > descriptor.rotation_policy.maximum_descriptor_lifetime_seconds) throw new SomaError("host descriptor exceeds its committed maximum lifetime", 8, "HOST_DESCRIPTOR_LIFETIME_INVALID");
   if (descriptor.origin !== expected.origin) throw new SomaError("descriptor origin differs from the expected origin", 8, "HOST_ORIGIN_MISMATCH");
   if (descriptor.host_did !== expected.host_did) throw new SomaError("descriptor host DID differs from the expected DID", 8, "HOST_DID_MISMATCH");
   if (descriptor.network_lineage_id !== expected.network_lineage_id) throw new SomaError("descriptor network differs from the expected network", 8, "HOST_NETWORK_MISMATCH");

@@ -26,8 +26,8 @@
     },
     {
       "path": "HOST-PIN-PROFILE.md",
-      "bytes": 6053,
-      "sha256": "6b7104a3ffad07051b5e726a84670b4d31c7d740218d284eaf2e79133eda08c3"
+      "bytes": 6456,
+      "sha256": "37d6db03c8f8f3eab69ee8e2e92013abeacc3e9ee124d99a71bafe51c65cdbb3"
     },
     {
       "path": "IMPLEMENTATION-STATUS.md",
@@ -81,8 +81,8 @@
     },
     {
       "path": "conformance/vera-host-descriptor-provisional-v1.json",
-      "bytes": 10614,
-      "sha256": "485c87243a1c224dc09b941203b24a27a91e2ed0ffb49c768f461b1a44ed341d"
+      "bytes": 11910,
+      "sha256": "943e045267afd9e2610ce32e9ea2c108babfd8512e3fab7e9e915283fccdb90d"
     },
     {
       "path": "defaults/policy.json",
@@ -151,8 +151,8 @@
     },
     {
       "path": "schemas/vera-host-descriptor.v1.schema.json",
-      "bytes": 13979,
-      "sha256": "a8c5ed5fa8c83b879cd85925d7dac8410d7b9ca894bd567be746c4b4241492f0"
+      "bytes": 16079,
+      "sha256": "ced3211a317dfe3c858966318c8154bd0af529773b090f02361112c4a7474107"
     },
     {
       "path": "scripts/build-release-manifest.mjs",
@@ -166,8 +166,8 @@
     },
     {
       "path": "scripts/generate-host-descriptor-vector.mjs",
-      "bytes": 5551,
-      "sha256": "e4240cd4e9b15d1f37dd3e912f10d9d436ea1b0596203950ded12b6070fc7287"
+      "bytes": 6160,
+      "sha256": "613e8ddb69cabe4b3dcfc7a26451fa3b89be97ce81211fc9fde88347ee5b8540"
     },
     {
       "path": "scripts/generate-preview-vector.mjs",
@@ -211,13 +211,13 @@
     },
     {
       "path": "src/host.mjs",
-      "bytes": 23760,
-      "sha256": "bd59f990e8bb8b6417148d6b2a8b940383e60ac86dc7ebe102751c5799b289da"
+      "bytes": 23980,
+      "sha256": "a3d815264411e37c5f69e6d5024d1c607a4b7a37917a2923a354b9ce97d0e81b"
     },
     {
       "path": "src/json-schema.mjs",
-      "bytes": 4403,
-      "sha256": "8f69fcc40622c4d11038afe3a7f4560a92e833bc64361b50736947354e7bfe49"
+      "bytes": 5144,
+      "sha256": "e1d7dd6e3e061b46ca9cf6d19db1e84638f54a08f71f760d72158cf519690fe4"
     },
     {
       "path": "src/keystore.mjs",
@@ -256,8 +256,8 @@
     },
     {
       "path": "test/host.test.mjs",
-      "bytes": 18402,
-      "sha256": "8cc95e37d24103c80e8b5763d676270e54c6cd2e321505a94747cd7f38e0ceb5"
+      "bytes": 20099,
+      "sha256": "da78a51ee29fa00ae94d3a7005060ee63f7eba3913293f0615f2f2eea902ffb2"
     },
     {
       "path": "test/membrane.test.mjs",

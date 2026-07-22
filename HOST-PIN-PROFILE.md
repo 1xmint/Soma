@@ -43,7 +43,8 @@ invariants that JSON Schema cannot express:
 - canonical UTF-8 JSON and a 256 KiB file ceiling;
 - exact descriptor identifier and Ed25519 signature domains;
 - exact expected origin, DID, network, context, and optional signing-key hash;
-- the capsule root of the audited Somavera Origin release;
+- exact descriptor sequence/predecessor and closed rotation-policy shape;
+- the capsule root `ee8bb4f2a851ecd103a84db988e24eb2241ec702c9f0743045a2e83008f89e7d` from Origin commit `07a4e89`;
 - issuance, expiry, active-key windows, and coherent revocation fields;
 - unique signing and ingestion key identifiers and public keys;
 - usable X25519 ingestion material through a local derivation sanity check;
@@ -101,10 +102,7 @@ expectations is idempotent. Any changed descriptor IDâ€”including a new sig
 key, ingestion key, origin, region, subprocessor, policy, disclosure, release,
 limit, or expiryâ€”fails with `HOST_DESCRIPTOR_CHANGE_UNSUPPORTED`.
 
-This is deliberate. The current descriptor carries only its active signature;
-it does not provide the separately ratified continuity proof needed to decide
-whether a new key is a legitimate rotation or an attacker. A later slice must
-define and test that proof before replacement can be enabled.
+This is deliberate. Origin commit `07a4e89` now defines and tests a freeze-blocking ordinary-succession proof, but this reference slice does not ingest that proof, persist a candidate successor, display a change diff, or obtain the separate controller confirmation. Therefore even a cryptographically valid succession proof remains non-authoritative here. A later bounded implementation must add that complete state machine and its no-network/no-consent tests before descriptor replacement can be enabled; emergency compromise recovery remains separately unsupported.
 
 ## Security limits
 

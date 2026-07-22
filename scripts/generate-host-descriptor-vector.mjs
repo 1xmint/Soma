@@ -10,6 +10,18 @@ const hostDid = "did:example:vera-vector";
 const core = {
   schema_version: "somavera.vera-host-descriptor.v1",
   profile_status: "freeze_blocking_draft",
+  descriptor_sequence: 0,
+  previous_descriptor_id: null,
+  rotation_policy: {
+    ordinary_succession: "precommitted_overlap_dual_signature_v1",
+    successor_key_precommitment: "required_in_prior_descriptor",
+    requires_prior_and_successor_signatures: true,
+    requires_controller_confirmation: true,
+    emergency_compromise_recovery: "blocked_until_recovery_authority_profile",
+    maximum_overlap_seconds: 86400,
+    maximum_descriptor_lifetime_seconds: 31536000,
+    allowed_change_scopes: ["renewal_only", "signing_key_rotation", "ingestion_key_rotation", "signing_and_ingestion_key_rotation"]
+  },
   network_lineage_id: `somavera:network:v1:${"b".repeat(64)}`,
   execution_context_id: `somavera:context:v1:${"a".repeat(64)}`,
   host_did: hostDid,
@@ -18,7 +30,7 @@ const core = {
   release: {
     release_id: "vera-vector-v0.1.0",
     release_manifest_hash: "2".repeat(64),
-    origin_capsule_hash: "afaf365d2704d9fddb62371819fa2ce5a48f3d8323f5d9dcd8277b095517deda",
+    origin_capsule_hash: "ee8bb4f2a851ecd103a84db988e24eb2241ec702c9f0743045a2e83008f89e7d",
     implementation: "somavera-fixed-conformance-vector"
   },
   policy_hash: "4".repeat(64),
@@ -55,7 +67,7 @@ const core = {
   operator_memory_disclosure: "ordinary_process_operator_can_access_plaintext",
   metadata_disclosure: { ip_address: true, timing: true, approximate_size: true, route_class: true },
   issued_at: "2026-07-01T00:00:00Z",
-  expires_at: "2030-07-01T00:00:00Z"
+  expires_at: "2027-07-01T00:00:00Z"
 };
 const descriptorId = sha256(Buffer.from(`somavera:vera-host-descriptor:v1\n${canonicalize(core)}`));
 const signatureMessage = Buffer.concat([Buffer.from("somavera:vera-host-descriptor-signature:v1\n"), Buffer.from(descriptorId, "hex")]);

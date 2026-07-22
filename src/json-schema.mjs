@@ -26,6 +26,20 @@ export function assertJsonSchema(value, schema, { code = "JSON_SCHEMA_INVALID", 
   }
   function visit(current, rule, pointer) {
     if (!rule || typeof rule !== "object") reject(pointer, "schema rule is invalid");
+    if (rule.allOf) for (const candidate of rule.allOf) visit(current, candidate, pointer);
+    if (rule.oneOf) {
+      let matches = 0;
+      for (const candidate of rule.oneOf) {
+        try { visit(current, candidate, pointer); matches += 1; } catch (error) { if (!(error instanceof SomaError)) throw error; }
+      }
+      if (matches !== 1) reject(pointer, "value must match exactly one oneOf branch");
+    }
+    if (rule.if) {
+      let condition = true;
+      try { visit(current, rule.if, pointer); } catch (error) { if (!(error instanceof SomaError)) throw error; condition = false; }
+      if (condition && rule.then) visit(current, rule.then, pointer);
+      if (!condition && rule.else) visit(current, rule.else, pointer);
+    }
     if (rule.$ref) return visit(current, resolveLocal(root, rule.$ref), pointer);
     if (Object.hasOwn(rule, "const") && !equal(current, rule.const)) reject(pointer, "constant value mismatch");
     if (rule.enum && !rule.enum.some((candidate) => equal(current, candidate))) reject(pointer, "value is not in the enum");
