@@ -44,7 +44,7 @@ invariants that JSON Schema cannot express:
 - exact descriptor identifier and Ed25519 signature domains;
 - exact expected origin, DID, network, context, and optional signing-key hash;
 - exact descriptor sequence/predecessor and closed rotation-policy shape;
-- the capsule root `8cb60c8ce3199aa35c101657834eece86e8823e9d6aa8eb47a9e23db89582431` from Origin commit `e5cf452`;
+- the capsule root `24d5ad1099d9eb915e987511f9ca3725ad44e1dc599783ea1048070f497b3ac4` from Origin commit `a1c3a4b`;
 - issuance, expiry, active-key windows, and coherent revocation fields;
 - unique signing and ingestion key identifiers and public keys;
 - usable X25519 ingestion material through a local derivation sanity check;
@@ -118,6 +118,4 @@ Direct replacement remains forbidden. `soma host succession-preview` may persist
   requires a separate profile and acceptance evidence.
 - Application encryption does not hide IP address, timing, approximate size, or
   route class. The descriptor must disclose those metadata exposures.
-- Local controller signatures detect accidental or unauthorized byte changes;
-  without an independent external anchor they do not defeat full device
-  compromise or rollback by an attacker controlling the filesystem and keys.
+- Local controller signatures detect accidental or unauthorized byte changes. Portable host-trust capsules preserve complete pin/history bytes and detect rollback when compared with a separately preserved prior capsule, but same-device export alone does not defeat full device compromise. External anchor receipts remain unimplemented.

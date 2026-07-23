@@ -13,7 +13,7 @@ import { verifyHostDescriptor } from "../src/host.mjs";
 const root = path.resolve(fileURLToPath(new URL("../", import.meta.url)));
 const cli = path.join(root, "bin", "soma.mjs");
 const preload = pathToFileURL(path.join(root, "test", "no-network-preload.mjs")).href;
-const capsule = "8cb60c8ce3199aa35c101657834eece86e8823e9d6aa8eb47a9e23db89582431";
+const capsule = "24d5ad1099d9eb915e987511f9ca3725ad44e1dc599783ea1048070f497b3ac4";
 
 function execute(args, trace) {
   return spawnSync(process.execPath, [cli, ...args], {

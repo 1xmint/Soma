@@ -2,7 +2,7 @@
 
 Status: **implemented controller-confirmed inert local transition; connection, consent, disclosure, send, and emergency recovery are absent**
 
-This slice imports the ordinary Vera Host descriptor-succession and controller-confirmation contracts from Somavera Origin commit `e5cf452` and capsule root `8cb60c8ce3199aa35c101657834eece86e8823e9d6aa8eb47a9e23db89582431`. It verifies a successor against an existing controller-signed host pin, stores one controller-signed pending candidate, and can replace that inert pin only after an exact controller confirmation. Every operation is local and performs zero network actions.
+This slice imports the ordinary Vera Host descriptor-succession and controller-confirmation contracts from Somavera Origin commit `a1c3a4b` and capsule root `24d5ad1099d9eb915e987511f9ca3725ad44e1dc599783ea1048070f497b3ac4`. It verifies a successor against an existing controller-signed host pin, stores one controller-signed pending candidate, and can replace that inert pin only after an exact controller confirmation. Every operation is local and performs zero network actions.
 
 ## Commands
 
@@ -43,7 +43,7 @@ The resulting version-2 pin remains `offline_pin_only_no_connection_no_consent_n
 
 - Dual signatures establish controlled continuity, not host honesty, confidentiality, or safety.
 - Compromise of both the prior key and its precommitted successor can authorize a malicious ordinary transition; immutable fields and controller confirmation reduce but cannot eliminate that risk.
-- Controller signatures and local history do not defeat rollback when an attacker controls both the filesystem and controller key; an independent external anchor is still required.
+- Controller signatures and local history do not defeat rollback when an attacker controls both the filesystem and controller key. `HOST-TRUST-CAPSULE-PROFILE.md` provides complete portable bytes and comparison against a separately preserved capsule, but external publication/anchor receipts remain unimplemented.
 - Validity depends on local system time; authenticated time is absent.
 - Atomic rename and file synchronization inherit the actual operating system, filesystem, storage-controller, and hardware durability guarantees. Power-loss behavior beyond those guarantees cannot be proven by this implementation.
 - Controller-key rotation is not yet implemented, so history currently verifies under the active local controller identity.

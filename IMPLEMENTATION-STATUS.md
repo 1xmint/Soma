@@ -1,7 +1,7 @@
 # Soma Reference Implementation Status
 
 Date: 2026-07-22
-Contract source: Somavera Origin local commit `e5cf452`
+Contract source: Somavera Origin local commit `a1c3a4b`
 Release status: **early Windows-first slice; not protocol-conforming or production-ready**
 
 ## Implemented in this slice
@@ -17,13 +17,15 @@ Release status: **early Windows-first slice; not protocol-conforming or producti
 - Bounded ordinary-succession preview with dual-signature/precommitment validation and one inert controller-signed candidate per host.
 - Exact controller-confirmation receipt, version-2 inert pin, signed transition history, atomic current-pin replacement, deterministic crash recovery, idempotency, and per-host race serialization.
 - Fault injection at every transaction boundary and a 100-identical-plus-one-competing confirmation race.
+- Complete controller-signed portable host-trust capsules, standalone expected-controller verification, strict prefix comparison, rollback/fork detection, exclusive output creation, and explicit non-anchor/non-restore authority.
+- Current-only new pinning plus explicitly supported immediately prior Origin-profile verification and succession compatibility.
 - Dynamic zero-egress sentinel and static production network-import scan.
 
 ## Not implemented
 
 - Ratified portable network evidence, independent receipts, external rollback anchors, or reputation computation.
 - Network discovery, authenticated TLS connection/challenge, application encryption, query/response, or contribution flows.
-- Emergency host recovery or independent host-history anchoring.
+- External host-history anchor adapters, independent publication receipts, host-trust restore/import, or emergency host recovery.
 - Signed consent grants, sends, withdrawals, deletion, acknowledgements, or tombstone tracking.
 - Sovereign Vera export/import/search.
 - Identity recovery, encrypted owner-state backup/restore, or controller-key rotation.

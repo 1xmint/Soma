@@ -212,7 +212,7 @@ export async function verifyCandidateRecord(home, record, identity, { currentTim
   const successorKey = keyById(record.successor_descriptor.host_signing_keys, record.successor_descriptor.active_host_signing_key_id);
   const successorHash = sha256(Buffer.from(successorKey.public_key_base64, "base64"));
   const successorExpected = { ...pin.expected, active_signing_key_sha256: successorHash };
-  await verifyHostDescriptor(record.successor_descriptor, successorExpected, { validationTime: createdAt, requireCurrent: true, requireKeyHash: true });
+  await verifyHostDescriptor(record.successor_descriptor, successorExpected, { validationTime: createdAt, requireCurrent: true, requireKeyHash: true, acceptedOriginCapsuleHashes: [pin.descriptor.release.origin_capsule_hash] });
   if (record.successor_active_signing_key_sha256 !== successorHash || record.successor_descriptor_id !== record.successor_descriptor.descriptor_id || record.succession_id !== record.succession_proof.succession_id || record.change_scope !== record.succession_proof.change_scope) throw new SomaError("candidate bindings are inconsistent", 7, "HOST_SUCCESSION_CANDIDATE_BINDING_INVALID");
   const computedId = sha256(Buffer.from(CANDIDATE_ID_DOMAIN + canonicalize(candidateCore(record))));
   if (computedId !== record.candidate_id) throw new SomaError("candidate identifier mismatch", 7, "HOST_SUCCESSION_CANDIDATE_ID_INVALID");
@@ -232,7 +232,7 @@ async function previewHostSuccessionUnlocked(home, successorFile, proofFile) {
   validateOrdinaryHostSuccession(pin.descriptor, successor, proof, { validationTime: now });
   const successorKey = keyById(successor.host_signing_keys, successor.active_host_signing_key_id);
   const successorHash = sha256(Buffer.from(successorKey.public_key_base64, "base64"));
-  await verifyHostDescriptor(successor, { ...pin.expected, active_signing_key_sha256: successorHash }, { validationTime: now, requireCurrent: true, requireKeyHash: true });
+  await verifyHostDescriptor(successor, { ...pin.expected, active_signing_key_sha256: successorHash }, { validationTime: now, requireCurrent: true, requireKeyHash: true, acceptedOriginCapsuleHashes: [pin.descriptor.release.origin_capsule_hash] });
   await mkdir(candidateDirectory(home), { recursive: true, mode: 0o700 });
   const target = candidateFile(home, successor.host_did);
   try {

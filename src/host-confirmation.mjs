@@ -148,7 +148,7 @@ function transitionRecord(priorPin, candidate, confirmation, successorPin, ident
   };
 }
 
-async function verifyTransition(home, record, identity) {
+export async function verifyTransition(home, record, identity) {
   assertJsonSchema(record, await transitionSchema(), { code: "HOST_SUCCESSION_TRANSITION_SCHEMA_INVALID", label: "host succession transition", exitCode: 7 });
   if (record.controller_did !== identity.controller_did || record.authority !== TRANSITION_AUTHORITY || record.prepared_at !== record.confirmation.confirmed_at) throw new SomaError("host succession transition authority is invalid", 7, "HOST_SUCCESSION_TRANSITION_INVARIANT_INVALID");
   const preparedAt = Date.parse(record.prepared_at);

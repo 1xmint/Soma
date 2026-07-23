@@ -26,18 +26,23 @@
     },
     {
       "path": "HOST-PIN-PROFILE.md",
-      "bytes": 6561,
-      "sha256": "0f2a0ff8c00383725e55b29dbeeb9a1c96ad7a8bc0a258a2257c6614d3132a2a"
+      "bytes": 6670,
+      "sha256": "e3badcb857cf91465f5d1ed9ea13743e8f986c14ce66514b5b75f96b68ed974d"
     },
     {
       "path": "HOST-SUCCESSION-PROFILE.md",
-      "bytes": 5296,
-      "sha256": "19bdd69fd0238ebbc026f0a2652936fae95234b00057a6aeaee6314969b79ab4"
+      "bytes": 5429,
+      "sha256": "cf0bc4b55efce1b29d312a4b41aaecbd1009c058200d03ec10ef33962cc5e1e1"
+    },
+    {
+      "path": "HOST-TRUST-CAPSULE-PROFILE.md",
+      "bytes": 4591,
+      "sha256": "bde5347f431ac12f9c221a206d6b8b392aa3e14478d2030d582976f938ef7ad5"
     },
     {
       "path": "IMPLEMENTATION-STATUS.md",
-      "bytes": 2929,
-      "sha256": "33c33402a90bef46ac0979b33f31269faf9d8a346754376fcec26c4014a7e7de"
+      "bytes": 3352,
+      "sha256": "b96442b92c67e2edc1ede5d5b34e1e5a9feaa5209444d58b7d1407d022b591d0"
     },
     {
       "path": "LICENSE",
@@ -51,8 +56,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 3690,
-      "sha256": "e58fef955f0538fd804f794819318389be848a8ddade6c70c7ed2417d9d9d01d"
+      "bytes": 4331,
+      "sha256": "3ac6038d72d9ce0cd5ad1ca7f4b83f80c2fedd763e6af003f55ca747ec34b74e"
     },
     {
       "path": "SECURITY.md",
@@ -95,6 +100,16 @@
       "sha256": "56320521ea80724b4a72c0b1f994cc117f1edf5208ae980ac40f1e9ad9874b69"
     },
     {
+      "path": "conformance/host-trust-capsule-invalid-v1.json",
+      "bytes": 2537,
+      "sha256": "c6eb3a38fbac8a439e54e6a6e60986c1e5213a82d2f5c050eba5bd953a408338"
+    },
+    {
+      "path": "conformance/host-trust-capsule-v1.json",
+      "bytes": 9013,
+      "sha256": "f6f59816a86116cd2cc48ae8c55a3ec67a60999297815e3fd4fa4de591b29af6"
+    },
+    {
       "path": "conformance/local-evidence-entry-provisional-v1.json",
       "bytes": 3631,
       "sha256": "1b5f32e712234a5c21c09aa8af97a42585a56298b2cd2b45a5af0e59b263ed72"
@@ -107,7 +122,7 @@
     {
       "path": "conformance/vera-host-descriptor-provisional-v1.json",
       "bytes": 11910,
-      "sha256": "11ec814828ed273e14b78a36d047ad9560fc4bf2403dbc6e645e19b257059c21"
+      "sha256": "845e9d52adee435da035a5ff1a84a4800ef8a6fdcba489c0f4c921c0f378478f"
     },
     {
       "path": "defaults/policy.json",
@@ -121,8 +136,8 @@
     },
     {
       "path": "package.json",
-      "bytes": 678,
-      "sha256": "f53fa7481f89975a2beb33cd775139e993487df8a006964470a0ef437ae59eb0"
+      "bytes": 711,
+      "sha256": "98d6ab1b159d01010cbef7f5315064fcf9de78c9068f29ba2fc4160cdca205d4"
     },
     {
       "path": "schemas/authorized-field-projection.provisional.schema.json",
@@ -190,6 +205,11 @@
       "sha256": "c6ddf82438897850f86f08de5ab0caabe95cb09ac51a42b2423cdccb1bc416db"
     },
     {
+      "path": "schemas/soma-host-trust-capsule.schema.json",
+      "bytes": 5715,
+      "sha256": "b8411300b2151221480d7416e9cae462f19cd9f9d7e70ebc4b561bb5eb35398b"
+    },
+    {
       "path": "schemas/vera-host-descriptor-succession.v1.schema.json",
       "bytes": 5032,
       "sha256": "73fd5fca6593f6c12b4b624aec1d985bafef4b5b86f324ce869af8ff582097be"
@@ -212,7 +232,7 @@
     {
       "path": "scripts/generate-host-descriptor-vector.mjs",
       "bytes": 6312,
-      "sha256": "e0bb4576eda8b77ed6141ae86e1f3be512138a6382dbcd36fd478423eff12b5a"
+      "sha256": "f06a328a550ada57f7fd5e71218c946a5634e933da20f8a0478de9db6dbe9c15"
     },
     {
       "path": "scripts/generate-preview-vector.mjs",
@@ -231,8 +251,8 @@
     },
     {
       "path": "src/cli.mjs",
-      "bytes": 13022,
-      "sha256": "bea9341144585e56df5bd22de4e64541541072555e26c1b33c16a54412ddb4eb"
+      "bytes": 16433,
+      "sha256": "267131f85676ab0ba80d5dba9a0c0272e2c6ab99ef969c17571968b5c0794ab3"
     },
     {
       "path": "src/constants.mjs",
@@ -241,8 +261,8 @@
     },
     {
       "path": "src/crypto.mjs",
-      "bytes": 6126,
-      "sha256": "e0692134ec66fd68118a609fcbe8e80d495890fb338023c43f92a90cdf5fdd10"
+      "bytes": 6477,
+      "sha256": "a90a6ed2f2833bc25e33fa4f93a32715fc7e8f1ce7ff6cc0a841eadda47430b6"
     },
     {
       "path": "src/errors.mjs",
@@ -261,8 +281,8 @@
     },
     {
       "path": "src/host-confirmation.mjs",
-      "bytes": 24460,
-      "sha256": "e36077969860bbea19cdca4e2b96b0426ced07aafcbbe06cfd12fb53eb3ecca8"
+      "bytes": 24467,
+      "sha256": "892c87ff761ed099cf9091c8332ad650f339218714b9d200de35f2e082ae67e3"
     },
     {
       "path": "src/host-lock.mjs",
@@ -271,13 +291,18 @@
     },
     {
       "path": "src/host-succession.mjs",
-      "bytes": 23968,
-      "sha256": "82bcaed5e904afd184e1b2bf711c86c9b97cf19936a9de0d1f0aa6385d4c120f"
+      "bytes": 24118,
+      "sha256": "20373ff7a0f3e03bef1b2e9311dbea1f755de38162b92fea360c04f29f798f8c"
+    },
+    {
+      "path": "src/host-trust-capsule.mjs",
+      "bytes": 19410,
+      "sha256": "7a0984cc65dbadddeb184f5a6665cf106703353a6b35d04dbc14211554753fa0"
     },
     {
       "path": "src/host.mjs",
-      "bytes": 26516,
-      "sha256": "0930437dfd2ce08f764bf1c189c3759e1314ac7b8b87bd2af9181e626bcfaa42"
+      "bytes": 26856,
+      "sha256": "c8971cb48dda5e0573845a7dc821930262d1af46d383a11c1dc9bf37c4ec4ccb"
     },
     {
       "path": "src/json-schema.mjs",
@@ -322,17 +347,22 @@
     {
       "path": "test/host-confirmation.test.mjs",
       "bytes": 19785,
-      "sha256": "4c6d4cf4855815858cab32630276bc86b17d655ba0ace6ca4f21af40ed80b627"
+      "sha256": "5d07a9145266a28b5e558a4ab0862a28181c0cfbee1cae793ae79733736d3ce0"
     },
     {
       "path": "test/host-succession.test.mjs",
       "bytes": 12881,
-      "sha256": "927d305d8be8c4348e7f916b644af832a51c083edee6af1e295f8bd441fddf93"
+      "sha256": "6532364f4be41cb644bcecb130b343ccb14949eb3771042e65b25c9a4175a8e6"
+    },
+    {
+      "path": "test/host-trust-capsule.test.mjs",
+      "bytes": 20162,
+      "sha256": "81ef88413c71ae63ca1a60a57cc42d8bd5684170ddf2d5c2966d8801b682fae5"
     },
     {
       "path": "test/host.test.mjs",
       "bytes": 20344,
-      "sha256": "a099db58097236e04dac1ca36a4738197b5acb2c006319b24e67fc53a00664e2"
+      "sha256": "6674f6ed407cce61f093fb369c6ca101cb999ef98507c51d4b1cb765e7dbe00e"
     },
     {
       "path": "test/membrane.test.mjs",

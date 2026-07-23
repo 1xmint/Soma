@@ -8,6 +8,7 @@ import { observeStatus, previewObservation } from "./membrane.mjs";
 import { expectedHostBindings, hostStatus, pinHostDescriptor, verifyHostDescriptorFile } from "./host.mjs";
 import { hostSuccessionStatus, previewHostSuccession } from "./host-succession.mjs";
 import { confirmHostSuccession, hostSuccessionHistoryStatus } from "./host-confirmation.mjs";
+import { compareHostTrustCapsules, exportHostTrustCapsule, verifyHostTrustCapsuleFile } from "./host-trust-capsule.mjs";
 
 function parse(argv) {
   const result = { command: null, options: {}, positionals: [] };
@@ -21,7 +22,7 @@ function parse(argv) {
       result.options[token.slice(2).replaceAll("-", "_")] = true;
       continue;
     }
-    if (["--home", "--label", "--recovery", "--input", "--artifact", "--evidence", "--policy", "--descriptor", "--expect-origin", "--expect-host-did", "--expect-network", "--expect-context", "--expect-key-hash", "--successor", "--proof", "--candidate-id", "--subject", "--expect-successor-descriptor"].includes(token)) {
+    if (["--home", "--label", "--recovery", "--input", "--artifact", "--evidence", "--policy", "--descriptor", "--expect-origin", "--expect-host-did", "--expect-network", "--expect-context", "--expect-key-hash", "--successor", "--proof", "--candidate-id", "--subject", "--expect-successor-descriptor", "--out", "--capsule", "--trusted", "--candidate", "--expect-controller-did", "--expect-controller-key-hash"].includes(token)) {
       const value = argv[index + 1];
       if (value === undefined || value.startsWith("--")) throw new SomaError(`${token} requires a value`, 2, "OPTION_VALUE_REQUIRED");
       result.options[token.slice(2).replaceAll("-", "_")] = value;
@@ -37,7 +38,7 @@ function parse(argv) {
 }
 
 function help() {
-  return `Soma reference ${VERSION}\n\nUsage:\n  soma init [--home PATH] [--label TEXT] --recovery none [--json]\n  soma doctor [--home PATH] [--network] [--json]\n  soma status [--home PATH] [--json]\n  soma evidence record --input ABSOLUTE_EVENT.json [--home PATH] [--json]\n  soma evidence verify [--home PATH] [--json]\n  soma host status [--home PATH] [--json]\n  soma host verify --descriptor ABSOLUTE_DESCRIPTOR.json --expect-origin ORIGIN --expect-host-did DID --expect-network NETWORK --expect-context CONTEXT [--expect-key-hash HASH] [--home PATH] [--json]\n  soma host pin --descriptor ABSOLUTE_DESCRIPTOR.json --expect-origin ORIGIN --expect-host-did DID --expect-network NETWORK --expect-context CONTEXT --expect-key-hash HASH [--home PATH] [--json]\n  soma host succession-preview --successor ABSOLUTE_DESCRIPTOR.json --proof ABSOLUTE_PROOF.json [--home PATH] [--json]\n  soma host succession-confirm --candidate-id HASH --subject HASH --expect-successor-descriptor HASH --confirm-inert-pin-replacement [--home PATH] [--json]\n  soma observe status [--home PATH] [--json]\n  soma observe preview (--artifact ABSOLUTE_PATH | --evidence EVIDENCE_ID) --policy ABSOLUTE_POLICY.json [--home PATH] [--json]\n\nObservation preview is offline and creates no grant or send authority.\nEvidence is provisional, pre-network, self-signed attribution only. It is not truth, reputation, or independent rollback proof.\nObserver, telemetry, updates, retries, watchers, wallet, and token features are absent/off.`;
+  return `Soma reference ${VERSION}\n\nUsage:\n  soma init [--home PATH] [--label TEXT] --recovery none [--json]\n  soma doctor [--home PATH] [--network] [--json]\n  soma status [--home PATH] [--json]\n  soma evidence record --input ABSOLUTE_EVENT.json [--home PATH] [--json]\n  soma evidence verify [--home PATH] [--json]\n  soma host status [--home PATH] [--json]\n  soma host verify --descriptor ABSOLUTE_DESCRIPTOR.json --expect-origin ORIGIN --expect-host-did DID --expect-network NETWORK --expect-context CONTEXT [--expect-key-hash HASH] [--home PATH] [--json]\n  soma host pin --descriptor ABSOLUTE_DESCRIPTOR.json --expect-origin ORIGIN --expect-host-did DID --expect-network NETWORK --expect-context CONTEXT --expect-key-hash HASH [--home PATH] [--json]\n  soma host succession-preview --successor ABSOLUTE_DESCRIPTOR.json --proof ABSOLUTE_PROOF.json [--home PATH] [--json]\n  soma host succession-confirm --candidate-id HASH --subject HASH --expect-successor-descriptor HASH --confirm-inert-pin-replacement [--home PATH] [--json]\n  soma host trust-export --out ABSOLUTE_CAPSULE.json [--home PATH] [--json]\n  soma host trust-verify --capsule ABSOLUTE_CAPSULE.json --expect-controller-did DID --expect-controller-key-hash HASH [--json]\n  soma host trust-compare --trusted TRUSTED_CAPSULE.json --candidate CANDIDATE_CAPSULE.json --expect-controller-did DID --expect-controller-key-hash HASH [--json]\n  soma observe status [--home PATH] [--json]\n  soma observe preview (--artifact ABSOLUTE_PATH | --evidence EVIDENCE_ID) --policy ABSOLUTE_POLICY.json [--home PATH] [--json]\n\nObservation preview is offline and creates no grant or send authority.\nEvidence is provisional, pre-network, self-signed attribution only. It is not truth, reputation, or independent rollback proof.\nObserver, telemetry, updates, retries, watchers, wallet, and token features are absent/off.`;
 }
 
 function print(value, json) {
@@ -124,9 +125,31 @@ export async function runCli(argv) {
     }
     if (parsed.command === "host") {
       const action = parsed.positionals[0];
-      if (!action || parsed.positionals.length !== 1 || !["status", "verify", "pin", "succession-preview", "succession-confirm"].includes(action)) throw new SomaError("host requires exactly one action: status, verify, pin, succession-preview, or succession-confirm", 2, "HOST_ACTION_INVALID");
-      await inspectState(home);
-      if (action === "status") {
+      if (!action || parsed.positionals.length !== 1 || !["status", "verify", "pin", "succession-preview", "succession-confirm", "trust-export", "trust-verify", "trust-compare"].includes(action)) throw new SomaError("host requires exactly one action: status, verify, pin, succession-preview, succession-confirm, trust-export, trust-verify, or trust-compare", 2, "HOST_ACTION_INVALID");
+      const allowed = {
+        status: [],
+        verify: ["descriptor", "expect_origin", "expect_host_did", "expect_network", "expect_context", "expect_key_hash"],
+        pin: ["descriptor", "expect_origin", "expect_host_did", "expect_network", "expect_context", "expect_key_hash"],
+        "succession-preview": ["successor", "proof"],
+        "succession-confirm": ["candidate_id", "subject", "expect_successor_descriptor", "confirm_inert_pin_replacement"],
+        "trust-export": ["out"],
+        "trust-verify": ["capsule", "expect_controller_did", "expect_controller_key_hash"],
+        "trust-compare": ["trusted", "candidate", "expect_controller_did", "expect_controller_key_hash"]
+      };
+      const common = new Set(["home", "json", "no_color"]);
+      const unexpected = Object.keys(parsed.options).filter((key) => !common.has(key) && !allowed[action].includes(key));
+      if (unexpected.length) throw new SomaError("host " + action + " does not accept " + unexpected.map((key) => "--" + key.replaceAll("_", "-")).join(", "), 2, "OPTION_NOT_ALLOWED");
+      if (!["trust-verify", "trust-compare"].includes(action)) await inspectState(home);
+      if (action === "trust-export") {
+        if (!parsed.options.out) throw new SomaError("host trust-export requires --out", 2, "HOST_TRUST_CAPSULE_OUTPUT_REQUIRED");
+        print({ ok: true, command: "host trust-export", home, ...(await exportHostTrustCapsule(home, parsed.options.out)) }, parsed.options.json);
+      } else if (action === "trust-verify") {
+        if (!parsed.options.capsule || !parsed.options.expect_controller_did || !parsed.options.expect_controller_key_hash) throw new SomaError("host trust-verify requires --capsule, --expect-controller-did, and --expect-controller-key-hash", 2, "HOST_TRUST_CAPSULE_VERIFY_INPUT_REQUIRED");
+        print({ ok: true, command: "host trust-verify", ...(await verifyHostTrustCapsuleFile(parsed.options.capsule, { controllerDid: parsed.options.expect_controller_did, controllerKeyHash: parsed.options.expect_controller_key_hash })) }, parsed.options.json);
+      } else if (action === "trust-compare") {
+        if (!parsed.options.trusted || !parsed.options.candidate || !parsed.options.expect_controller_did || !parsed.options.expect_controller_key_hash) throw new SomaError("host trust-compare requires --trusted, --candidate, --expect-controller-did, and --expect-controller-key-hash", 2, "HOST_TRUST_CAPSULE_COMPARE_INPUT_REQUIRED");
+        print({ ok: true, command: "host trust-compare", ...(await compareHostTrustCapsules(parsed.options.trusted, parsed.options.candidate, { controllerDid: parsed.options.expect_controller_did, controllerKeyHash: parsed.options.expect_controller_key_hash })) }, parsed.options.json);
+      } else if (action === "status") {
         if (parsed.options.descriptor || parsed.options.successor || parsed.options.proof || parsed.options.candidate_id || parsed.options.subject || parsed.options.expect_successor_descriptor || parsed.options.confirm_inert_pin_replacement || parsed.options.expect_origin || parsed.options.expect_host_did || parsed.options.expect_network || parsed.options.expect_context || parsed.options.expect_key_hash) throw new SomaError("host status does not accept verification options", 2, "OPTION_NOT_ALLOWED");
         print({ ok: true, command: "host status", home, ...(await hostStatus(home)), ...(await hostSuccessionStatus(home)), ...(await hostSuccessionHistoryStatus(home)) }, parsed.options.json);
       } else if (action === "succession-preview") {

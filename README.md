@@ -20,6 +20,9 @@ soma host verify --descriptor C:\absolute\host.json --expect-origin https://vera
 soma host pin --descriptor C:\absolute\host.json --expect-origin https://vera.example --expect-host-did DID --expect-network NETWORK --expect-context CONTEXT --expect-key-hash HASH
 soma host succession-preview --successor C:\absolute\successor.json --proof C:\absolute\proof.json
 soma host succession-confirm --candidate-id HASH --subject HASH --expect-successor-descriptor HASH --confirm-inert-pin-replacement
+soma host trust-export --out C:\absolute\host-trust.json
+soma host trust-verify --capsule C:\absolute\host-trust.json --expect-controller-did DID --expect-controller-key-hash HASH
+soma host trust-compare --trusted C:\offline\trusted.json --candidate C:\absolute\candidate.json --expect-controller-did DID --expect-controller-key-hash HASH
 soma observe status
 soma observe preview --artifact C:\absolute\public.txt --policy C:\absolute\policy.json
 soma observe preview --evidence EVIDENCE_ID --policy C:\absolute\policy.json
@@ -46,7 +49,7 @@ A local host descriptor can be schema-checked, signature-verified, and pinned
 only with exact independently supplied identity, network, context, and signing-key
 expectations. Pins are controller-signed but inert: they create no connection,
 consent, or send authority. Direct changed-descriptor replacement fails closed.
-An Origin ordinary-succession proof may be stored as a controller-signed inert candidate. Exact controller confirmation can atomically replace only the inert pin, retain signed history, and recover interrupted local commits. It grants no routing, connection, consent, disclosure, or send authority. See `HOST-PIN-PROFILE.md` and `HOST-SUCCESSION-PROFILE.md`.
+An Origin ordinary-succession proof may be stored as a controller-signed inert candidate. Exact controller confirmation can atomically replace only the inert pin, retain signed history, and recover interrupted local commits. A complete signed portable host-trust capsule can export and independently verify those exact bytes; comparison against separately preserved trusted bytes detects rollback or forks. The capsule is not itself an external anchor or restore authority. None of these operations grants routing, connection, consent, disclosure, or send authority. See `HOST-PIN-PROFILE.md`, `HOST-SUCCESSION-PROFILE.md`, and `HOST-TRUST-CAPSULE-PROFILE.md`.
 
 ## Consent-preview boundary
 

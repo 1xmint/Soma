@@ -31,7 +31,7 @@ const core = {
   release: {
     release_id: "vera-vector-v0.1.0",
     release_manifest_hash: "2".repeat(64),
-    origin_capsule_hash: "8cb60c8ce3199aa35c101657834eece86e8823e9d6aa8eb47a9e23db89582431",
+    origin_capsule_hash: "24d5ad1099d9eb915e987511f9ca3725ad44e1dc599783ea1048070f497b3ac4",
     implementation: "somavera-fixed-conformance-vector"
   },
   policy_hash: "4".repeat(64),

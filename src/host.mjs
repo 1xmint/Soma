@@ -8,7 +8,8 @@ import { assertJsonSchema } from "./json-schema.mjs";
 import { unprotectSecretBundle } from "./keystore.mjs";
 import { RELEASE_ROOT } from "./constants.mjs";
 
-const ORIGIN_CAPSULE_HASH = "8cb60c8ce3199aa35c101657834eece86e8823e9d6aa8eb47a9e23db89582431";
+export const ORIGIN_CAPSULE_HASH = "24d5ad1099d9eb915e987511f9ca3725ad44e1dc599783ea1048070f497b3ac4";
+export const SUPPORTED_ORIGIN_CAPSULE_HASHES = Object.freeze([ORIGIN_CAPSULE_HASH, "8cb60c8ce3199aa35c101657834eece86e8823e9d6aa8eb47a9e23db89582431"]);
 const HASH = /^[a-f0-9]{64}$/;
 const DID = /^did:[a-z0-9]+:(?:[A-Za-z0-9._-]|%[0-9A-Fa-f]{2})+(?::(?:[A-Za-z0-9._-]|%[0-9A-Fa-f]{2})+)*$/;
 const NETWORK = /^somavera:network:v1:[a-f0-9]{64}$/;
@@ -106,7 +107,7 @@ function signingKeyHash(key) {
   return sha256(canonicalBase64(key.public_key_base64, 32, "HOST_SIGNING_KEY_INVALID", "host signing public key"));
 }
 
-export async function verifyHostDescriptor(descriptor, expected, { validationTime = Date.now(), requireCurrent = true, requireKeyHash = false, schemaExitCode = 2 } = {}) {
+export async function verifyHostDescriptor(descriptor, expected, { validationTime = Date.now(), requireCurrent = true, requireKeyHash = false, schemaExitCode = 2, acceptedOriginCapsuleHashes = [ORIGIN_CAPSULE_HASH] } = {}) {
   validateExpectationShape(expected, requireKeyHash);
   assertJsonSchema(descriptor, await descriptorSchema(), { code: "HOST_DESCRIPTOR_SCHEMA_INVALID", label: "host descriptor", exitCode: schemaExitCode });
   noControls(descriptor);
@@ -118,7 +119,7 @@ export async function verifyHostDescriptor(descriptor, expected, { validationTim
   if (descriptor.host_did !== expected.host_did) throw new SomaError("descriptor host DID differs from the expected DID", 8, "HOST_DID_MISMATCH");
   if (descriptor.network_lineage_id !== expected.network_lineage_id) throw new SomaError("descriptor network differs from the expected network", 8, "HOST_NETWORK_MISMATCH");
   if (descriptor.execution_context_id !== expected.execution_context_id) throw new SomaError("descriptor context differs from the expected execution context", 8, "HOST_CONTEXT_MISMATCH");
-  if (descriptor.release.origin_capsule_hash !== ORIGIN_CAPSULE_HASH) throw new SomaError("descriptor is bound to a different Origin capsule", 8, "HOST_ORIGIN_CAPSULE_MISMATCH");
+  if (!Array.isArray(acceptedOriginCapsuleHashes) || !acceptedOriginCapsuleHashes.includes(descriptor.release.origin_capsule_hash)) throw new SomaError("descriptor is bound to an unsupported Origin capsule", 8, "HOST_ORIGIN_CAPSULE_MISMATCH");
   const origin = new URL(descriptor.origin);
   if (origin.origin !== descriptor.origin || origin.hostname !== descriptor.transport_security.server_name) throw new SomaError("descriptor TLS server name does not exactly match its origin", 8, "HOST_TLS_NAME_MISMATCH");
   if (!descriptor.supported_protocols.includes("somavera-soma-vera-private-v1")) throw new SomaError("descriptor lacks the private application protocol", 8, "HOST_PRIVATE_PROTOCOL_MISSING");
@@ -237,7 +238,7 @@ export async function verifyPinRecord(record, identity, { currentTime = Date.now
   const pinnedAt = exactIso(record.pinned_at, "HOST_PIN_TIME_INVALID", "host pin pinned_at");
   if (pinnedAt > currentTime) throw new SomaError("host pin timestamp is in the future", 7, "HOST_PIN_TIME_INVALID");
   let summary;
-  try { summary = await verifyHostDescriptor(record.descriptor, record.expected, { validationTime: pinnedAt, requireCurrent: true, requireKeyHash: true, schemaExitCode: 7 }); }
+  try { summary = await verifyHostDescriptor(record.descriptor, record.expected, { validationTime: pinnedAt, requireCurrent: true, requireKeyHash: true, schemaExitCode: 7, acceptedOriginCapsuleHashes: SUPPORTED_ORIGIN_CAPSULE_HASHES }); }
   catch (error) { if (error instanceof SomaError && error.exitCode !== 7) throw new SomaError(error.message, 7, error.code, error.details); throw error; }
   const domain = v2 ? "soma:host-pin:provisional-v2\n" : "soma:host-pin:provisional-v1\n";
   const computedId = sha256(Buffer.from(domain + canonicalize(pinCore(record))));

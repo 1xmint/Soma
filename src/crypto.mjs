@@ -111,6 +111,12 @@ export function signEd25519(privateKeyBase64, message) {
   }
 }
 
+export function ed25519MultibaseSha256(publicKeyMultibase) {
+  const decoded = base58btcDecode(publicKeyMultibase);
+  if (decoded.length !== 34 || !decoded.subarray(0, 2).equals(MULTICODEC.Ed25519)) throw new SomaError("public key is not canonical Ed25519 multibase", 7, "PUBLIC_KEY_MULTIBASE_INVALID");
+  return sha256(decoded.subarray(2));
+}
+
 export function verifyEd25519(publicKeyMultibase, message, signatureBase64) {
   try {
     const decoded = base58btcDecode(publicKeyMultibase);
