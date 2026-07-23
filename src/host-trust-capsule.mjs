@@ -166,6 +166,7 @@ export async function exportHostTrustCapsule(home, outputFile) {
   await verifyHostSuccessionHistoryStore(home, identity);
   const objects = await localObjects(home);
   const createdAt = new Date().toISOString();
+  if ((identity.key_history?.controller_rotation_sequence || 0) > 0) throw new SomaError("v1 host-trust capsules cannot carry controller rotation history; preserve the last pre-rotation capsule until the v2 profile is implemented", 8, "HOST_TRUST_CAPSULE_CONTROLLER_ROTATION_UNSUPPORTED");
   const controllerPublic = identity.keys.find((key) => key.role === "controller_signing" && key.status === "active");
   const semantic = await semanticState(objects, identity, Date.parse(createdAt));
   const release = await verifyRelease();

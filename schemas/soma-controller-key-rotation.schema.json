@@ -1,0 +1,167 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://somavera.org/schemas/soma-controller-key-rotation.schema.json",
+  "title": "Somavera Soma Ordinary Controller-Key Rotation",
+  "description": "A closed, dual-signed transition from one live Soma controller-signing key to one fresh successor. It preserves a stable controller DID and historic verification, but is not compromise recovery and grants no network, consent, disclosure, token, or governance authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "profile_status",
+    "rotation_id",
+    "proposal_id",
+    "controller_did",
+    "rotation_sequence",
+    "previous_rotation_id",
+    "prior_key",
+    "successor_key",
+    "prepared_at",
+    "effective_at",
+    "reason",
+    "decision",
+    "prior_private_key_disposition",
+    "rollback_assurance",
+    "authority",
+    "signatures"
+  ],
+  "properties": {
+    "$schema": { "const": "../schemas/soma-controller-key-rotation.schema.json" },
+    "schema_version": { "const": "somavera.soma-controller-key-rotation.v1" },
+    "profile_status": { "const": "freeze_blocking_draft" },
+    "rotation_id": { "$ref": "#/$defs/hash" },
+    "proposal_id": { "$ref": "#/$defs/hash" },
+    "controller_did": { "$ref": "#/$defs/did" },
+    "rotation_sequence": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+    "previous_rotation_id": {
+      "oneOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/hash" }
+      ]
+    },
+    "prior_key": { "$ref": "#/$defs/priorKey" },
+    "successor_key": { "$ref": "#/$defs/successorKey" },
+    "prepared_at": { "$ref": "#/$defs/timestamp" },
+    "effective_at": { "$ref": "#/$defs/timestamp" },
+    "reason": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+    },
+    "decision": { "const": "replace_online_controller_signing_key_only" },
+    "prior_private_key_disposition": { "const": "destroy_after_committed_successor_is_recoverable" },
+    "rollback_assurance": { "const": "local_consistency_only_unless_exact_history_is_externally_preserved" },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "authorizes_controller_key_rotation",
+        "authorizes_agent_key_rotation",
+        "authorizes_observer_key_rotation",
+        "authorizes_identity_recovery",
+        "authorizes_emergency_recovery",
+        "authorizes_connection",
+        "authorizes_consent",
+        "authorizes_disclosure",
+        "authorizes_send",
+        "authorizes_token_action",
+        "authorizes_governance"
+      ],
+      "properties": {
+        "authorizes_controller_key_rotation": { "const": true },
+        "authorizes_agent_key_rotation": { "const": false },
+        "authorizes_observer_key_rotation": { "const": false },
+        "authorizes_identity_recovery": { "const": false },
+        "authorizes_emergency_recovery": { "const": false },
+        "authorizes_connection": { "const": false },
+        "authorizes_consent": { "const": false },
+        "authorizes_disclosure": { "const": false },
+        "authorizes_send": { "const": false },
+        "authorizes_token_action": { "const": false },
+        "authorizes_governance": { "const": false }
+      }
+    },
+    "signatures": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["prior", "successor"],
+      "properties": {
+        "prior": { "$ref": "#/$defs/signature" },
+        "successor": { "$ref": "#/$defs/signature" }
+      }
+    }
+  },
+  "$defs": {
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "did": { "type": "string", "pattern": "^did:[a-z0-9]+:.+$", "maxLength": 512 },
+    "keyId": { "type": "string", "minLength": 3, "maxLength": 512 },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "keyBase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "key_id",
+        "role",
+        "suite",
+        "public_key_multibase",
+        "public_key_sha256",
+        "valid_from",
+        "valid_until",
+        "status"
+      ],
+      "properties": {
+        "key_id": { "$ref": "#/$defs/keyId" },
+        "role": { "const": "controller_signing" },
+        "suite": { "const": "Ed25519-v1" },
+        "public_key_multibase": {
+          "type": "string",
+          "pattern": "^z[1-9A-HJ-NP-Za-km-z]{40,64}$"
+        },
+        "public_key_sha256": { "$ref": "#/$defs/hash" },
+        "valid_from": { "$ref": "#/$defs/timestamp" },
+        "valid_until": {},
+        "status": {}
+      }
+    },
+    "priorKey": {
+      "allOf": [
+        { "$ref": "#/$defs/keyBase" },
+        {
+          "type": "object",
+          "properties": {
+            "valid_until": { "$ref": "#/$defs/timestamp" },
+            "status": { "const": "retired" }
+          }
+        }
+      ]
+    },
+    "successorKey": {
+      "allOf": [
+        { "$ref": "#/$defs/keyBase" },
+        {
+          "type": "object",
+          "properties": {
+            "valid_until": { "type": "null" },
+            "status": { "const": "active" }
+          }
+        }
+      ]
+    },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["suite", "key_id", "value"],
+      "properties": {
+        "suite": { "const": "Ed25519-v1" },
+        "key_id": { "$ref": "#/$defs/keyId" },
+        "value": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9+/]{86}==$",
+          "minLength": 88,
+          "maxLength": 88,
+          "contentEncoding": "base64"
+        }
+      }
+    }
+  }
+}

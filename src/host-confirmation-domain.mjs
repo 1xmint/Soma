@@ -1,6 +1,7 @@
 import { canonicalize } from "./canonicalize.mjs";
 import { sha256, verifyEd25519 } from "./crypto.mjs";
 import { SomaError } from "./errors.mjs";
+import { controllerSigningKeyAt } from "./controller-rotation.mjs";
 
 export const CONFIRMATION_SUBJECT_DOMAIN = "somavera:soma-host-succession-confirmation-subject:v1\n";
 export const CONFIRMATION_ID_DOMAIN = "somavera:soma-host-succession-confirmation:v1\n";
@@ -64,7 +65,7 @@ export function validateHostSuccessionConfirmation(confirmation, prior, successo
   const errors = [];
   const subject = successionSubject(prior, successor, proof);
   for (const [field, expected] of Object.entries(confirmationSubjectCore(subject))) if (!same(confirmation[field], expected)) errors.push(`CONFIRMATION_BINDING_MISMATCH:${field}`);
-  const controller = identity.keys?.find((key) => key.role === "controller_signing" && key.status === "active" && key.key_id === confirmation.controller_signing_key_id);
+  const controller = controllerSigningKeyAt(identity, confirmation.controller_signing_key_id, Date.parse(confirmation.confirmed_at));
   if (confirmation.controller_did !== identity.controller_did || !controller) errors.push("CONFIRMATION_CONTROLLER_MISMATCH");
   const issued = Date.parse(proof.issued_at), expires = Date.parse(proof.expires_at), confirmed = Date.parse(confirmation.confirmed_at);
   if (!(issued <= confirmed && confirmed <= expires) || !(issued <= validationTime && validationTime <= expires)) errors.push("CONFIRMATION_TIME_INVALID");

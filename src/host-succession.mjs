@@ -15,6 +15,7 @@ import {
 import { assertJsonSchema } from "./json-schema.mjs";
 import { RELEASE_ROOT } from "./constants.mjs";
 import { successionSubject } from "./host-confirmation-domain.mjs";
+import { controllerSigningKeyAt } from "./controller-rotation.mjs";
 import { acquireHostSuccessionLock } from "./host-lock.mjs";
 
 const DESCRIPTOR_ID_DOMAIN = "somavera:vera-host-descriptor:v1\n";
@@ -216,7 +217,7 @@ export async function verifyCandidateRecord(home, record, identity, { currentTim
   if (record.successor_active_signing_key_sha256 !== successorHash || record.successor_descriptor_id !== record.successor_descriptor.descriptor_id || record.succession_id !== record.succession_proof.succession_id || record.change_scope !== record.succession_proof.change_scope) throw new SomaError("candidate bindings are inconsistent", 7, "HOST_SUCCESSION_CANDIDATE_BINDING_INVALID");
   const computedId = sha256(Buffer.from(CANDIDATE_ID_DOMAIN + canonicalize(candidateCore(record))));
   if (computedId !== record.candidate_id) throw new SomaError("candidate identifier mismatch", 7, "HOST_SUCCESSION_CANDIDATE_ID_INVALID");
-  const controller = identity.keys?.find((key) => key.role === "controller_signing" && key.key_id === record.signature.key_id && key.status === "active");
+  const controller = controllerSigningKeyAt(identity, record.signature.key_id, createdAt);
   if (!controller || record.signature.suite !== "Ed25519-v1" || !verifyEd25519(controller.public_key_multibase, Buffer.concat([Buffer.from(CANDIDATE_SIGNATURE_DOMAIN), Buffer.from(record.candidate_id, "hex")]), record.signature.value)) throw new SomaError("candidate controller signature is invalid", 7, "HOST_SUCCESSION_CANDIDATE_SIGNATURE_INVALID");
   const subject = successionSubject(pin.descriptor, record.successor_descriptor, record.succession_proof);
   return { candidate_id: record.candidate_id, subject_id: subject.subject_id, host_did: record.host_did, succession_id: record.succession_id, prior_descriptor_id: record.prior_descriptor_id, successor_descriptor_id: record.successor_descriptor_id, change_scope: record.change_scope, successor_active_signing_key_sha256: successorHash, successor_active_ingestion_key_sha256: subject.successor_active_ingestion_key_sha256, candidate_status: currentTime <= Date.parse(record.succession_proof.expires_at) ? "pending_confirmation_current" : "expired_inert", authority: CANDIDATE_AUTHORITY };

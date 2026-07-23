@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { open, mkdir, readFile, readdir, rename, rm, stat, statfs, lstat, realpath } from "node:fs/promises";
 import path from "node:path";
-import { createInitialKeyMaterial } from "./crypto.mjs";
+import { createInitialKeyMaterial, privateKeyForRole, publicRecordForPrivate } from "./crypto.mjs";
 import { defaultSomaHome, RELEASE_ROOT, STATE_DIRECTORIES, VERSION } from "./constants.mjs";
 import { SomaError } from "./errors.mjs";
 import { protectSecretBundle, unprotectSecretBundle } from "./keystore.mjs";
@@ -12,6 +12,13 @@ import { createInitialEvidenceHead, verifyEvidenceLedger } from "./evidence.mjs"
 import { verifyHostPinStore } from "./host.mjs";
 import { verifyHostSuccessionCandidateStore } from "./host-succession.mjs";
 import { recoverHostSuccessionTransactions, verifyHostSuccessionHistoryStore } from "./host-confirmation.mjs";
+import {
+  attachPublicKeyHistory,
+  controllerRotationStatus,
+  initialPublicKeyHistory,
+  recoverControllerRotationTransactions,
+  verifyPublicKeyHistory
+} from "./controller-rotation.mjs";
 
 const CONTROL = /[\u0000-\u001f\u007f]/;
 
@@ -169,10 +176,7 @@ export async function initialize({ home: requestedHome, label = null, recovery, 
     await writeDurable(path.join(stage, "config", "keystore.blob"), protectedBundle.blob, 0o600);
     protectedBundle.blob.fill(0);
     await writeJson(path.join(stage, "identity", "identity.json"), publicIdentity);
-    await writeJson(path.join(stage, "identity", "public-key-history.json"), {
-      schema_version: "somavera.soma-public-key-history.v1",
-      entries: publicIdentity.keys.map((key) => ({ key_id: key.key_id, role: key.role, status: key.status, valid_from: createdAt, valid_until: null }))
-    });
+    await writeJson(path.join(stage, "identity", "public-key-history.json"), initialPublicKeyHistory(publicIdentity, createdAt));
     await writeJson(path.join(stage, "identity", "recovery-policy.json"), {
       schema_version: "somavera.soma-recovery-policy.v1",
       mode: "none",
@@ -223,6 +227,7 @@ export async function inspectState(requestedHome, { verifyReleaseFirst = true, v
   await assertSafeParent(home);
   await assertNoPathIndirection(home);
   if (!(await exists(home))) throw new SomaError("SOMA_HOME is not initialized", 7, "HOME_NOT_INITIALIZED");
+  const recoveredControllerRotations = await recoverControllerRotationTransactions(home);
   const [config, identity, history, recoveryPolicy, permissions, prohibited, disk] = await Promise.all([
     readJson(path.join(home, "config", "config.json"), "CONFIG_INVALID"),
     readJson(path.join(home, "identity", "identity.json"), "IDENTITY_INVALID"),
@@ -235,6 +240,8 @@ export async function inspectState(requestedHome, { verifyReleaseFirst = true, v
   if (config.schema_version !== "somavera.soma-local-config.v1" || config.observer?.status !== "off" || config.telemetry !== false || config.background_watchers !== false) {
     throw new SomaError("local configuration violates the observer-off baseline", 7, "OBSERVER_OFF_BASELINE_INVALID");
   }
+  await verifyPublicKeyHistory(identity, history);
+  attachPublicKeyHistory(identity, history);
   const recoveredHostTransitions = await recoverHostSuccessionTransactions(home, identity);
   const hostPins = await verifyHostPinStore(home, identity);
   const hostCandidates = await verifyHostSuccessionCandidateStore(home, identity);
@@ -242,10 +249,10 @@ export async function inspectState(requestedHome, { verifyReleaseFirst = true, v
   if (config.connected_hosts !== 0 || (await listImmediateFiles(path.join(home, "consent", "grants"))).length !== 0 || (await listImmediateFiles(path.join(home, "queue"))).length !== 0) {
     throw new SomaError("baseline contains connected authority, consent, or queued work", 7, "REMOTE_AUTHORITY_BASELINE_INVALID");
   }
-  if (identity.schema_version !== "somavera.soma-local-identity.v1" || !Array.isArray(identity.keys) || identity.keys.length !== 4) {
+  if (identity.schema_version !== "somavera.soma-local-identity.v1" || !Array.isArray(identity.keys) || identity.keys.length !== 4 + history.controller_rotation_sequence) {
     throw new SomaError("public identity has an invalid shape", 7, "IDENTITY_SHAPE_INVALID");
   }
-  if (history.entries?.length !== 4 || recoveryPolicy.mode !== "none") {
+  if (recoveryPolicy.mode !== "none") {
     throw new SomaError("identity or recovery invariants do not hold", 7, "STATE_INVARIANT_INVALID");
   }
   if (!permissions.protected || permissions.owner_matches !== true || permissions.unauthorized_allow_count !== 0 || permissions.unsafe_path_count !== 0) {
@@ -254,13 +261,22 @@ export async function inspectState(requestedHome, { verifyReleaseFirst = true, v
   if (prohibited.length) throw new SomaError("prohibited files exist in SOMA_HOME", 7, "PROHIBITED_STATE_FILE", { matches: prohibited });
   const blob = await readFile(path.join(home, "config", "keystore.blob"));
   const secretBundle = unprotectSecretBundle(config.keystore.backend, blob);
-  const secretBundleValid = secretBundle.schema_version === "somavera.soma-secret-bundle.v1" && secretBundle.private_keys?.length === 4 && Buffer.from(secretBundle.root_store_key_base64 || "", "base64").length === 32;
+  let secretBundleValid = secretBundle.schema_version === "somavera.soma-secret-bundle.v1" && secretBundle.private_keys?.length === 4 && Buffer.from(secretBundle.root_store_key_base64 || "", "base64").length === 32;
+  try {
+    const privateController = privateKeyForRole(secretBundle, "controller_signing");
+    const publicController = publicRecordForPrivate(privateController, "Ed25519");
+    const activeController = identity.keys.find((key) => key.role === "controller_signing" && key.status === "active");
+    secretBundleValid = secretBundleValid && publicController.key_id === activeController?.key_id;
+  } catch {
+    secretBundleValid = false;
+  }
   eraseSecretBundle(secretBundle);
   if (!secretBundleValid) throw new SomaError("keystore contents failed integrity checks", 7, "KEYSTORE_CONTENT_INVALID");
   const evidenceVerification = verifyEvidence ? await verifyEvidenceLedger(home) : null;
   const freeBytes = Number(disk.bavail) * Number(disk.bsize);
   if (!Number.isFinite(freeBytes) || freeBytes < 50 * 1024 * 1024) throw new SomaError("insufficient disk headroom", 7, "DISK_HEADROOM_LOW");
   if (Date.now() < Date.parse("2025-01-01T00:00:00Z")) throw new SomaError("system clock is implausibly old", 7, "CLOCK_IMPLAUSIBLE");
+  const rotationStatus = await controllerRotationStatus(home);
   const summary = {
     identity: {
       controller_did: identity.controller_did,
@@ -276,6 +292,11 @@ export async function inspectState(requestedHome, { verifyReleaseFirst = true, v
     pending_host_successions: hostCandidates.length,
     completed_host_successions: hostSuccessionHistory.length,
     recovered_host_transitions: recoveredHostTransitions,
+    recovered_controller_rotations: recoveredControllerRotations,
+    controller_rotation_sequence: rotationStatus.controller_rotation_sequence,
+    controller_rotation_head: rotationStatus.controller_rotation_head,
+    active_controller_key_id: rotationStatus.active_controller_key_id,
+    pending_controller_rotation: rotationStatus.pending_controller_rotation,
     active_grants: 0,
     queued_items: 0,
     evidence_head: evidenceVerification?.head ?? null,

@@ -21,6 +21,9 @@ export function defaultSomaHome() {
 export const STATE_DIRECTORIES = Object.freeze([
   "config",
   "identity",
+  "identity/pending",
+  "identity/rotations",
+  "identity/transactions",
   "hosts",
   "hosts/candidates",
   "hosts/history",

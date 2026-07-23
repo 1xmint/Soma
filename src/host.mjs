@@ -7,9 +7,10 @@ import { SomaError } from "./errors.mjs";
 import { assertJsonSchema } from "./json-schema.mjs";
 import { unprotectSecretBundle } from "./keystore.mjs";
 import { RELEASE_ROOT } from "./constants.mjs";
+import { attachPublicKeyHistory, controllerSigningKeyAt } from "./controller-rotation.mjs";
 
-export const ORIGIN_CAPSULE_HASH = "24d5ad1099d9eb915e987511f9ca3725ad44e1dc599783ea1048070f497b3ac4";
-export const SUPPORTED_ORIGIN_CAPSULE_HASHES = Object.freeze([ORIGIN_CAPSULE_HASH, "8cb60c8ce3199aa35c101657834eece86e8823e9d6aa8eb47a9e23db89582431"]);
+export const ORIGIN_CAPSULE_HASH = "9f711a3a8e53502c464efd2798266067adc2d42995246acb3b496c05ef948fb0";
+export const SUPPORTED_ORIGIN_CAPSULE_HASHES = Object.freeze([ORIGIN_CAPSULE_HASH, "24d5ad1099d9eb915e987511f9ca3725ad44e1dc599783ea1048070f497b3ac4", "8cb60c8ce3199aa35c101657834eece86e8823e9d6aa8eb47a9e23db89582431"]);
 const HASH = /^[a-f0-9]{64}$/;
 const DID = /^did:[a-z0-9]+:(?:[A-Za-z0-9._-]|%[0-9A-Fa-f]{2})+(?::(?:[A-Za-z0-9._-]|%[0-9A-Fa-f]{2})+)*$/;
 const NETWORK = /^somavera:network:v1:[a-f0-9]{64}$/;
@@ -201,7 +202,11 @@ export async function verifyHostDescriptorFile(file, expected) {
 }
 
 export async function publicIdentity(home) {
-  return JSON.parse(await readFile(path.join(home, "identity", "identity.json"), "utf8"));
+  const [identity, history] = await Promise.all([
+    readFile(path.join(home, "identity", "identity.json"), "utf8").then(JSON.parse),
+    readFile(path.join(home, "identity", "public-key-history.json"), "utf8").then(JSON.parse)
+  ]);
+  return attachPublicKeyHistory(identity, history);
 }
 
 export function eraseSecretBundle(bundle) {
@@ -243,7 +248,7 @@ export async function verifyPinRecord(record, identity, { currentTime = Date.now
   const domain = v2 ? "soma:host-pin:provisional-v2\n" : "soma:host-pin:provisional-v1\n";
   const computedId = sha256(Buffer.from(domain + canonicalize(pinCore(record))));
   if (computedId !== record.pin_id) throw new SomaError("host pin identifier mismatch", 7, "HOST_PIN_ID_MISMATCH");
-  const controller = identity.keys?.find((key) => key.role === "controller_signing" && key.key_id === record.signature.key_id && key.status === "active");
+  const controller = controllerSigningKeyAt(identity, record.signature.key_id, pinnedAt);
   const signatureDomain = v2 ? "soma:host-pin-signature:provisional-v2\n" : "soma:host-pin-signature:provisional-v1\n";
   if (!controller || record.signature.suite !== "Ed25519-v1" || !verifyEd25519(controller.public_key_multibase, Buffer.concat([Buffer.from(signatureDomain), Buffer.from(record.pin_id, "hex")]), record.signature.value)) throw new SomaError("host pin controller signature is invalid", 7, "HOST_PIN_SIGNATURE_INVALID");
   return {

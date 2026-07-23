@@ -8,12 +8,12 @@ import test from "node:test";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { canonicalize } from "../src/canonicalize.mjs";
 import { sha256 } from "../src/crypto.mjs";
-import { verifyHostDescriptor } from "../src/host.mjs";
+import { SUPPORTED_ORIGIN_CAPSULE_HASHES, verifyHostDescriptor } from "../src/host.mjs";
 
 const root = path.resolve(fileURLToPath(new URL("../", import.meta.url)));
 const cli = path.join(root, "bin", "soma.mjs");
 const preload = pathToFileURL(path.join(root, "test", "no-network-preload.mjs")).href;
-const capsule = "24d5ad1099d9eb915e987511f9ca3725ad44e1dc599783ea1048070f497b3ac4";
+const capsule = "9f711a3a8e53502c464efd2798266067adc2d42995246acb3b496c05ef948fb0";
 
 function execute(args, trace) {
   return spawnSync(process.execPath, [cli, ...args], {
@@ -140,7 +140,7 @@ test("fixed host descriptor vector reproduces its identifier, signature, and tru
   assert.equal(canonicalize(core), vector.descriptor_core_jcs);
   assert.equal(sha256(Buffer.from(`somavera:vera-host-descriptor:v1\n${vector.descriptor_core_jcs}`)), vector.descriptor_id);
   assert.equal(vector.descriptor.descriptor_id, vector.descriptor_id);
-  const result = await verifyHostDescriptor(vector.descriptor, vector.expected, { validationTime: Date.parse(vector.validation_time), requireCurrent: true, requireKeyHash: true });
+  const result = await verifyHostDescriptor(vector.descriptor, vector.expected, { validationTime: Date.parse(vector.validation_time), requireCurrent: true, requireKeyHash: true, acceptedOriginCapsuleHashes: SUPPORTED_ORIGIN_CAPSULE_HASHES });
   assert.equal(result.descriptor_id, vector.descriptor_id);
   assert.equal(result.active_signing_key_sha256, vector.expected.active_signing_key_sha256);
   assert.equal(Buffer.concat([Buffer.from("somavera:vera-host-descriptor-signature:v1\n"), Buffer.from(vector.descriptor_id, "hex")]).toString("hex"), vector.signature_message_hex);
@@ -180,6 +180,17 @@ test("controller-signed host pin is offline, idempotent, inert, and visible to d
   assert.equal(repeated.status, 0, repeated.stderr || repeated.stdout);
   assert.equal(JSON.parse(repeated.stdout).idempotent, true);
   assert.equal(JSON.parse(repeated.stdout).local_mutation, false);
+  const rotationPreviewCommand = execute(["identity", "controller-rotate-preview", "--home", home, "--reason", "historic host pin test", "--json"], trace);
+  assert.equal(rotationPreviewCommand.status, 0, rotationPreviewCommand.stdout);
+  const rotationPreview = JSON.parse(rotationPreviewCommand.stdout);
+  const rotationConfirm = execute([
+    "identity", "controller-rotate-confirm", "--home", home,
+    "--proposal-id", rotationPreview.proposal_id,
+    "--expect-successor-key-hash", rotationPreview.successor_key_sha256,
+    "--confirm-controller-rotation", "--json"
+  ], trace);
+  assert.equal(rotationConfirm.status, 0, rotationConfirm.stdout);
+  assert.equal(JSON.parse(rotationConfirm.stdout).controller_did, JSON.parse(rotationPreviewCommand.stdout).controller_did);
   const status = execute(["host", "status", "--home", home, "--json"], trace);
   assert.equal(status.status, 0, status.stderr || status.stdout);
   const hostState = JSON.parse(status.stdout);

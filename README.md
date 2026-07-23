@@ -13,6 +13,9 @@ Implemented commands:
 soma init --recovery none
 soma doctor
 soma status
+soma identity status
+soma identity controller-rotate-preview --reason "scheduled rotation"
+soma identity controller-rotate-confirm --proposal-id HASH --expect-successor-key-hash HASH --confirm-controller-rotation
 soma evidence record --input C:\absolute\event.json
 soma evidence verify
 soma host status
@@ -35,6 +38,17 @@ back to a plaintext production key file.
 For development on an unsupported platform, an unmistakably insecure mode may
 be selected with `--dev-insecure-file-keystore`. It is test-only, reports a
 security degradation, and must never be used with private data or a network.
+
+## Controller-key boundary
+
+Ordinary offline controller-key rotation preserves one stable controller DID
+through an exact old/new dual-signed event, protected pending key, one logical
+identity commit point, deterministic restart recovery, historical public-key
+windows, and successor-only live private-key state. It is not safe compromise
+recovery and a same-device history is not independent rollback evidence.
+Version-1 host-trust export fails explicitly after rotation until a capsule
+profile can carry the complete controller chain. See
+`CONTROLLER-ROTATION-PROFILE.md`.
 
 ## Evidence boundary
 

@@ -70,6 +70,32 @@ function createRole(role, algorithm) {
   };
 }
 
+export function createControllerKeyMaterial() {
+  return createRole("controller_signing", "Ed25519");
+}
+
+export function publicRecordForPrivate(privateRecord, algorithm = "Ed25519") {
+  const der = Buffer.from(privateRecord.private_key_pkcs8_base64 || "", "base64");
+  try {
+    const privateKey = createPrivateKey({ key: der, format: "der", type: "pkcs8" });
+    const raw = rawPublicKey(createPublicKey(privateKey));
+    const fingerprint = `z${base58btc(Buffer.concat([MULTICODEC[algorithm], raw]))}`;
+    const did = `did:key:${fingerprint}`;
+    return {
+      role: privateRecord.role,
+      algorithm: `${algorithm}-v1`,
+      did,
+      key_id: `${did}#${fingerprint}`,
+      public_key_multibase: fingerprint,
+      status: "active"
+    };
+  } catch {
+    throw new SomaError("private key material is invalid", 7, "PRIVATE_KEY_INVALID");
+  } finally {
+    der.fill(0);
+  }
+}
+
 export function createInitialKeyMaterial(createdAt) {
   const roles = [
     createRole("controller_signing", "Ed25519"),

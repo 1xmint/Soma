@@ -25,6 +25,7 @@ import { acquireHostSuccessionLock } from "./host-lock.mjs";
 import { candidateDirectory, candidateFile, storedCandidate, verifyCandidateRecord } from "./host-succession.mjs";
 import { assertJsonSchema } from "./json-schema.mjs";
 import { RELEASE_ROOT } from "./constants.mjs";
+import { controllerSigningKeyAt } from "./controller-rotation.mjs";
 
 const HASH = /^[a-f0-9]{64}$/;
 const TRANSITION_AUTHORITY = "prepared_local_transition_no_connection_no_consent_no_send";
@@ -162,7 +163,7 @@ export async function verifyTransition(home, record, identity) {
   if (record.host_did !== record.candidate.host_did || record.candidate_id !== record.candidate.candidate_id || record.subject_id !== candidateSummary.subject_id || record.subject_id !== record.confirmation.subject_id || record.confirmation_id !== record.confirmation.confirmation_id || record.prior_pin_id !== record.prior_pin.pin_id || record.successor_pin_id !== record.successor_pin.pin_id || record.successor_pin.predecessor_pin_id !== record.prior_pin_id || record.successor_pin.confirmation_id !== record.confirmation_id || record.successor_pin.subject_id !== record.subject_id || record.successor_pin.descriptor.descriptor_id !== record.candidate.successor_descriptor_id) throw new SomaError("host succession transition bindings are invalid", 7, "HOST_SUCCESSION_TRANSITION_BINDING_INVALID");
   const computed = sha256(Buffer.from(TRANSITION_ID_DOMAIN + canonicalize(transitionCore(record))));
   if (computed !== record.transition_id) throw new SomaError("host succession transition identifier is invalid", 7, "HOST_SUCCESSION_TRANSITION_ID_INVALID");
-  const controller = identity.keys?.find((key) => key.role === "controller_signing" && key.status === "active" && key.key_id === record.signature.key_id);
+  const controller = controllerSigningKeyAt(identity, record.signature.key_id, preparedAt);
   if (!controller || record.signature.suite !== "Ed25519-v1" || !verifyEd25519(controller.public_key_multibase, Buffer.concat([Buffer.from(TRANSITION_SIGNATURE_DOMAIN), Buffer.from(record.transition_id, "hex")]), record.signature.value)) throw new SomaError("host succession transition signature is invalid", 7, "HOST_SUCCESSION_TRANSITION_SIGNATURE_INVALID");
   return { transition_id: record.transition_id, candidate_id: record.candidate_id, subject_id: record.subject_id, confirmation_id: record.confirmation_id, host_did: record.host_did, prior_pin_id: record.prior_pin_id, successor_pin_id: record.successor_pin_id, successor_descriptor_id: record.successor_pin.descriptor.descriptor_id };
 }

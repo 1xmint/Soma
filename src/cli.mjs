@@ -9,6 +9,7 @@ import { expectedHostBindings, hostStatus, pinHostDescriptor, verifyHostDescript
 import { hostSuccessionStatus, previewHostSuccession } from "./host-succession.mjs";
 import { confirmHostSuccession, hostSuccessionHistoryStatus } from "./host-confirmation.mjs";
 import { compareHostTrustCapsules, exportHostTrustCapsule, verifyHostTrustCapsuleFile } from "./host-trust-capsule.mjs";
+import { confirmControllerRotation, controllerRotationStatus, previewControllerRotation } from "./controller-rotation.mjs";
 
 function parse(argv) {
   const result = { command: null, options: {}, positionals: [] };
@@ -18,11 +19,11 @@ function parse(argv) {
       result.command = token;
       continue;
     }
-    if (token === "--json" || token === "--no-color" || token === "--network" || token === "--dev-insecure-file-keystore" || token === "--confirm-inert-pin-replacement") {
+    if (token === "--json" || token === "--no-color" || token === "--network" || token === "--dev-insecure-file-keystore" || token === "--confirm-inert-pin-replacement" || token === "--confirm-controller-rotation") {
       result.options[token.slice(2).replaceAll("-", "_")] = true;
       continue;
     }
-    if (["--home", "--label", "--recovery", "--input", "--artifact", "--evidence", "--policy", "--descriptor", "--expect-origin", "--expect-host-did", "--expect-network", "--expect-context", "--expect-key-hash", "--successor", "--proof", "--candidate-id", "--subject", "--expect-successor-descriptor", "--out", "--capsule", "--trusted", "--candidate", "--expect-controller-did", "--expect-controller-key-hash"].includes(token)) {
+    if (["--home", "--label", "--recovery", "--input", "--artifact", "--evidence", "--policy", "--descriptor", "--expect-origin", "--expect-host-did", "--expect-network", "--expect-context", "--expect-key-hash", "--successor", "--proof", "--candidate-id", "--subject", "--expect-successor-descriptor", "--out", "--capsule", "--trusted", "--candidate", "--expect-controller-did", "--expect-controller-key-hash", "--reason", "--proposal-id", "--expect-successor-key-hash"].includes(token)) {
       const value = argv[index + 1];
       if (value === undefined || value.startsWith("--")) throw new SomaError(`${token} requires a value`, 2, "OPTION_VALUE_REQUIRED");
       result.options[token.slice(2).replaceAll("-", "_")] = value;
@@ -38,7 +39,10 @@ function parse(argv) {
 }
 
 function help() {
-  return `Soma reference ${VERSION}\n\nUsage:\n  soma init [--home PATH] [--label TEXT] --recovery none [--json]\n  soma doctor [--home PATH] [--network] [--json]\n  soma status [--home PATH] [--json]\n  soma evidence record --input ABSOLUTE_EVENT.json [--home PATH] [--json]\n  soma evidence verify [--home PATH] [--json]\n  soma host status [--home PATH] [--json]\n  soma host verify --descriptor ABSOLUTE_DESCRIPTOR.json --expect-origin ORIGIN --expect-host-did DID --expect-network NETWORK --expect-context CONTEXT [--expect-key-hash HASH] [--home PATH] [--json]\n  soma host pin --descriptor ABSOLUTE_DESCRIPTOR.json --expect-origin ORIGIN --expect-host-did DID --expect-network NETWORK --expect-context CONTEXT --expect-key-hash HASH [--home PATH] [--json]\n  soma host succession-preview --successor ABSOLUTE_DESCRIPTOR.json --proof ABSOLUTE_PROOF.json [--home PATH] [--json]\n  soma host succession-confirm --candidate-id HASH --subject HASH --expect-successor-descriptor HASH --confirm-inert-pin-replacement [--home PATH] [--json]\n  soma host trust-export --out ABSOLUTE_CAPSULE.json [--home PATH] [--json]\n  soma host trust-verify --capsule ABSOLUTE_CAPSULE.json --expect-controller-did DID --expect-controller-key-hash HASH [--json]\n  soma host trust-compare --trusted TRUSTED_CAPSULE.json --candidate CANDIDATE_CAPSULE.json --expect-controller-did DID --expect-controller-key-hash HASH [--json]\n  soma observe status [--home PATH] [--json]\n  soma observe preview (--artifact ABSOLUTE_PATH | --evidence EVIDENCE_ID) --policy ABSOLUTE_POLICY.json [--home PATH] [--json]\n\nObservation preview is offline and creates no grant or send authority.\nEvidence is provisional, pre-network, self-signed attribution only. It is not truth, reputation, or independent rollback proof.\nObserver, telemetry, updates, retries, watchers, wallet, and token features are absent/off.`;
+  return `Soma reference ${VERSION}\n\nUsage:\n  soma init [--home PATH] [--label TEXT] --recovery none [--json]\n  soma doctor [--home PATH] [--network] [--json]\n  soma status [--home PATH] [--json]\n  soma identity status [--home PATH] [--json]
+  soma identity controller-rotate-preview --reason TEXT [--home PATH] [--json]
+  soma identity controller-rotate-confirm --proposal-id HASH --expect-successor-key-hash HASH --confirm-controller-rotation [--home PATH] [--json]
+  soma evidence record --input ABSOLUTE_EVENT.json [--home PATH] [--json]\n  soma evidence verify [--home PATH] [--json]\n  soma host status [--home PATH] [--json]\n  soma host verify --descriptor ABSOLUTE_DESCRIPTOR.json --expect-origin ORIGIN --expect-host-did DID --expect-network NETWORK --expect-context CONTEXT [--expect-key-hash HASH] [--home PATH] [--json]\n  soma host pin --descriptor ABSOLUTE_DESCRIPTOR.json --expect-origin ORIGIN --expect-host-did DID --expect-network NETWORK --expect-context CONTEXT --expect-key-hash HASH [--home PATH] [--json]\n  soma host succession-preview --successor ABSOLUTE_DESCRIPTOR.json --proof ABSOLUTE_PROOF.json [--home PATH] [--json]\n  soma host succession-confirm --candidate-id HASH --subject HASH --expect-successor-descriptor HASH --confirm-inert-pin-replacement [--home PATH] [--json]\n  soma host trust-export --out ABSOLUTE_CAPSULE.json [--home PATH] [--json]\n  soma host trust-verify --capsule ABSOLUTE_CAPSULE.json --expect-controller-did DID --expect-controller-key-hash HASH [--json]\n  soma host trust-compare --trusted TRUSTED_CAPSULE.json --candidate CANDIDATE_CAPSULE.json --expect-controller-did DID --expect-controller-key-hash HASH [--json]\n  soma observe status [--home PATH] [--json]\n  soma observe preview (--artifact ABSOLUTE_PATH | --evidence EVIDENCE_ID) --policy ABSOLUTE_POLICY.json [--home PATH] [--json]\n\nObservation preview is offline and creates no grant or send authority.\nEvidence is provisional, pre-network, self-signed attribution only. It is not truth, reputation, or independent rollback proof.\nObserver, telemetry, updates, retries, watchers, wallet, and token features are absent/off.`;
 }
 
 function print(value, json) {
@@ -106,6 +110,28 @@ export async function runCli(argv) {
       if (parsed.positionals.length) throw new SomaError("unexpected positional arguments", 2, "POSITIONAL_ARGUMENT_UNEXPECTED");
       const result = await inspectState(home);
       print({ ok: true, command: "status", home: result.home, release_version: result.release.release_version, ...result.summary }, parsed.options.json);
+      return 0;
+    }
+    if (parsed.command === "identity") {
+      const action = parsed.positionals[0];
+      if (!action || parsed.positionals.length !== 1 || !["status", "controller-rotate-preview", "controller-rotate-confirm"].includes(action)) throw new SomaError("identity requires status, controller-rotate-preview, or controller-rotate-confirm", 2, "IDENTITY_ACTION_INVALID");
+      const common = new Set(["home", "json", "no_color"]);
+      const allowed = action === "status" ? [] : action === "controller-rotate-preview" ? ["reason"] : ["proposal_id", "expect_successor_key_hash", "confirm_controller_rotation"];
+      const unexpected = Object.keys(parsed.options).filter((key) => !common.has(key) && !allowed.includes(key));
+      if (unexpected.length) throw new SomaError("identity " + action + " does not accept " + unexpected.map((key) => "--" + key.replaceAll("_", "-")).join(", "), 2, "OPTION_NOT_ALLOWED");
+      await inspectState(home);
+      if (action === "status") print({ ok: true, command: "identity status", home, ...(await controllerRotationStatus(home)), local_mutation: false, remote_mutation: false }, parsed.options.json);
+      else if (action === "controller-rotate-preview") {
+        if (!parsed.options.reason) throw new SomaError("controller-rotate-preview requires --reason", 2, "CONTROLLER_ROTATION_REASON_REQUIRED");
+        print({ ok: true, command: "identity controller-rotate-preview", home, ...(await previewControllerRotation(home, parsed.options.reason)) }, parsed.options.json);
+      } else {
+        const result = await confirmControllerRotation(home, {
+          proposalId: parsed.options.proposal_id,
+          successorKeyHash: parsed.options.expect_successor_key_hash,
+          confirmControllerRotation: parsed.options.confirm_controller_rotation === true
+        });
+        print({ ok: true, command: "identity controller-rotate-confirm", home, ...result }, parsed.options.json);
+      }
       return 0;
     }
     if (parsed.command === "evidence") {

@@ -2,7 +2,7 @@
 
 Status: **implemented offline portable copy; not an external anchor and not restore authority**
 
-This slice implements the closed `soma-host-trust-capsule.v1` contract from Somavera Origin commit `a1c3a4b` and capsule root `24d5ad1099d9eb915e987511f9ca3725ad44e1dc599783ea1048070f497b3ac4`.
+This slice implements the closed `soma-host-trust-capsule.v1` contract originally frozen at Somavera Origin commit `a1c3a4b`. The current compatible Origin capsule root is `9f711a3a8e53502c464efd2798266067adc2d42995246acb3b496c05ef948fb0`; exact immediately prior profiles remain verification-only compatible.
 
 ## Commands
 
@@ -56,4 +56,4 @@ New pinning accepts only the current Origin profile. Stored pins from the immedi
 - A capsule does not prove host honesty, availability, confidentiality, or current network reachability.
 - If an attacker controls the controller key and no earlier capsule or fingerprint survives independently, the attacker can create a self-consistent alternative local history.
 - Restore is intentionally unimplemented. A later restore profile must specify controller-key lifecycle, conflict handling, quarantine, atomic installation, and authority boundaries before any import command exists.
-- Controller-key rotation remains unsupported in this reference slice.
+- Version 1 carries only one controller key and cannot authenticate pins signed across a Soma controller-key rotation. Export fails explicitly after rotation; a separately specified v2 capsule must carry the complete dual-signed controller chain before post-rotation export can be enabled.
