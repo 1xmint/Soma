@@ -1,4 +1,5 @@
 import { createPrivateKey, sign } from "node:crypto";
+import { writeFile } from "node:fs/promises";
 import { canonicalize } from "../src/canonicalize.mjs";
 import { sha256 } from "../src/crypto.mjs";
 
@@ -30,7 +31,7 @@ const core = {
   release: {
     release_id: "vera-vector-v0.1.0",
     release_manifest_hash: "2".repeat(64),
-    origin_capsule_hash: "ee8bb4f2a851ecd103a84db988e24eb2241ec702c9f0743045a2e83008f89e7d",
+    origin_capsule_hash: "8cb60c8ce3199aa35c101657834eece86e8823e9d6aa8eb47a9e23db89582431",
     implementation: "somavera-fixed-conformance-vector"
   },
   policy_hash: "4".repeat(64),
@@ -73,7 +74,7 @@ const descriptorId = sha256(Buffer.from(`somavera:vera-host-descriptor:v1\n${can
 const signatureMessage = Buffer.concat([Buffer.from("somavera:vera-host-descriptor-signature:v1\n"), Buffer.from(descriptorId, "hex")]);
 const signature = sign(null, signatureMessage, privateKey).toString("base64");
 const descriptor = { ...core, descriptor_id: descriptorId, signature: { suite: "Ed25519-v1", key_id: core.active_host_signing_key_id, value: signature } };
-console.log(JSON.stringify({
+const output = JSON.stringify({
   vector_version: "soma.vera-host-descriptor.provisional-v1",
   status: "provisional_not_ratified",
   validation_time: "2026-07-22T12:00:00Z",
@@ -88,4 +89,6 @@ console.log(JSON.stringify({
   descriptor_id: descriptorId,
   signature_message_hex: signatureMessage.toString("hex"),
   descriptor
-}, null, 2));
+}, null, 2);
+if (process.argv[2]) await writeFile(process.argv[2], `${output}\n`, "utf8");
+else console.log(output);

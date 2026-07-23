@@ -8,17 +8,20 @@ import { assertJsonSchema } from "./json-schema.mjs";
 import { unprotectSecretBundle } from "./keystore.mjs";
 import { RELEASE_ROOT } from "./constants.mjs";
 
-const ORIGIN_CAPSULE_HASH = "ee8bb4f2a851ecd103a84db988e24eb2241ec702c9f0743045a2e83008f89e7d";
+const ORIGIN_CAPSULE_HASH = "8cb60c8ce3199aa35c101657834eece86e8823e9d6aa8eb47a9e23db89582431";
 const HASH = /^[a-f0-9]{64}$/;
 const DID = /^did:[a-z0-9]+:(?:[A-Za-z0-9._-]|%[0-9A-Fa-f]{2})+(?::(?:[A-Za-z0-9._-]|%[0-9A-Fa-f]{2})+)*$/;
 const NETWORK = /^somavera:network:v1:[a-f0-9]{64}$/;
 const CONTEXT = /^somavera:context:v1:[a-f0-9]{64}$/;
 const CONTROL = /[\u0000-\u001f\u007f]/;
-const PIN_FIELDS = ["authority", "connected", "controller_did", "descriptor", "expected", "pin_id", "pinned_at", "rotation_policy", "schema_version", "signature", "trust_basis"];
+const PIN_FIELDS_V1 = ["authority", "connected", "controller_did", "descriptor", "expected", "pin_id", "pinned_at", "rotation_policy", "schema_version", "signature", "trust_basis"];
+const PIN_FIELDS_V2 = [...PIN_FIELDS_V1, "confirmation_id", "predecessor_pin_id", "subject_id"];
 const EXPECTED_FIELDS = ["active_signing_key_sha256", "execution_context_id", "host_did", "network_lineage_id", "origin"];
 const SIGNATURE_FIELDS = ["key_id", "suite", "value"];
 const TRUST_BASIS = "exact_bindings_plus_out_of_band_active_signing_key_sha256";
-const AUTHORITY = "offline_pin_only_no_connection_no_consent_no_send";
+export const SUCCESSION_TRUST_BASIS = "prior_out_of_band_pin_plus_dual_signed_precommitted_succession_plus_controller_confirmation";
+export const HOST_PIN_AUTHORITY = "offline_pin_only_no_connection_no_consent_no_send";
+const AUTHORITY = HOST_PIN_AUTHORITY;
 
 function exactObject(value, fields, code, label) {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new SomaError(`${label} must be an object`, 7, code);
@@ -103,9 +106,9 @@ function signingKeyHash(key) {
   return sha256(canonicalBase64(key.public_key_base64, 32, "HOST_SIGNING_KEY_INVALID", "host signing public key"));
 }
 
-export async function verifyHostDescriptor(descriptor, expected, { validationTime = Date.now(), requireCurrent = true, requireKeyHash = false } = {}) {
+export async function verifyHostDescriptor(descriptor, expected, { validationTime = Date.now(), requireCurrent = true, requireKeyHash = false, schemaExitCode = 2 } = {}) {
   validateExpectationShape(expected, requireKeyHash);
-  assertJsonSchema(descriptor, await descriptorSchema(), { code: "HOST_DESCRIPTOR_SCHEMA_INVALID", label: "host descriptor" });
+  assertJsonSchema(descriptor, await descriptorSchema(), { code: "HOST_DESCRIPTOR_SCHEMA_INVALID", label: "host descriptor", exitCode: schemaExitCode });
   noControls(descriptor);
   const issuedAt = exactIso(descriptor.issued_at, "HOST_DESCRIPTOR_TIME_INVALID", "descriptor issued_at");
   const expiresAt = exactIso(descriptor.expires_at, "HOST_DESCRIPTOR_TIME_INVALID", "descriptor expires_at");
@@ -223,21 +226,37 @@ export async function durableFile(file, body) {
 }
 
 export async function verifyPinRecord(record, identity, { currentTime = Date.now() } = {}) {
-  exactObject(record, PIN_FIELDS, "HOST_PIN_SHAPE_INVALID", "host pin");
+  const version = record?.schema_version;
+  const v2 = version === "soma.host-pin.provisional-v2";
+  exactObject(record, v2 ? PIN_FIELDS_V2 : PIN_FIELDS_V1, "HOST_PIN_SHAPE_INVALID", "host pin");
   exactObject(record.expected, EXPECTED_FIELDS, "HOST_PIN_EXPECTATION_INVALID", "host pin expectation");
   exactObject(record.signature, SIGNATURE_FIELDS, "HOST_PIN_SIGNATURE_INVALID", "host pin signature");
-  if (record.schema_version !== "soma.host-pin.provisional-v1" || record.controller_did !== identity.controller_did || record.trust_basis !== TRUST_BASIS || record.authority !== AUTHORITY || record.connected !== false || record.rotation_policy !== "changed_descriptor_blocked_until_ratified_rotation_proof") throw new SomaError("host pin authority or identity fields are invalid", 7, "HOST_PIN_INVARIANT_INVALID");
+  const validV1 = !v2 && version === "soma.host-pin.provisional-v1" && record.trust_basis === TRUST_BASIS && record.rotation_policy === "changed_descriptor_blocked_until_ratified_rotation_proof";
+  const validV2 = v2 && record.trust_basis === SUCCESSION_TRUST_BASIS && record.rotation_policy === "controller_confirmed_ordinary_succession_inert" && HASH.test(record.predecessor_pin_id || "") && HASH.test(record.confirmation_id || "") && HASH.test(record.subject_id || "");
+  if ((!validV1 && !validV2) || record.controller_did !== identity.controller_did || record.authority !== AUTHORITY || record.connected !== false) throw new SomaError("host pin authority or identity fields are invalid", 7, "HOST_PIN_INVARIANT_INVALID");
   const pinnedAt = exactIso(record.pinned_at, "HOST_PIN_TIME_INVALID", "host pin pinned_at");
   if (pinnedAt > currentTime) throw new SomaError("host pin timestamp is in the future", 7, "HOST_PIN_TIME_INVALID");
-  const summary = await verifyHostDescriptor(record.descriptor, record.expected, { validationTime: pinnedAt, requireCurrent: true, requireKeyHash: true });
-  const computedId = sha256(Buffer.from(`soma:host-pin:provisional-v1\n${canonicalize(pinCore(record))}`));
+  let summary;
+  try { summary = await verifyHostDescriptor(record.descriptor, record.expected, { validationTime: pinnedAt, requireCurrent: true, requireKeyHash: true, schemaExitCode: 7 }); }
+  catch (error) { if (error instanceof SomaError && error.exitCode !== 7) throw new SomaError(error.message, 7, error.code, error.details); throw error; }
+  const domain = v2 ? "soma:host-pin:provisional-v2\n" : "soma:host-pin:provisional-v1\n";
+  const computedId = sha256(Buffer.from(domain + canonicalize(pinCore(record))));
   if (computedId !== record.pin_id) throw new SomaError("host pin identifier mismatch", 7, "HOST_PIN_ID_MISMATCH");
   const controller = identity.keys?.find((key) => key.role === "controller_signing" && key.key_id === record.signature.key_id && key.status === "active");
-  if (!controller || record.signature.suite !== "Ed25519-v1" || !verifyEd25519(controller.public_key_multibase, Buffer.concat([Buffer.from("soma:host-pin-signature:provisional-v1\n"), Buffer.from(record.pin_id, "hex")]), record.signature.value)) throw new SomaError("host pin controller signature is invalid", 7, "HOST_PIN_SIGNATURE_INVALID");
-  return { ...summary, pin_id: record.pin_id, pinned_at: record.pinned_at, current_descriptor_status: currentTime < Date.parse(record.descriptor.expires_at) ? "time_valid" : "expired_inert" };
+  const signatureDomain = v2 ? "soma:host-pin-signature:provisional-v2\n" : "soma:host-pin-signature:provisional-v1\n";
+  if (!controller || record.signature.suite !== "Ed25519-v1" || !verifyEd25519(controller.public_key_multibase, Buffer.concat([Buffer.from(signatureDomain), Buffer.from(record.pin_id, "hex")]), record.signature.value)) throw new SomaError("host pin controller signature is invalid", 7, "HOST_PIN_SIGNATURE_INVALID");
+  return {
+    ...summary,
+    trust_assurance: v2 ? SUCCESSION_TRUST_BASIS : summary.trust_assurance,
+    pin_id: record.pin_id,
+    pinned_at: record.pinned_at,
+    pin_schema_version: version,
+    ...(v2 ? { predecessor_pin_id: record.predecessor_pin_id, confirmation_id: record.confirmation_id, subject_id: record.subject_id } : {}),
+    current_descriptor_status: currentTime < Date.parse(record.descriptor.expires_at) ? "time_valid" : "expired_inert"
+  };
 }
 
-async function existingPin(file, identity) {
+export async function existingPin(file, identity) {
   try { return parseCanonicalJson(await readFile(file, "utf8"), "stored host pin"); } catch (error) { if (error.code === "ENOENT") return null; throw error; }
 }
 
@@ -305,7 +324,7 @@ export async function verifyHostPinStore(home, identity = null) {
   const entries = await readdir(path.join(home, "hosts"), { withFileTypes: true });
   const results = [];
   for (const entry of entries) {
-    if (entry.isDirectory() && entry.name === "candidates") continue;
+    if (entry.isDirectory() && ["candidates", "history", "transactions"].includes(entry.name)) continue;
     if (!entry.isFile() || !/^[a-f0-9]{64}\.json$/.test(entry.name)) throw new SomaError("host store contains an unsupported entry", 7, "HOST_STORE_ENTRY_INVALID", { entry: entry.name });
     const file = path.join(home, "hosts", entry.name);
     const record = parseCanonicalJson(await readFile(file, "utf8"), "stored host pin");

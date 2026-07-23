@@ -1,91 +1,50 @@
-# Offline Vera Host Succession Preview
+# Offline Vera Host Succession
 
-Status: **implemented inert local draft; confirmation, pin replacement, connection, consent, and send are absent**
+Status: **implemented controller-confirmed inert local transition; connection, consent, disclosure, send, and emergency recovery are absent**
 
-This slice imports the ordinary Vera Host descriptor-succession contract from
-Somavera Origin commit `07a4e89` and capsule root
-`ee8bb4f2a851ecd103a84db988e24eb2241ec702c9f0743045a2e83008f89e7d`.
-It can verify a successor against one existing controller-signed host pin and
-store a controller-signed pending candidate. It performs zero network actions.
+This slice imports the ordinary Vera Host descriptor-succession and controller-confirmation contracts from Somavera Origin commit `e5cf452` and capsule root `8cb60c8ce3199aa35c101657834eece86e8823e9d6aa8eb47a9e23db89582431`. It verifies a successor against an existing controller-signed host pin, stores one controller-signed pending candidate, and can replace that inert pin only after an exact controller confirmation. Every operation is local and performs zero network actions.
 
-## Command
+## Commands
 
 ```text
 soma host succession-preview --successor ABSOLUTE_DESCRIPTOR.json --proof ABSOLUTE_PROOF.json --home ABSOLUTE_HOME
+soma host succession-confirm --candidate-id HASH --subject HASH --expect-successor-descriptor HASH --confirm-inert-pin-replacement --home ABSOLUTE_HOME
 ```
 
-Both inputs must be canonical UTF-8 JSON in local regular files. The command
-does not fetch descriptors, follow redirects, contact the host, register
-consent, create a session, retry a request, or place work in a queue.
+All inputs are local. Neither command fetches a descriptor, follows a redirect, contacts a host, registers consent, creates a session, retries work, or places work in a queue. Confirmation requires the literal replacement flag and all three exact identifiers; there is no broad yes flag or inferred candidate.
 
 ## Required continuity proof
 
-The verifier requires all of the following:
+The preview verifier requires exact sequence and predecessor continuity; immutable host, network, context, transport, release, policy, capability, disclosure, region, subprocessor, retention, and limit fields; bounded prior precommitment of every newly active key; coherent key retirement and lifecycle history; recomputed descriptor and proof identifiers; distinct role-separated prior and successor signatures; an exact no-authority statement; and a live proof window of at most 900 seconds within both descriptors.
 
-- the successor sequence is exactly prior sequence plus one;
-- `previous_descriptor_id` is the recomputed prior descriptor ID;
-- host DID, exact HTTPS origin, network lineage, execution context, discovery,
-  TLS identity, release, policy, protocols, capabilities, disclosures, regions,
-  subprocessors, retention, limits, and rotation policy are unchanged;
-- each newly active signing or ingestion key appeared with identical key ID,
-  role, suite, and public bytes as a live, bounded `overlap` key in the prior
-  descriptor;
-- replaced active keys become `retired`, historic keys remain present, and
-  their lifecycle fields cannot be rewritten;
-- every descriptor ID and active-key signature verifies;
-- the proof ID recomputes under the Origin succession domain;
-- prior and successor active signing keys verify distinct role-separated proof
-  signatures;
-- sequence, predecessor, descriptor IDs, active key IDs, exact change scope,
-  issue time, expiry, and the no-authority statement all agree; and
-- the proof is current, no longer than 900 seconds, and lies inside both
-  descriptor validity intervals.
+Revocation smuggling, an uncommitted key, multiple active keys, key-role reuse, expired overlap, immutable-field change, signature replay, or excess descriptor lifetime fails closed. Ordinary succession cannot authorize emergency recovery after total compromise.
 
-Revocation smuggling, an uncommitted key, multiple active keys, key-role reuse,
-an expired overlap, an immutable-field change, a signature replay, or a
-descriptor lifetime beyond its committed policy fails closed. Ordinary
-succession cannot authorize emergency recovery after total compromise.
+## Candidate and confirmation bindings
 
-## Candidate record
+One candidate per host is stored under `hosts/candidates/`. Its controller signature binds the current pin, complete successor descriptor and proof, succession and change-scope identifiers, successor active-key commitment, controller DID, creation time, and the authority `offline_candidate_only_no_pin_replacement_no_connection_no_consent_no_send`. Preview is idempotent for identical bytes and conflicts on a different candidate.
 
-One candidate per host is stored under `hosts/candidates/` using a filename
-derived from the host DID. The closed record binds:
+The confirmation subject is recomputed from the live candidate and binds the candidate ID, prior pin and descriptor IDs, successor descriptor and active keys, succession proof and change scope, host DID, exact origin, network lineage, execution context, proof expiry, and inert replacement authority. The controller-confirmation receipt binds that subject, the expected successor descriptor, the exact decision `replace_inert_pin_only`, and explicit false values for connection, consent, disclosure, send, and emergency recovery. Receipt creation and commit must both occur while the proof is live.
 
-- the current controller-signed prior pin ID;
-- prior and successor descriptor IDs;
-- the complete successor descriptor and succession proof;
-- succession ID and change scope;
-- the successor active signing-key SHA-256;
-- creation time and controller DID;
-- `confirmed: false` and `connected: false`; and
-- authority `offline_candidate_only_no_pin_replacement_no_connection_no_consent_no_send`.
+## Atomic transition and recovery
 
-The controller signs a domain-separated candidate ID. `doctor`, `status`, and
-`host status` revalidate the candidate, its controller signature, current prior
-pin binding, descriptors, proof, and content-derived storage path. Repeating
-the exact preview is idempotent. A different pending candidate for the same
-host conflicts instead of replacing it. A candidate whose proof window has
-ended is reported `expired_inert`.
+The implementation writes a complete controller-signed prepared transaction, synchronizes a successor-pin temporary file, rechecks the current pin and proof window, and atomically renames the successor over the current pin. That rename is the sole commit point. It then consumes the exact candidate and publishes the prepared transaction as immutable local history.
 
-## Deliberately absent confirmation transition
+Startup, `doctor`, and `status` deterministically recover interruptions:
 
-This command is not confirmation. It never edits the host pin. The separately
-designed confirmation transition must bind the exact candidate ID, display the
-complete security-relevant change, require an explicit controller act, update
-the expected active-key commitment, replace the pin atomically, retain prior
-history, consume the candidate, and still grant no connection or consent.
+- if the prior pin is current, preparation is rolled back and the candidate remains;
+- if the exact successor is current, candidate consumption and history publication are completed;
+- any unrelated current state, invalid signature, fork, gap, or mismatched history fails closed.
 
-Until that transition and its crash/race/rollback tests exist, the only usable
-pin remains the prior descriptor and every changed descriptor continues to
-fail through ordinary `soma host pin`.
+Identical repeated confirmations are idempotent. A per-host exclusive lock serializes local contenders. The adversarial suite faults every durable boundary and races 100 identical confirmations plus a competing candidate.
+
+The resulting version-2 pin remains `offline_pin_only_no_connection_no_consent_no_send`. It is not routing, session, consent, disclosure, contribution, payment, or emergency-recovery authority.
 
 ## Security limits
 
-- Dual signatures prove controlled continuity, not host honesty or safety.
-- A compromised prior key plus compromised precommitted successor key can sign
-  a malicious transition; immutable fields and human confirmation reduce but
-  cannot erase that risk.
-- Local controller signatures do not defeat a device attacker controlling both
-  the filesystem and controller key without an independent external anchor.
-- Local system time controls validity decisions; authenticated time is absent.
-- No emergency recovery authority is implemented.
+- Dual signatures establish controlled continuity, not host honesty, confidentiality, or safety.
+- Compromise of both the prior key and its precommitted successor can authorize a malicious ordinary transition; immutable fields and controller confirmation reduce but cannot eliminate that risk.
+- Controller signatures and local history do not defeat rollback when an attacker controls both the filesystem and controller key; an independent external anchor is still required.
+- Validity depends on local system time; authenticated time is absent.
+- Atomic rename and file synchronization inherit the actual operating system, filesystem, storage-controller, and hardware durability guarantees. Power-loss behavior beyond those guarantees cannot be proven by this implementation.
+- Controller-key rotation is not yet implemented, so history currently verifies under the active local controller identity.
+- Emergency compromise recovery remains unsupported.

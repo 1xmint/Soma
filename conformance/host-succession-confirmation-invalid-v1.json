@@ -1,0 +1,151 @@
+{
+  "vector_version": "somavera.host-succession-confirmation-invalid.v1",
+  "base_vector": "host-succession-confirmation-v1.json",
+  "cases": [
+    {
+      "name": "binding_network_lineage_id",
+      "mutation": "binding:network_lineage_id",
+      "expected_error": "CONFIRMATION_BINDING_MISMATCH:network_lineage_id"
+    },
+    {
+      "name": "binding_execution_context_id",
+      "mutation": "binding:execution_context_id",
+      "expected_error": "CONFIRMATION_BINDING_MISMATCH:execution_context_id"
+    },
+    {
+      "name": "binding_host_did",
+      "mutation": "binding:host_did",
+      "expected_error": "CONFIRMATION_BINDING_MISMATCH:host_did"
+    },
+    {
+      "name": "binding_origin",
+      "mutation": "binding:origin",
+      "expected_error": "CONFIRMATION_BINDING_MISMATCH:origin"
+    },
+    {
+      "name": "binding_prior_descriptor_id",
+      "mutation": "binding:prior_descriptor_id",
+      "expected_error": "CONFIRMATION_BINDING_MISMATCH:prior_descriptor_id"
+    },
+    {
+      "name": "binding_prior_descriptor_sequence",
+      "mutation": "binding:prior_descriptor_sequence",
+      "expected_error": "CONFIRMATION_BINDING_MISMATCH:prior_descriptor_sequence"
+    },
+    {
+      "name": "binding_successor_descriptor_id",
+      "mutation": "binding:successor_descriptor_id",
+      "expected_error": "CONFIRMATION_BINDING_MISMATCH:successor_descriptor_id"
+    },
+    {
+      "name": "binding_successor_descriptor_sequence",
+      "mutation": "binding:successor_descriptor_sequence",
+      "expected_error": "CONFIRMATION_BINDING_MISMATCH:successor_descriptor_sequence"
+    },
+    {
+      "name": "binding_succession_id",
+      "mutation": "binding:succession_id",
+      "expected_error": "CONFIRMATION_BINDING_MISMATCH:succession_id"
+    },
+    {
+      "name": "binding_change_scope",
+      "mutation": "binding:change_scope",
+      "expected_error": "CONFIRMATION_BINDING_MISMATCH:change_scope"
+    },
+    {
+      "name": "binding_successor_active_host_signing_key_id",
+      "mutation": "binding:successor_active_host_signing_key_id",
+      "expected_error": "CONFIRMATION_BINDING_MISMATCH:successor_active_host_signing_key_id"
+    },
+    {
+      "name": "binding_successor_active_host_signing_key_sha256",
+      "mutation": "binding:successor_active_host_signing_key_sha256",
+      "expected_error": "CONFIRMATION_BINDING_MISMATCH:successor_active_host_signing_key_sha256"
+    },
+    {
+      "name": "binding_successor_active_ingestion_key_id",
+      "mutation": "binding:successor_active_ingestion_key_id",
+      "expected_error": "CONFIRMATION_BINDING_MISMATCH:successor_active_ingestion_key_id"
+    },
+    {
+      "name": "binding_successor_active_ingestion_key_sha256",
+      "mutation": "binding:successor_active_ingestion_key_sha256",
+      "expected_error": "CONFIRMATION_BINDING_MISMATCH:successor_active_ingestion_key_sha256"
+    },
+    {
+      "name": "wrong_controller_did",
+      "mutation": "wrong_controller_did",
+      "expected_error": "CONFIRMATION_CONTROLLER_MISMATCH"
+    },
+    {
+      "name": "wrong_controller_key",
+      "mutation": "wrong_controller_key",
+      "expected_error": "CONFIRMATION_CONTROLLER_MISMATCH"
+    },
+    {
+      "name": "before_proof_window",
+      "mutation": "before_proof_window",
+      "expected_error": "CONFIRMATION_TIME_INVALID"
+    },
+    {
+      "name": "after_proof_window",
+      "mutation": "after_proof_window",
+      "expected_error": "CONFIRMATION_TIME_INVALID"
+    },
+    {
+      "name": "decision_widening",
+      "mutation": "decision_widening",
+      "expected_error": "CONFIRMATION_DECISION_INVALID"
+    },
+    {
+      "name": "pin_replacement_removed",
+      "mutation": "pin_replacement_removed",
+      "expected_error": "CONFIRMATION_AUTHORITY_INVALID"
+    },
+    {
+      "name": "connection_authority_escalation",
+      "mutation": "connection_authority_escalation",
+      "expected_error": "CONFIRMATION_AUTHORITY_INVALID"
+    },
+    {
+      "name": "consent_authority_escalation",
+      "mutation": "consent_authority_escalation",
+      "expected_error": "CONFIRMATION_AUTHORITY_INVALID"
+    },
+    {
+      "name": "disclosure_authority_escalation",
+      "mutation": "disclosure_authority_escalation",
+      "expected_error": "CONFIRMATION_AUTHORITY_INVALID"
+    },
+    {
+      "name": "send_authority_escalation",
+      "mutation": "send_authority_escalation",
+      "expected_error": "CONFIRMATION_AUTHORITY_INVALID"
+    },
+    {
+      "name": "emergency_authority_escalation",
+      "mutation": "emergency_authority_escalation",
+      "expected_error": "CONFIRMATION_AUTHORITY_INVALID"
+    },
+    {
+      "name": "signature_key_mismatch",
+      "mutation": "signature_key_mismatch",
+      "expected_error": "CONFIRMATION_SIGNATURE_INVALID"
+    },
+    {
+      "name": "signature_corruption",
+      "mutation": "signature_corruption",
+      "expected_error": "CONFIRMATION_SIGNATURE_INVALID"
+    },
+    {
+      "name": "subject_id_corruption",
+      "mutation": "subject_id_corruption",
+      "expected_error": "CONFIRMATION_SUBJECT_ID_INVALID"
+    },
+    {
+      "name": "confirmation_id_corruption",
+      "mutation": "confirmation_id_corruption",
+      "expected_error": "CONFIRMATION_ID_INVALID"
+    }
+  ]
+}

@@ -13,7 +13,7 @@ import { deriveHostDescriptorId, deriveHostSuccessionId, validateOrdinaryHostSuc
 const root = path.resolve(fileURLToPath(new URL("../", import.meta.url)));
 const cli = path.join(root, "bin", "soma.mjs");
 const preload = pathToFileURL(path.join(root, "test", "no-network-preload.mjs")).href;
-const capsule = "ee8bb4f2a851ecd103a84db988e24eb2241ec702c9f0743045a2e83008f89e7d";
+const capsule = "8cb60c8ce3199aa35c101657834eece86e8823e9d6aa8eb47a9e23db89582431";
 
 function execute(args, trace) {
   return spawnSync(process.execPath, [cli, ...args], { cwd: root, encoding: "utf8", windowsHide: true, timeout: 30000, env: { ...process.env, NODE_OPTIONS: `${process.env.NODE_OPTIONS || ""} --import=${preload}`.trim(), SOMA_NETWORK_TRACE: trace } });
@@ -145,7 +145,7 @@ test("offline succession preview stores one inert signed candidate without repla
   assert.equal(JSON.parse(command.stdout).error, "HOST_DESCRIPTOR_CHANGE_UNSUPPORTED");
   command = execute(["host", "succession-confirm", "--home", home, "--json"], trace);
   assert.equal(command.status, 2, command.stdout);
-  assert.equal(JSON.parse(command.stdout).error, "HOST_ACTION_INVALID");
+  assert.equal(JSON.parse(command.stdout).error, "HOST_SUCCESSION_CONFIRMATION_INPUT_INVALID");
   assert.equal((await readdir(path.join(home, "consent", "grants"))).length, 0);
   assert.equal((await readdir(path.join(home, "queue"))).length, 0);
   const candidateDirectory = path.join(home, "hosts", "candidates");

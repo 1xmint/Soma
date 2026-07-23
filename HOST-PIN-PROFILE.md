@@ -44,7 +44,7 @@ invariants that JSON Schema cannot express:
 - exact descriptor identifier and Ed25519 signature domains;
 - exact expected origin, DID, network, context, and optional signing-key hash;
 - exact descriptor sequence/predecessor and closed rotation-policy shape;
-- the capsule root `ee8bb4f2a851ecd103a84db988e24eb2241ec702c9f0743045a2e83008f89e7d` from Origin commit `07a4e89`;
+- the capsule root `8cb60c8ce3199aa35c101657834eece86e8823e9d6aa8eb47a9e23db89582431` from Origin commit `e5cf452`;
 - issuance, expiry, active-key windows, and coherent revocation fields;
 - unique signing and ingestion key identifiers and public keys;
 - usable X25519 ingestion material through a local derivation sanity check;
@@ -102,7 +102,7 @@ expectations is idempotent. Any changed descriptor ID--including a new signing
 key, ingestion key, origin, region, subprocessor, policy, disclosure, release,
 limit, or expiry--fails with `HOST_DESCRIPTOR_CHANGE_UNSUPPORTED`.
 
-This is deliberate. `soma host succession-preview` now ingests the Origin proof and may persist a controller-signed inert candidate, but it does not display a confirmation ceremony or replace the pin. Therefore even a cryptographically valid succession proof remains non-authoritative for routing. See `HOST-SUCCESSION-PROFILE.md`. A later bounded implementation must add the exact candidate-confirmation and atomic replacement state machine before descriptor replacement can be enabled; emergency compromise recovery remains separately unsupported.
+Direct replacement remains forbidden. `soma host succession-preview` may persist a controller-signed inert candidate, and `soma host succession-confirm` can replace the current pin only when the controller supplies the exact candidate, confirmation-subject, and successor-descriptor identifiers plus the literal `--confirm-inert-pin-replacement` flag. The resulting version-2 pin, signed transaction history, crash recovery, and race serialization are described in `HOST-SUCCESSION-PROFILE.md`. This transition remains non-authoritative for routing: connection, consent, disclosure, send, and emergency compromise recovery are separately unsupported.
 
 ## Security limits
 

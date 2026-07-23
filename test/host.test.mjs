@@ -13,7 +13,7 @@ import { verifyHostDescriptor } from "../src/host.mjs";
 const root = path.resolve(fileURLToPath(new URL("../", import.meta.url)));
 const cli = path.join(root, "bin", "soma.mjs");
 const preload = pathToFileURL(path.join(root, "test", "no-network-preload.mjs")).href;
-const capsule = "ee8bb4f2a851ecd103a84db988e24eb2241ec702c9f0743045a2e83008f89e7d";
+const capsule = "8cb60c8ce3199aa35c101657834eece86e8823e9d6aa8eb47a9e23db89582431";
 
 function execute(args, trace) {
   return spawnSync(process.execPath, [cli, ...args], {
@@ -157,7 +157,7 @@ test("offline descriptor verification is non-authoritative and pinning requires 
   assert.equal(verification.pin_eligible, false);
   assert.equal(verification.authority, "verification_only_no_pin_no_connection_no_consent_no_send");
   const hostEntries = await readdir(path.join(home, "hosts"), { withFileTypes: true });
-  assert.deepEqual(hostEntries.map((entry) => [entry.name, entry.isDirectory()]), [["candidates", true]]);
+  assert.deepEqual(hostEntries.map((entry) => [entry.name, entry.isDirectory()]).sort(), [["candidates", true], ["history", true], ["transactions", true]]);
   const refused = execute(args("pin", home, file, expected, false), trace);
   assert.equal(refused.status, 8, refused.stderr || refused.stdout);
   assert.equal(JSON.parse(refused.stdout).error, "HOST_PIN_KEY_HASH_REQUIRED");

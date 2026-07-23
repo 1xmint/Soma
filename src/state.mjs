@@ -11,6 +11,7 @@ import { canonicalize } from "./canonicalize.mjs";
 import { createInitialEvidenceHead, verifyEvidenceLedger } from "./evidence.mjs";
 import { verifyHostPinStore } from "./host.mjs";
 import { verifyHostSuccessionCandidateStore } from "./host-succession.mjs";
+import { recoverHostSuccessionTransactions, verifyHostSuccessionHistoryStore } from "./host-confirmation.mjs";
 
 const CONTROL = /[\u0000-\u001f\u007f]/;
 
@@ -234,8 +235,10 @@ export async function inspectState(requestedHome, { verifyReleaseFirst = true, v
   if (config.schema_version !== "somavera.soma-local-config.v1" || config.observer?.status !== "off" || config.telemetry !== false || config.background_watchers !== false) {
     throw new SomaError("local configuration violates the observer-off baseline", 7, "OBSERVER_OFF_BASELINE_INVALID");
   }
+  const recoveredHostTransitions = await recoverHostSuccessionTransactions(home, identity);
   const hostPins = await verifyHostPinStore(home, identity);
   const hostCandidates = await verifyHostSuccessionCandidateStore(home, identity);
+  const hostSuccessionHistory = await verifyHostSuccessionHistoryStore(home, identity);
   if (config.connected_hosts !== 0 || (await listImmediateFiles(path.join(home, "consent", "grants"))).length !== 0 || (await listImmediateFiles(path.join(home, "queue"))).length !== 0) {
     throw new SomaError("baseline contains connected authority, consent, or queued work", 7, "REMOTE_AUTHORITY_BASELINE_INVALID");
   }
@@ -271,6 +274,8 @@ export async function inspectState(requestedHome, { verifyReleaseFirst = true, v
     connected_hosts: 0,
     pinned_hosts: hostPins.length,
     pending_host_successions: hostCandidates.length,
+    completed_host_successions: hostSuccessionHistory.length,
+    recovered_host_transitions: recoveredHostTransitions,
     active_grants: 0,
     queued_items: 0,
     evidence_head: evidenceVerification?.head ?? null,

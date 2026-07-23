@@ -23,6 +23,8 @@ export const STATE_DIRECTORIES = Object.freeze([
   "identity",
   "hosts",
   "hosts/candidates",
+  "hosts/history",
+  "hosts/transactions",
   "consent/grants",
   "consent/withdrawals",
   "consent/previews",

@@ -14,6 +14,8 @@ import {
 } from "./host.mjs";
 import { assertJsonSchema } from "./json-schema.mjs";
 import { RELEASE_ROOT } from "./constants.mjs";
+import { successionSubject } from "./host-confirmation-domain.mjs";
+import { acquireHostSuccessionLock } from "./host-lock.mjs";
 
 const DESCRIPTOR_ID_DOMAIN = "somavera:vera-host-descriptor:v1\n";
 const DESCRIPTOR_SIGNATURE_DOMAIN = "somavera:vera-host-descriptor-signature:v1\n";
@@ -172,11 +174,11 @@ async function proofSchema() {
   return JSON.parse(await readFile(path.join(RELEASE_ROOT, "schemas", "vera-host-descriptor-succession.v1.schema.json"), "utf8"));
 }
 
-function candidateDirectory(home) {
+export function candidateDirectory(home) {
   return path.join(home, "hosts", "candidates");
 }
 
-function candidateFile(home, hostDid) {
+export function candidateFile(home, hostDid) {
   return path.join(candidateDirectory(home), `${sha256(Buffer.from(`soma:host-succession-candidate-file:provisional-v1\n${hostDid}`))}.json`);
 }
 
@@ -188,22 +190,22 @@ function storedIntegrityError(error) {
   return new SomaError(error.message, 7, error.code, error.details);
 }
 
-async function storedCandidate(home, file, identity) {
+export async function storedCandidate(home, file, identity, options = {}) {
   try {
     const record = parseCanonicalJson(await readFile(file, "utf8"), "stored host succession candidate");
-    return { record, summary: await verifyCandidateRecord(home, record, identity) };
+    return { record, summary: await verifyCandidateRecord(home, record, identity, options) };
   } catch (error) {
     throw storedIntegrityError(error);
   }
 }
 
-async function verifyCandidateRecord(home, record, identity, { currentTime = Date.now() } = {}) {
+export async function verifyCandidateRecord(home, record, identity, { currentTime = Date.now(), priorPin = null } = {}) {
   assertJsonSchema(record, await candidateSchema(), { code: "HOST_SUCCESSION_CANDIDATE_SCHEMA_INVALID", label: "host succession candidate", exitCode: 7 });
   exactObject(record, CANDIDATE_FIELDS, "HOST_SUCCESSION_CANDIDATE_SHAPE_INVALID", "host succession candidate");
   exactObject(record.signature, SIGNATURE_FIELDS, "HOST_SUCCESSION_CANDIDATE_SIGNATURE_INVALID", "candidate signature");
   if (record.schema_version !== "soma.host-succession-candidate.provisional-v1" || record.controller_did !== identity.controller_did || record.authority !== CANDIDATE_AUTHORITY || record.confirmed !== false || record.connected !== false) throw new SomaError("host succession candidate authority fields are invalid", 7, "HOST_SUCCESSION_CANDIDATE_INVARIANT_INVALID");
   const createdAt = exactIso(record.created_at, "HOST_SUCCESSION_CANDIDATE_TIME_INVALID", "candidate created_at");
-  const { record: pin } = await verifiedHostPinForDid(home, record.host_did, identity);
+  const pin = priorPin || (await verifiedHostPinForDid(home, record.host_did, identity)).record;
   if (pin.pin_id !== record.prior_pin_id || pin.descriptor.descriptor_id !== record.prior_descriptor_id) throw new SomaError("candidate no longer binds the current prior pin", 8, "HOST_SUCCESSION_PRIOR_PIN_MISMATCH");
   assertJsonSchema(record.succession_proof, await proofSchema(), { code: "HOST_SUCCESSION_PROOF_SCHEMA_INVALID", label: "host succession proof", exitCode: 7 });
   validateOrdinaryHostSuccession(pin.descriptor, record.successor_descriptor, record.succession_proof, { validationTime: createdAt });
@@ -216,10 +218,11 @@ async function verifyCandidateRecord(home, record, identity, { currentTime = Dat
   if (computedId !== record.candidate_id) throw new SomaError("candidate identifier mismatch", 7, "HOST_SUCCESSION_CANDIDATE_ID_INVALID");
   const controller = identity.keys?.find((key) => key.role === "controller_signing" && key.key_id === record.signature.key_id && key.status === "active");
   if (!controller || record.signature.suite !== "Ed25519-v1" || !verifyEd25519(controller.public_key_multibase, Buffer.concat([Buffer.from(CANDIDATE_SIGNATURE_DOMAIN), Buffer.from(record.candidate_id, "hex")]), record.signature.value)) throw new SomaError("candidate controller signature is invalid", 7, "HOST_SUCCESSION_CANDIDATE_SIGNATURE_INVALID");
-  return { candidate_id: record.candidate_id, host_did: record.host_did, succession_id: record.succession_id, prior_descriptor_id: record.prior_descriptor_id, successor_descriptor_id: record.successor_descriptor_id, change_scope: record.change_scope, successor_active_signing_key_sha256: successorHash, candidate_status: currentTime <= Date.parse(record.succession_proof.expires_at) ? "pending_confirmation_current" : "expired_inert", authority: CANDIDATE_AUTHORITY };
+  const subject = successionSubject(pin.descriptor, record.successor_descriptor, record.succession_proof);
+  return { candidate_id: record.candidate_id, subject_id: subject.subject_id, host_did: record.host_did, succession_id: record.succession_id, prior_descriptor_id: record.prior_descriptor_id, successor_descriptor_id: record.successor_descriptor_id, change_scope: record.change_scope, successor_active_signing_key_sha256: successorHash, successor_active_ingestion_key_sha256: subject.successor_active_ingestion_key_sha256, candidate_status: currentTime <= Date.parse(record.succession_proof.expires_at) ? "pending_confirmation_current" : "expired_inert", authority: CANDIDATE_AUTHORITY };
 }
 
-export async function previewHostSuccession(home, successorFile, proofFile) {
+async function previewHostSuccessionUnlocked(home, successorFile, proofFile) {
   const successor = await readCanonicalFile(successorFile, 262144, "HOST_SUCCESSOR_DESCRIPTOR_FILE_INVALID", "successor host descriptor");
   const proof = await readCanonicalFile(proofFile, 131072, "HOST_SUCCESSION_PROOF_FILE_INVALID", "host succession proof");
   assertJsonSchema(proof, await proofSchema(), { code: "HOST_SUCCESSION_PROOF_SCHEMA_INVALID", label: "host succession proof" });
@@ -257,6 +260,12 @@ export async function previewHostSuccession(home, successorFile, proofFile) {
     }
     return { local_mutation: true, remote_mutation: false, idempotent: false, ...(await verifyCandidateRecord(home, record, identity)), network_actions: 0 };
   } finally { eraseSecretBundle(secretBundle); }
+}
+
+export async function previewHostSuccession(home, successorFile, proofFile) {
+  const release = await acquireHostSuccessionLock(home);
+  try { return await previewHostSuccessionUnlocked(home, successorFile, proofFile); }
+  finally { await release(); }
 }
 
 export async function verifyHostSuccessionCandidateStore(home, identity = null) {
