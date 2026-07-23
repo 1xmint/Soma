@@ -396,8 +396,8 @@
     },
     {
       "path": "test/membrane.test.mjs",
-      "bytes": 17656,
-      "sha256": "68e2b03a8a9e6498b3e2c118d3ebe22ec062c13a0601f86b44d197160f4e54c6"
+      "bytes": 17661,
+      "sha256": "62fa3923038dc62697f5beab4ece92c1458c0556105cf76ce8000d887dd7bd55"
     },
     {
       "path": "test/no-network-preload.mjs",
