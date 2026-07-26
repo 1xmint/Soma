@@ -15,7 +15,7 @@ import { validateHostSuccessionConfirmation } from "../src/host-confirmation-dom
 const root = path.resolve(fileURLToPath(new URL("../", import.meta.url)));
 const cli = path.join(root, "bin", "soma.mjs");
 const preload = pathToFileURL(path.join(root, "test", "no-network-preload.mjs")).href;
-const capsule = "e1e986648dec5d99aeefdb3fdc14db92b601e6f3ea30bf2e3f6babb97af7e83c";
+const capsule = "90e6a961f0b9bf9be137ea08b2f93483b3aa5e4df610a7785f13f08ad1a31c3b";
 const BASE58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 
 function execute(args, trace) {

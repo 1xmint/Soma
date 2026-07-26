@@ -44,7 +44,7 @@ invariants that JSON Schema cannot express:
 - exact descriptor identifier and Ed25519 signature domains;
 - exact expected origin, DID, network, context, and optional signing-key hash;
 - exact descriptor sequence/predecessor and closed rotation-policy shape;
-- the capsule root `e1e986648dec5d99aeefdb3fdc14db92b601e6f3ea30bf2e3f6babb97af7e83c` from Origin commit `9ac1adbc496153c1d1bb8dfa1d1c764009779442`;
+- the capsule root `90e6a961f0b9bf9be137ea08b2f93483b3aa5e4df610a7785f13f08ad1a31c3b` from Origin commit `edf075f1e72aa48abb92fde3e7777d3fd5995df4`;
 - issuance, expiry, active-key windows, and coherent revocation fields;
 - unique signing and ingestion key identifiers and public keys;
 - usable X25519 ingestion material through a local derivation sanity check;
