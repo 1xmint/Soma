@@ -2,7 +2,7 @@
 
 Status: **v2 implemented offline portable copy with complete controller history; not an external anchor and not restore authority**
 
-This slice implements `somavera.soma-host-trust-capsule.v2` from Somavera Origin commit `44ad60711b2701aeaa481dba174a07df7b4de1c5` and capsule root `047b76b3a96e536893f3dff1a5dc62cd3ac83669769395fe8f48d629e050084f`. New exports use v2. Legacy v1 capsules remain standalone-verifiable under their exact supported Origin bindings.
+This slice implements `somavera.soma-host-trust-capsule.v2` from Somavera Origin commit `9ac1adbc496153c1d1bb8dfa1d1c764009779442` and capsule root `e1e986648dec5d99aeefdb3fdc14db92b601e6f3ea30bf2e3f6babb97af7e83c`. New exports use v2. Legacy v1 capsules remain standalone-verifiable under their exact supported Origin bindings.
 
 ## Commands
 

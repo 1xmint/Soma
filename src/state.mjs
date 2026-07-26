@@ -185,6 +185,7 @@ export async function initialize({ home: requestedHome, label = null, recovery, 
     await writeDurable(path.join(stage, "evidence", "ledger.jsonl"), "", 0o600);
     await writeDurable(path.join(stage, "evidence", "head.json"), `${canonicalize(initialEvidenceHead)}\n`, 0o600);
     await writeDurable(path.join(stage, "logs", "security.jsonl"), "", 0o600);
+    await restrictStateRoot(stage);
     await rename(stage, home);
     stageCreated = false;
     finalCreated = true;

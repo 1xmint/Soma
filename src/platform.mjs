@@ -36,7 +36,14 @@ export async function restrictStateRoot(directory) {
     "$type=[Security.AccessControl.AccessControlType]::Allow",
     "$acl.AddAccessRule((New-Object Security.AccessControl.FileSystemAccessRule($user,'FullControl',$inherit,$prop,$type)))",
     "$acl.AddAccessRule((New-Object Security.AccessControl.FileSystemAccessRule($system,'FullControl',$inherit,$prop,$type)))",
-    "Set-Acl -LiteralPath $path -AclObject $acl",
+    "$currentAcl=Get-Acl -LiteralPath $path",
+    "$currentName=[Security.Principal.WindowsIdentity]::GetCurrent().Name",
+    "$currentOwnerMatches=($currentAcl.Owner -eq $currentName -or $currentAcl.Owner -eq $user.Value)",
+    "if(-not $currentAcl.AreAccessRulesProtected -or -not $currentOwnerMatches){Set-Acl -LiteralPath $path -AclObject $acl}",
+    "$items=Get-ChildItem -LiteralPath $path -Force -Recurse",
+    "$ownerMismatch=$false;foreach($item in $items){$itemOwner=(Get-Acl -LiteralPath $item.FullName).Owner;if($itemOwner -ne $currentName -and $itemOwner -ne $user.Value){$ownerMismatch=$true;break}}",
+    "if($ownerMismatch){$takeownOutput=& takeown.exe /F $path /R /D Y 2>&1;if($LASTEXITCODE -ne 0){throw ('takeown failed: '+($takeownOutput -join ' '))}}",
+    "foreach($item in $items){$itemAcl=$item.GetAccessControl();$itemAcl.SetAccessRuleProtection($true,$false);foreach($rule in @($itemAcl.Access)){$itemAcl.RemoveAccessRuleSpecific($rule)};$itemInherit=if($item.PSIsContainer){$inherit}else{[Security.AccessControl.InheritanceFlags]::None};$itemAcl.AddAccessRule((New-Object Security.AccessControl.FileSystemAccessRule($user,'FullControl',$itemInherit,$prop,$type)));$itemAcl.AddAccessRule((New-Object Security.AccessControl.FileSystemAccessRule($system,'FullControl',$itemInherit,$prop,$type)));$item.SetAccessControl($itemAcl)}",
     "[ordered]@{profile='windows-owner-system-only-v1';user_sid=$user.Value}|ConvertTo-Json -Compress"
   ].join(";");
   return powershellJson(script, directory);

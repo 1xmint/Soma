@@ -3,8 +3,8 @@
 Status: **implemented offline ordinary rotation; not compromise recovery and not independently rollback-resistant**
 
 This slice implements the closed `somavera.soma-controller-key-rotation.v1`
-contract from Somavera Origin commit `44ad60711b2701aeaa481dba174a07df7b4de1c5` and capsule root
-`047b76b3a96e536893f3dff1a5dc62cd3ac83669769395fe8f48d629e050084f`.
+contract from Somavera Origin commit `9ac1adbc496153c1d1bb8dfa1d1c764009779442` and capsule root
+`e1e986648dec5d99aeefdb3fdc14db92b601e6f3ea30bf2e3f6babb97af7e83c`.
 
 ## Commands
 

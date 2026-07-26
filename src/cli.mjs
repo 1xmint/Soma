@@ -3,6 +3,7 @@ import { stdin, stdout } from "node:process";
 import { VERSION } from "./constants.mjs";
 import { asSomaError, SomaError } from "./errors.mjs";
 import { initialize, inspectState, resolveHome } from "./state.mjs";
+import { restrictStateRoot } from "./platform.mjs";
 import { recordEvidence, verifyAndRepairEvidence } from "./evidence.mjs";
 import { observeStatus, previewObservation } from "./membrane.mjs";
 import { expectedHostBindings, hostStatus, pinHostDescriptor, verifyHostDescriptorFile } from "./host.mjs";
@@ -50,6 +51,11 @@ function print(value, json) {
   else stdout.write(`${typeof value === "string" ? value : JSON.stringify(value, null, 2)}\n`);
 }
 
+async function sealStateMutation(home, result) {
+  if (result?.local_mutation === true) await restrictStateRoot(home);
+  return result;
+}
+
 async function recoveryChoice(options) {
   if (options.recovery) return options.recovery;
   if (!stdin.isTTY) throw new SomaError("recovery choice is required in non-interactive mode", 2, "RECOVERY_CHOICE_REQUIRED");
@@ -65,6 +71,7 @@ async function recoveryChoice(options) {
 
 export async function runCli(argv) {
   let parsed;
+  let home = null;
   try {
     parsed = parse(argv);
     if (parsed.options.version) {
@@ -75,7 +82,7 @@ export async function runCli(argv) {
       print(help(), parsed.options.json);
       return 0;
     }
-    const home = resolveHome(parsed.options.home);
+    home = resolveHome(parsed.options.home);
     if (parsed.command === "init") {
       if (parsed.positionals.length) throw new SomaError("unexpected positional arguments", 2, "POSITIONAL_ARGUMENT_UNEXPECTED");
       const result = await initialize({
@@ -84,6 +91,7 @@ export async function runCli(argv) {
         recovery: await recoveryChoice(parsed.options),
         allowInsecureDevelopment: parsed.options.dev_insecure_file_keystore === true
       });
+      await sealStateMutation(home, result);
       print({ ok: true, command: "init", ...result }, parsed.options.json);
       return 0;
     }
@@ -123,13 +131,16 @@ export async function runCli(argv) {
       if (action === "status") print({ ok: true, command: "identity status", home, ...(await controllerRotationStatus(home)), local_mutation: false, remote_mutation: false }, parsed.options.json);
       else if (action === "controller-rotate-preview") {
         if (!parsed.options.reason) throw new SomaError("controller-rotate-preview requires --reason", 2, "CONTROLLER_ROTATION_REASON_REQUIRED");
-        print({ ok: true, command: "identity controller-rotate-preview", home, ...(await previewControllerRotation(home, parsed.options.reason)) }, parsed.options.json);
+        const result = await previewControllerRotation(home, parsed.options.reason);
+        await sealStateMutation(home, result);
+        print({ ok: true, command: "identity controller-rotate-preview", home, ...result }, parsed.options.json);
       } else {
         const result = await confirmControllerRotation(home, {
           proposalId: parsed.options.proposal_id,
           successorKeyHash: parsed.options.expect_successor_key_hash,
           confirmControllerRotation: parsed.options.confirm_controller_rotation === true
         });
+        await sealStateMutation(home, result);
         print({ ok: true, command: "identity controller-rotate-confirm", home, ...result }, parsed.options.json);
       }
       return 0;
@@ -141,11 +152,14 @@ export async function runCli(argv) {
       if (action === "record") {
         if (!parsed.options.input) throw new SomaError("evidence record requires --input", 2, "EVIDENCE_INPUT_REQUIRED");
         const result = await recordEvidence(home, parsed.options.input);
+        await sealStateMutation(home, result);
         print({ ok: true, command: "evidence record", home, ...result }, parsed.options.json);
       } else {
         if (parsed.options.input) throw new SomaError("evidence verify does not accept --input", 2, "OPTION_NOT_ALLOWED");
         const result = await verifyAndRepairEvidence(home);
-        print({ ok: true, command: "evidence verify", home, local_mutation: result.head_repaired || result.recovered_incomplete_tail_bytes > 0, remote_mutation: false, ...result }, parsed.options.json);
+        const output = { local_mutation: result.head_repaired || result.recovered_incomplete_tail_bytes > 0, remote_mutation: false, ...result };
+        await sealStateMutation(home, output);
+        print({ ok: true, command: "evidence verify", home, ...output }, parsed.options.json);
       }
       return 0;
     }
@@ -181,16 +195,20 @@ export async function runCli(argv) {
       } else if (action === "succession-preview") {
         if (parsed.options.descriptor || parsed.options.candidate_id || parsed.options.subject || parsed.options.expect_successor_descriptor || parsed.options.confirm_inert_pin_replacement || parsed.options.expect_origin || parsed.options.expect_host_did || parsed.options.expect_network || parsed.options.expect_context || parsed.options.expect_key_hash) throw new SomaError("host succession-preview accepts only --successor and --proof", 2, "OPTION_NOT_ALLOWED");
         if (!parsed.options.successor || !parsed.options.proof) throw new SomaError("host succession-preview requires --successor and --proof", 2, "HOST_SUCCESSION_INPUT_REQUIRED");
-        print({ ok: true, command: "host succession-preview", home, ...(await previewHostSuccession(home, parsed.options.successor, parsed.options.proof)) }, parsed.options.json);
+        const result = await previewHostSuccession(home, parsed.options.successor, parsed.options.proof);
+        await sealStateMutation(home, result);
+        print({ ok: true, command: "host succession-preview", home, ...result }, parsed.options.json);
       } else if (action === "succession-confirm") {
         if (parsed.options.descriptor || parsed.options.successor || parsed.options.proof || parsed.options.expect_origin || parsed.options.expect_host_did || parsed.options.expect_network || parsed.options.expect_context || parsed.options.expect_key_hash) throw new SomaError("host succession-confirm accepts only exact confirmation identifiers and the explicit replacement flag", 2, "OPTION_NOT_ALLOWED");
         const result = await confirmHostSuccession(home, { candidateId: parsed.options.candidate_id, subjectId: parsed.options.subject, successorDescriptorId: parsed.options.expect_successor_descriptor, confirmInertPinReplacement: parsed.options.confirm_inert_pin_replacement === true });
+        await sealStateMutation(home, result);
         print({ ok: true, command: "host succession-confirm", home, ...result }, parsed.options.json);
       } else {
         if (parsed.options.successor || parsed.options.proof || parsed.options.candidate_id || parsed.options.subject || parsed.options.expect_successor_descriptor || parsed.options.confirm_inert_pin_replacement) throw new SomaError(`host ${action} does not accept succession options`, 2, "OPTION_NOT_ALLOWED");
         if (!parsed.options.descriptor) throw new SomaError(`host ${action} requires --descriptor`, 2, "HOST_DESCRIPTOR_REQUIRED");
         const expected = expectedHostBindings(parsed.options);
         const result = action === "verify" ? await verifyHostDescriptorFile(parsed.options.descriptor, expected) : await pinHostDescriptor(home, parsed.options.descriptor, expected);
+        await sealStateMutation(home, result);
         print({ ok: true, command: `host ${action}`, home, ...result }, parsed.options.json);
       }
       return 0;
@@ -205,13 +223,18 @@ export async function runCli(argv) {
       } else {
         if (!parsed.options.policy) throw new SomaError("observe preview requires --policy", 2, "PREVIEW_POLICY_REQUIRED");
         const result = await previewObservation(home, { policyFile: parsed.options.policy, artifactFile: parsed.options.artifact ?? null, evidenceId: parsed.options.evidence ?? null });
+        await sealStateMutation(home, result);
         print({ ok: true, command: "observe preview", home, ...result }, parsed.options.json);
       }
       return 0;
     }
     throw new SomaError(`unknown command: ${parsed.command}`, 2, "COMMAND_UNKNOWN");
   } catch (error) {
-    const failure = asSomaError(error);
+    let failure = asSomaError(error);
+    if (failure.details?.local_mutation === true && home) {
+      try { await restrictStateRoot(home); }
+      catch (sealError) { failure = asSomaError(sealError); }
+    }
     const payload = {
       ok: false,
       error: failure.code,
