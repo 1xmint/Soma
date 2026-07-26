@@ -8,6 +8,7 @@ import { assertJsonSchema } from "./json-schema.mjs";
 import { unprotectSecretBundle } from "./keystore.mjs";
 import { RELEASE_ROOT } from "./constants.mjs";
 import { attachPublicKeyHistory, controllerSigningKeyAt } from "./controller-rotation.mjs";
+import { restrictStateRoot } from "./platform.mjs";
 
 export const ORIGIN_CAPSULE_HASH = "e1e986648dec5d99aeefdb3fdc14db92b601e6f3ea30bf2e3f6babb97af7e83c";
 export const SUPPORTED_ORIGIN_CAPSULE_HASHES = Object.freeze([ORIGIN_CAPSULE_HASH, "3bebd4d13f733c0ad58280c0467f8e79b212400604dd595a0cf3e15af052b663", "047b76b3a96e536893f3dff1a5dc62cd3ac83669769395fe8f48d629e050084f", "9f711a3a8e53502c464efd2798266067adc2d42995246acb3b496c05ef948fb0", "24d5ad1099d9eb915e987511f9ca3725ad44e1dc599783ea1048070f497b3ac4", "8cb60c8ce3199aa35c101657834eece86e8823e9d6aa8eb47a9e23db89582431"]);
@@ -314,7 +315,10 @@ export async function pinHostDescriptor(home, file, expected) {
       return { local_mutation: false, remote_mutation: false, idempotent: true, ...racedSummary, authority: AUTHORITY, network_actions: 0 };
     }
     return { local_mutation: true, remote_mutation: false, idempotent: false, ...(await verifyPinRecord(record, identity)), descriptor_verification: verified, authority: AUTHORITY, network_actions: 0 };
-  } finally { eraseSecretBundle(secretBundle); }
+  } finally {
+    eraseSecretBundle(secretBundle);
+    if (secretBundle) await restrictStateRoot(home);
+  }
 }
 
 export async function verifiedHostPinForDid(home, hostDid, identity = null) {

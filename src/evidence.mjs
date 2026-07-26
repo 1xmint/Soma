@@ -6,6 +6,7 @@ import { privateKeyForRole, sha256, signEd25519, verifyEd25519 } from "./crypto.
 import { EMPTY_HASH } from "./constants.mjs";
 import { SomaError } from "./errors.mjs";
 import { unprotectSecretBundle } from "./keystore.mjs";
+import { restrictStateRoot } from "./platform.mjs";
 
 const HASH = /^[a-f0-9]{64}$/;
 const NAME = /^[a-z][a-z0-9_.-]{1,127}$/;
@@ -421,7 +422,7 @@ export async function recordEvidence(home, inputFile, { faultInjector = null } =
     };
   } finally {
     eraseSecretBundle(secretBundle);
-    await release();
+    try { await restrictStateRoot(home); } finally { await release(); }
   }
 }
 
@@ -433,6 +434,6 @@ export async function verifyAndRepairEvidence(home) {
     return await verifyEvidenceLedger(home, { repair: true, secretBundle });
   } finally {
     eraseSecretBundle(secretBundle);
-    await release();
+    try { await restrictStateRoot(home); } finally { await release(); }
   }
 }

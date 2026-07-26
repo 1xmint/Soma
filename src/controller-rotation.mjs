@@ -14,6 +14,7 @@ import { RELEASE_ROOT } from "./constants.mjs";
 import { SomaError } from "./errors.mjs";
 import { assertJsonSchema } from "./json-schema.mjs";
 import { protectSecretBundle, unprotectSecretBundle } from "./keystore.mjs";
+import { restrictStateRoot } from "./platform.mjs";
 
 export const PROPOSAL_ID_DOMAIN = "somavera:soma-controller-key-rotation-proposal:v1\n";
 export const ROTATION_ID_DOMAIN = "somavera:soma-controller-key-rotation:v1\n";
@@ -648,8 +649,9 @@ export async function previewControllerRotation(home, reason) {
     throw new SomaError("rotation reason must contain 1 through 256 safe characters", 2, "CONTROLLER_ROTATION_REASON_INVALID");
   }
   const release = await acquireLock(home);
+  let mustSeal = false;
   try {
-    await recoverControllerRotationTransactions(home);
+    if ((await recoverControllerRotationTransactions(home)).length) mustSeal = true;
     const { identity, history } = await publicState(home);
     try {
       const existing = await pending(home, identity, history);
@@ -657,6 +659,7 @@ export async function previewControllerRotation(home, reason) {
       return { local_mutation: false, remote_mutation: false, idempotent: true, ...proposalSummary(existing), network_actions: 0 };
     } catch (error) {
       if (error.code === "CONTROLLER_ROTATION_PROPOSAL_EXPIRED") {
+        mustSeal = true;
         await unlink(pendingProposalFile(home)).catch(() => {});
         await unlink(pendingSecretFile(home)).catch(() => {});
       } else if (error.code !== "ENOENT") throw error;
@@ -673,6 +676,7 @@ export async function previewControllerRotation(home, reason) {
         private_key: successor.privateRecord
       }, config.keystore.backend === "development-plaintext-file-v1");
       if (protectedPending.backend !== config.keystore.backend) throw new SomaError("pending key store backend differs from the active keystore", 7, "CONTROLLER_ROTATION_KEYSTORE_MISMATCH");
+      mustSeal = true;
       await durable(pendingSecretFile(home), protectedPending.blob);
       await durable(pendingProposalFile(home), `${canonicalize(proposal)}\n`);
     } catch (error) {
@@ -684,7 +688,7 @@ export async function previewControllerRotation(home, reason) {
     }
     return { local_mutation: true, remote_mutation: false, idempotent: false, ...proposalSummary(proposal), network_actions: 0 };
   } finally {
-    await release();
+    try { if (mustSeal) await restrictStateRoot(home); } finally { await release(); }
   }
 }
 
@@ -717,12 +721,13 @@ export async function confirmControllerRotation(home, {
   if (!confirmControllerRotation) throw new SomaError("explicit controller rotation confirmation is required", 9, "CONTROLLER_ROTATION_CONFIRMATION_REQUIRED");
   if (!HASH.test(proposalId || "") || !HASH.test(successorKeyHash || "")) throw new SomaError("exact proposal and successor key hashes are required", 2, "CONTROLLER_ROTATION_CONFIRMATION_INPUT_INVALID");
   const release = await acquireLock(home);
+  let mustSeal = false;
   let currentBundle;
   let pendingBundle;
   let nextBundle;
   let protectedNext;
   try {
-    await recoverControllerRotationTransactions(home);
+    if ((await recoverControllerRotationTransactions(home)).length) mustSeal = true;
     const { identity, history } = await publicState(home);
     let proposal;
     try {
@@ -808,6 +813,7 @@ export async function confirmControllerRotation(home, {
       prior_history: structuredClone(history),
       event
     };
+    mustSeal = true;
     await durable(identityTemporary(home), `${canonicalize(next.identity)}\n`);
     await durable(historyTemporary(home), `${canonicalize(next.history)}\n`);
     await durable(keystoreTemporary(home), protectedNext.blob);
@@ -849,7 +855,7 @@ export async function confirmControllerRotation(home, {
     erase(pendingBundle);
     erase(nextBundle);
     protectedNext?.blob?.fill(0);
-    await release();
+    try { if (mustSeal) await restrictStateRoot(home); } finally { await release(); }
   }
 }
 

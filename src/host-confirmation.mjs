@@ -3,6 +3,7 @@ import path from "node:path";
 import { canonicalize, parseCanonicalJson } from "./canonicalize.mjs";
 import { privateKeyForRole, sha256, signEd25519, verifyEd25519 } from "./crypto.mjs";
 import { SomaError } from "./errors.mjs";
+import { restrictStateRoot } from "./platform.mjs";
 import {
   controllerSecret,
   durableFile,
@@ -297,8 +298,15 @@ async function recoverUnlocked(home, identity) {
 
 export async function recoverHostSuccessionTransactions(home, identity = null) {
   const release = await acquireHostSuccessionLock(home);
-  try { return await recoverUnlocked(home, identity || await publicIdentity(home)); }
-  finally { await release(); }
+  let actions = null;
+  let failed = true;
+  try {
+    actions = await recoverUnlocked(home, identity || await publicIdentity(home));
+    failed = false;
+    return actions;
+  } finally {
+    try { if (failed || actions.length) await restrictStateRoot(home); } finally { await release(); }
+  }
 }
 
 async function fault(options, stage) {
@@ -309,10 +317,11 @@ export async function confirmHostSuccession(home, options) {
   if (!HASH.test(options?.candidateId || "") || !HASH.test(options?.subjectId || "") || !HASH.test(options?.successorDescriptorId || "")) throw new SomaError("confirmation requires exact lowercase SHA-256 candidate, subject, and successor descriptor IDs", 2, "HOST_SUCCESSION_CONFIRMATION_INPUT_INVALID");
   if (options.confirmInertPinReplacement !== true) throw new SomaError("confirmation requires the explicit inert-pin-replacement flag", 9, "HOST_SUCCESSION_CONFIRMATION_REQUIRED");
   const release = await acquireHostSuccessionLock(home, 120000);
+  let mustSeal = false;
   let secretBundle;
   try {
     const identity = await publicIdentity(home);
-    await recoverUnlocked(home, identity);
+    if ((await recoverUnlocked(home, identity)).length) mustSeal = true;
     const histories = await historyRecords(home, identity);
     const committed = histories.find(({ record }) => record.candidate_id === options.candidateId);
     if (committed) {
@@ -338,6 +347,7 @@ export async function confirmHostSuccession(home, options) {
     await verifyPinRecord(successorPin, identity, { currentTime: now });
     const transition = transitionRecord(priorPin, selected.candidate, confirmation, successorPin, identity, controller);
     await verifyTransition(home, transition, identity);
+    mustSeal = true;
     await mkdir(transactionDirectory(home), { recursive: true, mode: 0o700 });
     await mkdir(historyHostDirectory(home, selected.candidate.host_did), { recursive: true, mode: 0o700 });
     const prepared = transactionFile(home, selected.candidate.host_did);
@@ -358,7 +368,7 @@ export async function confirmHostSuccession(home, options) {
     return { local_mutation: true, remote_mutation: false, idempotent: false, committed: true, transition_id: transition.transition_id, confirmation_id: confirmation.confirmation_id, subject_id: confirmation.subject_id, candidate_id: selected.candidate.candidate_id, prior_pin_id: priorPin.pin_id, successor_pin_id: successorPin.pin_id, successor_descriptor_id: successorPin.descriptor.descriptor_id, authority: HOST_PIN_AUTHORITY, network_actions: 0 };
   } finally {
     eraseSecretBundle(secretBundle);
-    await release();
+    try { if (mustSeal) await restrictStateRoot(home); } finally { await release(); }
   }
 }
 

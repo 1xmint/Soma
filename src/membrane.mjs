@@ -6,6 +6,7 @@ import { canonicalize, parseCanonicalJson } from "./canonicalize.mjs";
 import { sha256 } from "./crypto.mjs";
 import { SomaError } from "./errors.mjs";
 import { verifyEvidenceLedger } from "./evidence.mjs";
+import { restrictStateRoot } from "./platform.mjs";
 
 const HARD_SOURCE_BYTES = 262144;
 const HARD_PAYLOAD_BYTES = 400000;
@@ -282,6 +283,7 @@ export async function previewObservation(home, { policyFile, artifactFile = null
   const findings = scanInputs.flatMap(([field, value]) => scanText(value, field)).sort((a, b) => a.field.localeCompare(b.field) || a.utf16_offset - b.utf16_offset || a.code.localeCompare(b.code));
   if (findings.length) {
     const denialId = await storeDenial(home, sourceKind, sourceId, policyHash, findings, ["SECRET_OR_PROHIBITED_IDENTITY_CANARY"]);
+    await restrictStateRoot(home);
     throw new SomaError("preview denied by secret and prohibited-identity scanning; no payload was stored or sent", 6, "PREVIEW_SCAN_DENIED", { local_mutation: true, denial_id: denialId, finding_codes: [...new Set(findings.map((entry) => entry.code))].sort() });
   }
   const payload = {
@@ -334,6 +336,7 @@ export async function previewObservation(home, { policyFile, artifactFile = null
   const previewId = sha256(Buffer.from(`soma:observation-preview:provisional-v1\n${canonicalize(decisionCore)}`));
   const decision = { ...decisionCore, preview_id: previewId };
   const directory = await storePreview(home, previewId, payloadJcs, policyJcs, decision);
+  await restrictStateRoot(home);
   return {
     local_mutation: true,
     remote_mutation: false,

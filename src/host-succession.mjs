@@ -3,6 +3,7 @@ import path from "node:path";
 import { canonicalize, parseCanonicalJson } from "./canonicalize.mjs";
 import { privateKeyForRole, sha256, signEd25519, verifyEd25519, verifyEd25519RawBase64 } from "./crypto.mjs";
 import { SomaError } from "./errors.mjs";
+import { restrictStateRoot } from "./platform.mjs";
 import {
   controllerSecret,
   durableFile,
@@ -266,7 +267,7 @@ async function previewHostSuccessionUnlocked(home, successorFile, proofFile) {
 export async function previewHostSuccession(home, successorFile, proofFile) {
   const release = await acquireHostSuccessionLock(home);
   try { return await previewHostSuccessionUnlocked(home, successorFile, proofFile); }
-  finally { await release(); }
+  finally { try { await restrictStateRoot(home); } finally { await release(); } }
 }
 
 export async function verifyHostSuccessionCandidateStore(home, identity = null) {

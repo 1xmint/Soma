@@ -311,8 +311,8 @@
     },
     {
       "path": "src/controller-rotation.mjs",
-      "bytes": 48359,
-      "sha256": "be4b7a23e7094afe9f09b11253fe8befe3905dafa0454a16e74c3f7200a1a089"
+      "bytes": 48718,
+      "sha256": "64c6b005033bb1ea729fbb4914d464827628b7d84c128442b05f8a094a850c03"
     },
     {
       "path": "src/crypto.mjs",
@@ -326,8 +326,8 @@
     },
     {
       "path": "src/evidence.mjs",
-      "bytes": 23929,
-      "sha256": "d367298061f9515711cf712f804320dda6421049f64fc6f0293a22d773beb3c2"
+      "bytes": 24083,
+      "sha256": "9ba4208045c7306e86948f9390b03c21845ac21739ec7de29e99b43fd8b263d6"
     },
     {
       "path": "src/host-confirmation-domain.mjs",
@@ -336,8 +336,8 @@
     },
     {
       "path": "src/host-confirmation.mjs",
-      "bytes": 24472,
-      "sha256": "79c10c7c3574534c641b00a1659d54d5206b382de61f8a2d7100cd40073fe5cd"
+      "bytes": 24841,
+      "sha256": "5634ac1ce6306fc3d5eaa9865235fa9d9052d293a5c90851223b3cb0b1163448"
     },
     {
       "path": "src/host-lock.mjs",
@@ -346,8 +346,8 @@
     },
     {
       "path": "src/host-succession.mjs",
-      "bytes": 24122,
-      "sha256": "39cd09646105f6f13dc0ef492bde412e0cc1e85628413f257a25874e1bfbbdf2"
+      "bytes": 24225,
+      "sha256": "6e23916bd4192c8ca13e8d6f8683302dff5e4368fa7b37e1902c6bba32649e1d"
     },
     {
       "path": "src/host-trust-capsule.mjs",
@@ -356,8 +356,8 @@
     },
     {
       "path": "src/host.mjs",
-      "bytes": 27351,
-      "sha256": "5e610ec186b480099fd3c5701c02413ab2aacdecc5c90828443a3c1c19f144a6"
+      "bytes": 27462,
+      "sha256": "d65511d95f9ab1973aef484feab77f6b499c7574ea362baa359ef2a13516a9b8"
     },
     {
       "path": "src/json-schema.mjs",
@@ -371,8 +371,8 @@
     },
     {
       "path": "src/membrane.mjs",
-      "bytes": 24655,
-      "sha256": "e44d4e27c4688c55c0bbf52ddbf22a46c8430d2904e89139661c9d94fe267531"
+      "bytes": 24775,
+      "sha256": "6c9421a58edfb127d2c64b5dca504129f1ea72ce35c859acd9d380cfe11e1ba4"
     },
     {
       "path": "src/platform.mjs",
