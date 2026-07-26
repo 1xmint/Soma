@@ -87,7 +87,6 @@ for (let index = 1; index < ceilings.length; index += 1) {
   assert(BigInt(ceilings[index].max_grain) > BigInt(ceilings[index - 1].max_grain), "issuance ceilings must increase");
 }
 assert(activation.activation_core.token.genesis_supply_grain === "0", "activation genesis supply must be zero");
-assert(activation.activation_core.issuance.lifetime_mint_ceiling_grain === "1000000000000000000", "lifetime mint ceiling mismatch");
 assert(activation.activation_core.issuance.tail_supply_basis === "live_supply_at_anniversary", "tail supply basis mismatch");
 assert(BigInt(ceilings.at(-1).max_grain) <= BigInt(activation.activation_core.issuance.lifetime_mint_ceiling_grain), "scheduled issuance exceeds lifetime ceiling");
 
@@ -151,8 +150,9 @@ const emptyEconomicState = () => ({
   consumed_issuance_receipts: []
 });
 
-function buildTokenFixture() {
+function buildTokenFixture(mutateCore) {
   const core = structuredClone(activation.activation_core);
+  if (mutateCore) mutateCore(core);
   const activeSigners = tokenSigners.filter((entry) => entry.seatIndex < 3);
   const seats = tokenSigners.map((entry) => ({
     chamber: entry.chamber,
@@ -228,6 +228,31 @@ function expectTokenRejection(name, mutate, requiredCodes) {
 const validActivation = buildTokenFixture();
 const validResult = validateTokenActivationTransition(validActivation);
 assert(validResult.ok, "valid token activation failed: " + validResult.errors.map((entry) => entry.code).join(", "));
+const validVariantActivation = buildTokenFixture((core) => {
+  core.token = {
+    name: "Ratified Test Asset",
+    symbol: "RTA",
+    denom: "grain",
+    decimals: 6,
+    genesis_supply_grain: "0"
+  };
+  core.issuance = {
+    lifetime_mint_ceiling_grain: "500000000000",
+    epoch_seconds: 3600,
+    schedule_year_seconds: 31536000,
+    cumulative_ceilings: [
+      { elapsed_year: 1, max_grain: "50000000000" },
+      { elapsed_year: 3, max_grain: "150000000000" }
+    ],
+    tail_annual_cap_basis_points: 0,
+    tail_supply_basis: "live_supply_at_anniversary"
+  };
+});
+const validVariantResult = validateTokenActivationTransition(validVariantActivation);
+assert(
+  validVariantResult.ok,
+  "safe non-default ratified parameter profile failed: " + validVariantResult.errors.map((entry) => entry.code).join(", ")
+);
 assert(validActivation.preState.governance.manifest.$schema === "../schemas/preactivation-governance.schema.json", "local schema reference must be accepted");
 const governanceWithoutSchema = structuredClone(validActivation.preState.governance.manifest);
 delete governanceWithoutSchema.$schema;
@@ -273,6 +298,21 @@ expectTokenRejection("duplicate anchor year", (fixture) => { fixture.manifest.ac
 expectTokenRejection("decreasing anchor", (fixture) => { fixture.manifest.activation_core.issuance.cumulative_ceilings[2].max_grain = "170000000000000000"; }, ["CEILING_MAX_NOT_STRICT"]);
 expectTokenRejection("anchor above lifetime", (fixture) => { fixture.manifest.activation_core.issuance.cumulative_ceilings[4].max_grain = "1000000000000000001"; }, ["CEILING_ABOVE_LIFETIME"]);
 expectTokenRejection("invalid tail basis", (fixture) => { fixture.manifest.activation_core.issuance.tail_supply_basis = "circulating_supply"; }, ["TAIL_SUPPLY_BASIS_INVALID"]);
+for (const field of [
+  "parameter_decision_hash",
+  "economic_simulation_hash",
+  "launch_gate_report_hash",
+  "external_settlement_policy_hash"
+]) {
+  expectTokenRejection("missing activation evidence " + field, (fixture) => { delete fixture.manifest.activation_core[field]; }, ["SHAPE_REQUIRED_FIELD"]);
+}
+expectTokenRejection("empty token name", (fixture) => { fixture.manifest.activation_core.token.name = ""; }, ["TOKEN_NAME_INVALID"]);
+expectTokenRejection("invalid token symbol", (fixture) => { fixture.manifest.activation_core.token.symbol = "v"; }, ["TOKEN_SYMBOL_INVALID"]);
+expectTokenRejection("invalid token denomination", (fixture) => { fixture.manifest.activation_core.token.denom = "Grain"; }, ["TOKEN_DENOM_INVALID"]);
+expectTokenRejection("invalid token decimals", (fixture) => { fixture.manifest.activation_core.token.decimals = 19; }, ["TOKEN_DECIMALS_INVALID"]);
+expectTokenRejection("zero lifetime ceiling", (fixture) => { fixture.manifest.activation_core.issuance.lifetime_mint_ceiling_grain = "0"; }, ["LIFETIME_CEILING_INVALID", "CEILING_ABOVE_LIFETIME"]);
+expectTokenRejection("epoch below safety floor", (fixture) => { fixture.manifest.activation_core.issuance.epoch_seconds = 59; }, ["EPOCH_SECONDS_INVALID"]);
+expectTokenRejection("schedule year below safety floor", (fixture) => { fixture.manifest.activation_core.issuance.schedule_year_seconds = 86399; }, ["SCHEDULE_YEAR_SECONDS_INVALID"]);
 expectTokenRejection("invalid signature role", (fixture) => { fixture.manifest.ratification_signatures[0].chamber = "founder"; }, ["SIGNATURE_CHAMBER_INVALID"]);
 expectTokenRejection("nonzero pre-state supply", (fixture) => { fixture.preState.token.live_supply_grain = "1"; }, ["PRESTATE_TOKEN_NOT_ZERO"]);
 expectTokenRejection("pre-existing asset lineage", (fixture) => { fixture.preState.token.asset_lineage_id = "vera:rpa:v1:" + "a".repeat(64); }, ["PRESTATE_TOKEN_NOT_ZERO"]);

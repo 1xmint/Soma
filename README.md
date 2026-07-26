@@ -41,6 +41,8 @@ Brainstorms, pitch decks, private notes, implementation comments, and token mark
 - [`ACTUALIZATION-PLAN.md`](ACTUALIZATION-PLAN.md) - the two drag-and-drop systems, test network, and build gates
 - [`ASSURANCE-CASE.md`](ASSURANCE-CASE.md) - named safety properties, adversarial evidence, and Phoenix release gates
 - [`PHOENIX-ORIGIN.md`](PHOENIX-ORIGIN.md) - one-page recovery truth card and authenticity boundary
+- [`RATIFICATION.md`](RATIFICATION.md) - release, tokenless Genesis, token activation, and Phoenix ceremonies
+- [`GENESIS-TOKEN-AUDIT.md`](GENESIS-TOKEN-AUDIT.md) - Genesis, token, money, liquidity, and legacy-design audit
 - [`CONFIDENTIAL-COMPUTE.md`](CONFIDENTIAL-COMPUTE.md) - local, enclave, MPC, FHE, and metadata-protection profiles
 - [`TOKEN-SPEC.md`](TOKEN-SPEC.md) - proposed revivable protocol asset and launch gates
 - [`TOKEN-OPERATIONS.md`](TOKEN-OPERATIONS.md) - deterministic issuance, fees, supply invariants, and first-epoch mechanics

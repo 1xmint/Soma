@@ -13,6 +13,7 @@ This file prevents an attractive draft from being mistaken for a finished protoc
 | P0 | Public source of truth | this standalone capsule; legacy internal notes stay private/non-normative | signed release manifest |
 | P0 | Continuity definition | Origin bytes create only a new Phoenix lineage; exact continuity also requires external release authenticity, complete state/replay bytes, death evidence, and checkpoint-pre-state quorums | separate Phoenix and exact-continuity drills plus succession vectors |
 | P0 | Token timing | no valuable VERA until launch gates pass | public gate report |
+| P0 | Parameter doctrine | schemas enforce constitutional invariants; the signed activation manifest fixes reviewed economic values; scenario A is not an implicit default | variant-profile conformance, parameter decision, simulations, and activation evidence hashes |
 | P0 | Legal classification | make no categorical label; review exact facts in each jurisdiction | published counsel scope and disclosures |
 | P1 | Consensus substrate | evaluate sovereign app-chain versus minimal settlement contract; avoid premature lock-in | threat, cost, liveness, migration comparison |
 | P1 | Canonicalization | RFC 8785 profile plus explicit rejection rules and vectors | two-language conformance |
@@ -54,8 +55,9 @@ The token activation manifest must contain final, integer or rational values for
 12. checkpoint cadence and external anchors;
 13. same-lineage migration and double-spend prevention;
 14. source, compiler, binary, contract, and schema hashes;
-15. audit reports, economic simulation, and legal disclosures;
-16. activation height/time, absolute bootstrap sunset, terminal-halt behavior, and abort conditions.
+15. parameter-decision, economic-simulation, launch-gate, and external-settlement-policy hashes;
+16. audit reports and jurisdiction-scoped legal disclosures;
+17. activation height/time, absolute bootstrap sunset, terminal-halt behavior, and abort conditions.
 
 If any value is TBD, the token is not ready to activate.
 

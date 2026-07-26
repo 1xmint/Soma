@@ -1,15 +1,15 @@
 # VERA DETERMINISTIC TOKEN OPERATIONS
 
-Status: proposed v1 algorithm for simulation and ratification.
-Rule: TOKEN-SPEC.md states policy; this file makes the recommended accounting unambiguous.
+Status: **simulation scenario A; not ratified and not an activation default.**
+Rule: the signed activation manifest supplies all ratifiable parameters. `TOKEN-SPEC.md` states policy; this file makes scenario A accounting unambiguous.
 
 ## 1. Units and counters
 
-- 1 VERA equals 1,000,000,000 grain.
+- Scenario A displays 1 VERA as 1,000,000,000 grain; the activation manifest fixes display precision.
 - All ledger arithmetic uses unsigned integer grain. Floating point is forbidden.
 - Every consensus monetary amount or supply counter uses the `*_grain` suffix and is a canonical unsigned base-10 integer string counting grain. This is the sole consensus denomination and unit suffix.
 - genesis_supply equals zero.
-- lifetime_mint_ceiling equals 1,000,000,000 VERA.
+- Scenario A lifetime_mint_ceiling equals 1,000,000,000 VERA; the activation manifest fixes the actual integer-grain ceiling.
 - total_minted is cumulative creation and never decreases.
 - total_burned is cumulative destruction and never decreases.
 - live_supply equals total_minted minus total_burned.
@@ -34,13 +34,13 @@ This solves the mechanical first-transaction problem without a premine or a disg
 
 ## 3. Epochs and issuance
 
-The activation manifest fixes activation consensus time T0, epoch duration, annual duration, and `tail_supply_basis = live_supply_at_anniversary`. The recommended values are:
+The activation manifest fixes activation consensus time T0, epoch duration, annual duration, and `tail_supply_basis = live_supply_at_anniversary`. Scenario A uses:
 
 - epoch_seconds = 86,400;
 - schedule_year_seconds = 31,557,600;
 - maximum timestamp advance and median-time calculation are consensus rules.
 
-Before year 16, cumulative schedule anchors are:
+In scenario A, before year 16, cumulative schedule anchors are:
 
 | Elapsed schedule time | Cumulative ceiling |
 |---:|---:|

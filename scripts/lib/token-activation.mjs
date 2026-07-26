@@ -120,6 +120,10 @@ function coreShapeErrors(core, errors) {
     "issuance",
     "epoch_allocation",
     "fee_policy",
+    "parameter_decision_hash",
+    "economic_simulation_hash",
+    "launch_gate_report_hash",
+    "external_settlement_policy_hash",
     "bond_policy_hash",
     "governance_hash",
     "data_rights_hash",
@@ -134,6 +138,10 @@ function coreShapeErrors(core, errors) {
   for (const field of [
     "origin_hash",
     "preactivation_governance_manifest_hash",
+    "parameter_decision_hash",
+    "economic_simulation_hash",
+    "launch_gate_report_hash",
+    "external_settlement_policy_hash",
     "bond_policy_hash",
     "governance_hash",
     "data_rights_hash",
@@ -149,9 +157,10 @@ function coreShapeErrors(core, errors) {
   if (!isTimestamp(core.activation_time)) issue(errors, "ACTIVATION_TIME_INVALID", "/activation_core/activation_time", "must be an RFC 3339 timestamp");
 
   if (exactObject(core.token, "/activation_core/token", ["name", "symbol", "denom", "decimals", "genesis_supply_grain"], [], errors)) {
-    if (core.token.name !== "Vera" || core.token.symbol !== "VERA" || core.token.denom !== "grain" || core.token.decimals !== 9) {
-      issue(errors, "TOKEN_IDENTITY_INVALID", "/activation_core/token", "token identity constants differ");
-    }
+    if (typeof core.token.name !== "string" || core.token.name.length < 1 || core.token.name.length > 64) issue(errors, "TOKEN_NAME_INVALID", "/activation_core/token/name", "must contain from one through sixty-four characters");
+    if (typeof core.token.symbol !== "string" || !/^[A-Z][A-Z0-9]{1,11}$/.test(core.token.symbol)) issue(errors, "TOKEN_SYMBOL_INVALID", "/activation_core/token/symbol", "must be two through twelve uppercase alphanumeric characters");
+    if (core.token.denom !== "grain") issue(errors, "TOKEN_DENOM_INVALID", "/activation_core/token/denom", "schema v1 requires the grain atomic denomination");
+    if (!Number.isSafeInteger(core.token.decimals) || core.token.decimals < 0 || core.token.decimals > 18) issue(errors, "TOKEN_DECIMALS_INVALID", "/activation_core/token/decimals", "must be an integer from zero through eighteen");
     if (core.token.genesis_supply_grain !== "0") issue(errors, "GENESIS_SUPPLY_NONZERO", "/activation_core/token/genesis_supply_grain", "must be zero");
   }
 
@@ -164,14 +173,15 @@ function coreShapeErrors(core, errors) {
     "tail_annual_cap_basis_points",
     "tail_supply_basis"
   ], [], errors)) {
-    if (issuance.lifetime_mint_ceiling_grain !== "1000000000000000000") issue(errors, "LIFETIME_CEILING_INVALID", "/activation_core/issuance/lifetime_mint_ceiling_grain", "v1 ceiling differs");
-    if (issuance.epoch_seconds !== 86400 || issuance.schedule_year_seconds !== 31557600) issue(errors, "ISSUANCE_TIMEBASE_INVALID", "/activation_core/issuance", "v1 timebase differs");
+    if (!isGrain(issuance.lifetime_mint_ceiling_grain) || BigInt(issuance.lifetime_mint_ceiling_grain) === 0n) issue(errors, "LIFETIME_CEILING_INVALID", "/activation_core/issuance/lifetime_mint_ceiling_grain", "must be positive canonical unsigned grain");
+    if (!Number.isSafeInteger(issuance.epoch_seconds) || issuance.epoch_seconds < 60 || issuance.epoch_seconds > 31557600) issue(errors, "EPOCH_SECONDS_INVALID", "/activation_core/issuance/epoch_seconds", "must be from sixty seconds through one Julian year");
+    if (!Number.isSafeInteger(issuance.schedule_year_seconds) || issuance.schedule_year_seconds < 86400 || issuance.schedule_year_seconds > 63115200) issue(errors, "SCHEDULE_YEAR_SECONDS_INVALID", "/activation_core/issuance/schedule_year_seconds", "must be from one day through two Julian years");
     if (issuance.tail_supply_basis !== "live_supply_at_anniversary") issue(errors, "TAIL_SUPPLY_BASIS_INVALID", "/activation_core/issuance/tail_supply_basis", "must use live_supply_at_anniversary");
     if (!Number.isSafeInteger(issuance.tail_annual_cap_basis_points) || issuance.tail_annual_cap_basis_points < 0 || issuance.tail_annual_cap_basis_points > 100) {
       issue(errors, "TAIL_CAP_INVALID", "/activation_core/issuance/tail_annual_cap_basis_points", "must be an integer from 0 through 100");
     }
-    if (!Array.isArray(issuance.cumulative_ceilings) || issuance.cumulative_ceilings.length < 5 || issuance.cumulative_ceilings.length > 100) {
-      issue(errors, "CEILING_ARRAY_INVALID", "/activation_core/issuance/cumulative_ceilings", "requires from five through one hundred anchors");
+    if (!Array.isArray(issuance.cumulative_ceilings) || issuance.cumulative_ceilings.length < 1 || issuance.cumulative_ceilings.length > 100) {
+      issue(errors, "CEILING_ARRAY_INVALID", "/activation_core/issuance/cumulative_ceilings", "requires from one through one hundred anchors");
     } else {
       let priorYear = 0;
       let priorMax = -1n;

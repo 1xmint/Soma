@@ -1,7 +1,7 @@
 # VERA REVIVABLE PROTOCOL ASSET — TOKEN PLAN
 
 Document ID: `somavera/token/0.1-draft`
-Status: **recommended design; no token exists; name and symbol are provisional**
+Status: **proposed architecture with simulation scenario A; no token exists; no parameters are ratified**
 
 ## 1. What is new about it
 
@@ -23,7 +23,7 @@ Somavera should use one economic token and must not collapse unrelated concepts 
 
 Token wealth never raises reputation, identity assurance, factual confidence, model weight, or contribution priority.
 
-## 3. Recommended fixed identity parameters
+## 3. Simulation scenario A identity parameters
 
 - Working name: `Vera`
 - Working symbol: `VERA`
@@ -36,7 +36,7 @@ Token wealth never raises reputation, identity assurance, factual confidence, mo
 - Automatic conversion of prelaunch points: **forbidden**
 - Hidden or discretionary mint authority: **forbidden**
 
-Name, symbol, and precision require trademark, wallet, exchange, and legal review before ratification. Changing them after activation requires an explicit versioned migration; it never changes historical units silently.
+Name, symbol, and precision require trademark, wallet, exchange, and legal review before ratification. The schema-v1 atomic denomination is `grain` because its consensus fields use the `*_grain` suffix; changing that denomination requires a versioned wire migration, not an activation parameter vote. Changing any display identity after activation requires an explicit versioned migration and never changes historical units silently.
 
 Every consensus monetary amount or supply counter uses the `*_grain` suffix and is a canonical unsigned base-10 integer string counting **grain**. This is the sole consensus denomination and unit suffix; floating point and whole-VERA interpretation are forbidden. In formulas below, readable names such as `live_supply` and `total_minted` denote those grain counters; displayed VERA amounts are converted to grain exactly before consensus arithmetic.
 
@@ -102,7 +102,7 @@ Transition to bonded validation only after the distribution and independence gat
 
 ## 8. Recommended issuance envelope
 
-The mainnet schedule must be ratified only after simulation. The recommended starting envelope is:
+The mainnet schedule must be ratified only after simulation. The following values are **simulation scenario A**, not schema defaults or an activation promise:
 
 ```text
 lifetime_mint_ceiling = 1,000,000,000 VERA

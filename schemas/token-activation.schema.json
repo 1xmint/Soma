@@ -47,6 +47,10 @@
         "issuance",
         "epoch_allocation",
         "fee_policy",
+        "parameter_decision_hash",
+        "economic_simulation_hash",
+        "launch_gate_report_hash",
+        "external_settlement_policy_hash",
         "bond_policy_hash",
         "governance_hash",
         "data_rights_hash",
@@ -76,10 +80,13 @@
             "genesis_supply_grain"
           ],
           "properties": {
-            "name": { "const": "Vera" },
-            "symbol": { "const": "VERA" },
+            "name": { "type": "string", "minLength": 1, "maxLength": 64 },
+            "symbol": {
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9]{1,11}$"
+            },
             "denom": { "const": "grain" },
-            "decimals": { "const": 9 },
+            "decimals": { "type": "integer", "minimum": 0, "maximum": 18 },
             "genesis_supply_grain": { "const": "0" }
           }
         },
@@ -95,12 +102,23 @@
             "tail_supply_basis"
           ],
           "properties": {
-            "lifetime_mint_ceiling_grain": { "const": "1000000000000000000" },
-            "epoch_seconds": { "const": 86400 },
-            "schedule_year_seconds": { "const": 31557600 },
+            "lifetime_mint_ceiling_grain": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$"
+            },
+            "epoch_seconds": {
+              "type": "integer",
+              "minimum": 60,
+              "maximum": 31557600
+            },
+            "schedule_year_seconds": {
+              "type": "integer",
+              "minimum": 86400,
+              "maximum": 63115200
+            },
             "cumulative_ceilings": {
               "type": "array",
-              "minItems": 5,
+              "minItems": 1,
               "maxItems": 100,
               "items": {
                 "type": "object",
@@ -140,6 +158,10 @@
             }
           }
         },
+        "parameter_decision_hash": { "$ref": "#/$defs/hash" },
+        "economic_simulation_hash": { "$ref": "#/$defs/hash" },
+        "launch_gate_report_hash": { "$ref": "#/$defs/hash" },
+        "external_settlement_policy_hash": { "$ref": "#/$defs/hash" },
         "bond_policy_hash": { "$ref": "#/$defs/hash" },
         "governance_hash": { "$ref": "#/$defs/hash" },
         "data_rights_hash": { "$ref": "#/$defs/hash" },

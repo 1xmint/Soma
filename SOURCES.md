@@ -24,6 +24,7 @@ Somavera rules come from the ratified capsule, not from external sites. These so
 - MPCLeague, research on communication and performance tradeoffs in secure multi-party LLM inference: https://arxiv.org/abs/2505.07239
 - W3C Verifiable Credentials Data Model 2.0 history and Recommendation: https://www.w3.org/standards/history/vc-data-model/
 - W3C Verifiable Credentials overview: https://www.w3.org/2025/credentials/
+- NIST SP 800-63-4 Digital Identity Guidelines: https://www.nist.gov/publications/nist-sp-800-63-4-digital-identity-guidelines
 - CometBFT state sync: https://docs.cometbft.com/v0.37/core/state-sync
 - CometBFT light-client specification: https://docs.cometbft.com/v0.38/spec/light-client/
 - Cosmos SDK state/store concepts: https://docs.cosmos.network/sdk/latest/learn/concepts/store
