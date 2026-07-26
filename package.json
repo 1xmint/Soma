@@ -8,6 +8,8 @@
   "scripts": {
     "check": "node scripts/check-conformance.mjs",
     "manifest": "node scripts/build-manifest.mjs",
+    "simulate": "node scripts/run-economic-simulations.mjs",
+    "simulation-report": "node scripts/build-economic-simulation-report.mjs",
     "verify": "node scripts/verify-capsule.mjs"
   },
   "engines": {

@@ -25,5 +25,11 @@ await import("./lib/host-trust-capsule-v2-conformance.mjs");
 // Standards-complete JSON Schema 2020-12 validation for every schema/example pair.
 await import("./lib/full-schema-conformance.mjs");
 
+// Partial Genesis identity/tokenless semantics; authority and signatures remain blocking.
+await import("./lib/genesis-validation-conformance.mjs");
+
+// Integer-only economic comparisons whose bundled synthetic corpus rejects activation.
+await import("./lib/economic-simulation-conformance.mjs");
+
 // Parse every Markdown fence labelled JSON so documentation examples cannot silently rot.
 await import("./lib/document-json-conformance.mjs");

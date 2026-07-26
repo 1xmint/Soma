@@ -35,6 +35,11 @@
       "sha256": "0c68122aa97027e3efa76b1944ed62c45be70449e7f8ddc45cca52350a1e535b"
     },
     {
+      "path": "CONSENSUS-SUBSTRATE-DECISION.md",
+      "bytes": 6549,
+      "sha256": "fbdd99e21b051b7af174bb3e76a42f1c10a2b43663b0e2120af358ab7aabe587"
+    },
+    {
       "path": "CONTRIBUTING.md",
       "bytes": 782,
       "sha256": "008171ade14da7a98799fc73bafd4e9faac6f1302f0c470eb8a517882df6ff91"
@@ -46,8 +51,13 @@
     },
     {
       "path": "DECISIONS-NEEDED.md",
-      "bytes": 6816,
-      "sha256": "16923889cde1e7effcea7ad9431fa636e8679030dd15fde6d2ace2a4bbefa8d4"
+      "bytes": 6914,
+      "sha256": "f278e5c87111b35106a61f7031152f93bae21cf12c1f7d0f235fff1955455066"
+    },
+    {
+      "path": "ECONOMIC-SIMULATION.md",
+      "bytes": 5260,
+      "sha256": "e35dfa4cd20aedaa4e2dfdd45de133a54037a97a776e398b27f2b9ebdf5802b4"
     },
     {
       "path": "ECONOMY.md",
@@ -56,8 +66,13 @@
     },
     {
       "path": "GENESIS-TOKEN-AUDIT.md",
-      "bytes": 15891,
-      "sha256": "6e6631a72ac10c3b4f20248ce1812d47c07c0d39eea32b648a2131eafb4a2702"
+      "bytes": 16128,
+      "sha256": "e9e08ef2d5a0be791008d2de92e7cec314b0cc8f242022d5688d54d9233350b1"
+    },
+    {
+      "path": "GENESIS-VALIDATION.md",
+      "bytes": 2472,
+      "sha256": "6c7b31759189e951e5b95a98ad6c5c8e0b0cd3ec80de6bf7ac51a8ab7dcf07d4"
     },
     {
       "path": "GOVERNANCE.md",
@@ -91,13 +106,13 @@
     },
     {
       "path": "RATIFICATION.md",
-      "bytes": 15691,
-      "sha256": "64be913f7acd53c6a1df5b8ca99a1e7e8fa4e544839225086b2bab1d212a9439"
+      "bytes": 15837,
+      "sha256": "855cc62bcaf6d05da32263960aee8b9f0e62b858d345a8d7410f8e7f8672908f"
     },
     {
       "path": "README.md",
-      "bytes": 6170,
-      "sha256": "b7105f4e2b3729be7e18cad55239d22380521ba8b247e9a73896b9005b9b0f48"
+      "bytes": 6527,
+      "sha256": "4a3b79e3e732ef70076d71cbbe8ba76e1b5bc1bea688ff8ee77eafa01fb1ec3e"
     },
     {
       "path": "RECOVERY.md",
@@ -116,8 +131,8 @@
     },
     {
       "path": "SOURCES.md",
-      "bytes": 4545,
-      "sha256": "71792b4fdf7fa2317ef3cf3f5865acf1fdb92f39d183bec4e78b2b593a4152d5"
+      "bytes": 5161,
+      "sha256": "6a21434ed5469caea6807d95ea431b14bb8d9647a228406146b4b2f5f58acca2"
     },
     {
       "path": "THREAT-MODEL.md",
@@ -238,6 +253,16 @@
       "path": "examples/consent-grant.example.json",
       "bytes": 1304,
       "sha256": "8056eff5f2c30cb8e16140e694570229e809cb8c92a93dc08487d8cb3fe89057"
+    },
+    {
+      "path": "examples/economic-simulation-report.example.json",
+      "bytes": 4930,
+      "sha256": "08e28d51ae0c3bcf1e603daa4900108486c5d9da1d8c675340c081d33be31346"
+    },
+    {
+      "path": "examples/economic-simulation-suite.example.json",
+      "bytes": 14364,
+      "sha256": "ad5beb7eff67274c267b2e5bdabaf9a31127ab8e860437319bdd7cbb4f692452"
     },
     {
       "path": "examples/evidence-event.example.json",
@@ -361,8 +386,8 @@
     },
     {
       "path": "package.json",
-      "bytes": 590,
-      "sha256": "16f451e61ee82cc146d6025c6a907f256831027d00857ea6be9798b8fe3b6f1e"
+      "bytes": 729,
+      "sha256": "b98bac4b11010e2dfb4e04fba025353039383ef52b6b8f14596993c87f1b9693"
     },
     {
       "path": "schemas/checkpoint-state-package.schema.json",
@@ -378,6 +403,16 @@
       "path": "schemas/consent-grant.schema.json",
       "bytes": 3706,
       "sha256": "bb8f1c38e3a2deb052a5ac296237ad99c06fb6b81887666a1d808969de61018c"
+    },
+    {
+      "path": "schemas/economic-simulation-report.schema.json",
+      "bytes": 3212,
+      "sha256": "3ec3b66df6ca6723cae17e711c7559c6f184c6ac8304b7982c668ccf55d6c736"
+    },
+    {
+      "path": "schemas/economic-simulation-suite.schema.json",
+      "bytes": 8109,
+      "sha256": "697fd1ab72607bdbacdf30d0fabc999fd3f6ccc719d481c190f307a26d9c4151"
     },
     {
       "path": "schemas/evidence-event.schema.json",
@@ -495,6 +530,11 @@
       "sha256": "ced3211a317dfe3c858966318c8154bd0af529773b090f02361112c4a7474107"
     },
     {
+      "path": "scripts/build-economic-simulation-report.mjs",
+      "bytes": 773,
+      "sha256": "acc5252d548daa1f3108c49c42198e6eb57dbbf424d33a5bce1cdbcae4d547e4"
+    },
+    {
       "path": "scripts/build-manifest.mjs",
       "bytes": 1122,
       "sha256": "5e88b92ae78c3e3a92c980387246d1c12cd12d2f2f1098b196c98d978fc1df98"
@@ -506,8 +546,8 @@
     },
     {
       "path": "scripts/check-conformance.mjs",
-      "bytes": 1433,
-      "sha256": "1e442a0104eb5bfadfa9e006c21e7713df60dd5023145aeb6a08a8510ffdd929"
+      "bytes": 1731,
+      "sha256": "486e72f49586159e07e4621235d4a27536ce6940ca4d18deb638ea14ec756339"
     },
     {
       "path": "scripts/generate-controller-key-rotation-vector.mjs",
@@ -555,9 +595,29 @@
       "sha256": "af1f657a6889d9db1579e6778226fec38a78eec7878552a79edafcb693ed6f8a"
     },
     {
+      "path": "scripts/lib/economic-simulation-conformance.mjs",
+      "bytes": 3212,
+      "sha256": "23bea3ee47337e6973da5e7001e4119eb826bd12bb650a5f08aad158f12653c5"
+    },
+    {
+      "path": "scripts/lib/economic-simulation.mjs",
+      "bytes": 12465,
+      "sha256": "3752d40c768757d03a7af3e1a98670e30f2beee8521f66c2a11885479b6d24af"
+    },
+    {
       "path": "scripts/lib/full-schema-conformance.mjs",
       "bytes": 2875,
       "sha256": "ba2199fdbc3b85aaa68b74b42535f9249e30d278e9854ec89f6023a1ee2e8c50"
+    },
+    {
+      "path": "scripts/lib/genesis-validation-conformance.mjs",
+      "bytes": 3392,
+      "sha256": "c1689e02ef6add6ea38486ce18974f928207771caab943bdf9ea222c1c423c63"
+    },
+    {
+      "path": "scripts/lib/genesis-validation.mjs",
+      "bytes": 4104,
+      "sha256": "293c4d5d3b5e5df9945190836b7ba89c3d79df461959368c12faf798e2b89fbf"
     },
     {
       "path": "scripts/lib/host-confirmation-conformance.mjs",
@@ -605,6 +665,11 @@
       "sha256": "f0a06a2e363d78baf27eb06c20f9bcaa6e64a31f70b08284d0491ee44035e520"
     },
     {
+      "path": "scripts/run-economic-simulations.mjs",
+      "bytes": 750,
+      "sha256": "22a9923940c04164c99844c8ef445bc4c31d33fcc451b0c15aee99aec9d7b3e5"
+    },
+    {
       "path": "scripts/verify-capsule.mjs",
       "bytes": 1729,
       "sha256": "219de0269a165c87b3e722e04cf9ebc46f177ea31e9449d3ed8a6bba361e8cad"
@@ -630,5 +695,5 @@
       "sha256": "5d4bcfba15649b5040b40cc8e3aeb5d396b6d3d5f1abec1ca747f0af005c8dc4"
     }
   ],
-  "capsule_root": "90e6a961f0b9bf9be137ea08b2f93483b3aa5e4df610a7785f13f08ad1a31c3b"
+  "capsule_root": "4ef5a42ab4b330678f8c52a822d90c105b267751da6227c31c54a50c67bf67e0"
 }

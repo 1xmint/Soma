@@ -25,10 +25,16 @@ Somavera rules come from the ratified capsule, not from external sites. These so
 - W3C Verifiable Credentials Data Model 2.0 history and Recommendation: https://www.w3.org/standards/history/vc-data-model/
 - W3C Verifiable Credentials overview: https://www.w3.org/2025/credentials/
 - NIST SP 800-63-4 Digital Identity Guidelines: https://www.nist.gov/publications/nist-sp-800-63-4-digital-identity-guidelines
-- CometBFT state sync: https://docs.cometbft.com/v0.37/core/state-sync
-- CometBFT light-client specification: https://docs.cometbft.com/v0.38/spec/light-client/
+- CometBFT 0.39 documentation: https://docs.cosmos.network/cometbft/latest/docs/README
+- CometBFT ABCI++ overview: https://docs.cosmos.network/cometbft/latest/spec/abci/Overview
+- CometBFT application requirements: https://docs.cosmos.network/cometbft/latest/spec/abci/Requirements-for-the-Application
+- CometBFT four-node Docker testnet: https://docs.cosmos.network/cometbft/latest/docs/networks/Docker-Compose
 - Cosmos SDK state/store concepts: https://docs.cosmos.network/sdk/latest/learn/concepts/store
-- Cosmos SDK upgrade guidance: https://docs.cosmos.network/sdk/latest/guides/upgrades/upgrade
+- Cosmos SDK upgrade module: https://docs.cosmos.network/sdk/latest/modules/upgrade/README
+- Ethereum smart contracts and irreversibility: https://ethereum.org/developers/docs/smart-contracts/
+- Ethereum scaling and rollups: https://ethereum.org/developers/docs/scaling/
+- Ethereum optimistic rollups: https://ethereum.org/developers/docs/scaling/optimistic-rollups/
+- Ethereum zero-knowledge rollups: https://ethereum.org/developers/docs/scaling/zk-rollups/
 - Uniswap v2 whitepaper, primary explanation of two-asset automated liquidity pools: https://docs.uniswap.org/whitepaper.pdf
 - CFTC Technology Advisory Committee DeFi report, including automated markets and liquidity pools: https://www.cftc.gov/media/10106/TAC_DeFiReport010824/download
 

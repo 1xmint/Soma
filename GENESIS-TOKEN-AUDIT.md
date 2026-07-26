@@ -161,11 +161,12 @@ The legacy material is useful historical brainstorming, not protocol authority.
 
 ### P0 — deterministic protocol
 
-- No selected consensus substrate or complete ledger state-transition profile
-  exists.
+- A replaceable CometBFT pilot adapter is selected, but the permanent substrate
+  and complete ledger state-transition profile remain unselected.
 - No second independent implementation reproduces all consensus roots.
-- Genesis and recovery schemas exist, but the full semantic validator and
-  adversarial vectors for Genesis ratification are incomplete.
+- Genesis identity, lineage, tokenless, uniqueness, and pilot voting-power checks
+  exist, but authority-manifest resolution, signature verification, substrate
+  mapping, and the full adversarial Genesis validator remain incomplete.
 - Reproducible binaries, SBOMs, dependency archives, and offline build evidence
   are incomplete.
 
@@ -173,7 +174,8 @@ The legacy material is useful historical brainstorming, not protocol authority.
 
 - The supply and fee numbers are uncalibrated hypotheses.
 - No fee-market measurement establishes spam cost or validator revenue needs.
-- No reproducible economic simulator or published scenario corpus exists.
+- An integer-only reproducible simulator and synthetic rejection corpus exist;
+  no empirically calibrated, independently attested activation corpus exists.
 - Receipt independence, procurement auctions, collusion detection, and
   objective service measurement are not implemented at network scale.
 - No qualified legal analysis exists for the exact operator, paymaster,

@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:somavera:schema:economic-simulation-report:v1",
+  "title": "Somavera Economic Simulation Report v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "engine_profile",
+    "suite_hash",
+    "corpus_status",
+    "quote_unit_id",
+    "coverage",
+    "profile_results",
+    "engine_conformance",
+    "activation_decision",
+    "global_reasons",
+    "report_hash"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": { "const": "somavera.economic-simulation-report.v1" },
+    "engine_profile": { "const": "somavera-economic-simulator-integer-v1" },
+    "suite_hash": { "$ref": "#/$defs/hash" },
+    "corpus_status": {
+      "enum": [
+        "synthetic_unattested",
+        "empirical_independently_attested"
+      ]
+    },
+    "quote_unit_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._:-]{2,127}$"
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required_count", "observed_count", "missing_tags"],
+      "properties": {
+        "required_count": { "type": "integer", "minimum": 0 },
+        "observed_count": { "type": "integer", "minimum": 0 },
+        "missing_tags": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_]{2,63}$" }
+        }
+      }
+    },
+    "profile_results": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "profile_id",
+          "scenario_count",
+          "failed_scenario_count",
+          "minimum_validator_cost_coverage_basis_points",
+          "maximum_fee_burden_basis_points",
+          "native_fee_inaccessible_scenario_count",
+          "failure_codes",
+          "decision"
+        ],
+        "properties": {
+          "profile_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"
+          },
+          "scenario_count": { "type": "integer", "minimum": 1 },
+          "failed_scenario_count": { "type": "integer", "minimum": 0 },
+          "minimum_validator_cost_coverage_basis_points": { "$ref": "#/$defs/uint" },
+          "maximum_fee_burden_basis_points": { "$ref": "#/$defs/uint" },
+          "native_fee_inaccessible_scenario_count": { "type": "integer", "minimum": 0 },
+          "failure_codes": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]{2,127}$" }
+          },
+          "decision": { "const": "reject_activation" }
+        }
+      }
+    },
+    "engine_conformance": { "const": "pass" },
+    "activation_decision": { "const": "reject_activation" },
+    "global_reasons": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]{2,127}$" }
+    },
+    "report_hash": { "$ref": "#/$defs/hash" }
+  },
+  "$defs": {
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "uint": { "type": "string", "pattern": "^(0|[1-9][0-9]*)$" }
+  }
+}

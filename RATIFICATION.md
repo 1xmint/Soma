@@ -346,9 +346,10 @@ As of this draft:
 
 - the capsule is integrity-verifiable but not threshold-ratified;
 - example Genesis and activation signatures are placeholders;
-- no complete Genesis semantic validator or second independent implementation
-  exists;
-- no economic simulation corpus or launch-gate evidence package exists;
+- only the Genesis identity/tokenless validation layer exists; authority,
+  signatures, substrate mapping, and a second independent implementation do not;
+- a synthetic economic rejection corpus exists, but no empirically calibrated,
+  independently attested corpus or launch-gate evidence package exists;
 - no valuable VERA asset, balance, pool, or historical continuity claim exists.
 
 The next legitimate milestone is a review-frozen **candidate** Origin release

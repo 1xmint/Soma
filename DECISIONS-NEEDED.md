@@ -15,7 +15,7 @@ This file prevents an attractive draft from being mistaken for a finished protoc
 | P0 | Token timing | no valuable VERA until launch gates pass | public gate report |
 | P0 | Parameter doctrine | schemas enforce constitutional invariants; the signed activation manifest fixes reviewed economic values; scenario A is not an implicit default | variant-profile conformance, parameter decision, simulations, and activation evidence hashes |
 | P0 | Legal classification | make no categorical label; review exact facts in each jurisdiction | published counsel scope and disclosures |
-| P1 | Consensus substrate | evaluate sovereign app-chain versus minimal settlement contract; avoid premature lock-in | threat, cost, liveness, migration comparison |
+| P1 | Consensus substrate | use a replaceable CometBFT adapter for the tokenless pilot; keep sovereign app-chain, rollup, and minimal settlement contract open for valuable operation | threat, cost, liveness, data-availability, recovery, and migration comparison |
 | P1 | Canonicalization | RFC 8785 profile plus explicit rejection rules and vectors | two-language conformance |
 | P1 | Identity method | standards-compatible DID/key representation, pairwise IDs, rotation, revocation, recovery | resolver and lifecycle vectors |
 | P1 | Evidence model | separate assertion, execution, outcome, factual verification, and dispute | receipt schemas and adversarial fixtures |
