@@ -421,8 +421,8 @@
     },
     {
       "path": "test/host-trust-capsule.test.mjs",
-      "bytes": 20346,
-      "sha256": "32ee83056f9dd566bd367226695cfb52d99151a6a9464e163a0ce8e8e6665df7"
+      "bytes": 20385,
+      "sha256": "6bbb5b35e883b5eac1ddab612bc2adf3b3067ca1bc0ff17dfc31d68519faea95"
     },
     {
       "path": "test/host.test.mjs",

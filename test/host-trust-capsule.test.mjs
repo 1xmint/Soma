@@ -119,6 +119,7 @@ test("stored pins from the immediately prior Origin profile remain verifiable an
     const pin = { ...core, pin_id: pinId, signature: { suite: "Ed25519-v1", key_id: controller.key_id, value: signEd25519(controller.private_key_pkcs8_base64, Buffer.concat([Buffer.from("soma:host-pin-signature:provisional-v1\n"), Buffer.from(pinId, "hex")])) } };
     await writeFile(hostFile(setup.home, live.prior_descriptor.host_did), `${canonicalize(pin)}\n`);
   } finally { eraseSecretBundle(secretBundle); }
+  await restrictStateRoot(setup.home);
   command = execute(["doctor", "--home", setup.home, "--json"], setup.trace);
   assert.equal(command.status, 0, command.stdout);
   const successorFile = path.join(setup.temporary, "prior-origin-successor.json"), proofFile = path.join(setup.temporary, "prior-origin-proof.json");
