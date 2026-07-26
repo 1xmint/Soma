@@ -14,7 +14,7 @@ import { RELEASE_ROOT } from "./constants.mjs";
 import { SomaError } from "./errors.mjs";
 import { assertJsonSchema } from "./json-schema.mjs";
 import { protectSecretBundle, unprotectSecretBundle } from "./keystore.mjs";
-import { restrictStateRoot } from "./platform.mjs";
+import { restrictStatePath, restrictStateRoot } from "./platform.mjs";
 
 export const PROPOSAL_ID_DOMAIN = "somavera:soma-controller-key-rotation-proposal:v1\n";
 export const ROTATION_ID_DOMAIN = "somavera:soma-controller-key-rotation:v1\n";
@@ -123,14 +123,21 @@ function processAlive(pid) {
   }
 }
 
-async function acquireLock(home, timeoutMs = 30000) {
+async function acquireLock(home, timeoutMs = 120000) {
   const file = lockFile(home);
   const deadline = Date.now() + timeoutMs;
   while (true) {
     try {
       const handle = await open(file, "wx", 0o600);
-      await handle.writeFile(`${process.pid}\n`);
-      await handle.sync();
+      try {
+        await handle.writeFile(`${process.pid}\n`);
+        await handle.sync();
+        await restrictStatePath(file);
+      } catch (setupError) {
+        await handle.close().catch(() => {});
+        await unlink(file).catch(() => {});
+        throw setupError;
+      }
       return async () => {
         await handle.close();
         await unlink(file).catch((error) => { if (error.code !== "ENOENT") throw error; });

@@ -311,8 +311,8 @@
     },
     {
       "path": "src/controller-rotation.mjs",
-      "bytes": 48718,
-      "sha256": "64c6b005033bb1ea729fbb4914d464827628b7d84c128442b05f8a094a850c03"
+      "bytes": 48946,
+      "sha256": "eef42dc4b61cbcff2c1da5aa5a59ceb16a4d4615722dbfb726bc6a948fce3827"
     },
     {
       "path": "src/crypto.mjs",
@@ -326,8 +326,8 @@
     },
     {
       "path": "src/evidence.mjs",
-      "bytes": 24083,
-      "sha256": "9ba4208045c7306e86948f9390b03c21845ac21739ec7de29e99b43fd8b263d6"
+      "bytes": 24311,
+      "sha256": "4e6b8f1e4875a6974f84c556794ce1d1dffbee6e006586d2e32cd2e68df63a63"
     },
     {
       "path": "src/host-confirmation-domain.mjs",
@@ -341,8 +341,8 @@
     },
     {
       "path": "src/host-lock.mjs",
-      "bytes": 2663,
-      "sha256": "81743d718f332e4c84d67cbab0c801f1b46583ecf0cf052ab0bd177a08d37e6c"
+      "bytes": 2924,
+      "sha256": "752a497894b8170df51443846a24c2a7b99470ef0afd7e0db3d8b300c9ff32c4"
     },
     {
       "path": "src/host-succession.mjs",
@@ -376,8 +376,8 @@
     },
     {
       "path": "src/platform.mjs",
-      "bytes": 4874,
-      "sha256": "34eb79746af38c96f0265fc0ed4b4f3bda3063f5e0547cb13ff60ccd6a6fbce2"
+      "bytes": 6693,
+      "sha256": "6f93edbd7718d29bc923f06231fdc29e2c419a7889188ebc3c28eb38cb413694"
     },
     {
       "path": "src/release.mjs",
@@ -421,8 +421,8 @@
     },
     {
       "path": "test/host-trust-capsule.test.mjs",
-      "bytes": 20303,
-      "sha256": "a4fcc8809c3daa600780852535d1704acfaaccccfae847a550182fd497ddc8ab"
+      "bytes": 20346,
+      "sha256": "32ee83056f9dd566bd367226695cfb52d99151a6a9464e163a0ce8e8e6665df7"
     },
     {
       "path": "test/host.test.mjs",

@@ -18,6 +18,36 @@ function powershellJson(script, input) {
   return result.stdout.trim() ? JSON.parse(result.stdout) : null;
 }
 
+export async function restrictStatePath(file) {
+  if (process.platform !== "win32") {
+    await chmod(file, 0o600);
+    return { profile: "posix-owner-only-v1" };
+  }
+  const script = [
+    "$ErrorActionPreference='Stop'",
+    "$path=[Console]::In.ReadToEnd()",
+    "$identity=[Security.Principal.WindowsIdentity]::GetCurrent()",
+    "$user=$identity.User",
+    "$system=New-Object Security.Principal.SecurityIdentifier('S-1-5-18')",
+    "$item=Get-Item -LiteralPath $path -Force",
+    "$currentAcl=$item.GetAccessControl()",
+    "$currentOwner=$currentAcl.Owner",
+    "$ownerMatches=($currentOwner -eq $identity.Name -or $currentOwner -eq $user.Value)",
+    "if(-not $ownerMatches){$takeownOutput=& takeown.exe /F $path 2>&1;if($LASTEXITCODE -ne 0){throw ('takeown failed: '+($takeownOutput -join ' '))};$item=Get-Item -LiteralPath $path -Force}",
+    "$acl=$item.GetAccessControl()",
+    "$acl.SetAccessRuleProtection($true,$false)",
+    "foreach($rule in @($acl.Access)){$acl.RemoveAccessRuleSpecific($rule)}",
+    "$none=[Security.AccessControl.InheritanceFlags]::None",
+    "$prop=[Security.AccessControl.PropagationFlags]::None",
+    "$type=[Security.AccessControl.AccessControlType]::Allow",
+    "$acl.AddAccessRule((New-Object Security.AccessControl.FileSystemAccessRule($user,'FullControl',$none,$prop,$type)))",
+    "$acl.AddAccessRule((New-Object Security.AccessControl.FileSystemAccessRule($system,'FullControl',$none,$prop,$type)))",
+    "$item.SetAccessControl($acl)",
+    "[ordered]@{profile='windows-owner-system-only-v1';user_sid=$user.Value}|ConvertTo-Json -Compress"
+  ].join(";");
+  return powershellJson(script, file);
+}
+
 export async function restrictStateRoot(directory) {
   if (process.platform !== "win32") {
     await chmod(directory, 0o700);
@@ -40,7 +70,8 @@ export async function restrictStateRoot(directory) {
     "$currentName=[Security.Principal.WindowsIdentity]::GetCurrent().Name",
     "$currentOwnerMatches=($currentAcl.Owner -eq $currentName -or $currentAcl.Owner -eq $user.Value)",
     "if(-not $currentAcl.AreAccessRulesProtected -or -not $currentOwnerMatches){Set-Acl -LiteralPath $path -AclObject $acl}",
-    "$items=Get-ChildItem -LiteralPath $path -Force -Recurse",
+    "$runPath=[IO.Path]::GetFullPath((Join-Path $path 'run'))",
+    "$items=Get-ChildItem -LiteralPath $path -Force -Recurse|Where-Object{-not(-not $_.PSIsContainer -and $_.Directory.FullName -eq $runPath -and $_.Extension -eq '.lock')}",
     "$ownerMismatch=$false;foreach($item in $items){$itemOwner=(Get-Acl -LiteralPath $item.FullName).Owner;if($itemOwner -ne $currentName -and $itemOwner -ne $user.Value){$ownerMismatch=$true;break}}",
     "if($ownerMismatch){$takeownOutput=& takeown.exe /F $path /R /D Y 2>&1;if($LASTEXITCODE -ne 0){throw ('takeown failed: '+($takeownOutput -join ' '))}}",
     "foreach($item in $items){$itemAcl=$item.GetAccessControl();$itemAcl.SetAccessRuleProtection($true,$false);foreach($rule in @($itemAcl.Access)){$itemAcl.RemoveAccessRuleSpecific($rule)};$itemInherit=if($item.PSIsContainer){$inherit}else{[Security.AccessControl.InheritanceFlags]::None};$itemAcl.AddAccessRule((New-Object Security.AccessControl.FileSystemAccessRule($user,'FullControl',$itemInherit,$prop,$type)));$itemAcl.AddAccessRule((New-Object Security.AccessControl.FileSystemAccessRule($system,'FullControl',$itemInherit,$prop,$type)));$item.SetAccessControl($itemAcl)}",

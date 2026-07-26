@@ -205,6 +205,7 @@ test("trusted capsule comparison detects rollback and controller-signed same-hei
     await writeFile(priorPinPath, `${canonicalize(malicious)}\n`);
     for (const candidateName of await readdir(path.join(rolledBackHome, "hosts", "candidates"))) await unlink(path.join(rolledBackHome, "hosts", "candidates", candidateName));
   } finally { eraseSecretBundle(secretBundle); }
+  await restrictStateRoot(rolledBackHome);
   command = exportCapsule(rolledBackHome, fork, setup.trace);
   assert.equal(command.status, 0, command.stdout);
   command = execute(compareArgs(pre, fork, exported), setup.trace);

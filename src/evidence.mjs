@@ -6,7 +6,7 @@ import { privateKeyForRole, sha256, signEd25519, verifyEd25519 } from "./crypto.
 import { EMPTY_HASH } from "./constants.mjs";
 import { SomaError } from "./errors.mjs";
 import { unprotectSecretBundle } from "./keystore.mjs";
-import { restrictStateRoot } from "./platform.mjs";
+import { restrictStatePath, restrictStateRoot } from "./platform.mjs";
 
 const HASH = /^[a-f0-9]{64}$/;
 const NAME = /^[a-z][a-z0-9_.-]{1,127}$/;
@@ -220,7 +220,7 @@ function processIsAlive(pid) {
   }
 }
 
-async function acquireLock(home, timeoutMs = 5000) {
+async function acquireLock(home, timeoutMs = 30000) {
   const file = path.join(home, "run", "evidence-writer.lock");
   const deadline = Date.now() + timeoutMs;
   const token = randomBytes(16).toString("hex");
@@ -228,8 +228,15 @@ async function acquireLock(home, timeoutMs = 5000) {
   while (true) {
     try {
       const handle = await open(file, "wx", 0o600);
-      await handle.writeFile(`${canonicalize(owner)}\n`, "utf8");
-      await handle.sync();
+      try {
+        await handle.writeFile(`${canonicalize(owner)}\n`, "utf8");
+        await handle.sync();
+        await restrictStatePath(file);
+      } catch (setupError) {
+        await handle.close().catch(() => {});
+        await unlink(file).catch(() => {});
+        throw setupError;
+      }
       return async () => {
         await handle.close();
         try {

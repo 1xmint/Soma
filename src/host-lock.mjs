@@ -3,6 +3,7 @@ import path from "node:path";
 import { randomBytes } from "node:crypto";
 import { canonicalize, parseCanonicalJson } from "./canonicalize.mjs";
 import { SomaError } from "./errors.mjs";
+import { restrictStatePath } from "./platform.mjs";
 
 function processIsAlive(pid) {
   try { process.kill(pid, 0); return true; }
@@ -26,7 +27,7 @@ async function releaseOwnedLock(file, handle, token) {
   }
 }
 
-export async function acquireHostSuccessionLock(home, timeoutMs = 5000) {
+export async function acquireHostSuccessionLock(home, timeoutMs = 30000) {
   const file = path.join(home, "run", "host-succession.lock");
   const deadline = Date.now() + timeoutMs;
   const token = randomBytes(16).toString("hex");
@@ -36,8 +37,15 @@ export async function acquireHostSuccessionLock(home, timeoutMs = 5000) {
   while (true) {
     try {
       const handle = await open(file, "wx", 0o600);
-      await handle.writeFile(`${canonicalize(owner)}\n`, "utf8");
-      await handle.sync();
+      try {
+        await handle.writeFile(`${canonicalize(owner)}\n`, "utf8");
+        await handle.sync();
+        await restrictStatePath(file);
+      } catch (setupError) {
+        await handle.close().catch(() => {});
+        await unlink(file).catch(() => {});
+        throw setupError;
+      }
       return () => releaseOwnedLock(file, handle, token);
     } catch (error) {
       if (!["EACCES", "EBUSY", "EEXIST", "EPERM"].includes(error.code)) throw error;
