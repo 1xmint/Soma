@@ -1,0 +1,41 @@
+{
+  "$schema": "../schemas/vera-host-descriptor-succession.schema.json",
+  "schema_version": "somavera.vera-host-descriptor-succession.v1",
+  "profile_status": "freeze_blocking_draft",
+  "succession_id": "fe06159bcb2d1a128cb98271cc78d669d5599ff53fb7a94e5e3de43cf3b447f6",
+  "network_lineage_id": "somavera:network:v1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "execution_context_id": "somavera:context:v1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "host_did": "did:key:example-vera-host",
+  "origin": "https://vera.example.test",
+  "prior_descriptor_id": "3483cb9841ab443e8ec8b57e9f208f42259f7f537c99e419746afbabaefb0c9d",
+  "prior_descriptor_sequence": 7,
+  "successor_descriptor_id": "c40e76035bb61d4d3757a7aff1af3c5a5d6e82868c9645ec397301d3d85ee68d",
+  "successor_descriptor_sequence": 8,
+  "change_scope": "signing_and_ingestion_key_rotation",
+  "prior_active_host_signing_key_id": "did:key:example-vera-host#signing-7",
+  "successor_active_host_signing_key_id": "did:key:example-vera-host#signing-8",
+  "prior_active_ingestion_key_id": "did:key:example-vera-host#ingestion-7",
+  "successor_active_ingestion_key_id": "did:key:example-vera-host#ingestion-8",
+  "issued_at": "2027-01-01T12:00:00Z",
+  "expires_at": "2027-01-01T12:15:00Z",
+  "controller_confirmation_required": true,
+  "authority": {
+    "continuity_only": true,
+    "authorizes_connection": false,
+    "authorizes_consent": false,
+    "authorizes_disclosure": false,
+    "authorizes_emergency_recovery": false
+  },
+  "signatures": {
+    "prior_active_key_signature": {
+      "suite": "Ed25519-v1",
+      "key_id": "did:key:example-vera-host#signing-7",
+      "value": "KuQRWRLCK5DrZeE13JTrphlrhJRBHcuYYpg7EbnjjcNT2YKeqBMi6g72vWN5hl/b8qojVnpS0IsibKIcKvl6Cg=="
+    },
+    "successor_active_key_signature": {
+      "suite": "Ed25519-v1",
+      "key_id": "did:key:example-vera-host#signing-8",
+      "value": "ATfm18O65Es8suQ5/OYOrvh6GNc3BHW2UCaYE/E9L7yzxHh9xpo+KtMBdH/z/FjDNhvzdlvChvjHJ905mA/ABw=="
+    }
+  }
+}

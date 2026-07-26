@@ -1,0 +1,68 @@
+{
+  "$schema": "../schemas/soma-host-trust-capsule.schema.json",
+  "schema_version": "somavera.soma-host-trust-capsule.v1",
+  "profile_status": "freeze_blocking_draft",
+  "capsule_id": "a5ed7ecda5a25849e11c6977538e5aea10aca36ec455022a673934194665b9ad",
+  "created_at": "2027-01-01T13:00:00Z",
+  "controller": {
+    "did": "did:key:example-soma-capsule-controller",
+    "signing_key_id": "did:key:example-soma-capsule-controller#controller-1",
+    "public_key_multibase": "z6Mkij11FdkRD1VWPeH2QZiJUibpZ7jurn6We4284XHBkxPk",
+    "public_key_sha256": "55946b541e2f40e962b1ab6721a5892c6b7e1b95167813f3bd70384a1bef8adc"
+  },
+  "source": {
+    "origin_capsule_hash": "8cb60c8ce3199aa35c101657834eece86e8823e9d6aa8eb47a9e23db89582431",
+    "reference_release_manifest_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "reference_release_version": "0.1.0"
+  },
+  "host_count": 1,
+  "transition_count": 1,
+  "current_set_root": "72256a4493fd4c4ba52962538314f182e89f565687e02485efbd38c07eee69ac",
+  "object_set_root": "062734d3b19ae04726f62ca1683faab446561a076d14065eeb0df66110e608b2",
+  "hosts": [
+    {
+      "host_did": "did:key:example-vera-host",
+      "current_pin_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "current_descriptor_id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "current_descriptor_sequence": 8,
+      "transition_ids": [
+        "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      ],
+      "history_chain_root": "d79d660e3eb998ea92d629b184db44939880cf959c540f5a1d018896cd24c769"
+    }
+  ],
+  "objects": [
+    {
+      "path": "hosts/1111111111111111111111111111111111111111111111111111111111111111.json",
+      "kind": "current_pin",
+      "byte_length": 460,
+      "sha256": "36f70db4c370703ef0fbcaf64a5dbf4296db6d9951a60a9eb9f761245531e9fe",
+      "canonical_json_base64": "eyJjb25maXJtYXRpb25faWQiOiJkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkIiwiZGVzY3JpcHRvciI6eyJkZXNjcmlwdG9yX2lkIjoiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYiIsImRlc2NyaXB0b3Jfc2VxdWVuY2UiOjgsImhvc3RfZGlkIjoiZGlkOmtleTpleGFtcGxlLXZlcmEtaG9zdCJ9LCJwaW5faWQiOiJhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhIiwicHJlZGVjZXNzb3JfcGluX2lkIjoiZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZSIsInNjaGVtYV92ZXJzaW9uIjoic29tYS5ob3N0LXBpbi5wcm92aXNpb25hbC12MiJ9Cg=="
+    },
+    {
+      "path": "hosts/history/1111111111111111111111111111111111111111111111111111111111111111/dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd.json",
+      "kind": "history_transition",
+      "byte_length": 361,
+      "sha256": "ac5d85db5c531d60d95f7b57ce826ef54fe2912ef875848073d97f3bd13b0f48",
+      "canonical_json_base64": "eyJjb25maXJtYXRpb25faWQiOiJkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkIiwiaG9zdF9kaWQiOiJkaWQ6a2V5OmV4YW1wbGUtdmVyYS1ob3N0Iiwic2NoZW1hX3ZlcnNpb24iOiJzb21hLmhvc3Qtc3VjY2Vzc2lvbi10cmFuc2l0aW9uLnByb3Zpc2lvbmFsLXYxIiwic3VjY2Vzc29yX3Bpbl9pZCI6ImFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEiLCJ0cmFuc2l0aW9uX2lkIjoiY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjYyJ9Cg=="
+    }
+  ],
+  "claims": {
+    "complete_host_trust_state": true,
+    "contains_managed_secrets": false,
+    "external_anchor_created": false,
+    "rollback_detection_without_separately_preserved_capsule": false,
+    "authorizes_restore": false,
+    "authorizes_connection": false,
+    "authorizes_consent": false,
+    "authorizes_disclosure": false,
+    "authorizes_send": false,
+    "authorizes_emergency_recovery": false
+  },
+  "authority": "portable_offline_host_trust_capsule_not_external_anchor_not_restore_authority",
+  "signature": {
+    "suite": "Ed25519-v1",
+    "key_id": "did:key:example-soma-capsule-controller#controller-1",
+    "value": "PA436UNWDM79I9XAUU+CW00yXVyW5jySfRKDlxare1wNDyvmSTsuqsQPe3bPD6sqmvqt2VqnDwbfRoZHpWLjAw=="
+  }
+}

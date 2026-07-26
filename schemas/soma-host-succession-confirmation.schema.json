@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://somavera.org/schemas/soma-host-succession-confirmation.schema.json",
+  "title": "Somavera Soma Host Succession Controller Confirmation",
+  "description": "A closed controller-signed confirmation of one exact ordinary host succession subject. It authorizes inert local pin replacement only and never connection, consent, disclosure, send, or emergency recovery.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "profile_status",
+    "confirmation_id",
+    "subject_id",
+    "network_lineage_id",
+    "execution_context_id",
+    "controller_did",
+    "controller_signing_key_id",
+    "host_did",
+    "origin",
+    "prior_descriptor_id",
+    "prior_descriptor_sequence",
+    "successor_descriptor_id",
+    "successor_descriptor_sequence",
+    "succession_id",
+    "change_scope",
+    "successor_active_host_signing_key_id",
+    "successor_active_host_signing_key_sha256",
+    "successor_active_ingestion_key_id",
+    "successor_active_ingestion_key_sha256",
+    "confirmed_at",
+    "decision",
+    "authority",
+    "signature"
+  ],
+  "properties": {
+    "$schema": { "const": "../schemas/soma-host-succession-confirmation.schema.json" },
+    "schema_version": { "const": "somavera.soma-host-succession-confirmation.v1" },
+    "profile_status": { "const": "freeze_blocking_draft" },
+    "confirmation_id": { "$ref": "#/$defs/hash" },
+    "subject_id": { "$ref": "#/$defs/hash" },
+    "network_lineage_id": { "$ref": "#/$defs/networkLineageId" },
+    "execution_context_id": { "$ref": "#/$defs/executionContextId" },
+    "controller_did": { "$ref": "#/$defs/did" },
+    "controller_signing_key_id": { "$ref": "#/$defs/keyId" },
+    "host_did": { "$ref": "#/$defs/did" },
+    "origin": { "type": "string", "pattern": "^https://[^/?#]+(?::[0-9]{1,5})?$" },
+    "prior_descriptor_id": { "$ref": "#/$defs/hash" },
+    "prior_descriptor_sequence": { "type": "integer", "minimum": 0, "maximum": 9007199254740990 },
+    "successor_descriptor_id": { "$ref": "#/$defs/hash" },
+    "successor_descriptor_sequence": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+    "succession_id": { "$ref": "#/$defs/hash" },
+    "change_scope": {
+      "enum": ["renewal_only", "signing_key_rotation", "ingestion_key_rotation", "signing_and_ingestion_key_rotation"]
+    },
+    "successor_active_host_signing_key_id": { "$ref": "#/$defs/keyId" },
+    "successor_active_host_signing_key_sha256": { "$ref": "#/$defs/hash" },
+    "successor_active_ingestion_key_id": { "$ref": "#/$defs/keyId" },
+    "successor_active_ingestion_key_sha256": { "$ref": "#/$defs/hash" },
+    "confirmed_at": { "$ref": "#/$defs/timestamp" },
+    "decision": { "const": "replace_inert_pin_only" },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "authorizes_pin_replacement",
+        "authorizes_connection",
+        "authorizes_consent",
+        "authorizes_disclosure",
+        "authorizes_send",
+        "authorizes_emergency_recovery"
+      ],
+      "properties": {
+        "authorizes_pin_replacement": { "const": true },
+        "authorizes_connection": { "const": false },
+        "authorizes_consent": { "const": false },
+        "authorizes_disclosure": { "const": false },
+        "authorizes_send": { "const": false },
+        "authorizes_emergency_recovery": { "const": false }
+      }
+    },
+    "signature": { "$ref": "#/$defs/signature" }
+  },
+  "$defs": {
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "networkLineageId": { "type": "string", "pattern": "^somavera:network:v1:[a-f0-9]{64}$" },
+    "executionContextId": { "type": "string", "pattern": "^somavera:context:v1:[a-f0-9]{64}$" },
+    "did": { "type": "string", "pattern": "^did:[a-z0-9]+:.+$", "maxLength": 512 },
+    "keyId": { "type": "string", "minLength": 3, "maxLength": 512 },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["suite", "key_id", "value"],
+      "properties": {
+        "suite": { "const": "Ed25519-v1" },
+        "key_id": { "$ref": "#/$defs/keyId" },
+        "value": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9+/]{86}==$",
+          "minLength": 88,
+          "maxLength": 88,
+          "contentEncoding": "base64"
+        }
+      }
+    }
+  }
+}

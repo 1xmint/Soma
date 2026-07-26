@@ -1,0 +1,32 @@
+{
+  "$schema": "../schemas/query-delegation.schema.json",
+  "schema_version": "somavera.query-delegation.v1",
+  "delegation_id": "4141414141414141414141414141414141414141414141414141414141414141",
+  "network_lineage_id": "somavera:network:v1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "execution_context_id": "somavera:context:v1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "controller_did": "did:key:example-controller",
+  "delegate_soma_did": "did:key:example-soma-agent",
+  "audience_host_dids": ["did:key:example-vera-host"],
+  "allowed_return_soma_dids": ["did:key:example-soma-agent"],
+  "query_constraints": {
+    "scopes": ["public", "controller_confidential"],
+    "purposes": ["private_retrieval"],
+    "maximum_top_k": 5,
+    "artifact_statuses": ["reinforced", "provisional"],
+    "permitted_query_hashes": []
+  },
+  "parent_delegation_id": null,
+  "delegation_depth": 0,
+  "single_use": false,
+  "nonce": "abcdef0123456789abcdef0123456789",
+  "issued_at": "2027-01-01T00:00:00Z",
+  "not_before": "2027-01-01T00:00:00Z",
+  "expires_at": "2027-01-01T01:00:00Z",
+  "revocation_registry_reference": "host-status:delegations/example-controller",
+  "signing_key_id": "did:key:example-controller#signing-1",
+  "signature": {
+    "suite": "Ed25519-v1",
+    "key_id": "did:key:example-controller#signing-1",
+    "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+  }
+}

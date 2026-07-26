@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:somavera:schema:network-genesis:v1",
+  "title": "Somavera Network Genesis v1",
+  "$comment": "genesis core projection, lineage, context, and ratification domains are defined in ID-DERIVATION.md",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "genesis_core_hash",
+    "execution_context_id",
+    "context_epoch",
+    "network_lineage_id",
+    "origin_hash",
+    "protocol_release_hash",
+    "genesis_time",
+    "chain",
+    "validator_set",
+    "governance",
+    "recovery_policy",
+    "token",
+    "external_anchors",
+    "ratification_signatures"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": { "const": "somavera.network-genesis.v1" },
+    "genesis_core_hash": { "$ref": "#/$defs/hash" },
+    "execution_context_id": {
+      "type": "string",
+      "pattern": "^somavera:context:v1:[a-f0-9]{64}$"
+    },
+    "context_epoch": { "type": "integer", "const": 0 },
+    "network_lineage_id": {
+      "type": "string",
+      "pattern": "^somavera:network:v1:[a-f0-9]{64}$"
+    },
+    "origin_hash": { "$ref": "#/$defs/hash" },
+    "protocol_release_hash": { "$ref": "#/$defs/hash" },
+    "genesis_time": { "type": "string", "format": "date-time" },
+    "chain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "consensus_profile",
+        "block_time_ms",
+        "max_event_bytes",
+        "checkpoint_max_blocks"
+      ],
+      "properties": {
+        "consensus_profile": { "type": "string", "minLength": 3, "maxLength": 128 },
+        "block_time_ms": { "type": "integer", "minimum": 250, "maximum": 60000 },
+        "max_event_bytes": { "type": "integer", "minimum": 1024, "maximum": 10485760 },
+        "checkpoint_max_blocks": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "validator_set": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 1000,
+      "items": { "$ref": "#/$defs/validator" }
+    },
+    "governance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "document_hash",
+        "chamber_policy_hash",
+        "seat_manifest_hash",
+        "governance_manifest_hash"
+      ],
+      "properties": {
+        "document_hash": { "$ref": "#/$defs/hash" },
+        "chamber_policy_hash": { "$ref": "#/$defs/hash" },
+        "seat_manifest_hash": { "$ref": "#/$defs/hash" },
+        "governance_manifest_hash": { "$ref": "#/$defs/hash" }
+      }
+    },
+    "recovery_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["document_hash", "guardian_manifest_hash", "old_network_death_policy_hash", "threshold", "guardian_key_ids"],
+      "properties": {
+        "document_hash": { "$ref": "#/$defs/hash" },
+        "guardian_manifest_hash": { "$ref": "#/$defs/hash" },
+        "old_network_death_policy_hash": { "$ref": "#/$defs/hash" },
+        "threshold": { "type": "integer", "minimum": 2 },
+        "guardian_key_ids": {
+          "type": "array",
+          "minItems": 3,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 3, "maxLength": 512 }
+        }
+      }
+    },
+    "token": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "activated",
+        "activation_core_hash",
+        "asset_lineage_id",
+        "genesis_supply_grain"
+      ],
+      "properties": {
+        "activated": { "const": false },
+        "activation_core_hash": { "type": "null" },
+        "asset_lineage_id": { "type": "null" },
+        "genesis_supply_grain": { "const": "0" }
+      }
+    },
+    "external_anchors": {
+      "type": "array",
+      "minItems": 2,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 3, "maxLength": 512 }
+    },
+    "ratification_signatures": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 1000,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/signature" }
+    }
+  },
+  "$defs": {
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "validator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "validator_id",
+        "public_key",
+        "voting_power",
+        "organization",
+        "jurisdiction"
+      ],
+      "properties": {
+        "validator_id": { "type": "string", "pattern": "^did:[a-z0-9]+:.+$" },
+        "public_key": {
+          "type": "string",
+          "contentEncoding": "base64",
+          "minLength": 40,
+          "maxLength": 128
+        },
+        "voting_power": { "type": "string", "pattern": "^[1-9][0-9]*$" },
+        "organization": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "jurisdiction": { "type": "string", "minLength": 2, "maxLength": 128 }
+      }
+    },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "key_id", "suite", "value"],
+      "properties": {
+        "role": {
+          "enum": [
+            "economic_chamber",
+            "operator_contributor_chamber",
+            "public_data_rights_chamber"
+          ]
+        },
+        "key_id": { "type": "string", "minLength": 3, "maxLength": 512 },
+        "suite": { "const": "Ed25519-v1" },
+        "value": {
+          "type": "string",
+          "contentEncoding": "base64",
+          "minLength": 80,
+          "maxLength": 128
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,219 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:somavera:schema:token-activation:v1",
+  "title": "VERA Token Activation Manifest v1",
+  "$comment": "activation_core is unsigned; derived IDs and the signature domain are defined in ID-DERIVATION.md",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "activation_core",
+    "activation_core_hash",
+    "asset_lineage_id",
+    "ratification_signatures"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": { "const": "vera.token-activation.v1" },
+    "activation_core": { "$ref": "#/$defs/activation_core" },
+    "activation_core_hash": { "$ref": "#/$defs/hash" },
+    "asset_lineage_id": {
+      "type": "string",
+      "pattern": "^vera:rpa:v1:[a-f0-9]{64}$"
+    },
+    "ratification_signatures": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 1000,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/signature" }
+    }
+  },
+  "$defs": {
+    "hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "activation_core": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "origin_hash",
+        "network_lineage_id",
+        "activation_time",
+        "activation_height",
+        "preactivation_governance_manifest_hash",
+        "token",
+        "issuance",
+        "epoch_allocation",
+        "fee_policy",
+        "bond_policy_hash",
+        "governance_hash",
+        "data_rights_hash",
+        "recovery_hash",
+        "protocol_release_hashes",
+        "bootstrap",
+        "legal",
+        "abort_conditions_hash"
+      ],
+      "properties": {
+        "origin_hash": { "$ref": "#/$defs/hash" },
+        "network_lineage_id": {
+          "type": "string",
+          "pattern": "^somavera:network:v1:[a-f0-9]{64}$"
+        },
+        "activation_time": { "type": "string", "format": "date-time" },
+        "activation_height": { "type": "integer", "minimum": 1 },
+        "preactivation_governance_manifest_hash": { "$ref": "#/$defs/hash" },
+        "token": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "name",
+            "symbol",
+            "denom",
+            "decimals",
+            "genesis_supply_grain"
+          ],
+          "properties": {
+            "name": { "const": "Vera" },
+            "symbol": { "const": "VERA" },
+            "denom": { "const": "grain" },
+            "decimals": { "const": 9 },
+            "genesis_supply_grain": { "const": "0" }
+          }
+        },
+        "issuance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "lifetime_mint_ceiling_grain",
+            "epoch_seconds",
+            "schedule_year_seconds",
+            "cumulative_ceilings",
+            "tail_annual_cap_basis_points",
+            "tail_supply_basis"
+          ],
+          "properties": {
+            "lifetime_mint_ceiling_grain": { "const": "1000000000000000000" },
+            "epoch_seconds": { "const": 86400 },
+            "schedule_year_seconds": { "const": 31557600 },
+            "cumulative_ceilings": {
+              "type": "array",
+              "minItems": 5,
+              "maxItems": 100,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["elapsed_year", "max_grain"],
+                "properties": {
+                  "elapsed_year": { "type": "integer", "minimum": 1 },
+                  "max_grain": { "type": "string", "pattern": "^(0|[1-9][0-9]*)$" }
+                }
+              }
+            },
+            "tail_annual_cap_basis_points": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "tail_supply_basis": { "const": "live_supply_at_anniversary" }
+          }
+        },
+        "epoch_allocation": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": { "$ref": "#/$defs/split" }
+        },
+        "fee_policy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["service_price_to_provider_basis_points", "network_fee"],
+          "properties": {
+            "service_price_to_provider_basis_points": { "const": 10000 },
+            "network_fee": {
+              "type": "array",
+              "minItems": 3,
+              "maxItems": 3,
+              "items": { "$ref": "#/$defs/split" }
+            }
+          }
+        },
+        "bond_policy_hash": { "$ref": "#/$defs/hash" },
+        "governance_hash": { "$ref": "#/$defs/hash" },
+        "data_rights_hash": { "$ref": "#/$defs/hash" },
+        "recovery_hash": { "$ref": "#/$defs/hash" },
+        "protocol_release_hashes": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 100,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/hash" }
+        },
+        "bootstrap": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "validator_manifest_hash",
+            "automatic_sunset_height",
+            "permissionless_gate_hash"
+          ],
+          "properties": {
+            "validator_manifest_hash": { "$ref": "#/$defs/hash" },
+            "automatic_sunset_height": { "type": "integer", "minimum": 2 },
+            "permissionless_gate_hash": { "$ref": "#/$defs/hash" }
+          }
+        },
+        "legal": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["review_hash", "disclosures_uri"],
+          "properties": {
+            "review_hash": { "$ref": "#/$defs/hash" },
+            "disclosures_uri": {
+              "type": "string",
+              "format": "uri",
+              "maxLength": 512
+            }
+          }
+        },
+        "abort_conditions_hash": { "$ref": "#/$defs/hash" }
+      }
+    },
+    "split": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["recipient", "basis_points"],
+      "properties": {
+        "recipient": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_.-]{2,63}$"
+        },
+        "basis_points": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        }
+      }
+    },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["chamber", "key_id", "suite", "value"],
+      "properties": {
+        "chamber": {
+          "enum": ["economic", "operator_contributor", "public_data_rights"]
+        },
+        "key_id": { "type": "string", "minLength": 3, "maxLength": 512 },
+        "suite": { "const": "Ed25519-v1" },
+        "value": {
+          "type": "string",
+          "contentEncoding": "base64",
+          "minLength": 80,
+          "maxLength": 128
+        }
+      }
+    }
+  }
+}

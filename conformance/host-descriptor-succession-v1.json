@@ -1,0 +1,466 @@
+{
+  "vector_version": "somavera.host-descriptor-succession.v1",
+  "description": "Deterministic test-only ordinary succession with precommitted signing and ingestion keys.",
+  "validation_time": "2027-01-01T12:05:00Z",
+  "domains": {
+    "descriptor_id": "somavera:vera-host-descriptor:v1",
+    "descriptor_signature": "somavera:vera-host-descriptor-signature:v1",
+    "succession_id": "somavera:vera-host-descriptor-succession:v1",
+    "prior_succession_signature": "somavera:vera-host-descriptor-succession-signature:v1\nprior",
+    "successor_succession_signature": "somavera:vera-host-descriptor-succession-signature:v1\nsuccessor"
+  },
+  "expected": {
+    "prior_descriptor_core_jcs": "{\"active_host_signing_key_id\":\"did:key:example-vera-host#signing-7\",\"active_ingestion_key_id\":\"did:key:example-vera-host#ingestion-7\",\"capabilities\":{\"private_request_actions\":[\"host.register\",\"host.challenge\",\"consent.register\",\"consent.withdraw\",\"contribution.offer\",\"vera.query\",\"export.request\",\"status.lookup\",\"content.delete\",\"tombstone.status\"],\"private_response_actions\":[\"host.registered\",\"host.challenge-result\",\"consent.accepted\",\"consent.withdrawn\",\"contribution.accepted\",\"contribution.rejected\",\"answer.source-bundle\",\"export.ready\",\"status.result\",\"content.deleted\",\"tombstone.result\",\"private.error\"],\"public_routes\":[\"host_descriptor\",\"public_query\",\"public_pack\"]},\"capability_limits\":{\"maximum_answer_plaintext_bytes\":1048576,\"maximum_concurrent_private_requests\":16,\"maximum_contribution_plaintext_bytes\":262144,\"maximum_query_utf8_bytes\":16384,\"maximum_top_k\":5},\"data_regions\":[{\"jurisdiction\":\"Test jurisdiction\",\"region_code\":\"test-region-1\"}],\"descriptor_sequence\":7,\"discovery\":{\"cache_max_age_seconds\":300,\"media_type\":\"application/json\",\"method\":\"GET\",\"path\":\"/.well-known/somavera/vera-host.json\",\"redirects_allowed\":false},\"execution_context_id\":\"somavera:context:v1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"expires_at\":\"2027-01-02T00:00:00Z\",\"host_did\":\"did:key:example-vera-host\",\"host_signing_keys\":[{\"key_id\":\"did:key:example-vera-host#signing-7\",\"lifecycle\":{\"revocation_reference\":null,\"revoked_at\":null,\"status\":\"active\",\"valid_from\":\"2026-12-31T00:00:00Z\",\"valid_until\":\"2027-01-02T00:00:00Z\"},\"public_key_base64\":\"A6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg=\",\"purpose\":\"descriptor_and_private_response_signing\",\"suite\":\"Ed25519-v1\"},{\"key_id\":\"did:key:example-vera-host#signing-8\",\"lifecycle\":{\"revocation_reference\":null,\"revoked_at\":null,\"status\":\"overlap\",\"valid_from\":\"2027-01-01T12:00:00Z\",\"valid_until\":\"2027-01-02T12:00:00Z\"},\"public_key_base64\":\"Kay64UG8yvCyLhqU000LxzYeUm0L/hLIl5S8kyKWbdc=\",\"purpose\":\"descriptor_and_private_response_signing\",\"suite\":\"Ed25519-v1\"}],\"ingestion_encryption_keys\":[{\"key_id\":\"did:key:example-vera-host#ingestion-7\",\"lifecycle\":{\"revocation_reference\":null,\"revoked_at\":null,\"status\":\"active\",\"valid_from\":\"2026-12-31T00:00:00Z\",\"valid_until\":\"2027-01-02T00:00:00Z\"},\"public_key_base64\":\"MTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTE=\",\"purpose\":\"private_request_decryption\",\"suite\":\"HPKE-Base-X25519-HKDF-SHA256-AES256GCM-v1\"},{\"key_id\":\"did:key:example-vera-host#ingestion-8\",\"lifecycle\":{\"revocation_reference\":null,\"revoked_at\":null,\"status\":\"overlap\",\"valid_from\":\"2027-01-01T12:00:00Z\",\"valid_until\":\"2027-01-02T12:00:00Z\"},\"public_key_base64\":\"MjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjI=\",\"purpose\":\"private_request_decryption\",\"suite\":\"HPKE-Base-X25519-HKDF-SHA256-AES256GCM-v1\"}],\"issued_at\":\"2027-01-01T00:00:00Z\",\"metadata_disclosure\":{\"approximate_size\":true,\"ip_address\":true,\"route_class\":true,\"timing\":true},\"model_use_disclosure\":{\"external_model_providers\":[],\"inference_enabled\":false,\"training_enabled\":false},\"network_lineage_id\":\"somavera:network:v1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"operator_memory_disclosure\":\"ordinary_process_operator_can_access_plaintext\",\"origin\":\"https://vera.example.test\",\"policy_hash\":\"0404040404040404040404040404040404040404040404040404040404040404\",\"previous_descriptor_id\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"private_request_endpoint\":{\"hpke_profile\":\"HPKE-Base-X25519-HKDF-SHA256-AES256GCM-v1\",\"hpke_profile_status\":\"freeze_blocking_draft\",\"maximum_encrypted_bytes\":393216,\"maximum_plaintext_bytes\":262144,\"media_type\":\"application/json\",\"method\":\"POST\",\"path\":\"/v1/private/requests\",\"redirects_allowed\":false},\"profile_status\":\"freeze_blocking_draft\",\"query_policy\":{\"controller_confidential_scope_enabled\":true,\"maximum_top_k\":5,\"private_query_retention_seconds\":0,\"public_scope_enabled\":true,\"requires_separate_training_consent\":true,\"stores_private_query_bodies\":false},\"release\":{\"implementation\":\"somavera-vera-host-test-only\",\"origin_capsule_hash\":\"0303030303030303030303030303030303030303030303030303030303030303\",\"release_id\":\"vera-host-v0.1.0-test\",\"release_manifest_hash\":\"0202020202020202020202020202020202020202020202020202020202020202\"},\"retention_behavior\":{\"maximum_backup_deletion_seconds\":2592000,\"maximum_host_confidential_seconds\":2592000,\"maximum_private_query_seconds\":0,\"withdrawal_blocks_future_use\":true},\"rotation_policy\":{\"allowed_change_scopes\":[\"renewal_only\",\"signing_key_rotation\",\"ingestion_key_rotation\",\"signing_and_ingestion_key_rotation\"],\"emergency_compromise_recovery\":\"blocked_until_recovery_authority_profile\",\"maximum_descriptor_lifetime_seconds\":86400,\"maximum_overlap_seconds\":86400,\"ordinary_succession\":\"precommitted_overlap_dual_signature_v1\",\"requires_controller_confirmation\":true,\"requires_prior_and_successor_signatures\":true,\"successor_key_precommitment\":\"required_in_prior_descriptor\"},\"schema_version\":\"somavera.vera-host-descriptor.v1\",\"subprocessors\":[],\"supported_protocols\":[\"somavera-soma-vera-private-v1\",\"somavera-vera-public-query-v1\",\"somavera-vera-public-pack-v1\",\"somavera-vera-checkpoint-v1\"],\"transport_security\":{\"certificate_spki_sha256\":[],\"minimum_tls_version\":\"1.3\",\"redirects_allowed\":false,\"server_name\":\"vera.example.test\",\"tls_required\":true}}",
+    "successor_descriptor_core_jcs": "{\"active_host_signing_key_id\":\"did:key:example-vera-host#signing-8\",\"active_ingestion_key_id\":\"did:key:example-vera-host#ingestion-8\",\"capabilities\":{\"private_request_actions\":[\"host.register\",\"host.challenge\",\"consent.register\",\"consent.withdraw\",\"contribution.offer\",\"vera.query\",\"export.request\",\"status.lookup\",\"content.delete\",\"tombstone.status\"],\"private_response_actions\":[\"host.registered\",\"host.challenge-result\",\"consent.accepted\",\"consent.withdrawn\",\"contribution.accepted\",\"contribution.rejected\",\"answer.source-bundle\",\"export.ready\",\"status.result\",\"content.deleted\",\"tombstone.result\",\"private.error\"],\"public_routes\":[\"host_descriptor\",\"public_query\",\"public_pack\"]},\"capability_limits\":{\"maximum_answer_plaintext_bytes\":1048576,\"maximum_concurrent_private_requests\":16,\"maximum_contribution_plaintext_bytes\":262144,\"maximum_query_utf8_bytes\":16384,\"maximum_top_k\":5},\"data_regions\":[{\"jurisdiction\":\"Test jurisdiction\",\"region_code\":\"test-region-1\"}],\"descriptor_sequence\":8,\"discovery\":{\"cache_max_age_seconds\":300,\"media_type\":\"application/json\",\"method\":\"GET\",\"path\":\"/.well-known/somavera/vera-host.json\",\"redirects_allowed\":false},\"execution_context_id\":\"somavera:context:v1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"expires_at\":\"2027-01-02T12:00:00Z\",\"host_did\":\"did:key:example-vera-host\",\"host_signing_keys\":[{\"key_id\":\"did:key:example-vera-host#signing-7\",\"lifecycle\":{\"revocation_reference\":null,\"revoked_at\":null,\"status\":\"retired\",\"valid_from\":\"2026-12-31T00:00:00Z\",\"valid_until\":\"2027-01-02T00:00:00Z\"},\"public_key_base64\":\"A6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg=\",\"purpose\":\"descriptor_and_private_response_signing\",\"suite\":\"Ed25519-v1\"},{\"key_id\":\"did:key:example-vera-host#signing-8\",\"lifecycle\":{\"revocation_reference\":null,\"revoked_at\":null,\"status\":\"active\",\"valid_from\":\"2027-01-01T12:00:00Z\",\"valid_until\":\"2027-01-02T12:00:00Z\"},\"public_key_base64\":\"Kay64UG8yvCyLhqU000LxzYeUm0L/hLIl5S8kyKWbdc=\",\"purpose\":\"descriptor_and_private_response_signing\",\"suite\":\"Ed25519-v1\"}],\"ingestion_encryption_keys\":[{\"key_id\":\"did:key:example-vera-host#ingestion-7\",\"lifecycle\":{\"revocation_reference\":null,\"revoked_at\":null,\"status\":\"retired\",\"valid_from\":\"2026-12-31T00:00:00Z\",\"valid_until\":\"2027-01-02T00:00:00Z\"},\"public_key_base64\":\"MTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTE=\",\"purpose\":\"private_request_decryption\",\"suite\":\"HPKE-Base-X25519-HKDF-SHA256-AES256GCM-v1\"},{\"key_id\":\"did:key:example-vera-host#ingestion-8\",\"lifecycle\":{\"revocation_reference\":null,\"revoked_at\":null,\"status\":\"active\",\"valid_from\":\"2027-01-01T12:00:00Z\",\"valid_until\":\"2027-01-02T12:00:00Z\"},\"public_key_base64\":\"MjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjI=\",\"purpose\":\"private_request_decryption\",\"suite\":\"HPKE-Base-X25519-HKDF-SHA256-AES256GCM-v1\"}],\"issued_at\":\"2027-01-01T12:00:00Z\",\"metadata_disclosure\":{\"approximate_size\":true,\"ip_address\":true,\"route_class\":true,\"timing\":true},\"model_use_disclosure\":{\"external_model_providers\":[],\"inference_enabled\":false,\"training_enabled\":false},\"network_lineage_id\":\"somavera:network:v1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"operator_memory_disclosure\":\"ordinary_process_operator_can_access_plaintext\",\"origin\":\"https://vera.example.test\",\"policy_hash\":\"0404040404040404040404040404040404040404040404040404040404040404\",\"previous_descriptor_id\":\"3483cb9841ab443e8ec8b57e9f208f42259f7f537c99e419746afbabaefb0c9d\",\"private_request_endpoint\":{\"hpke_profile\":\"HPKE-Base-X25519-HKDF-SHA256-AES256GCM-v1\",\"hpke_profile_status\":\"freeze_blocking_draft\",\"maximum_encrypted_bytes\":393216,\"maximum_plaintext_bytes\":262144,\"media_type\":\"application/json\",\"method\":\"POST\",\"path\":\"/v1/private/requests\",\"redirects_allowed\":false},\"profile_status\":\"freeze_blocking_draft\",\"query_policy\":{\"controller_confidential_scope_enabled\":true,\"maximum_top_k\":5,\"private_query_retention_seconds\":0,\"public_scope_enabled\":true,\"requires_separate_training_consent\":true,\"stores_private_query_bodies\":false},\"release\":{\"implementation\":\"somavera-vera-host-test-only\",\"origin_capsule_hash\":\"0303030303030303030303030303030303030303030303030303030303030303\",\"release_id\":\"vera-host-v0.1.0-test\",\"release_manifest_hash\":\"0202020202020202020202020202020202020202020202020202020202020202\"},\"retention_behavior\":{\"maximum_backup_deletion_seconds\":2592000,\"maximum_host_confidential_seconds\":2592000,\"maximum_private_query_seconds\":0,\"withdrawal_blocks_future_use\":true},\"rotation_policy\":{\"allowed_change_scopes\":[\"renewal_only\",\"signing_key_rotation\",\"ingestion_key_rotation\",\"signing_and_ingestion_key_rotation\"],\"emergency_compromise_recovery\":\"blocked_until_recovery_authority_profile\",\"maximum_descriptor_lifetime_seconds\":86400,\"maximum_overlap_seconds\":86400,\"ordinary_succession\":\"precommitted_overlap_dual_signature_v1\",\"requires_controller_confirmation\":true,\"requires_prior_and_successor_signatures\":true,\"successor_key_precommitment\":\"required_in_prior_descriptor\"},\"schema_version\":\"somavera.vera-host-descriptor.v1\",\"subprocessors\":[],\"supported_protocols\":[\"somavera-soma-vera-private-v1\",\"somavera-vera-public-query-v1\",\"somavera-vera-public-pack-v1\",\"somavera-vera-checkpoint-v1\"],\"transport_security\":{\"certificate_spki_sha256\":[],\"minimum_tls_version\":\"1.3\",\"redirects_allowed\":false,\"server_name\":\"vera.example.test\",\"tls_required\":true}}",
+    "succession_core_jcs": "{\"authority\":{\"authorizes_connection\":false,\"authorizes_consent\":false,\"authorizes_disclosure\":false,\"authorizes_emergency_recovery\":false,\"continuity_only\":true},\"change_scope\":\"signing_and_ingestion_key_rotation\",\"controller_confirmation_required\":true,\"execution_context_id\":\"somavera:context:v1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"expires_at\":\"2027-01-01T12:15:00Z\",\"host_did\":\"did:key:example-vera-host\",\"issued_at\":\"2027-01-01T12:00:00Z\",\"network_lineage_id\":\"somavera:network:v1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"origin\":\"https://vera.example.test\",\"prior_active_host_signing_key_id\":\"did:key:example-vera-host#signing-7\",\"prior_active_ingestion_key_id\":\"did:key:example-vera-host#ingestion-7\",\"prior_descriptor_id\":\"3483cb9841ab443e8ec8b57e9f208f42259f7f537c99e419746afbabaefb0c9d\",\"prior_descriptor_sequence\":7,\"profile_status\":\"freeze_blocking_draft\",\"schema_version\":\"somavera.vera-host-descriptor-succession.v1\",\"successor_active_host_signing_key_id\":\"did:key:example-vera-host#signing-8\",\"successor_active_ingestion_key_id\":\"did:key:example-vera-host#ingestion-8\",\"successor_descriptor_id\":\"c40e76035bb61d4d3757a7aff1af3c5a5d6e82868c9645ec397301d3d85ee68d\",\"successor_descriptor_sequence\":8}",
+    "prior_descriptor_id": "3483cb9841ab443e8ec8b57e9f208f42259f7f537c99e419746afbabaefb0c9d",
+    "successor_descriptor_id": "c40e76035bb61d4d3757a7aff1af3c5a5d6e82868c9645ec397301d3d85ee68d",
+    "succession_id": "fe06159bcb2d1a128cb98271cc78d669d5599ff53fb7a94e5e3de43cf3b447f6",
+    "result": "accept_continuity_pending_controller_confirmation"
+  },
+  "prior_descriptor": {
+    "$schema": "../schemas/vera-host-descriptor.schema.json",
+    "schema_version": "somavera.vera-host-descriptor.v1",
+    "profile_status": "freeze_blocking_draft",
+    "descriptor_id": "3483cb9841ab443e8ec8b57e9f208f42259f7f537c99e419746afbabaefb0c9d",
+    "descriptor_sequence": 7,
+    "previous_descriptor_id": "1111111111111111111111111111111111111111111111111111111111111111",
+    "rotation_policy": {
+      "ordinary_succession": "precommitted_overlap_dual_signature_v1",
+      "successor_key_precommitment": "required_in_prior_descriptor",
+      "requires_prior_and_successor_signatures": true,
+      "requires_controller_confirmation": true,
+      "emergency_compromise_recovery": "blocked_until_recovery_authority_profile",
+      "maximum_overlap_seconds": 86400,
+      "maximum_descriptor_lifetime_seconds": 86400,
+      "allowed_change_scopes": [
+        "renewal_only",
+        "signing_key_rotation",
+        "ingestion_key_rotation",
+        "signing_and_ingestion_key_rotation"
+      ]
+    },
+    "network_lineage_id": "somavera:network:v1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "execution_context_id": "somavera:context:v1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "host_did": "did:key:example-vera-host",
+    "origin": "https://vera.example.test",
+    "discovery": {
+      "method": "GET",
+      "path": "/.well-known/somavera/vera-host.json",
+      "media_type": "application/json",
+      "redirects_allowed": false,
+      "cache_max_age_seconds": 300
+    },
+    "release": {
+      "release_id": "vera-host-v0.1.0-test",
+      "release_manifest_hash": "0202020202020202020202020202020202020202020202020202020202020202",
+      "origin_capsule_hash": "0303030303030303030303030303030303030303030303030303030303030303",
+      "implementation": "somavera-vera-host-test-only"
+    },
+    "policy_hash": "0404040404040404040404040404040404040404040404040404040404040404",
+    "host_signing_keys": [
+      {
+        "key_id": "did:key:example-vera-host#signing-7",
+        "purpose": "descriptor_and_private_response_signing",
+        "suite": "Ed25519-v1",
+        "public_key_base64": "A6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg=",
+        "lifecycle": {
+          "valid_from": "2026-12-31T00:00:00Z",
+          "valid_until": "2027-01-02T00:00:00Z",
+          "status": "active",
+          "revoked_at": null,
+          "revocation_reference": null
+        }
+      },
+      {
+        "key_id": "did:key:example-vera-host#signing-8",
+        "purpose": "descriptor_and_private_response_signing",
+        "suite": "Ed25519-v1",
+        "public_key_base64": "Kay64UG8yvCyLhqU000LxzYeUm0L/hLIl5S8kyKWbdc=",
+        "lifecycle": {
+          "valid_from": "2027-01-01T12:00:00Z",
+          "valid_until": "2027-01-02T12:00:00Z",
+          "status": "overlap",
+          "revoked_at": null,
+          "revocation_reference": null
+        }
+      }
+    ],
+    "ingestion_encryption_keys": [
+      {
+        "key_id": "did:key:example-vera-host#ingestion-7",
+        "purpose": "private_request_decryption",
+        "suite": "HPKE-Base-X25519-HKDF-SHA256-AES256GCM-v1",
+        "public_key_base64": "MTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTE=",
+        "lifecycle": {
+          "valid_from": "2026-12-31T00:00:00Z",
+          "valid_until": "2027-01-02T00:00:00Z",
+          "status": "active",
+          "revoked_at": null,
+          "revocation_reference": null
+        }
+      },
+      {
+        "key_id": "did:key:example-vera-host#ingestion-8",
+        "purpose": "private_request_decryption",
+        "suite": "HPKE-Base-X25519-HKDF-SHA256-AES256GCM-v1",
+        "public_key_base64": "MjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjI=",
+        "lifecycle": {
+          "valid_from": "2027-01-01T12:00:00Z",
+          "valid_until": "2027-01-02T12:00:00Z",
+          "status": "overlap",
+          "revoked_at": null,
+          "revocation_reference": null
+        }
+      }
+    ],
+    "active_host_signing_key_id": "did:key:example-vera-host#signing-7",
+    "active_ingestion_key_id": "did:key:example-vera-host#ingestion-7",
+    "private_request_endpoint": {
+      "method": "POST",
+      "path": "/v1/private/requests",
+      "media_type": "application/json",
+      "redirects_allowed": false,
+      "maximum_encrypted_bytes": 393216,
+      "maximum_plaintext_bytes": 262144,
+      "hpke_profile": "HPKE-Base-X25519-HKDF-SHA256-AES256GCM-v1",
+      "hpke_profile_status": "freeze_blocking_draft"
+    },
+    "transport_security": {
+      "tls_required": true,
+      "minimum_tls_version": "1.3",
+      "server_name": "vera.example.test",
+      "certificate_spki_sha256": [],
+      "redirects_allowed": false
+    },
+    "supported_protocols": [
+      "somavera-soma-vera-private-v1",
+      "somavera-vera-public-query-v1",
+      "somavera-vera-public-pack-v1",
+      "somavera-vera-checkpoint-v1"
+    ],
+    "capabilities": {
+      "private_request_actions": [
+        "host.register",
+        "host.challenge",
+        "consent.register",
+        "consent.withdraw",
+        "contribution.offer",
+        "vera.query",
+        "export.request",
+        "status.lookup",
+        "content.delete",
+        "tombstone.status"
+      ],
+      "private_response_actions": [
+        "host.registered",
+        "host.challenge-result",
+        "consent.accepted",
+        "consent.withdrawn",
+        "contribution.accepted",
+        "contribution.rejected",
+        "answer.source-bundle",
+        "export.ready",
+        "status.result",
+        "content.deleted",
+        "tombstone.result",
+        "private.error"
+      ],
+      "public_routes": [
+        "host_descriptor",
+        "public_query",
+        "public_pack"
+      ]
+    },
+    "query_policy": {
+      "stores_private_query_bodies": false,
+      "private_query_retention_seconds": 0,
+      "public_scope_enabled": true,
+      "controller_confidential_scope_enabled": true,
+      "requires_separate_training_consent": true,
+      "maximum_top_k": 5
+    },
+    "data_regions": [
+      {
+        "region_code": "test-region-1",
+        "jurisdiction": "Test jurisdiction"
+      }
+    ],
+    "subprocessors": [],
+    "retention_behavior": {
+      "maximum_host_confidential_seconds": 2592000,
+      "maximum_private_query_seconds": 0,
+      "maximum_backup_deletion_seconds": 2592000,
+      "withdrawal_blocks_future_use": true
+    },
+    "model_use_disclosure": {
+      "inference_enabled": false,
+      "training_enabled": false,
+      "external_model_providers": []
+    },
+    "capability_limits": {
+      "maximum_query_utf8_bytes": 16384,
+      "maximum_answer_plaintext_bytes": 1048576,
+      "maximum_contribution_plaintext_bytes": 262144,
+      "maximum_concurrent_private_requests": 16,
+      "maximum_top_k": 5
+    },
+    "operator_memory_disclosure": "ordinary_process_operator_can_access_plaintext",
+    "metadata_disclosure": {
+      "ip_address": true,
+      "timing": true,
+      "approximate_size": true,
+      "route_class": true
+    },
+    "issued_at": "2027-01-01T00:00:00Z",
+    "expires_at": "2027-01-02T00:00:00Z",
+    "signature": {
+      "suite": "Ed25519-v1",
+      "key_id": "did:key:example-vera-host#signing-7",
+      "value": "m4xPayRj/CRVCX40/wX0e6a8BlXyBcpQfg1uEJf1hiVg8oD1gXlG9ECAGdEtq2UwPqCoB/2cK/FJH43GY6/RBg=="
+    }
+  },
+  "successor_descriptor": {
+    "$schema": "../schemas/vera-host-descriptor.schema.json",
+    "schema_version": "somavera.vera-host-descriptor.v1",
+    "profile_status": "freeze_blocking_draft",
+    "descriptor_id": "c40e76035bb61d4d3757a7aff1af3c5a5d6e82868c9645ec397301d3d85ee68d",
+    "descriptor_sequence": 8,
+    "previous_descriptor_id": "3483cb9841ab443e8ec8b57e9f208f42259f7f537c99e419746afbabaefb0c9d",
+    "rotation_policy": {
+      "ordinary_succession": "precommitted_overlap_dual_signature_v1",
+      "successor_key_precommitment": "required_in_prior_descriptor",
+      "requires_prior_and_successor_signatures": true,
+      "requires_controller_confirmation": true,
+      "emergency_compromise_recovery": "blocked_until_recovery_authority_profile",
+      "maximum_overlap_seconds": 86400,
+      "maximum_descriptor_lifetime_seconds": 86400,
+      "allowed_change_scopes": [
+        "renewal_only",
+        "signing_key_rotation",
+        "ingestion_key_rotation",
+        "signing_and_ingestion_key_rotation"
+      ]
+    },
+    "network_lineage_id": "somavera:network:v1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "execution_context_id": "somavera:context:v1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "host_did": "did:key:example-vera-host",
+    "origin": "https://vera.example.test",
+    "discovery": {
+      "method": "GET",
+      "path": "/.well-known/somavera/vera-host.json",
+      "media_type": "application/json",
+      "redirects_allowed": false,
+      "cache_max_age_seconds": 300
+    },
+    "release": {
+      "release_id": "vera-host-v0.1.0-test",
+      "release_manifest_hash": "0202020202020202020202020202020202020202020202020202020202020202",
+      "origin_capsule_hash": "0303030303030303030303030303030303030303030303030303030303030303",
+      "implementation": "somavera-vera-host-test-only"
+    },
+    "policy_hash": "0404040404040404040404040404040404040404040404040404040404040404",
+    "host_signing_keys": [
+      {
+        "key_id": "did:key:example-vera-host#signing-7",
+        "purpose": "descriptor_and_private_response_signing",
+        "suite": "Ed25519-v1",
+        "public_key_base64": "A6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg=",
+        "lifecycle": {
+          "valid_from": "2026-12-31T00:00:00Z",
+          "valid_until": "2027-01-02T00:00:00Z",
+          "status": "retired",
+          "revoked_at": null,
+          "revocation_reference": null
+        }
+      },
+      {
+        "key_id": "did:key:example-vera-host#signing-8",
+        "purpose": "descriptor_and_private_response_signing",
+        "suite": "Ed25519-v1",
+        "public_key_base64": "Kay64UG8yvCyLhqU000LxzYeUm0L/hLIl5S8kyKWbdc=",
+        "lifecycle": {
+          "valid_from": "2027-01-01T12:00:00Z",
+          "valid_until": "2027-01-02T12:00:00Z",
+          "status": "active",
+          "revoked_at": null,
+          "revocation_reference": null
+        }
+      }
+    ],
+    "ingestion_encryption_keys": [
+      {
+        "key_id": "did:key:example-vera-host#ingestion-7",
+        "purpose": "private_request_decryption",
+        "suite": "HPKE-Base-X25519-HKDF-SHA256-AES256GCM-v1",
+        "public_key_base64": "MTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTE=",
+        "lifecycle": {
+          "valid_from": "2026-12-31T00:00:00Z",
+          "valid_until": "2027-01-02T00:00:00Z",
+          "status": "retired",
+          "revoked_at": null,
+          "revocation_reference": null
+        }
+      },
+      {
+        "key_id": "did:key:example-vera-host#ingestion-8",
+        "purpose": "private_request_decryption",
+        "suite": "HPKE-Base-X25519-HKDF-SHA256-AES256GCM-v1",
+        "public_key_base64": "MjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjI=",
+        "lifecycle": {
+          "valid_from": "2027-01-01T12:00:00Z",
+          "valid_until": "2027-01-02T12:00:00Z",
+          "status": "active",
+          "revoked_at": null,
+          "revocation_reference": null
+        }
+      }
+    ],
+    "active_host_signing_key_id": "did:key:example-vera-host#signing-8",
+    "active_ingestion_key_id": "did:key:example-vera-host#ingestion-8",
+    "private_request_endpoint": {
+      "method": "POST",
+      "path": "/v1/private/requests",
+      "media_type": "application/json",
+      "redirects_allowed": false,
+      "maximum_encrypted_bytes": 393216,
+      "maximum_plaintext_bytes": 262144,
+      "hpke_profile": "HPKE-Base-X25519-HKDF-SHA256-AES256GCM-v1",
+      "hpke_profile_status": "freeze_blocking_draft"
+    },
+    "transport_security": {
+      "tls_required": true,
+      "minimum_tls_version": "1.3",
+      "server_name": "vera.example.test",
+      "certificate_spki_sha256": [],
+      "redirects_allowed": false
+    },
+    "supported_protocols": [
+      "somavera-soma-vera-private-v1",
+      "somavera-vera-public-query-v1",
+      "somavera-vera-public-pack-v1",
+      "somavera-vera-checkpoint-v1"
+    ],
+    "capabilities": {
+      "private_request_actions": [
+        "host.register",
+        "host.challenge",
+        "consent.register",
+        "consent.withdraw",
+        "contribution.offer",
+        "vera.query",
+        "export.request",
+        "status.lookup",
+        "content.delete",
+        "tombstone.status"
+      ],
+      "private_response_actions": [
+        "host.registered",
+        "host.challenge-result",
+        "consent.accepted",
+        "consent.withdrawn",
+        "contribution.accepted",
+        "contribution.rejected",
+        "answer.source-bundle",
+        "export.ready",
+        "status.result",
+        "content.deleted",
+        "tombstone.result",
+        "private.error"
+      ],
+      "public_routes": [
+        "host_descriptor",
+        "public_query",
+        "public_pack"
+      ]
+    },
+    "query_policy": {
+      "stores_private_query_bodies": false,
+      "private_query_retention_seconds": 0,
+      "public_scope_enabled": true,
+      "controller_confidential_scope_enabled": true,
+      "requires_separate_training_consent": true,
+      "maximum_top_k": 5
+    },
+    "data_regions": [
+      {
+        "region_code": "test-region-1",
+        "jurisdiction": "Test jurisdiction"
+      }
+    ],
+    "subprocessors": [],
+    "retention_behavior": {
+      "maximum_host_confidential_seconds": 2592000,
+      "maximum_private_query_seconds": 0,
+      "maximum_backup_deletion_seconds": 2592000,
+      "withdrawal_blocks_future_use": true
+    },
+    "model_use_disclosure": {
+      "inference_enabled": false,
+      "training_enabled": false,
+      "external_model_providers": []
+    },
+    "capability_limits": {
+      "maximum_query_utf8_bytes": 16384,
+      "maximum_answer_plaintext_bytes": 1048576,
+      "maximum_contribution_plaintext_bytes": 262144,
+      "maximum_concurrent_private_requests": 16,
+      "maximum_top_k": 5
+    },
+    "operator_memory_disclosure": "ordinary_process_operator_can_access_plaintext",
+    "metadata_disclosure": {
+      "ip_address": true,
+      "timing": true,
+      "approximate_size": true,
+      "route_class": true
+    },
+    "issued_at": "2027-01-01T12:00:00Z",
+    "expires_at": "2027-01-02T12:00:00Z",
+    "signature": {
+      "suite": "Ed25519-v1",
+      "key_id": "did:key:example-vera-host#signing-8",
+      "value": "ZtqYDVdHXy1/AyWJo+aKvYbDPNZq6sguBxu/FLU+maDcpR73SSp+Hna/lm9Dwfycmeb1xNW6Ggti1OhE+SisDQ=="
+    }
+  },
+  "succession_proof": {
+    "$schema": "../schemas/vera-host-descriptor-succession.schema.json",
+    "schema_version": "somavera.vera-host-descriptor-succession.v1",
+    "profile_status": "freeze_blocking_draft",
+    "succession_id": "fe06159bcb2d1a128cb98271cc78d669d5599ff53fb7a94e5e3de43cf3b447f6",
+    "network_lineage_id": "somavera:network:v1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "execution_context_id": "somavera:context:v1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "host_did": "did:key:example-vera-host",
+    "origin": "https://vera.example.test",
+    "prior_descriptor_id": "3483cb9841ab443e8ec8b57e9f208f42259f7f537c99e419746afbabaefb0c9d",
+    "prior_descriptor_sequence": 7,
+    "successor_descriptor_id": "c40e76035bb61d4d3757a7aff1af3c5a5d6e82868c9645ec397301d3d85ee68d",
+    "successor_descriptor_sequence": 8,
+    "change_scope": "signing_and_ingestion_key_rotation",
+    "prior_active_host_signing_key_id": "did:key:example-vera-host#signing-7",
+    "successor_active_host_signing_key_id": "did:key:example-vera-host#signing-8",
+    "prior_active_ingestion_key_id": "did:key:example-vera-host#ingestion-7",
+    "successor_active_ingestion_key_id": "did:key:example-vera-host#ingestion-8",
+    "issued_at": "2027-01-01T12:00:00Z",
+    "expires_at": "2027-01-01T12:15:00Z",
+    "controller_confirmation_required": true,
+    "authority": {
+      "continuity_only": true,
+      "authorizes_connection": false,
+      "authorizes_consent": false,
+      "authorizes_disclosure": false,
+      "authorizes_emergency_recovery": false
+    },
+    "signatures": {
+      "prior_active_key_signature": {
+        "suite": "Ed25519-v1",
+        "key_id": "did:key:example-vera-host#signing-7",
+        "value": "KuQRWRLCK5DrZeE13JTrphlrhJRBHcuYYpg7EbnjjcNT2YKeqBMi6g72vWN5hl/b8qojVnpS0IsibKIcKvl6Cg=="
+      },
+      "successor_active_key_signature": {
+        "suite": "Ed25519-v1",
+        "key_id": "did:key:example-vera-host#signing-8",
+        "value": "ATfm18O65Es8suQ5/OYOrvh6GNc3BHW2UCaYE/E9L7yzxHh9xpo+KtMBdH/z/FjDNhvzdlvChvjHJ905mA/ABw=="
+      }
+    }
+  }
+}

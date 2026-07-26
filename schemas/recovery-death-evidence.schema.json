@@ -1,0 +1,238 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:somavera:schema:recovery-death-evidence:v1",
+  "title": "Somavera Old-Network Death Evidence v1",
+  "$comment": "evidence_id is the domain-separated hash of the canonical object excluding $schema, schema_version, and evidence_id. Date ordering, policy durations, independence, freshness, and conflict aborts require semantic conformance checks.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "evidence_id",
+    "death_policy_id",
+    "network_lineage_id",
+    "execution_context_id",
+    "context_epoch",
+    "candidate_checkpoint",
+    "newest_obtainable_finality",
+    "windows",
+    "observer_reports",
+    "late_finality_proofs",
+    "conflicting_proofs",
+    "evaluated_at",
+    "result",
+    "limitations"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": { "const": "somavera.recovery-death-evidence.v1" },
+    "evidence_id": { "$ref": "#/$defs/hash" },
+    "death_policy_id": { "$ref": "#/$defs/hash" },
+    "network_lineage_id": { "$ref": "#/$defs/network_id" },
+    "execution_context_id": { "$ref": "#/$defs/context_id" },
+    "context_epoch": { "type": "integer", "minimum": 0 },
+    "candidate_checkpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "checkpoint_id",
+        "height",
+        "finalized_at",
+        "block_hash",
+        "app_hash",
+        "state_package_id"
+      ],
+      "properties": {
+        "checkpoint_id": { "$ref": "#/$defs/hash" },
+        "height": { "type": "integer", "minimum": 0 },
+        "finalized_at": { "type": "string", "format": "date-time" },
+        "block_hash": { "$ref": "#/$defs/hash" },
+        "app_hash": { "$ref": "#/$defs/hash" },
+        "state_package_id": { "$ref": "#/$defs/hash" }
+      }
+    },
+    "newest_obtainable_finality": { "$ref": "#/$defs/finality_observation" },
+    "windows": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "discovery_started_at",
+        "discovery_ended_at",
+        "observation_started_at",
+        "observation_ended_at",
+        "hold_down_started_at",
+        "hold_down_ended_at"
+      ],
+      "properties": {
+        "discovery_started_at": { "type": "string", "format": "date-time" },
+        "discovery_ended_at": { "type": "string", "format": "date-time" },
+        "observation_started_at": { "type": "string", "format": "date-time" },
+        "observation_ended_at": { "type": "string", "format": "date-time" },
+        "hold_down_started_at": { "type": "string", "format": "date-time" },
+        "hold_down_ended_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "observer_reports": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 100,
+      "items": { "$ref": "#/$defs/observer_report" }
+    },
+    "late_finality_proofs": {
+      "type": "array",
+      "maxItems": 100,
+      "items": { "$ref": "#/$defs/late_proof" }
+    },
+    "conflicting_proofs": {
+      "type": "array",
+      "maxItems": 100,
+      "items": { "$ref": "#/$defs/conflicting_proof" }
+    },
+    "evaluated_at": { "type": "string", "format": "date-time" },
+    "result": { "enum": ["predicate_satisfied", "aborted"] },
+    "limitations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "bounded_policy_only",
+        "absolute_death_proven",
+        "hidden_partition_excluded",
+        "universal_social_adoption_forced"
+      ],
+      "properties": {
+        "bounded_policy_only": { "const": true },
+        "absolute_death_proven": { "const": false },
+        "hidden_partition_excluded": { "const": false },
+        "universal_social_adoption_forced": { "const": false }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "result": { "const": "predicate_satisfied" } },
+        "required": ["result"]
+      },
+      "then": {
+        "properties": {
+          "late_finality_proofs": { "type": "array", "maxItems": 0 },
+          "conflicting_proofs": { "type": "array", "maxItems": 0 }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "network_id": { "type": "string", "pattern": "^somavera:network:v1:[a-f0-9]{64}$" },
+    "context_id": { "type": "string", "pattern": "^somavera:context:v1:[a-f0-9]{64}$" },
+    "finality_observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "checkpoint_id",
+        "height",
+        "finalized_at",
+        "block_hash",
+        "app_hash",
+        "proof_hash",
+        "observed_at"
+      ],
+      "properties": {
+        "checkpoint_id": { "$ref": "#/$defs/hash" },
+        "height": { "type": "integer", "minimum": 0 },
+        "finalized_at": { "type": "string", "format": "date-time" },
+        "block_hash": { "$ref": "#/$defs/hash" },
+        "app_hash": { "$ref": "#/$defs/hash" },
+        "proof_hash": { "$ref": "#/$defs/hash" },
+        "observed_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "report_finality_observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["height", "finalized_at", "proof_hash", "observed_at"],
+      "properties": {
+        "height": { "type": "integer", "minimum": 0 },
+        "finalized_at": { "type": "string", "format": "date-time" },
+        "proof_hash": { "$ref": "#/$defs/hash" },
+        "observed_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "observer_report": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "observer_id",
+        "controller_id",
+        "organization_id",
+        "jurisdiction",
+        "network_path_id",
+        "observed_from",
+        "observed_through",
+        "report_signed_at",
+        "clock_source_id",
+        "maximum_observed_clock_skew_seconds",
+        "newest_valid_finality",
+        "search_result",
+        "transcript_hash",
+        "suite",
+        "signature"
+      ],
+      "properties": {
+        "observer_id": { "type": "string", "minLength": 3, "maxLength": 256 },
+        "controller_id": { "type": "string", "minLength": 3, "maxLength": 256 },
+        "organization_id": { "type": "string", "minLength": 3, "maxLength": 256 },
+        "jurisdiction": { "type": "string", "minLength": 2, "maxLength": 128 },
+        "network_path_id": { "type": "string", "minLength": 3, "maxLength": 256 },
+        "observed_from": { "type": "string", "format": "date-time" },
+        "observed_through": { "type": "string", "format": "date-time" },
+        "report_signed_at": { "type": "string", "format": "date-time" },
+        "clock_source_id": { "type": "string", "minLength": 3, "maxLength": 256 },
+        "maximum_observed_clock_skew_seconds": { "type": "integer", "minimum": 0 },
+        "newest_valid_finality": { "$ref": "#/$defs/report_finality_observation" },
+        "search_result": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "searched_through",
+            "fresh_finality_found",
+            "conflicting_finality_found",
+            "competing_succession_found"
+          ],
+          "properties": {
+            "searched_through": { "type": "string", "format": "date-time" },
+            "fresh_finality_found": { "type": "boolean" },
+            "conflicting_finality_found": { "type": "boolean" },
+            "competing_succession_found": { "type": "boolean" }
+          }
+        },
+        "transcript_hash": { "$ref": "#/$defs/hash" },
+        "suite": { "const": "Ed25519-v1" },
+        "signature": {
+          "type": "string",
+          "contentEncoding": "base64",
+          "minLength": 80,
+          "maxLength": 128
+        }
+      }
+    },
+    "late_proof": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["proof", "received_at"],
+      "properties": {
+        "proof": { "$ref": "#/$defs/finality_observation" },
+        "received_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "conflicting_proof": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["proof", "conflicts_with_checkpoint_id", "received_at"],
+      "properties": {
+        "proof": { "$ref": "#/$defs/finality_observation" },
+        "conflicts_with_checkpoint_id": { "$ref": "#/$defs/hash" },
+        "received_at": { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}

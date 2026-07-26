@@ -1,0 +1,42 @@
+{
+  "$schema": "../schemas/consent-grant.schema.json",
+  "schema_version": "somavera.consent-grant.v1",
+  "consent_grant_id": "1111111111111111111111111111111111111111111111111111111111111111",
+  "network_lineage_id": "somavera:network:v1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "subject_did": "did:key:example-agent",
+  "controller_did": "did:key:example-controller",
+  "observer_did": "did:key:example-observer",
+  "purposes": [
+    "aggregate_research",
+    "safety_evaluation"
+  ],
+  "data_classes": [
+    "work_summary",
+    "objective_receipt"
+  ],
+  "destinations": [
+    "did:key:example-vera-host"
+  ],
+  "operations": [
+    "collect",
+    "store_encrypted",
+    "derive",
+    "evaluate",
+    "aggregate"
+  ],
+  "retention_seconds": 2592000,
+  "redistribution": "aggregate_only",
+  "model_training": false,
+  "public_release": false,
+  "license": "Somavera-Contribution-Grant-Example-v1",
+  "issued_at": "2027-01-01T00:00:00Z",
+  "expires_at": "2027-02-01T00:00:00Z",
+  "withdrawal_mode": "delete_deletable_and_tombstone",
+  "policy_version": "data-rights-v1",
+  "signature": {
+    "suite": "Ed25519-v1",
+    "key_id": "did:key:example-controller#key-1",
+    "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+  }
+}
+

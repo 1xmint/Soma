@@ -1,0 +1,260 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:somavera:schema:vera-answer-source-bundle:v1",
+  "title": "Somavera Vera Answer and Source Bundle v1",
+  "$comment": "Strict prototype draft. A host signature proves returned bytes and provenance claims, not factual truth. The bundle is signed before recipient encryption.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "response_event_id",
+    "network_lineage_id",
+    "execution_context_id",
+    "protocol",
+    "action",
+    "host_did",
+    "host_signing_key_id",
+    "request_event_id",
+    "query_authority",
+    "query_hash",
+    "return_descriptor_id",
+    "answer_status",
+    "answer_text",
+    "citations",
+    "sources",
+    "uncertainty",
+    "contradictions",
+    "abstention_reasons",
+    "policy",
+    "issued_at",
+    "expires_at",
+    "signature"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": { "const": "somavera.vera-answer-source-bundle.v1" },
+    "response_event_id": { "$ref": "#/$defs/hash" },
+    "network_lineage_id": { "$ref": "#/$defs/network" },
+    "execution_context_id": { "$ref": "#/$defs/context" },
+    "protocol": { "const": "vera" },
+    "action": { "const": "answer.source-bundle" },
+    "host_did": { "$ref": "#/$defs/did" },
+    "host_signing_key_id": { "$ref": "#/$defs/keyId" },
+    "request_event_id": { "$ref": "#/$defs/hash" },
+    "query_authority": { "$ref": "#/$defs/queryAuthority" },
+    "query_hash": { "$ref": "#/$defs/hash" },
+    "return_descriptor_id": { "$ref": "#/$defs/hash" },
+    "answer_status": { "type": "string", "enum": ["answered", "partial", "abstained"] },
+    "answer_text": { "type": "string", "maxLength": 65536 },
+    "citations": {
+      "type": "array",
+      "maxItems": 64,
+      "items": { "$ref": "#/$defs/citation" }
+    },
+    "sources": {
+      "type": "array",
+      "maxItems": 64,
+      "items": { "$ref": "#/$defs/source" }
+    },
+    "uncertainty": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["level", "basis"],
+      "properties": {
+        "level": { "type": "string", "enum": ["low", "medium", "high", "unknown"] },
+        "basis": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1, "maxLength": 256 }
+        }
+      }
+    },
+    "contradictions": {
+      "type": "array",
+      "maxItems": 16,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["contradiction_id", "source_ids", "summary"],
+        "properties": {
+          "contradiction_id": { "$ref": "#/$defs/hash" },
+          "source_ids": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 16,
+            "uniqueItems": true,
+            "items": { "$ref": "#/$defs/hash" }
+          },
+          "summary": { "type": "string", "minLength": 1, "maxLength": 1024 }
+        }
+      }
+    },
+    "abstention_reasons": {
+      "type": "array",
+      "maxItems": 8,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "NO_ELIGIBLE_EVIDENCE",
+          "RIGHTS_DENIED",
+          "WITHDRAWN_SOURCE",
+          "SEVERE_CONTRADICTION",
+          "UNSUPPORTED_SCOPE",
+          "INSUFFICIENT_EVIDENCE",
+          "POLICY_REJECTED"
+        ]
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["policy_hash", "retrieval_version", "retrieval_kind", "model_provider", "as_of"],
+      "properties": {
+        "policy_hash": { "$ref": "#/$defs/hash" },
+        "retrieval_version": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_.-]{2,63}$" },
+        "retrieval_kind": { "const": "local_lexical" },
+        "model_provider": { "type": "null" },
+        "as_of": { "type": "string", "format": "date-time" }
+      }
+    },
+    "issued_at": { "type": "string", "format": "date-time" },
+    "expires_at": { "type": "string", "format": "date-time" },
+    "signature": { "$ref": "#/$defs/signature" }
+  },
+  "oneOf": [
+    {
+      "required": ["answer_status", "answer_text", "citations", "sources", "abstention_reasons"],
+      "properties": {
+        "answer_status": { "const": "answered" },
+        "answer_text": { "type": "string", "minLength": 1 },
+        "citations": { "type": "array", "minItems": 1 },
+        "sources": { "type": "array", "minItems": 1 },
+        "abstention_reasons": { "type": "array", "maxItems": 0 }
+      }
+    },
+    {
+      "required": ["answer_status", "answer_text", "citations", "sources"],
+      "properties": {
+        "answer_status": { "const": "partial" },
+        "answer_text": { "type": "string", "minLength": 1 },
+        "citations": { "type": "array", "minItems": 1 },
+        "sources": { "type": "array", "minItems": 1 }
+      }
+    },
+    {
+      "required": ["answer_status", "answer_text", "abstention_reasons"],
+      "properties": {
+        "answer_status": { "const": "abstained" },
+        "answer_text": { "const": "" },
+        "abstention_reasons": { "type": "array", "minItems": 1 }
+      }
+    }
+  ],
+  "$defs": {
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "network": { "type": "string", "pattern": "^somavera:network:v1:[a-f0-9]{64}$" },
+    "context": { "type": "string", "pattern": "^somavera:context:v1:[a-f0-9]{64}$" },
+    "did": { "type": "string", "pattern": "^did:[a-z0-9]+:.+$", "maxLength": 512 },
+    "keyId": { "type": "string", "minLength": 3, "maxLength": 512 },
+    "queryAuthority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "controller_did", "requester_did", "delegation_id"],
+      "properties": {
+        "mode": { "type": "string", "enum": ["controller_direct", "delegated"] },
+        "controller_did": { "$ref": "#/$defs/did" },
+        "requester_did": { "$ref": "#/$defs/did" },
+        "delegation_id": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" }
+      },
+      "oneOf": [
+        {
+          "required": ["mode", "delegation_id"],
+          "properties": {
+            "mode": { "const": "controller_direct" },
+            "delegation_id": { "type": "null" }
+          }
+        },
+        {
+          "required": ["mode", "delegation_id"],
+          "properties": {
+            "mode": { "const": "delegated" },
+            "delegation_id": { "$ref": "#/$defs/hash" }
+          }
+        }
+      ]
+    },
+    "citation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["citation_id", "source_id", "claim_hash", "excerpt_hash"],
+      "properties": {
+        "citation_id": { "$ref": "#/$defs/hash" },
+        "source_id": { "$ref": "#/$defs/hash" },
+        "claim_hash": { "$ref": "#/$defs/hash" },
+        "excerpt_hash": { "$ref": "#/$defs/hash" }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_id",
+        "artifact_id",
+        "content_hash",
+        "source_event_ids",
+        "evidence_ids",
+        "receipt_ids",
+        "provenance_edge_ids",
+        "evaluation_ids",
+        "producer_did",
+        "artifact_status",
+        "rights",
+        "license",
+        "tombstone_state",
+        "excerpt",
+        "excerpt_hash"
+      ],
+      "properties": {
+        "source_id": { "$ref": "#/$defs/hash" },
+        "artifact_id": { "$ref": "#/$defs/hash" },
+        "content_hash": { "$ref": "#/$defs/hash" },
+        "source_event_ids": { "$ref": "#/$defs/hashArray" },
+        "evidence_ids": { "$ref": "#/$defs/hashArray" },
+        "receipt_ids": { "$ref": "#/$defs/hashArray" },
+        "provenance_edge_ids": { "$ref": "#/$defs/hashArray" },
+        "evaluation_ids": { "$ref": "#/$defs/hashArray" },
+        "producer_did": { "$ref": "#/$defs/did" },
+        "artifact_status": { "type": "string", "enum": ["reinforced", "provisional", "disputed", "withdrawn"] },
+        "rights": { "type": "string", "enum": ["public", "controller_confidential", "citation_only"] },
+        "license": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "tombstone_state": { "type": "string", "enum": ["none", "pending", "deleted", "irreversible_public_copy"] },
+        "excerpt": { "type": "string", "maxLength": 4096 },
+        "excerpt_hash": { "$ref": "#/$defs/hash" }
+      }
+    },
+    "hashArray": {
+      "type": "array",
+      "maxItems": 64,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/hash" }
+    },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["suite", "key_id", "value"],
+      "properties": {
+        "suite": { "const": "Ed25519-v1" },
+        "key_id": { "$ref": "#/$defs/keyId" },
+        "value": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9+/]{86}==$",
+          "minLength": 88,
+          "maxLength": 88,
+          "contentEncoding": "base64"
+        }
+      }
+    }
+  }
+}

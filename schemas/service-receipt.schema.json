@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:somavera:schema:service-receipt:v1",
+  "title": "Somavera Objective Service Receipt v1",
+  "$comment": "receipt_id and signer role requirements are defined in ID-DERIVATION.md",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "receipt_id",
+    "network_lineage_id",
+    "request_id",
+    "provider_did",
+    "consumer_did",
+    "capability",
+    "started_at",
+    "finished_at",
+    "input_commitment",
+    "output_commitment",
+    "units",
+    "outcome",
+    "evidence_ids",
+    "signatures"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": { "const": "somavera.service-receipt.v1" },
+    "receipt_id": { "$ref": "#/$defs/hash" },
+    "network_lineage_id": {
+      "type": "string",
+      "pattern": "^somavera:network:v1:[a-f0-9]{64}$"
+    },
+    "request_id": { "$ref": "#/$defs/hash" },
+    "provider_did": { "$ref": "#/$defs/did" },
+    "consumer_did": { "$ref": "#/$defs/did" },
+    "capability": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_.-]{1,127}$"
+    },
+    "started_at": { "type": "string", "format": "date-time" },
+    "finished_at": { "type": "string", "format": "date-time" },
+    "input_commitment": {
+      "oneOf": [
+        { "$ref": "#/$defs/hash" },
+        { "type": "null" }
+      ]
+    },
+    "output_commitment": {
+      "oneOf": [
+        { "$ref": "#/$defs/hash" },
+        { "type": "null" }
+      ]
+    },
+    "units": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["dimension", "amount"],
+        "properties": {
+          "dimension": {
+            "enum": [
+              "cpu_milliseconds",
+              "gpu_milliseconds",
+              "storage_byte_seconds",
+              "network_bytes",
+              "verified_task"
+            ]
+          },
+          "amount": {
+            "type": "string",
+            "pattern": "^[0-9]+$"
+          }
+        }
+      }
+    },
+    "outcome": {
+      "enum": ["succeeded", "failed", "disputed"]
+    },
+    "evidence_ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/hash" }
+    },
+    "signatures": {
+      "type": "array",
+      "minItems": 2,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/signature" }
+    }
+  },
+  "$defs": {
+    "hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "did": {
+      "type": "string",
+      "pattern": "^did:[a-z0-9]+:.+$"
+    },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "signer_did", "suite", "key_id", "value"],
+      "properties": {
+        "role": {
+          "enum": ["provider", "consumer", "independent_verifier"]
+        },
+        "signer_did": { "$ref": "#/$defs/did" },
+        "suite": { "const": "Ed25519-v1" },
+        "key_id": { "type": "string", "minLength": 3, "maxLength": 512 },
+        "value": {
+          "type": "string",
+          "contentEncoding": "base64",
+          "minLength": 80,
+          "maxLength": 128
+        }
+      }
+    }
+  }
+}
+

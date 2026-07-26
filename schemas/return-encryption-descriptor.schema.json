@@ -1,0 +1,232 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:somavera:schema:return-encryption-descriptor:v1",
+  "title": "Somavera Request-Bound Return Encryption Descriptor v1",
+  "$comment": "Freeze-blocking draft. This unsigned descriptor is inside the signed private request. It deliberately binds request_nonce rather than request_event_id to avoid a circular event identifier.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "profile_status",
+    "descriptor_id",
+    "network_lineage_id",
+    "execution_context_id",
+    "request_action",
+    "request_nonce",
+    "requester_did",
+    "authorized_host_did",
+    "destination_soma_did",
+    "recipient_return_key_id",
+    "recipient_return_public_key",
+    "key_role",
+    "usage",
+    "hpke_suite",
+    "allowed_response_actions",
+    "not_before",
+    "expires_at",
+    "maximum_plaintext_bytes"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": { "const": "somavera.return-encryption-descriptor.v1" },
+    "profile_status": { "const": "freeze_blocking_draft" },
+    "descriptor_id": { "$ref": "#/$defs/hash" },
+    "network_lineage_id": { "$ref": "#/$defs/network" },
+    "execution_context_id": { "$ref": "#/$defs/context" },
+    "request_action": {
+      "type": "string",
+      "enum": [
+        "host.register",
+        "host.challenge",
+        "consent.register",
+        "consent.withdraw",
+        "contribution.offer",
+        "vera.query",
+        "export.request",
+        "status.lookup",
+        "content.delete",
+        "tombstone.status"
+      ]
+    },
+    "request_nonce": { "type": "string", "pattern": "^[a-f0-9]{32,128}$" },
+    "requester_did": { "$ref": "#/$defs/did" },
+    "authorized_host_did": { "$ref": "#/$defs/did" },
+    "destination_soma_did": { "$ref": "#/$defs/did" },
+    "recipient_return_key_id": { "$ref": "#/$defs/keyId" },
+    "recipient_return_public_key": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9+/]{43}=$",
+      "minLength": 44,
+      "maxLength": 44,
+      "contentEncoding": "base64"
+    },
+    "key_role": { "const": "private_response_decryption" },
+    "usage": { "const": "single_request_response_family" },
+    "hpke_suite": { "const": "HPKE-Base-X25519-HKDF-SHA256-AES256GCM-v1" },
+    "allowed_response_actions": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 4,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "host.registered",
+          "host.challenge-result",
+          "consent.accepted",
+          "consent.withdrawn",
+          "contribution.accepted",
+          "contribution.rejected",
+          "answer.source-bundle",
+          "export.ready",
+          "status.result",
+          "content.deleted",
+          "tombstone.result",
+          "private.error"
+        ]
+      }
+    },
+    "not_before": { "type": "string", "format": "date-time" },
+    "expires_at": { "type": "string", "format": "date-time" },
+    "maximum_plaintext_bytes": { "type": "integer", "minimum": 1, "maximum": 1048576 }
+  },
+  "$defs": {
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "network": { "type": "string", "pattern": "^somavera:network:v1:[a-f0-9]{64}$" },
+    "context": { "type": "string", "pattern": "^somavera:context:v1:[a-f0-9]{64}$" },
+    "did": { "type": "string", "pattern": "^did:[a-z0-9]+:.+$", "maxLength": 512 },
+    "keyId": { "type": "string", "minLength": 3, "maxLength": 512 }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "request_action": { "const": "host.register" } }, "required": ["request_action"] },
+      "then": {
+        "properties": {
+          "allowed_response_actions": {
+            "type": "array",
+            "items": { "enum": ["host.registered", "private.error"] },
+            "contains": { "const": "host.registered" },
+            "minContains": 1
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "request_action": { "const": "host.challenge" } }, "required": ["request_action"] },
+      "then": {
+        "properties": {
+          "allowed_response_actions": {
+            "type": "array",
+            "items": { "enum": ["host.challenge-result", "private.error"] },
+            "contains": { "const": "host.challenge-result" },
+            "minContains": 1
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "request_action": { "const": "consent.register" } }, "required": ["request_action"] },
+      "then": {
+        "properties": {
+          "allowed_response_actions": {
+            "type": "array",
+            "items": { "enum": ["consent.accepted", "private.error"] },
+            "contains": { "const": "consent.accepted" },
+            "minContains": 1
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "request_action": { "const": "consent.withdraw" } }, "required": ["request_action"] },
+      "then": {
+        "properties": {
+          "allowed_response_actions": {
+            "type": "array",
+            "items": { "enum": ["consent.withdrawn", "private.error"] },
+            "contains": { "const": "consent.withdrawn" },
+            "minContains": 1
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "request_action": { "const": "contribution.offer" } }, "required": ["request_action"] },
+      "then": {
+        "properties": {
+          "allowed_response_actions": {
+            "type": "array",
+            "items": { "enum": ["contribution.accepted", "contribution.rejected", "private.error"] },
+            "contains": { "enum": ["contribution.accepted", "contribution.rejected"] },
+            "minContains": 1
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "request_action": { "const": "vera.query" } }, "required": ["request_action"] },
+      "then": {
+        "properties": {
+          "allowed_response_actions": {
+            "type": "array",
+            "items": { "enum": ["answer.source-bundle", "private.error"] },
+            "contains": { "const": "answer.source-bundle" },
+            "minContains": 1
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "request_action": { "const": "export.request" } }, "required": ["request_action"] },
+      "then": {
+        "properties": {
+          "allowed_response_actions": {
+            "type": "array",
+            "items": { "enum": ["export.ready", "private.error"] },
+            "contains": { "const": "export.ready" },
+            "minContains": 1
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "request_action": { "const": "status.lookup" } }, "required": ["request_action"] },
+      "then": {
+        "properties": {
+          "allowed_response_actions": {
+            "type": "array",
+            "items": { "enum": ["status.result", "private.error"] },
+            "contains": { "const": "status.result" },
+            "minContains": 1
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "request_action": { "const": "content.delete" } }, "required": ["request_action"] },
+      "then": {
+        "properties": {
+          "allowed_response_actions": {
+            "type": "array",
+            "items": { "enum": ["content.deleted", "private.error"] },
+            "contains": { "const": "content.deleted" },
+            "minContains": 1
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "request_action": { "const": "tombstone.status" } }, "required": ["request_action"] },
+      "then": {
+        "properties": {
+          "allowed_response_actions": {
+            "type": "array",
+            "items": { "enum": ["tombstone.result", "private.error"] },
+            "contains": { "const": "tombstone.result" },
+            "minContains": 1
+          }
+        }
+      }
+    }
+  ]
+}

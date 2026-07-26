@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:somavera:schema:recovery-death-policy:v1",
+  "title": "Somavera Genesis-Bound Old-Network Death Policy v1",
+  "$comment": "policy_id is the domain-separated hash of the canonical object excluding $schema and policy_id. A satisfied predicate is bounded evidence under these assumptions, never an absolute death oracle.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "policy_id",
+    "origin_hash",
+    "protocol_release_hash",
+    "applies_from_context_epoch",
+    "finality_profile",
+    "time_bounds",
+    "observer_requirements",
+    "reset_and_abort_rules",
+    "non_evidence",
+    "succession_authority"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": { "const": "somavera.recovery-death-policy.v1" },
+    "policy_id": { "$ref": "#/$defs/hash" },
+    "origin_hash": { "$ref": "#/$defs/hash" },
+    "protocol_release_hash": { "$ref": "#/$defs/hash" },
+    "applies_from_context_epoch": { "type": "integer", "const": 0 },
+    "finality_profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "proof_type",
+        "signature_suite",
+        "validator_set_source",
+        "minimum_voting_power_basis_points",
+        "conflict_identity_fields"
+      ],
+      "properties": {
+        "proof_type": { "const": "bft-finality-commit-v1" },
+        "signature_suite": { "const": "Ed25519-v1" },
+        "validator_set_source": { "const": "checkpoint_pre_state" },
+        "minimum_voting_power_basis_points": { "type": "integer", "minimum": 6667, "maximum": 10000 },
+        "conflict_identity_fields": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "uniqueItems": true,
+          "items": { "enum": ["height", "block_hash", "app_hash"] }
+        }
+      }
+    },
+    "time_bounds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "finalization_freshness_seconds",
+        "maximum_clock_skew_seconds",
+        "discovery_window_seconds",
+        "continuous_observation_seconds",
+        "hold_down_seconds",
+        "challenge_seconds",
+        "finality_observation_max_age_seconds",
+        "evidence_submission_max_age_seconds"
+      ],
+      "properties": {
+        "finalization_freshness_seconds": { "type": "integer", "minimum": 3600 },
+        "maximum_clock_skew_seconds": { "type": "integer", "minimum": 1, "maximum": 3600 },
+        "discovery_window_seconds": { "type": "integer", "minimum": 604800 },
+        "continuous_observation_seconds": { "type": "integer", "minimum": 2592000 },
+        "hold_down_seconds": { "type": "integer", "minimum": 2592000 },
+        "challenge_seconds": { "type": "integer", "minimum": 7776000 },
+        "finality_observation_max_age_seconds": { "type": "integer", "minimum": 60, "maximum": 604800 },
+        "evidence_submission_max_age_seconds": { "type": "integer", "minimum": 60, "maximum": 604800 }
+      }
+    },
+    "observer_requirements": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "minimum_independent_observers",
+        "minimum_distinct_controllers",
+        "minimum_distinct_organizations",
+        "minimum_distinct_jurisdictions",
+        "minimum_distinct_network_paths",
+        "controller_reuse_allowed",
+        "signed_time_source_transcripts_required",
+        "public_discovery_required"
+      ],
+      "properties": {
+        "minimum_independent_observers": { "type": "integer", "minimum": 3, "maximum": 100 },
+        "minimum_distinct_controllers": { "type": "integer", "minimum": 3, "maximum": 100 },
+        "minimum_distinct_organizations": { "type": "integer", "minimum": 3, "maximum": 100 },
+        "minimum_distinct_jurisdictions": { "type": "integer", "minimum": 2, "maximum": 100 },
+        "minimum_distinct_network_paths": { "type": "integer", "minimum": 2, "maximum": 100 },
+        "controller_reuse_allowed": { "const": false },
+        "signed_time_source_transcripts_required": { "const": true },
+        "public_discovery_required": { "const": true }
+      }
+    },
+    "reset_and_abort_rules": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "valid_fresh_finality_resets_observation",
+        "valid_fresh_finality_resets_hold_down",
+        "conflicting_finality_aborts",
+        "competing_succession_aborts",
+        "late_valid_finality_before_activation_aborts",
+        "missing_required_report_blocks"
+      ],
+      "properties": {
+        "valid_fresh_finality_resets_observation": { "const": true },
+        "valid_fresh_finality_resets_hold_down": { "const": true },
+        "conflicting_finality_aborts": { "const": true },
+        "competing_succession_aborts": { "const": true },
+        "late_valid_finality_before_activation_aborts": { "const": true },
+        "missing_required_report_blocks": { "const": true }
+      }
+    },
+    "non_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "silence_alone_proves_death",
+        "dns_failure_alone_proves_death",
+        "endpoint_timeout_alone_proves_death",
+        "operator_absence_alone_proves_death",
+        "network_partition_alone_proves_death"
+      ],
+      "properties": {
+        "silence_alone_proves_death": { "const": false },
+        "dns_failure_alone_proves_death": { "const": false },
+        "endpoint_timeout_alone_proves_death": { "const": false },
+        "operator_absence_alone_proves_death": { "const": false },
+        "network_partition_alone_proves_death": { "const": false }
+      }
+    },
+    "succession_authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "checkpoint_pre_state_recovery_threshold_required",
+        "every_checkpoint_pre_state_chamber_threshold_required",
+        "proposed_successor_keys_may_authorize"
+      ],
+      "properties": {
+        "checkpoint_pre_state_recovery_threshold_required": { "const": true },
+        "every_checkpoint_pre_state_chamber_threshold_required": { "const": true },
+        "proposed_successor_keys_may_authorize": { "const": false }
+      }
+    }
+  },
+  "$defs": {
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  }
+}

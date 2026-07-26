@@ -1,0 +1,181 @@
+{
+  "$schema": "../schemas/recovery-death-evidence.schema.json",
+  "schema_version": "somavera.recovery-death-evidence.v1",
+  "evidence_id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "death_policy_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "network_lineage_id": "somavera:network:v1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "execution_context_id": "somavera:context:v1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "context_epoch": 0,
+  "candidate_checkpoint": {
+    "checkpoint_id": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "height": 28800,
+    "finalized_at": "2027-01-02T00:00:00Z",
+    "block_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+    "app_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+    "state_package_id": "9999999999999999999999999999999999999999999999999999999999999999"
+  },
+  "newest_obtainable_finality": {
+    "checkpoint_id": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "height": 28800,
+    "finalized_at": "2027-01-02T00:00:00Z",
+    "block_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+    "app_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+    "proof_hash": "abababababababababababababababababababababababababababababababab",
+    "observed_at": "2028-05-07T11:00:00Z"
+  },
+  "windows": {
+    "discovery_started_at": "2028-01-01T00:00:00Z",
+    "discovery_ended_at": "2028-01-08T00:00:00Z",
+    "observation_started_at": "2028-01-08T00:00:00Z",
+    "observation_ended_at": "2028-02-07T00:00:00Z",
+    "hold_down_started_at": "2028-02-07T00:00:00Z",
+    "hold_down_ended_at": "2028-05-07T00:00:00Z"
+  },
+  "observer_reports": [
+    {
+      "observer_id": "observer-1",
+      "controller_id": "controller-observer-1",
+      "organization_id": "organization-observer-1",
+      "jurisdiction": "US-NY",
+      "network_path_id": "network-path-1",
+      "observed_from": "2028-01-08T00:00:00Z",
+      "observed_through": "2028-05-07T00:00:00Z",
+      "report_signed_at": "2028-05-07T12:00:00Z",
+      "clock_source_id": "clock-source-1",
+      "maximum_observed_clock_skew_seconds": 20,
+      "newest_valid_finality": {
+        "height": 28800,
+        "finalized_at": "2027-01-02T00:00:00Z",
+        "proof_hash": "abababababababababababababababababababababababababababababababab",
+        "observed_at": "2028-05-07T11:00:00Z"
+      },
+      "search_result": {
+        "searched_through": "2028-05-07T12:00:00Z",
+        "fresh_finality_found": false,
+        "conflicting_finality_found": false,
+        "competing_succession_found": false
+      },
+      "transcript_hash": "0101010101010101010101010101010101010101010101010101010101010101",
+      "suite": "Ed25519-v1",
+      "signature": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    },
+    {
+      "observer_id": "observer-2",
+      "controller_id": "controller-observer-2",
+      "organization_id": "organization-observer-2",
+      "jurisdiction": "CA-ON",
+      "network_path_id": "network-path-2",
+      "observed_from": "2028-01-08T00:00:00Z",
+      "observed_through": "2028-05-07T00:00:00Z",
+      "report_signed_at": "2028-05-07T12:00:00Z",
+      "clock_source_id": "clock-source-2",
+      "maximum_observed_clock_skew_seconds": 30,
+      "newest_valid_finality": {
+        "height": 28800,
+        "finalized_at": "2027-01-02T00:00:00Z",
+        "proof_hash": "abababababababababababababababababababababababababababababababab",
+        "observed_at": "2028-05-07T11:00:00Z"
+      },
+      "search_result": {
+        "searched_through": "2028-05-07T12:00:00Z",
+        "fresh_finality_found": false,
+        "conflicting_finality_found": false,
+        "competing_succession_found": false
+      },
+      "transcript_hash": "0202020202020202020202020202020202020202020202020202020202020202",
+      "suite": "Ed25519-v1",
+      "signature": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    },
+    {
+      "observer_id": "observer-3",
+      "controller_id": "controller-observer-3",
+      "organization_id": "organization-observer-3",
+      "jurisdiction": "DE-BE",
+      "network_path_id": "network-path-3",
+      "observed_from": "2028-01-08T00:00:00Z",
+      "observed_through": "2028-05-07T00:00:00Z",
+      "report_signed_at": "2028-05-07T12:00:00Z",
+      "clock_source_id": "clock-source-3",
+      "maximum_observed_clock_skew_seconds": 40,
+      "newest_valid_finality": {
+        "height": 28800,
+        "finalized_at": "2027-01-02T00:00:00Z",
+        "proof_hash": "abababababababababababababababababababababababababababababababab",
+        "observed_at": "2028-05-07T11:00:00Z"
+      },
+      "search_result": {
+        "searched_through": "2028-05-07T12:00:00Z",
+        "fresh_finality_found": false,
+        "conflicting_finality_found": false,
+        "competing_succession_found": false
+      },
+      "transcript_hash": "0303030303030303030303030303030303030303030303030303030303030303",
+      "suite": "Ed25519-v1",
+      "signature": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    },
+    {
+      "observer_id": "observer-4",
+      "controller_id": "controller-observer-4",
+      "organization_id": "organization-observer-4",
+      "jurisdiction": "JP-13",
+      "network_path_id": "network-path-4",
+      "observed_from": "2028-01-08T00:00:00Z",
+      "observed_through": "2028-05-07T00:00:00Z",
+      "report_signed_at": "2028-05-07T12:00:00Z",
+      "clock_source_id": "clock-source-4",
+      "maximum_observed_clock_skew_seconds": 50,
+      "newest_valid_finality": {
+        "height": 28800,
+        "finalized_at": "2027-01-02T00:00:00Z",
+        "proof_hash": "abababababababababababababababababababababababababababababababab",
+        "observed_at": "2028-05-07T11:00:00Z"
+      },
+      "search_result": {
+        "searched_through": "2028-05-07T12:00:00Z",
+        "fresh_finality_found": false,
+        "conflicting_finality_found": false,
+        "competing_succession_found": false
+      },
+      "transcript_hash": "0404040404040404040404040404040404040404040404040404040404040404",
+      "suite": "Ed25519-v1",
+      "signature": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    },
+    {
+      "observer_id": "observer-5",
+      "controller_id": "controller-observer-5",
+      "organization_id": "organization-observer-5",
+      "jurisdiction": "GB-LND",
+      "network_path_id": "network-path-5",
+      "observed_from": "2028-01-08T00:00:00Z",
+      "observed_through": "2028-05-07T00:00:00Z",
+      "report_signed_at": "2028-05-07T12:00:00Z",
+      "clock_source_id": "clock-source-5",
+      "maximum_observed_clock_skew_seconds": 60,
+      "newest_valid_finality": {
+        "height": 28800,
+        "finalized_at": "2027-01-02T00:00:00Z",
+        "proof_hash": "abababababababababababababababababababababababababababababababab",
+        "observed_at": "2028-05-07T11:00:00Z"
+      },
+      "search_result": {
+        "searched_through": "2028-05-07T12:00:00Z",
+        "fresh_finality_found": false,
+        "conflicting_finality_found": false,
+        "competing_succession_found": false
+      },
+      "transcript_hash": "0505050505050505050505050505050505050505050505050505050505050505",
+      "suite": "Ed25519-v1",
+      "signature": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    }
+  ],
+  "late_finality_proofs": [],
+  "conflicting_proofs": [],
+  "evaluated_at": "2028-05-07T12:00:00Z",
+  "result": "predicate_satisfied",
+  "limitations": {
+    "bounded_policy_only": true,
+    "absolute_death_proven": false,
+    "hidden_partition_excluded": false,
+    "universal_social_adoption_forced": false
+  }
+}
