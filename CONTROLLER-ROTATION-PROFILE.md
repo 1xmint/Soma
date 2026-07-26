@@ -3,8 +3,8 @@
 Status: **implemented offline ordinary rotation; not compromise recovery and not independently rollback-resistant**
 
 This slice implements the closed `somavera.soma-controller-key-rotation.v1`
-contract from Somavera Origin commit `50eb655` and capsule root
-`9f711a3a8e53502c464efd2798266067adc2d42995246acb3b496c05ef948fb0`.
+contract from Somavera Origin commit `44ad60711b2701aeaa481dba174a07df7b4de1c5` and capsule root
+`047b76b3a96e536893f3dff1a5dc62cd3ac83669769395fe8f48d629e050084f`.
 
 ## Commands
 
@@ -72,11 +72,10 @@ identical confirmations against one competitor under a zero-egress sentinel.
 - Signed local history proves internal continuity, not that the device has not
   been rolled back. Independent rollback assurance requires exact history or a
   compatible capsule preserved outside the candidate device.
-- `soma-host-trust-capsule.v1` contains only one controller key. Export therefore
-  fails explicitly after controller rotation until a v2 capsule can carry and
-  verify the complete controller-rotation chain. The last independently
-  preserved pre-rotation v1 capsule remains useful evidence but cannot describe
-  later controller state.
+- `soma-host-trust-capsule.v2` exports and verifies the complete dual-signed
+  controller chain from an independently expected initial key. A separately
+  preserved earlier capsule is still required for independent rollback/fork
+  comparison; the local chain alone is not an external anchor.
 - This profile rotates only `controller_signing`. Agent, observer, reply
   encryption, revocation, and identity-recovery lifecycles need separate
   ratified profiles.

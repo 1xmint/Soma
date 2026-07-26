@@ -181,8 +181,19 @@ test("exact confirmation preserves the stable controller, historic verification,
   assert.equal(JSON.parse(command.stdout).head.signer_key_id, initialControllerKey);
   const output = path.join(state.temporary, "post-rotation-capsule.json");
   command = execute(["host", "trust-export", "--home", state.home, "--out", output, "--json"], state.trace);
-  assert.equal(command.status, 8, command.stdout);
-  assert.equal(JSON.parse(command.stdout).error, "HOST_TRUST_CAPSULE_CONTROLLER_ROTATION_UNSUPPORTED");
+  assert.equal(command.status, 0, command.stdout);
+  const capsule = JSON.parse(command.stdout);
+  assert.equal(capsule.schema_version, "somavera.soma-host-trust-capsule.v2");
+  assert.equal(capsule.controller_rotation_count, 1);
+  assert.notEqual(capsule.controller_initial_key_sha256, capsule.controller_active_key_sha256);
+  command = execute([
+    "host", "trust-verify", "--capsule", output,
+    "--expect-controller-did", capsule.controller_did,
+    "--expect-controller-key-hash", capsule.controller_initial_key_sha256,
+    "--json"
+  ], state.trace);
+  assert.equal(command.status, 0, command.stdout);
+  assert.equal(JSON.parse(command.stdout).controller_rotation_count, 1);
   assert.equal((await readdir(path.join(state.home, "consent", "grants"))).length, 0);
   assert.equal((await readdir(path.join(state.home, "queue"))).length, 0);
   await noEgress(state.trace);

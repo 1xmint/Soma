@@ -46,9 +46,11 @@ through an exact old/new dual-signed event, protected pending key, one logical
 identity commit point, deterministic restart recovery, historical public-key
 windows, and successor-only live private-key state. It is not safe compromise
 recovery and a same-device history is not independent rollback evidence.
-Version-1 host-trust export fails explicitly after rotation until a capsule
-profile can carry the complete controller chain. See
-`CONTROLLER-ROTATION-PROFILE.md`.
+Host-trust capsule v2 exports the complete dual-signed controller chain from
+the independently expected initial key through the active key. A separately
+preserved earlier capsule is still required for independent rollback/fork
+comparison. See `CONTROLLER-ROTATION-PROFILE.md` and
+`HOST-TRUST-CAPSULE-PROFILE.md`.
 
 ## Evidence boundary
 

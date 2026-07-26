@@ -1,8 +1,8 @@
 # Portable Host-Trust Capsule
 
-Status: **implemented offline portable copy; not an external anchor and not restore authority**
+Status: **v2 implemented offline portable copy with complete controller history; not an external anchor and not restore authority**
 
-This slice implements the closed `soma-host-trust-capsule.v1` contract originally frozen at Somavera Origin commit `a1c3a4b`. The current compatible Origin capsule root is `9f711a3a8e53502c464efd2798266067adc2d42995246acb3b496c05ef948fb0`; exact immediately prior profiles remain verification-only compatible.
+This slice implements `somavera.soma-host-trust-capsule.v2` from Somavera Origin commit `44ad60711b2701aeaa481dba174a07df7b4de1c5` and capsule root `047b76b3a96e536893f3dff1a5dc62cd3ac83669769395fe8f48d629e050084f`. New exports use v2. Legacy v1 capsules remain standalone-verifiable under their exact supported Origin bindings.
 
 ## Commands
 
@@ -19,7 +19,8 @@ All three commands perform zero network actions. `trust-verify` and `trust-compa
 Export first verifies release integrity, every current host pin, every signed succession transition, and every complete predecessor chain. It then embeds the exact canonical bytes of:
 
 - each current controller-signed inert host pin; and
-- every committed controller-signed ordinary-succession transition required to reproduce its chain.
+- every committed controller-signed ordinary-succession transition required to reproduce its chain; and
+- the complete ordered, dual-signed Soma controller-key rotation chain from the initial key through the active key.
 
 The capsule contains sorted, unique normalized paths, object kind, byte length, SHA-256, and canonical JSON bytes. Per-host summaries bind the current pin and descriptor plus ordered transition IDs. Domain-separated history, current-set, object-set, capsule-ID, and controller-signature commitments cover the complete package.
 
@@ -32,18 +33,18 @@ No managed secret, private signing key, keystore blob, recovery share, consent r
 Standalone verification requires both:
 
 - the exact expected controller DID; and
-- SHA-256 of the raw 32-byte Ed25519 controller public key.
+- SHA-256 of the raw 32-byte Ed25519 **initial** controller public key.
 
-Those values must come from an independent record or authenticated channel. Copying them from the capsule being verified proves only self-consistency. Verification authenticates the capsule signature and every embedded pin and transition, reconstructs every chain, and recomputes all counts, roots, and identifiers.
+Those values must come from an independent record or authenticated channel. Copying them from the capsule being verified proves only self-consistency. Verification derives the initial key hash independently, validates both signatures and exact validity intervals for every controller rotation, authenticates the capsule with the resulting active key, verifies every embedded pin and host transition at its historical signing-key interval, reconstructs every chain, and recomputes all counts, roots, and identifiers.
 
 ## Rollback and fork comparison
 
 `trust-compare` treats the exact `--trusted` bytes as separately preserved evidence supplied by the caller. It accepts:
 
 - the identical capsule; or
-- a later capsule in which every trusted host remains and its ordered transition IDs are an exact prefix of the candidate chain.
+- a later capsule in which the trusted controller-rotation IDs and every trusted host transition list are exact prefixes of the candidate chains.
 
-Added hosts and strict valid descendants are allowed. A missing host, shorter chain, changed prefix, or different current pin at equal chain length fails as `HOST_TRUST_CAPSULE_ROLLBACK_OR_FORK`. This detects even a newer controller-signed same-height fork when compared with the preserved prior bytes.
+Added hosts and strict valid controller or host descendants are allowed. A dropped v2 history, missing host, shorter chain, changed prefix, unexplained active-controller change, or different current pin at equal chain length fails as `HOST_TRUST_CAPSULE_ROLLBACK_OR_FORK`. This detects even a newer controller-signed same-height fork when compared with the preserved prior bytes.
 
 ## Origin-profile compatibility
 
@@ -56,4 +57,5 @@ New pinning accepts only the current Origin profile. Stored pins from the immedi
 - A capsule does not prove host honesty, availability, confidentiality, or current network reachability.
 - If an attacker controls the controller key and no earlier capsule or fingerprint survives independently, the attacker can create a self-consistent alternative local history.
 - Restore is intentionally unimplemented. A later restore profile must specify controller-key lifecycle, conflict handling, quarantine, atomic installation, and authority boundaries before any import command exists.
-- Version 1 carries only one controller key and cannot authenticate pins signed across a Soma controller-key rotation. Export fails explicitly after rotation; a separately specified v2 capsule must carry the complete dual-signed controller chain before post-rotation export can be enabled.
+- The independently preserved initial controller DID and raw-key hash remain the trust root. If both are lost, a self-contained capsule can prove only internal consistency.
+- V2 exports carry the full controller chain and support post-rotation state, but they remain bounded portable evidence--not consensus, publication, notarization, or proof that the device was never rolled back.

@@ -2,7 +2,7 @@
 
 Status: **implemented controller-confirmed inert local transition; connection, consent, disclosure, send, and emergency recovery are absent**
 
-This slice imports the ordinary Vera Host descriptor-succession and controller-confirmation contracts from Somavera Origin commit `a1c3a4b` and capsule root `24d5ad1099d9eb915e987511f9ca3725ad44e1dc599783ea1048070f497b3ac4`. It verifies a successor against an existing controller-signed host pin, stores one controller-signed pending candidate, and can replace that inert pin only after an exact controller confirmation. Every operation is local and performs zero network actions.
+This slice imports the ordinary Vera Host descriptor-succession and controller-confirmation contracts from Somavera Origin commit `44ad60711b2701aeaa481dba174a07df7b4de1c5` and capsule root `047b76b3a96e536893f3dff1a5dc62cd3ac83669769395fe8f48d629e050084f`. It verifies a successor against an existing controller-signed host pin, stores one controller-signed pending candidate, and can replace that inert pin only after an exact controller confirmation. Every operation is local and performs zero network actions.
 
 ## Commands
 
@@ -46,5 +46,5 @@ The resulting version-2 pin remains `offline_pin_only_no_connection_no_consent_n
 - Controller signatures and local history do not defeat rollback when an attacker controls both the filesystem and controller key. `HOST-TRUST-CAPSULE-PROFILE.md` provides complete portable bytes and comparison against a separately preserved capsule, but external publication/anchor receipts remain unimplemented.
 - Validity depends on local system time; authenticated time is absent.
 - Atomic rename and file synchronization inherit the actual operating system, filesystem, storage-controller, and hardware durability guarantees. Power-loss behavior beyond those guarantees cannot be proven by this implementation.
-- Controller-key rotation is not yet implemented, so history currently verifies under the active local controller identity.
+- Ordinary controller-key rotation is implemented. Historical pin and transition signatures verify against authenticated key-validity intervals, and portable capsule v2 carries the complete dual-signed controller chain.
 - Emergency compromise recovery remains unsupported.

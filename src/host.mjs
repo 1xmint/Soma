@@ -9,8 +9,8 @@ import { unprotectSecretBundle } from "./keystore.mjs";
 import { RELEASE_ROOT } from "./constants.mjs";
 import { attachPublicKeyHistory, controllerSigningKeyAt } from "./controller-rotation.mjs";
 
-export const ORIGIN_CAPSULE_HASH = "9f711a3a8e53502c464efd2798266067adc2d42995246acb3b496c05ef948fb0";
-export const SUPPORTED_ORIGIN_CAPSULE_HASHES = Object.freeze([ORIGIN_CAPSULE_HASH, "24d5ad1099d9eb915e987511f9ca3725ad44e1dc599783ea1048070f497b3ac4", "8cb60c8ce3199aa35c101657834eece86e8823e9d6aa8eb47a9e23db89582431"]);
+export const ORIGIN_CAPSULE_HASH = "047b76b3a96e536893f3dff1a5dc62cd3ac83669769395fe8f48d629e050084f";
+export const SUPPORTED_ORIGIN_CAPSULE_HASHES = Object.freeze([ORIGIN_CAPSULE_HASH, "9f711a3a8e53502c464efd2798266067adc2d42995246acb3b496c05ef948fb0", "24d5ad1099d9eb915e987511f9ca3725ad44e1dc599783ea1048070f497b3ac4", "8cb60c8ce3199aa35c101657834eece86e8823e9d6aa8eb47a9e23db89582431"]);
 const HASH = /^[a-f0-9]{64}$/;
 const DID = /^did:[a-z0-9]+:(?:[A-Za-z0-9._-]|%[0-9A-Fa-f]{2})+(?::(?:[A-Za-z0-9._-]|%[0-9A-Fa-f]{2})+)*$/;
 const NETWORK = /^somavera:network:v1:[a-f0-9]{64}$/;

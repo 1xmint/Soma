@@ -15,7 +15,7 @@ import { restrictStateRoot } from "../src/platform.mjs";
 const root = path.resolve(fileURLToPath(new URL("../", import.meta.url)));
 const cli = path.join(root, "bin", "soma.mjs");
 const preload = pathToFileURL(path.join(root, "test", "no-network-preload.mjs")).href;
-const originCapsule = "9f711a3a8e53502c464efd2798266067adc2d42995246acb3b496c05ef948fb0";
+const originCapsule = "047b76b3a96e536893f3dff1a5dc62cd3ac83669769395fe8f48d629e050084f";
 
 function execute(args, trace) {
   return spawnSync(process.execPath, [cli, ...args], { cwd: root, encoding: "utf8", windowsHide: true, timeout: 30000, env: { ...process.env, NODE_OPTIONS: `${process.env.NODE_OPTIONS || ""} --import=${preload}`.trim(), SOMA_NETWORK_TRACE: trace } });
@@ -135,6 +135,8 @@ test("empty portable host-trust capsule verifies standalone and remains explicit
   let command = exportCapsule(setup.home, capsuleFile, setup.trace);
   assert.equal(command.status, 0, command.stdout);
   const exported = JSON.parse(command.stdout);
+  assert.equal(exported.schema_version, "somavera.soma-host-trust-capsule.v2");
+  assert.equal(exported.controller_rotation_count, 0);
   assert.equal(exported.host_count, 0);
   assert.equal(exported.transition_count, 0);
   assert.equal(exported.external_anchor_created, false);
@@ -179,7 +181,7 @@ test("trusted capsule comparison detects rollback and controller-signed same-hei
   assert.equal(command.status, 0, command.stdout);
   command = execute(compareArgs(pre, post, exported), setup.trace);
   assert.equal(command.status, 0, command.stdout);
-  assert.equal(JSON.parse(command.stdout).relation, "equal_or_strict_descendant_host_trust_state");
+  assert.equal(JSON.parse(command.stdout).relation, "equal_or_strict_descendant_controller_and_host_trust_state");
   command = execute(compareArgs(pre, pre, exported), setup.trace);
   assert.equal(command.status, 0, command.stdout);
   assert.equal(JSON.parse(command.stdout).relation, "identical_capsule");

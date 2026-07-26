@@ -9,9 +9,10 @@
   },
   "scripts": {
     "manifest": "node scripts/build-release-manifest.mjs",
+    "verify-origin-lock": "node scripts/verify-origin-lock.mjs",
     "verify-release": "node scripts/verify-release.mjs",
-    "test": "node --test --test-isolation=none --test-concurrency=1 test/cli.test.mjs test/evidence.test.mjs test/membrane.test.mjs test/host.test.mjs test/host-succession.test.mjs test/host-confirmation.test.mjs test/host-trust-capsule.test.mjs test/controller-rotation.test.mjs",
-    "check": "npm run verify-release && npm test"
+    "test": "node --test --test-isolation=none --test-concurrency=1 test/cli.test.mjs test/evidence.test.mjs test/membrane.test.mjs test/host.test.mjs test/host-succession.test.mjs test/host-confirmation.test.mjs test/host-trust-capsule.test.mjs test/host-trust-capsule-v2.test.mjs test/controller-rotation.test.mjs",
+    "check": "npm run verify-origin-lock && npm run verify-release && npm test"
   },
   "engines": {
     "node": ">=22"

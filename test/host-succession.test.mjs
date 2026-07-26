@@ -13,7 +13,7 @@ import { deriveHostDescriptorId, deriveHostSuccessionId, validateOrdinaryHostSuc
 const root = path.resolve(fileURLToPath(new URL("../", import.meta.url)));
 const cli = path.join(root, "bin", "soma.mjs");
 const preload = pathToFileURL(path.join(root, "test", "no-network-preload.mjs")).href;
-const capsule = "9f711a3a8e53502c464efd2798266067adc2d42995246acb3b496c05ef948fb0";
+const capsule = "047b76b3a96e536893f3dff1a5dc62cd3ac83669769395fe8f48d629e050084f";
 
 function execute(args, trace) {
   return spawnSync(process.execPath, [cli, ...args], { cwd: root, encoding: "utf8", windowsHide: true, timeout: 30000, env: { ...process.env, NODE_OPTIONS: `${process.env.NODE_OPTIONS || ""} --import=${preload}`.trim(), SOMA_NETWORK_TRACE: trace } });

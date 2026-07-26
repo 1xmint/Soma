@@ -1,7 +1,7 @@
 # Soma Reference Implementation Status
 
-Date: 2026-07-22
-Contract source: Somavera Origin local commit `50eb655`
+Date: 2026-07-26
+Contract source: Somavera Origin commit `44ad60711b2701aeaa481dba174a07df7b4de1c5`, capsule `047b76b3a96e536893f3dff1a5dc62cd3ac83669769395fe8f48d629e050084f`
 Release status: **early Windows-first slice; not protocol-conforming or production-ready**
 
 ## Implemented in this slice
@@ -17,7 +17,7 @@ Release status: **early Windows-first slice; not protocol-conforming or producti
 - Bounded ordinary-succession preview with dual-signature/precommitment validation and one inert controller-signed candidate per host.
 - Exact controller-confirmation receipt, version-2 inert pin, signed transition history, atomic current-pin replacement, deterministic crash recovery, idempotency, and per-host race serialization.
 - Fault injection at every transaction boundary and a 100-identical-plus-one-competing confirmation race.
-- Complete controller-signed portable host-trust capsules, standalone expected-controller verification, strict prefix comparison, rollback/fork detection, exclusive output creation, and explicit non-anchor/non-restore authority.
+- Complete controller-signed portable host-trust capsule v2 exports, full dual-signed controller-history verification from an independently expected initial key, historical host-signature verification, controller-and-host prefix comparison, rollback/fork detection, legacy v1 verification, exclusive output creation, and explicit non-anchor/non-restore authority.
 - Ordinary offline Soma controller-key rotation with immutable proposal commitment, DPAPI-protected pending successor, old/new role-separated signatures, stable controller DID, authenticated public history, one identity commit point, deterministic restart recovery, historic signature verification, and successor-only live controller private-key state.
 - Controller-rotation fault injection at each transaction boundary and a 100-identical-plus-one-competing confirmation race under the zero-egress sentinel.
 - Current-only new pinning plus explicitly supported immediately prior Origin-profile verification and succession compatibility.
@@ -31,7 +31,6 @@ Release status: **early Windows-first slice; not protocol-conforming or producti
 - Signed consent grants, sends, withdrawals, deletion, acknowledgements, or tombstone tracking.
 - Sovereign Vera export/import/search.
 - Identity recovery, compromised-key recovery, encrypted owner-state backup/restore, controller revocation, or non-controller key rotation.
-- A controller-history-capable host-trust capsule v2; v1 export fails explicitly after controller rotation.
 - macOS or Linux production keystore support.
 - Signed release authenticity, SBOM, provenance, or reproducible binary bundle.
 - Vera Host runtime, replication, learning, reputation, ledger, wallet, or token logic.
