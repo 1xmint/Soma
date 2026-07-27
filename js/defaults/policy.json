@@ -1,0 +1,9 @@
+{
+  "schema_version": "somavera.soma-local-policy.v1",
+  "observer_default": "off",
+  "telemetry": false,
+  "automatic_updates": false,
+  "automatic_retries": false,
+  "background_watchers": false,
+  "allowed_remote_actions": []
+}

@@ -1,0 +1,154 @@
+{
+  "vector_version": "soma.observation-preview.provisional-v1",
+  "status": "provisional_not_ratified",
+  "source_utf8": "Public Somavera preview vector.\n",
+  "policy": {
+    "schema_version": "soma.observation-preview-policy.provisional-v1",
+    "source_kind": "artifact",
+    "data_class": "public_artifact",
+    "authorized_fields": [
+      "artifact_hash",
+      "byte_length",
+      "media_type",
+      "title"
+    ],
+    "subject_did": "did:example:agent-vector",
+    "controller_did": "did:example:controller-vector",
+    "observer_did": "did:example:observer-vector",
+    "destination": {
+      "host_did": "did:web:vera.example",
+      "origin": "https://vera.example"
+    },
+    "purposes": [
+      "safety_evaluation"
+    ],
+    "operations": [
+      "collect",
+      "evaluate",
+      "store_encrypted"
+    ],
+    "data_state": "host_confidential",
+    "retention_seconds": 86400,
+    "redistribution": "none",
+    "replication": "none",
+    "replication_targets": [],
+    "model_training": false,
+    "public_release": false,
+    "license": {
+      "identifier": "CC-BY",
+      "version": "4.0"
+    },
+    "expires_at": "2027-07-16T12:00:00.000Z",
+    "withdrawal_mode": "delete_deletable_and_tombstone",
+    "policy_version": "pilot.1",
+    "max_source_bytes": 4096,
+    "artifact_metadata": {
+      "media_type": "text/plain",
+      "title": "Public preview vector",
+      "source_uri": "https://example.org/vector.txt",
+      "rights_basis": "open_license",
+      "controller_attests_rights": true
+    }
+  },
+  "policy_hash": "942da4c13294a76f17d0df0ca618a6c6a98ba454944c05e96eb4b61ee57af327",
+  "field_projection": {
+    "schema_version": "soma.authorized-field-projection.provisional-v1",
+    "source_kind": "artifact",
+    "data_class": "public_artifact",
+    "system_fields": [
+      "data_class",
+      "fields",
+      "schema_version",
+      "source_id",
+      "source_kind",
+      "subject_did"
+    ],
+    "authorized_fields": [
+      "artifact_hash",
+      "byte_length",
+      "media_type",
+      "title"
+    ]
+  },
+  "field_projection_hash": "fe37d768bb463523c6549b808f5a571a61060dbaf19873d5bbe025f2c42ba11b",
+  "payload_jcs": "{\"data_class\":\"public_artifact\",\"fields\":{\"artifact_hash\":\"0c4f9433311480f20defbeddc5064efff021cb7d334f79e3f42d3228ab884557\",\"byte_length\":32,\"media_type\":\"text/plain\",\"title\":\"Public preview vector\"},\"schema_version\":\"soma.observation-payload.provisional-v1\",\"source_id\":\"0c4f9433311480f20defbeddc5064efff021cb7d334f79e3f42d3228ab884557\",\"source_kind\":\"artifact\",\"subject_did\":\"did:example:agent-vector\"}",
+  "payload_hash": "362202c1c82af8635fa1bbf52d974b65b8ef7fde5fbaf476f7eaa8e7d489d33c",
+  "decision": {
+    "schema_version": "soma.observation-preview-decision.provisional-v1",
+    "created_at": "2026-07-16T12:00:00.000Z",
+    "source_kind": "artifact",
+    "source_id": "0c4f9433311480f20defbeddc5064efff021cb7d334f79e3f42d3228ab884557",
+    "payload_hash": "362202c1c82af8635fa1bbf52d974b65b8ef7fde5fbaf476f7eaa8e7d489d33c",
+    "payload_bytes": 405,
+    "policy_hash": "942da4c13294a76f17d0df0ca618a6c6a98ba454944c05e96eb4b61ee57af327",
+    "field_projection_hash": "fe37d768bb463523c6549b808f5a571a61060dbaf19873d5bbe025f2c42ba11b",
+    "data_class": "public_artifact",
+    "data_state": "host_confidential",
+    "authorized_fields": [
+      "artifact_hash",
+      "byte_length",
+      "media_type",
+      "title"
+    ],
+    "redactions": [
+      {
+        "field": "content_base64",
+        "reason": "not_in_exact_authorized_projection"
+      },
+      {
+        "field": "license_identifier",
+        "reason": "not_in_exact_authorized_projection"
+      },
+      {
+        "field": "license_version",
+        "reason": "not_in_exact_authorized_projection"
+      },
+      {
+        "field": "source_uri",
+        "reason": "not_in_exact_authorized_projection"
+      }
+    ],
+    "purposes": [
+      "safety_evaluation"
+    ],
+    "operations": [
+      "collect",
+      "evaluate",
+      "store_encrypted"
+    ],
+    "destination": {
+      "host_did": "did:web:vera.example",
+      "origin": "https://vera.example"
+    },
+    "retention_seconds": 86400,
+    "redistribution": "none",
+    "replication": "none",
+    "replication_targets": [],
+    "model_training": false,
+    "public_release": false,
+    "license": {
+      "identifier": "CC-BY",
+      "version": "4.0"
+    },
+    "expires_at": "2027-07-16T12:00:00.000Z",
+    "withdrawal_mode": "delete_deletable_and_tombstone",
+    "policy_version": "pilot.1",
+    "secret_scan": {
+      "profile": "soma.high-confidence-secret-and-identity-canaries.provisional-v1",
+      "passed": true,
+      "findings": []
+    },
+    "rights_check": {
+      "result": "controller_attested_not_independently_verified",
+      "basis": "open_license"
+    },
+    "warnings": [
+      "preview_only_no_grant_no_send",
+      "destination_is_proposed_not_pinned_in_this_release",
+      "scanner_is_defense_in_depth_and_cannot_prove_absence_of_private_or_regulated_meaning"
+    ],
+    "authority": "preview_only_no_grant_no_send",
+    "preview_id": "8c959152abc9a286e05bd074bb5aa1f642be2ac2e4df339b143e08210a0b81fb"
+  },
+  "preview_id": "8c959152abc9a286e05bd074bb5aa1f642be2ac2e4df339b143e08210a0b81fb"
+}

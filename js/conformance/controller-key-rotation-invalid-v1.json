@@ -1,0 +1,146 @@
+{
+  "vector_version": "somavera.soma-controller-key-rotation-invalid.v1",
+  "base_vector": "controller-key-rotation-v1.json",
+  "cases": [
+    {
+      "name": "unstable_controller_did",
+      "mutation": "unstable_controller_did",
+      "expected_error": "ROTATION_CONTROLLER_MISMATCH"
+    },
+    {
+      "name": "sequence_gap",
+      "mutation": "sequence_gap",
+      "expected_error": "ROTATION_SEQUENCE_INVALID"
+    },
+    {
+      "name": "wrong_predecessor",
+      "mutation": "wrong_predecessor",
+      "expected_error": "ROTATION_PREDECESSOR_INVALID"
+    },
+    {
+      "name": "prior_key_substitution",
+      "mutation": "prior_key_substitution",
+      "expected_error": "ROTATION_PRIOR_KEY_INVALID"
+    },
+    {
+      "name": "same_successor_key",
+      "mutation": "same_successor_key",
+      "expected_error": "ROTATION_SUCCESSOR_KEY_INVALID"
+    },
+    {
+      "name": "successor_hash_mismatch",
+      "mutation": "successor_hash_mismatch",
+      "expected_error": "ROTATION_SUCCESSOR_KEY_INVALID"
+    },
+    {
+      "name": "validity_gap",
+      "mutation": "validity_gap",
+      "expected_error": "ROTATION_KEY_WINDOW_INVALID"
+    },
+    {
+      "name": "effective_before_prepare",
+      "mutation": "effective_before_prepare",
+      "expected_error": "ROTATION_TIME_INVALID"
+    },
+    {
+      "name": "confirmation_window_exceeded",
+      "mutation": "confirmation_window_exceeded",
+      "expected_error": "ROTATION_TIME_INVALID"
+    },
+    {
+      "name": "prior_reactivation",
+      "mutation": "prior_reactivation",
+      "expected_error": "ROTATION_KEY_STATUS_INVALID"
+    },
+    {
+      "name": "successor_not_active",
+      "mutation": "successor_not_active",
+      "expected_error": "ROTATION_KEY_STATUS_INVALID"
+    },
+    {
+      "name": "decision_widening",
+      "mutation": "decision_widening",
+      "expected_error": "ROTATION_DECISION_INVALID"
+    },
+    {
+      "name": "private_key_retention",
+      "mutation": "private_key_retention",
+      "expected_error": "ROTATION_DISPOSITION_INVALID"
+    },
+    {
+      "name": "rollback_claim_widening",
+      "mutation": "rollback_claim_widening",
+      "expected_error": "ROTATION_ROLLBACK_ASSURANCE_INVALID"
+    },
+    {
+      "name": "agent_rotation_escalation",
+      "mutation": "agent_rotation_escalation",
+      "expected_error": "ROTATION_AUTHORITY_INVALID"
+    },
+    {
+      "name": "identity_recovery_escalation",
+      "mutation": "identity_recovery_escalation",
+      "expected_error": "ROTATION_AUTHORITY_INVALID"
+    },
+    {
+      "name": "connection_escalation",
+      "mutation": "connection_escalation",
+      "expected_error": "ROTATION_AUTHORITY_INVALID"
+    },
+    {
+      "name": "consent_escalation",
+      "mutation": "consent_escalation",
+      "expected_error": "ROTATION_AUTHORITY_INVALID"
+    },
+    {
+      "name": "disclosure_escalation",
+      "mutation": "disclosure_escalation",
+      "expected_error": "ROTATION_AUTHORITY_INVALID"
+    },
+    {
+      "name": "send_escalation",
+      "mutation": "send_escalation",
+      "expected_error": "ROTATION_AUTHORITY_INVALID"
+    },
+    {
+      "name": "token_escalation",
+      "mutation": "token_escalation",
+      "expected_error": "ROTATION_AUTHORITY_INVALID"
+    },
+    {
+      "name": "governance_escalation",
+      "mutation": "governance_escalation",
+      "expected_error": "ROTATION_AUTHORITY_INVALID"
+    },
+    {
+      "name": "prior_signature_key_mismatch",
+      "mutation": "prior_signature_key_mismatch",
+      "expected_error": "ROTATION_PRIOR_SIGNATURE_INVALID"
+    },
+    {
+      "name": "prior_signature_corruption",
+      "mutation": "prior_signature_corruption",
+      "expected_error": "ROTATION_PRIOR_SIGNATURE_INVALID"
+    },
+    {
+      "name": "successor_signature_key_mismatch",
+      "mutation": "successor_signature_key_mismatch",
+      "expected_error": "ROTATION_SUCCESSOR_SIGNATURE_INVALID"
+    },
+    {
+      "name": "successor_signature_corruption",
+      "mutation": "successor_signature_corruption",
+      "expected_error": "ROTATION_SUCCESSOR_SIGNATURE_INVALID"
+    },
+    {
+      "name": "proposal_id_corruption",
+      "mutation": "proposal_id_corruption",
+      "expected_error": "ROTATION_PROPOSAL_ID_INVALID"
+    },
+    {
+      "name": "rotation_id_corruption",
+      "mutation": "rotation_id_corruption",
+      "expected_error": "ROTATION_ID_INVALID"
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:somavera:soma:host-pin:provisional-v1",
+  "title": "Soma offline host pin provisional v1",
+  "$comment": "Controller-signed local trust record only. It grants no connection, consent, observation, encryption, or send authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "pin_id", "pinned_at", "controller_did", "trust_basis", "expected", "descriptor", "connected", "rotation_policy", "authority", "signature"],
+  "properties": {
+    "schema_version": { "const": "soma.host-pin.provisional-v1" },
+    "pin_id": { "$ref": "#/$defs/hash" },
+    "pinned_at": { "type": "string", "format": "date-time" },
+    "controller_did": { "$ref": "#/$defs/did" },
+    "trust_basis": { "const": "exact_bindings_plus_out_of_band_active_signing_key_sha256" },
+    "expected": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["origin", "host_did", "network_lineage_id", "execution_context_id", "active_signing_key_sha256"],
+      "properties": {
+        "origin": { "type": "string", "pattern": "^https://[A-Za-z0-9.-]+(?::[0-9]{1,5})?$" },
+        "host_did": { "$ref": "#/$defs/did" },
+        "network_lineage_id": { "type": "string", "pattern": "^somavera:network:v1:[a-f0-9]{64}$" },
+        "execution_context_id": { "type": "string", "pattern": "^somavera:context:v1:[a-f0-9]{64}$" },
+        "active_signing_key_sha256": { "$ref": "#/$defs/hash" }
+      }
+    },
+    "descriptor": { "$ref": "vera-host-descriptor.v1.schema.json" },
+    "connected": { "const": false },
+    "rotation_policy": { "const": "changed_descriptor_blocked_until_ratified_rotation_proof" },
+    "authority": { "const": "offline_pin_only_no_connection_no_consent_no_send" },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["suite", "key_id", "value"],
+      "properties": {
+        "suite": { "const": "Ed25519-v1" },
+        "key_id": { "type": "string", "minLength": 3, "maxLength": 512 },
+        "value": { "type": "string", "pattern": "^[A-Za-z0-9+/]{86}==$" }
+      }
+    }
+  },
+  "$defs": {
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "did": { "type": "string", "maxLength": 512, "pattern": "^did:[a-z0-9]+:(?:[A-Za-z0-9._-]|%[0-9A-Fa-f]{2})+(?::(?:[A-Za-z0-9._-]|%[0-9A-Fa-f]{2})+)*$" }
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "vector_version": "somavera.soma-host-trust-capsule-invalid.v2",
+  "base_vector": "host-trust-capsule-v2.json",
+  "cases": [
+    {
+      "name": "initial_key_substituted",
+      "mutation": "initial_key_substituted",
+      "expected_error": "CAPSULE_CONTROLLER_INITIAL_KEY_INVALID"
+    },
+    {
+      "name": "rotation_object_removed",
+      "mutation": "rotation_object_removed",
+      "expected_error": "CAPSULE_CONTROLLER_HISTORY_INCOMPLETE"
+    },
+    {
+      "name": "rotation_object_reordered",
+      "mutation": "rotation_object_reordered",
+      "expected_error": "CAPSULE_CONTROLLER_HISTORY_ORDER_INVALID"
+    },
+    {
+      "name": "rotation_prior_signature_corrupted",
+      "mutation": "rotation_prior_signature_corrupted",
+      "expected_error": "CAPSULE_CONTROLLER_HISTORY_SIGNATURE_INVALID"
+    },
+    {
+      "name": "rotation_successor_signature_corrupted",
+      "mutation": "rotation_successor_signature_corrupted",
+      "expected_error": "CAPSULE_CONTROLLER_HISTORY_SIGNATURE_INVALID"
+    },
+    {
+      "name": "rotation_head_mutated",
+      "mutation": "rotation_head_mutated",
+      "expected_error": "CAPSULE_CONTROLLER_HISTORY_HEAD_INVALID"
+    },
+    {
+      "name": "rotation_count_mutated",
+      "mutation": "rotation_count_mutated",
+      "expected_error": "CAPSULE_COUNT_INVALID"
+    },
+    {
+      "name": "controller_history_root_mutated",
+      "mutation": "controller_history_root_mutated",
+      "expected_error": "CAPSULE_CONTROLLER_HISTORY_ROOT_INVALID"
+    },
+    {
+      "name": "active_key_substituted",
+      "mutation": "active_key_substituted",
+      "expected_error": "CAPSULE_CONTROLLER_ACTIVE_KEY_INVALID"
+    },
+    {
+      "name": "controller_history_claim_escalated",
+      "mutation": "controller_history_claim_escalated",
+      "expected_error": "CAPSULE_CLAIMS_INVALID"
+    },
+    {
+      "name": "capsule_signature_corrupted",
+      "mutation": "capsule_signature_corrupted",
+      "expected_error": "CAPSULE_SIGNATURE_INVALID"
+    }
+  ]
+}

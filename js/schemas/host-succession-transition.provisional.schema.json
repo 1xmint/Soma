@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://somavera.org/schemas/host-succession-transition.provisional.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "transition_id", "prepared_at", "controller_did", "host_did", "candidate_id", "subject_id", "confirmation_id", "prior_pin_id", "successor_pin_id", "prior_pin", "candidate", "confirmation", "successor_pin", "authority", "signature"],
+  "properties": {
+    "schema_version": { "const": "soma.host-succession-transition.provisional-v1" },
+    "transition_id": { "$ref": "#/$defs/hash" },
+    "prepared_at": { "type": "string", "format": "date-time" },
+    "controller_did": { "type": "string", "pattern": "^did:[a-z0-9]+:.+$", "maxLength": 512 },
+    "host_did": { "type": "string", "pattern": "^did:[a-z0-9]+:.+$", "maxLength": 512 },
+    "candidate_id": { "$ref": "#/$defs/hash" },
+    "subject_id": { "$ref": "#/$defs/hash" },
+    "confirmation_id": { "$ref": "#/$defs/hash" },
+    "prior_pin_id": { "$ref": "#/$defs/hash" },
+    "successor_pin_id": { "$ref": "#/$defs/hash" },
+    "prior_pin": { "type": "object" },
+    "candidate": { "type": "object" },
+    "confirmation": { "type": "object" },
+    "successor_pin": { "type": "object" },
+    "authority": { "const": "prepared_local_transition_no_connection_no_consent_no_send" },
+    "signature": { "$ref": "#/$defs/signature" }
+  },
+  "$defs": {
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["suite", "key_id", "value"],
+      "properties": {
+        "suite": { "const": "Ed25519-v1" },
+        "key_id": { "type": "string", "minLength": 3, "maxLength": 512 },
+        "value": { "type": "string", "pattern": "^[A-Za-z0-9+/]{86}==$", "minLength": 88, "maxLength": 88, "contentEncoding": "base64" }
+      }
+    }
+  }
+}

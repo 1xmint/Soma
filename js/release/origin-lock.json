@@ -1,0 +1,83 @@
+{
+  "schema_version": "somavera.reference-origin-lock.v2",
+  "origin_status": "draft_not_ratified",
+  "origin_git_commit": "b64d7794ad368f5e690596e50dd0c11ef2f73072",
+  "origin_capsule_root": "48e45cb82cf27e0b3ad94d492c92cb6249ed7dc69734171e86c34ea424aed243",
+  "origin_capsule_manifest_version": "somavera.capsule-manifest.v1",
+  "binding_assurance": "capsule_manifest_root_and_import_hashes_verified_commit_and_publisher_not_independently_authenticated",
+  "implementation_scope": "tokenless_reference_only",
+  "token_activation_authorized": false,
+  "production_claim_authorized": false,
+  "locked_imports": [
+    {
+      "origin_path": "conformance/controller-key-rotation-invalid-v1.json",
+      "local_path": "conformance/controller-key-rotation-invalid-v1.json",
+      "sha256": "9a4d2bdf9bb74c0ba983cfb69432cd50311ecb7cd33670d80658c1afd164f761"
+    },
+    {
+      "origin_path": "conformance/controller-key-rotation-v1.json",
+      "local_path": "conformance/controller-key-rotation-v1.json",
+      "sha256": "403651ac81ca239ed0cb5388c99ce60afa6bce292ccacf73c7a973682d038b6c"
+    },
+    {
+      "origin_path": "conformance/host-descriptor-succession-invalid-v1.json",
+      "local_path": "conformance/host-descriptor-succession-invalid-v1.json",
+      "sha256": "d0bdd2dc14f3222c13d63a5278f074b75e1429353a7c1f7437a47ae20a62d986"
+    },
+    {
+      "origin_path": "conformance/host-descriptor-succession-v1.json",
+      "local_path": "conformance/host-descriptor-succession-v1.json",
+      "sha256": "d27d3d31a006944497cda1817ba18d22cafd1ddf78f76e5f9aa2201863b8e338"
+    },
+    {
+      "origin_path": "conformance/host-succession-confirmation-invalid-v1.json",
+      "local_path": "conformance/host-succession-confirmation-invalid-v1.json",
+      "sha256": "e6bbc9f99072b37f5e97ba16e5a0d2711cc178b07b9d6d53ffe4acd759ddd3a4"
+    },
+    {
+      "origin_path": "conformance/host-succession-confirmation-v1.json",
+      "local_path": "conformance/host-succession-confirmation-v1.json",
+      "sha256": "56320521ea80724b4a72c0b1f994cc117f1edf5208ae980ac40f1e9ad9874b69"
+    },
+    {
+      "origin_path": "conformance/host-trust-capsule-invalid-v1.json",
+      "local_path": "conformance/host-trust-capsule-invalid-v1.json",
+      "sha256": "c6eb3a38fbac8a439e54e6a6e60986c1e5213a82d2f5c050eba5bd953a408338"
+    },
+    {
+      "origin_path": "conformance/host-trust-capsule-invalid-v2.json",
+      "local_path": "conformance/host-trust-capsule-invalid-v2.json",
+      "sha256": "e24fb029cf77d0c842dcebe4f898ef059022f112408251c6b818a0c9e854f3ba"
+    },
+    {
+      "origin_path": "conformance/host-trust-capsule-v1.json",
+      "local_path": "conformance/host-trust-capsule-v1.json",
+      "sha256": "f6f59816a86116cd2cc48ae8c55a3ec67a60999297815e3fd4fa4de591b29af6"
+    },
+    {
+      "origin_path": "conformance/host-trust-capsule-v2.json",
+      "local_path": "conformance/host-trust-capsule-v2.json",
+      "sha256": "2c8a8c518220ace2676a8ac191c9fa65bc2c3b8912a645171e6ccb509406ee62"
+    },
+    {
+      "origin_path": "schemas/soma-controller-key-rotation.schema.json",
+      "local_path": "schemas/soma-controller-key-rotation.schema.json",
+      "sha256": "c7441867da3e1ef564097b2b6ade249db3b41dc9839d200e6e3911260cd6d91e"
+    },
+    {
+      "origin_path": "schemas/soma-host-succession-confirmation.schema.json",
+      "local_path": "schemas/soma-host-succession-confirmation.schema.json",
+      "sha256": "c6ddf82438897850f86f08de5ab0caabe95cb09ac51a42b2423cdccb1bc416db"
+    },
+    {
+      "origin_path": "schemas/soma-host-trust-capsule-v2.schema.json",
+      "local_path": "schemas/soma-host-trust-capsule-v2.schema.json",
+      "sha256": "c249df68a6411525be130a053fe37f8e43fdf84187c9b72afbbc3a2bb0db273a"
+    },
+    {
+      "origin_path": "schemas/soma-host-trust-capsule.schema.json",
+      "local_path": "schemas/soma-host-trust-capsule.schema.json",
+      "sha256": "b8411300b2151221480d7416e9cae462f19cd9f9d7e70ebc4b561bb5eb35398b"
+    }
+  ]
+}
