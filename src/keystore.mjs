@@ -1,10 +1,11 @@
 import { spawnSync } from "node:child_process";
 import { SomaError } from "./errors.mjs";
+import { resolveWindowsPowerShell } from "./platform.mjs";
 
 const ENTROPY_LABEL = "Somavera/Soma/DPAPI/v1";
 
 function runPowerShell(script, input) {
-  const result = spawnSync("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", script], {
+  const result = spawnSync(resolveWindowsPowerShell(), ["-NoProfile", "-NonInteractive", "-Command", script], {
     input,
     encoding: "utf8",
     windowsHide: true,

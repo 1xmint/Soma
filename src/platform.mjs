@@ -1,9 +1,35 @@
 import { spawnSync } from "node:child_process";
+import { existsSync } from "node:fs";
 import { chmod } from "node:fs/promises";
+import { isAbsolute, join } from "node:path";
 import { SomaError } from "./errors.mjs";
 
+let resolvedPowerShell = null;
+
+// Never spawn a bare "powershell.exe": Windows resolves an unqualified image
+// name against the current working directory before PATH, so a dropped binary
+// in the cwd would receive DPAPI plaintext on stdin. Resolve the absolute
+// system path, or refuse to run at all.
+export function resolveWindowsPowerShell() {
+  if (resolvedPowerShell) return resolvedPowerShell;
+  const systemRoot = process.env.SystemRoot || process.env.SYSTEMROOT || process.env.windir;
+  if (!systemRoot || !isAbsolute(systemRoot)) {
+    throw new SomaError("Windows system root is not resolvable", 8, "WINDOWS_SHELL_UNRESOLVED", {
+      cause: "SystemRoot environment variable missing or not absolute"
+    });
+  }
+  const candidate = join(systemRoot, "System32", "WindowsPowerShell", "v1.0", "powershell.exe");
+  if (!existsSync(candidate)) {
+    throw new SomaError("Windows PowerShell was not found at its system path", 8, "WINDOWS_SHELL_UNRESOLVED", {
+      cause: candidate
+    });
+  }
+  resolvedPowerShell = candidate;
+  return resolvedPowerShell;
+}
+
 function powershellJson(script, input) {
-  const result = spawnSync("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", script], {
+  const result = spawnSync(resolveWindowsPowerShell(), ["-NoProfile", "-NonInteractive", "-Command", script], {
     input,
     encoding: "utf8",
     windowsHide: true,

@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { open, mkdir, readFile, readdir, rename, rm, stat, statfs, lstat, realpath } from "node:fs/promises";
+import { open as openOnce, mkdir, readFile, readdir, rename as renameOnce, rm, stat, statfs, lstat, realpath } from "node:fs/promises";
 import path from "node:path";
 import { createInitialKeyMaterial, privateKeyForRole, publicRecordForPrivate } from "./crypto.mjs";
 import { defaultSomaHome, RELEASE_ROOT, STATE_DIRECTORIES, VERSION } from "./constants.mjs";
@@ -8,6 +8,7 @@ import { protectSecretBundle, unprotectSecretBundle } from "./keystore.mjs";
 import { inspectStateRootPermissions, restrictStateRoot } from "./platform.mjs";
 import { verifyRelease } from "./release.mjs";
 import { canonicalize } from "./canonicalize.mjs";
+import { retryTransient } from "./fs-transient.mjs";
 import { createInitialEvidenceHead, verifyEvidenceLedger } from "./evidence.mjs";
 import { verifyHostPinStore } from "./host.mjs";
 import { verifyHostSuccessionCandidateStore } from "./host-succession.mjs";
@@ -19,6 +20,11 @@ import {
   recoverControllerRotationTransactions,
   verifyPublicKeyHistory
 } from "./controller-rotation.mjs";
+
+// See fs-transient.mjs: Windows reports contention as EPERM/EBUSY on the
+// exclusive create and on the staging rename that publishes a new home.
+const open = (file, flags, mode) => retryTransient(() => openOnce(file, flags, mode));
+const rename = (from, to) => retryTransient(() => renameOnce(from, to));
 
 const CONTROL = /[\u0000-\u001f\u007f]/;
 

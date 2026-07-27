@@ -1,6 +1,7 @@
-import { link, mkdir, open, readFile, readdir, rename, stat, unlink } from "node:fs/promises";
+import { link, mkdir, open, readFile, readdir, rename as renameOnce, stat, unlink as unlinkOnce } from "node:fs/promises";
 import path from "node:path";
 import { canonicalize, parseCanonicalJson } from "./canonicalize.mjs";
+import { retryTransient } from "./fs-transient.mjs";
 import {
   createControllerKeyMaterial,
   ed25519MultibaseSha256,
@@ -15,6 +16,14 @@ import { SomaError } from "./errors.mjs";
 import { assertJsonSchema } from "./json-schema.mjs";
 import { protectSecretBundle, unprotectSecretBundle } from "./keystore.mjs";
 import { restrictStatePath, restrictStateRoot } from "./platform.mjs";
+
+// The commit sequence renames and unlinks under concurrent contention, where
+// Windows reports transient EPERM/EBUSY. Retrying here costs a failed rotation
+// that would otherwise have to be recovered; it never changes which outcome a
+// boundary resolves to. `open` is deliberately left unwrapped: acquireLock
+// already interprets EPERM/EBUSY itself and must keep its own timing.
+const rename = (from, to) => retryTransient(() => renameOnce(from, to));
+const unlink = (target) => retryTransient(() => unlinkOnce(target));
 
 export const PROPOSAL_ID_DOMAIN = "somavera:soma-controller-key-rotation-proposal:v1\n";
 export const ROTATION_ID_DOMAIN = "somavera:soma-controller-key-rotation:v1\n";
