@@ -1,7 +1,7 @@
 # Soma Reference Implementation Status
 
 Date: 2026-07-26
-Contract source: Somavera Origin commit `cabc10eb889def42c395735bf701b16c18105628`, capsule `4ef5a42ab4b330678f8c52a822d90c105b267751da6227c31c54a50c67bf67e0`
+Contract source: Somavera Origin commit `699e4f756ff3d38d1c5ed94260ac7678cc229342`, capsule `d4a0d2431d860ed36b7372bc999bcc2bd3315ad6e052647ea28e98e50bf49054`
 Release status: **early Windows-first slice; not protocol-conforming or production-ready**
 
 ## Implemented in this slice

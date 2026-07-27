@@ -1,8 +1,8 @@
 {
   "schema_version": "somavera.reference-origin-lock.v2",
   "origin_status": "draft_not_ratified",
-  "origin_git_commit": "cabc10eb889def42c395735bf701b16c18105628",
-  "origin_capsule_root": "4ef5a42ab4b330678f8c52a822d90c105b267751da6227c31c54a50c67bf67e0",
+  "origin_git_commit": "699e4f756ff3d38d1c5ed94260ac7678cc229342",
+  "origin_capsule_root": "d4a0d2431d860ed36b7372bc999bcc2bd3315ad6e052647ea28e98e50bf49054",
   "origin_capsule_manifest_version": "somavera.capsule-manifest.v1",
   "binding_assurance": "capsule_manifest_root_and_import_hashes_verified_commit_and_publisher_not_independently_authenticated",
   "implementation_scope": "tokenless_reference_only",

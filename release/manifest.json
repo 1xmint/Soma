@@ -22,7 +22,7 @@
     {
       "path": "CONTROLLER-ROTATION-PROFILE.md",
       "bytes": 4347,
-      "sha256": "fdbd8682581215ba05b46e534172080fdfa43a807424bfb5cc25d5d2f8383709"
+      "sha256": "5786bf9ae5271aaca36d579a83228e4c3c06f79d809d49a24ebefd092e17d868"
     },
     {
       "path": "EVIDENCE-PROFILE.md",
@@ -32,22 +32,22 @@
     {
       "path": "HOST-PIN-PROFILE.md",
       "bytes": 6703,
-      "sha256": "2d3de5d33f78b7d3e271305c5b891a25373d05c492e3b15008423e4d56f75c75"
+      "sha256": "82b5239ca0679e6d0872b50a0c08a7d852e8ab110de4538ab321af42ceaad3c5"
     },
     {
       "path": "HOST-SUCCESSION-PROFILE.md",
       "bytes": 5558,
-      "sha256": "6dc51f43335ae54b5fa7d11848d80d071d337a160b127d8166528ec6a591d4d9"
+      "sha256": "27dfa1323386dc28b92030c445c027f0a1f6209c035647898abe32f002aa72ab"
     },
     {
       "path": "HOST-TRUST-CAPSULE-PROFILE.md",
       "bytes": 5501,
-      "sha256": "483ce55b59b557dbeb273eb5ffb9acaa03c822ca0a46437aae853d3458ac5e56"
+      "sha256": "9c60444c4545537865cbba4a5b24059953e0885ff0a8fa06ab7e5dd01ca6bbf7"
     },
     {
       "path": "IMPLEMENTATION-STATUS.md",
       "bytes": 4152,
-      "sha256": "300cdc383faae5c6637166e801b3003f51967465a7f312427cb46fd004336342"
+      "sha256": "131ab54e3ffe014b4e9006fe334dc33f1ed86a138aca855532bad4eff9a903f9"
     },
     {
       "path": "LICENSE",
@@ -166,13 +166,13 @@
     },
     {
       "path": "release/origin-capsule-manifest.json",
-      "bytes": 23721,
-      "sha256": "04ae4c99b17f5dff41280ff824e2c08f05f00fef2282593db5138fd411fe6ee6"
+      "bytes": 26219,
+      "sha256": "5fc83b1f4a44d28b9944e33653cf9bda705dbd588a0dc0cbbfbb1e4970d9b0d2"
     },
     {
       "path": "release/origin-lock.json",
       "bytes": 3960,
-      "sha256": "04c9360b1cf06cc4eff75d2e87d7b58ed7bb32091ec544331d05a418908f99c8"
+      "sha256": "bc84c5ce8ea529dc4e323c21b7299a3bc637a3ef2ee866732d53481dacaa35fb"
     },
     {
       "path": "schemas/authorized-field-projection.provisional.schema.json",
@@ -356,8 +356,8 @@
     },
     {
       "path": "src/host.mjs",
-      "bytes": 27598,
-      "sha256": "d046331bf8618deaa371073fbc719476bf119d8cc31d544033dc1957df7d085b"
+      "bytes": 27666,
+      "sha256": "50502bbc792b288ba78c5a3520c0dfb5ec55c414d38708e509270e12ba06513d"
     },
     {
       "path": "src/json-schema.mjs",
@@ -407,12 +407,12 @@
     {
       "path": "test/host-confirmation.test.mjs",
       "bytes": 19785,
-      "sha256": "6fb0125e267a44292f8a146fd07f7e6b65f266e1e0f8e3d3569958cd3e025590"
+      "sha256": "84cdc4bffc54c07ecab50411c79e69477cb8676c27b03b90563af705b70c7e1f"
     },
     {
       "path": "test/host-succession.test.mjs",
       "bytes": 12881,
-      "sha256": "7f5a50d4ddab6f5ca228417bff0df776a76a607735852f131a0415a8862ac53f"
+      "sha256": "f298650eb68bf284d4fd69d74afe3b826ca61636be14c7c79e40b8346a2ed288"
     },
     {
       "path": "test/host-trust-capsule-v2.test.mjs",
@@ -422,12 +422,12 @@
     {
       "path": "test/host-trust-capsule.test.mjs",
       "bytes": 20385,
-      "sha256": "c40bc480bc64c6815581406bae6e45a664fe9bfb9681f3f19fca1fe14a67e366"
+      "sha256": "800cf149d139badf5d701dc4086a3b201c6eef1af0ad8b9b63f549ad8bc3f347"
     },
     {
       "path": "test/host.test.mjs",
       "bytes": 21216,
-      "sha256": "adb79fb1cb473ee10e5cf4a7c509f398e8ec5bf9626832e08eda8dda7e596533"
+      "sha256": "56d061996a70ec4cf9c9219c63249bff88b54960e72ee8e79e35df03208344fb"
     },
     {
       "path": "test/membrane.test.mjs",

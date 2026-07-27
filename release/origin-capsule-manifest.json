@@ -21,8 +21,8 @@
     },
     {
       "path": "ACTUALIZATION-PLAN.md",
-      "bytes": 14591,
-      "sha256": "916399230e73ecc6a0a77833523466e14e2818d1b134bd7aec2fdbfafb19f8d5"
+      "bytes": 14831,
+      "sha256": "bd22301b9bb8195b12b809a33e7e1128e99cae6247281aab0617a094eaec8b7a"
     },
     {
       "path": "ASSURANCE-CASE.md",
@@ -36,8 +36,8 @@
     },
     {
       "path": "CONSENSUS-SUBSTRATE-DECISION.md",
-      "bytes": 6549,
-      "sha256": "fbdd99e21b051b7af174bb3e76a42f1c10a2b43663b0e2120af358ab7aabe587"
+      "bytes": 7346,
+      "sha256": "5fcd6730cf8b21ffcd39089ccdf2803339deb554c7ec8a93478c72f0e601d45c"
     },
     {
       "path": "CONTRIBUTING.md",
@@ -71,8 +71,8 @@
     },
     {
       "path": "GENESIS-VALIDATION.md",
-      "bytes": 2472,
-      "sha256": "6c7b31759189e951e5b95a98ad6c5c8e0b0cd3ec80de6bf7ac51a8ab7dcf07d4"
+      "bytes": 2795,
+      "sha256": "43eba0b9125fc5f3822f5be6cb3c434336fe953ba1bee0d19ec7cc0bf367eea3"
     },
     {
       "path": "GOVERNANCE.md",
@@ -111,8 +111,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 6527,
-      "sha256": "4a3b79e3e732ef70076d71cbbe8ba76e1b5bc1bea688ff8ee77eafa01fb1ec3e"
+      "bytes": 6666,
+      "sha256": "81ef07821eeba6b8c69e738c4d7dda16a9245f19b887d1a240a71ed2832f395c"
     },
     {
       "path": "RECOVERY.md",
@@ -150,14 +150,19 @@
       "sha256": "40e76f35d9c410ab8bdab05059eb3134679702052cc342478be136c446c34206"
     },
     {
+      "path": "TOKENLESS-REDUCER.md",
+      "bytes": 10182,
+      "sha256": "7f5693212cd006a8c5afd8aea6338bb7d09eb3282e3ff44a17c583dcf5d706af"
+    },
+    {
       "path": "conformance/PROTOTYPE-ACCEPTANCE.md",
       "bytes": 77944,
       "sha256": "d55c3156cb2308edba7cd7839cf93b26c4c8a961fdb086e26847f702e2f5ffdb"
     },
     {
       "path": "conformance/README.md",
-      "bytes": 3400,
-      "sha256": "d1ae0d567256afe0b5cb5f71f9e2a9e2390d9672560248474e3cb272531688b4"
+      "bytes": 3802,
+      "sha256": "b76c3d6912c304c4afe7addc041df25291e84fd12558b77fcc5259cfe9a687fd"
     },
     {
       "path": "conformance/canonicalization-v1.json",
@@ -228,6 +233,16 @@
       "path": "conformance/recovery-domain-v1.json",
       "bytes": 1840,
       "sha256": "3c4ad0ffc6e4651cf54dcecb3b1694ea0d1fa26af0bca04d2c77b1ca06756f69"
+    },
+    {
+      "path": "conformance/tokenless-reducer-invalid-v1.json",
+      "bytes": 3647,
+      "sha256": "463b6ad8c012774333f614a496462f6137cf0fadb6db546e4e30ff3ec78426bc"
+    },
+    {
+      "path": "conformance/tokenless-reducer-v1.json",
+      "bytes": 29423,
+      "sha256": "578f4a6c8b3a871c7304576f8abcb09a1bd731ac079b6a01485d384bd8aeba7a"
     },
     {
       "path": "conformance/wire-invalid-v1.json",
@@ -345,6 +360,26 @@
       "sha256": "93072fccefa0584498461682675aa4e28da194a2df661c12d86fa6ef6c46d61b"
     },
     {
+      "path": "examples/tokenless-reducer-block-result.example.json",
+      "bytes": 949,
+      "sha256": "6f34e7e42889e26ce5d488dcf9681521fca97174403c1691e56a9e2d28d8050a"
+    },
+    {
+      "path": "examples/tokenless-reducer-block.example.json",
+      "bytes": 2233,
+      "sha256": "2114c567805a5f8d496b71c83eae9f26e0c1ffc2850aa6b5ab79a9d78c8b8fe1"
+    },
+    {
+      "path": "examples/tokenless-reducer-state.example.json",
+      "bytes": 2032,
+      "sha256": "96dbe79f9d1748d5cda18943bb2dd4c1a5daaaf3124b8b1cbae7534db2f0d6db"
+    },
+    {
+      "path": "examples/tokenless-reducer-transaction.example.json",
+      "bytes": 1359,
+      "sha256": "ab120b17c5b7c0c207d98c28e28b974c5bb658b5274aafdbf3de02f5bbeed14b"
+    },
+    {
       "path": "examples/vera-answer-source-bundle.example.json",
       "bytes": 3413,
       "sha256": "e91b4b9ca919d2ad7acad3401afa0fb194d1c2cf81c87dfd006f64a92965bd2e"
@@ -386,8 +421,8 @@
     },
     {
       "path": "package.json",
-      "bytes": 729,
-      "sha256": "b98bac4b11010e2dfb4e04fba025353039383ef52b6b8f14596993c87f1b9693"
+      "bytes": 808,
+      "sha256": "2d23c53d849d505ecb07bda289aff40f9e11e4f0b716c8aafc85541a0770fda4"
     },
     {
       "path": "schemas/checkpoint-state-package.schema.json",
@@ -495,6 +530,26 @@
       "sha256": "94a6a8719823f61c7c79f4010a77b2c143d1565ee7f727556dc7e5793c2dd38f"
     },
     {
+      "path": "schemas/tokenless-reducer-block-result.schema.json",
+      "bytes": 1738,
+      "sha256": "89ce18019265f1df8853f3ce4d61d9f89042fe3c3ca4026e39372f46935d8d4b"
+    },
+    {
+      "path": "schemas/tokenless-reducer-block.schema.json",
+      "bytes": 1405,
+      "sha256": "61cfcc5aae99f917b5d9321bed6ccbd0808ece23973c0de4dd7cf80486c7da1d"
+    },
+    {
+      "path": "schemas/tokenless-reducer-state.schema.json",
+      "bytes": 6123,
+      "sha256": "de9e4dd7be9d9cd62c51fdb9c6db83503b99578bcdd545f22840aeab56d4e5b4"
+    },
+    {
+      "path": "schemas/tokenless-reducer-transaction.schema.json",
+      "bytes": 3733,
+      "sha256": "9f85c6209875c1b4031f9c70811f0eb94a4e277738d351d2bec214b64f68755c"
+    },
+    {
       "path": "schemas/vera-answer-source-bundle.schema.json",
       "bytes": 9008,
       "sha256": "734858780bc2911bad34a7dd50a868abaead8122ba54bdb50f7f2cadc0de942e"
@@ -546,8 +601,8 @@
     },
     {
       "path": "scripts/check-conformance.mjs",
-      "bytes": 1731,
-      "sha256": "486e72f49586159e07e4621235d4a27536ce6940ca4d18deb638ea14ec756339"
+      "bytes": 1876,
+      "sha256": "e4eba221a65f4a6e225c8ead6073fe97c2ed1f55f151fc39b31bf17bb5812285"
     },
     {
       "path": "scripts/generate-controller-key-rotation-vector.mjs",
@@ -573,6 +628,11 @@
       "path": "scripts/generate-host-trust-capsule-vector.mjs",
       "bytes": 8250,
       "sha256": "e36cd0f3bbe1a7e162407d541124f3544517179e3fc352ad6e8b0009f34e7c9b"
+    },
+    {
+      "path": "scripts/generate-tokenless-reducer-vectors.mjs",
+      "bytes": 10499,
+      "sha256": "da159a423411976bc56e25663e44ee64f49c96ad51c235904fcbf16b2aaf07c2"
     },
     {
       "path": "scripts/lib/canonicalize.mjs",
@@ -660,6 +720,16 @@
       "sha256": "5d36c9746baa0a9d58376a53ba0dd4d3d2a5670f18a3f85b08e8243e4b6fc6b1"
     },
     {
+      "path": "scripts/lib/tokenless-reducer-conformance.mjs",
+      "bytes": 16395,
+      "sha256": "92b452cd59a6bef8c2af48c7fea4f698916876fbb7ce2498025af7e2b2eafe17"
+    },
+    {
+      "path": "scripts/lib/tokenless-reducer.mjs",
+      "bytes": 24906,
+      "sha256": "dcbdc25baba08780ce158cd89dbe1d07dfe2526e4fc29e69311291f8b2a9e077"
+    },
+    {
       "path": "scripts/lib/wire-conformance.mjs",
       "bytes": 11795,
       "sha256": "f0a06a2e363d78baf27eb06c20f9bcaa6e64a31f70b08284d0491ee44035e520"
@@ -695,5 +765,5 @@
       "sha256": "5d4bcfba15649b5040b40cc8e3aeb5d396b6d3d5f1abec1ca747f0af005c8dc4"
     }
   ],
-  "capsule_root": "4ef5a42ab4b330678f8c52a822d90c105b267751da6227c31c54a50c67bf67e0"
+  "capsule_root": "d4a0d2431d860ed36b7372bc999bcc2bd3315ad6e052647ea28e98e50bf49054"
 }

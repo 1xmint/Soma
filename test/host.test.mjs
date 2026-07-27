@@ -13,7 +13,7 @@ import { SUPPORTED_ORIGIN_CAPSULE_HASHES, verifyHostDescriptor } from "../src/ho
 const root = path.resolve(fileURLToPath(new URL("../", import.meta.url)));
 const cli = path.join(root, "bin", "soma.mjs");
 const preload = pathToFileURL(path.join(root, "test", "no-network-preload.mjs")).href;
-const capsule = "4ef5a42ab4b330678f8c52a822d90c105b267751da6227c31c54a50c67bf67e0";
+const capsule = "d4a0d2431d860ed36b7372bc999bcc2bd3315ad6e052647ea28e98e50bf49054";
 
 function execute(args, trace) {
   return spawnSync(process.execPath, [cli, ...args], {
