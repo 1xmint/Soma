@@ -14,7 +14,7 @@
 import { ObservationStore } from './store.js';
 import { submitObservations } from './submitter.js';
 import type { SomaIdentity } from './identity.js';
-import type { ObservationItem, CandidateArtifact } from './types.js';
+import type { ObservationItem, CandidateArtifact, ProtocolPrimitiveIntroduction } from './types.js';
 
 // ---- Types ----
 
@@ -58,10 +58,31 @@ const FIX_MESSAGE_RE = /fix|resolve|repair|correct/i;
 const FAILURE_MESSAGE_RE = /revert|retry|attempt|wip.*fix/i;
 const RETRY_ATTEMPT_RE = /retry|attempt/i;
 const OPERATOR_MESSAGE_RE =
-  /operator|onboarding|inspect|catalog|govern|registration|register|workflow|review guidance|status|next action|replay|agent|contribution/i;
+  /operator|onboarding|inspect|catalog|govern|registration|register|workflow|review guidance|status|next action|replay|contribution|agent api|agent-api|endpoint|endpoints|route|routes|auth|billing|payment|x402|delegation|schedule|monitor|lineage|heart|lifecycle/i;
 const PRIMARY_OPERATOR_SURFACE_RE =
-  /^(src\/(cli|commands|formatters)\.(js|ts)|src\/commands\/|src\/routes\/(catalog|inspect|govern|register|status|agents|contributions))/i;
+  /^(src\/(cli|commands|formatters)\.(js|ts)|src\/commands\/|src\/routes\/(catalog|inspect|govern|register|status|agents|contributions)|.*\/(routes|api|commands)\/|.*\/(agent-routes|server|auth|delegation-auth|billing|scheduler|x402-middleware|x402-verify|heart-client)\.(js|ts)$)/i;
 const SUPPLEMENTAL_OPERATOR_SURFACE_RE = /^(docs\/|README\.md$)/i;
+
+// ---- Protocol primitive introduction heuristics ----
+//
+// Targets: supply-chain / certificate / provenance / protocol primitive commits
+// that introduce new module surfaces, exported APIs, or implementation-layer
+// primitives. These are implementation-heavy and seam-adjacent but do not fit
+// the fix/test or operator-workflow shapes.
+//
+// Negative-space guards (must NOT fire on):
+//   - docs-only commits (all changed files are under docs/ or *.md)
+//   - pure dependency bumps ("bump X from A to B" with no supply-chain language)
+//   - merge commits (is_merge = true in content)
+//   - spec-gap fix commits (covered by test_backed_resolution or operator paths)
+//   - the existing operator_workflow corpus (those match PRIMARY_OPERATOR_SURFACE_RE)
+const SUPPLY_CHAIN_MESSAGE_RE =
+  /supply-chain|supply_chain|certificate.*primitiv|primitiv.*protocol|protocol.*primitiv|provenance.*primitiv|export.*path.*supply|supply.*export.*path|export\s+path\s+and\s+bump/i;
+// Files that signal substantive implementation or module-surface work
+const SUPPLY_CHAIN_IMPL_FILE_RE =
+  /^(src\/supply-chain\/|src\/.*certificate|src\/.*provenance|packages\/.*\/package\.json|tsconfig.*build)/i;
+// Docs-only guard: if ALL changed files match this, skip (docs-only commit)
+const DOCS_ONLY_FILE_RE = /^(docs\/|.*\.md$|.*\.mdx$)/i;
 
 /**
  * Evaluate a batch of observations and extract candidate artifacts.
@@ -177,6 +198,60 @@ export function extractCandidateArtifacts(
         sourceHash: commitHash,
       });
       continue;
+    }
+
+    // Priority 3: protocol_primitive_introduction
+    // Requires:
+    //   - message mentions supply-chain / certificate / provenance / primitive / export-path keywords
+    //   - NOT a merge commit
+    //   - NOT docs-only (at least one non-docs file changed)
+    //   - at least one implementation or module-surface file touched (src/ or package export config)
+    //     OR message pattern alone is sufficient for module-surface export commits
+    const isMerge = content['is_merge'] === true;
+    const allDocsOnly =
+      filesChanged.length > 0 && filesChanged.every((f) => DOCS_ONLY_FILE_RE.test(f.path));
+
+    if (
+      !isMerge &&
+      !allDocsOnly &&
+      SUPPLY_CHAIN_MESSAGE_RE.test(message)
+    ) {
+      const implFiles = filesChanged
+        .filter((f) => SUPPLY_CHAIN_IMPL_FILE_RE.test(f.path))
+        .map((f) => f.path);
+      const primitiveTestFiles = filesChanged
+        .filter((f) => TEST_FILE_RE.test(f.path))
+        .map((f) => f.path);
+      // Require at least one impl/surface file OR the commit is a pure module-surface
+      // export change (package.json + tsconfig only, which would still have at least
+      // one SUPPLY_CHAIN_IMPL_FILE_RE match via packages/*/package.json pattern).
+      if (implFiles.length > 0) {
+        // Propagate richer-signal fields from the observation content if present.
+        const exportedNames = Array.isArray(content['exported_names'])
+          ? (content['exported_names'] as string[]).filter((n) => typeof n === 'string')
+          : undefined;
+        const signatureExcerpts = Array.isArray(content['signature_excerpts'])
+          ? content['signature_excerpts'] as Array<{ file: string; lines: string[] }>
+          : undefined;
+
+        const primitiveArtifact: ProtocolPrimitiveIntroduction = {
+          artifact_type: 'protocol_primitive_introduction',
+          introduction_summary: messageSubject || message,
+          impl_files: implFiles,
+          test_files: primitiveTestFiles,
+          commit_hash: commitHash,
+          stats: {
+            total_additions:
+              typeof stats['total_additions'] === 'number' ? stats['total_additions'] : 0,
+            total_deletions:
+              typeof stats['total_deletions'] === 'number' ? stats['total_deletions'] : 0,
+          },
+          ...(exportedNames && exportedNames.length > 0 ? { exported_names: exportedNames } : {}),
+          ...(signatureExcerpts && signatureExcerpts.length > 0 ? { signature_excerpts: signatureExcerpts } : {}),
+        };
+        matching.push({ artifact: primitiveArtifact, sourceHash: commitHash });
+        continue;
+      }
     }
 
     // No match
@@ -303,15 +378,20 @@ export async function runArtifactPipeline(
     }
 
     const observedAtByHash = new Map<string, string>();
+    const repoPathByHash = new Map<string, string>();
     for (const row of pendingRows) {
       if (row.commit_hash) {
         observedAtByHash.set(row.commit_hash, row.observed_at);
+        repoPathByHash.set(row.commit_hash, row.repo_path);
       }
     }
 
     const wrappedItems: ObservationItem[] = pendingArtifacts.map((m) => ({
       type: m.artifact.artifact_type,
-      content: m.artifact as Record<string, unknown>,
+      content: {
+        ...(m.artifact as Record<string, unknown>),
+        repo_path: repoPathByHash.get(m.sourceHash) ?? '',
+      },
       observed_at: observedAtByHash.get(m.sourceHash) ?? new Date().toISOString(),
     }));
 

@@ -25,6 +25,19 @@ export type FileChange = z.infer<typeof fileChangeSchema>;
 
 // ---- Git commit content (goes in ObservationItem.content) ----
 
+/**
+ * A bounded excerpt of added lines from a seam-adjacent file.
+ * At most 3 excerpts per commit, at most 10 lines each.
+ */
+export const signatureExcerptSchema = z.object({
+  /** Repo-relative file path */
+  file: z.string().min(1),
+  /** Added lines (up to 10) from type/function/interface declarations */
+  lines: z.array(z.string()).max(10),
+});
+
+export type SignatureExcerpt = z.infer<typeof signatureExcerptSchema>;
+
 export const gitCommitObservationSchema = z.object({
   commit_hash: z.string().length(40),
   author_name: z.string(),
@@ -46,6 +59,19 @@ export const gitCommitObservationSchema = z.object({
   }),
   /** Path to the repo this commit came from (absolute) */
   repo_path: z.string(),
+  /**
+   * Richer-signal field 1: exported names introduced in seam-adjacent files.
+   * Extracted via regex on added lines: export (const|function|class|type|interface|enum) <name>
+   * Only populated for seam-adjacent commits (supply-chain, certificate, provenance paths).
+   * Optional — absent for non-seam commits.
+   */
+  exported_names: z.array(z.string()).optional(),
+  /**
+   * Richer-signal field 2: bounded excerpts of added type/function signature lines.
+   * At most 3 snippets, at most 10 lines per snippet. Only from seam-adjacent files.
+   * Optional — absent for non-seam commits.
+   */
+  signature_excerpts: z.array(signatureExcerptSchema).max(3).optional(),
 });
 
 export type GitCommitObservation = z.infer<typeof gitCommitObservationSchema>;
@@ -114,13 +140,41 @@ export const operatorWorkflowImprovementSchema = z.object({
   }),
 });
 
+export const protocolPrimitiveIntroductionSchema = z.object({
+  artifact_type: z.literal('protocol_primitive_introduction'),
+  introduction_summary: z.string().min(1),
+  /** Implementation files touched (src/, package exports, build config) */
+  impl_files: z.array(z.string()),
+  /** Test files covering the new primitive, if any */
+  test_files: z.array(z.string()),
+  commit_hash: z.string().length(40),
+  stats: z.object({
+    total_additions: z.number().int().min(0),
+    total_deletions: z.number().int().min(0),
+  }),
+  /**
+   * Richer-signal: exported names introduced in seam-adjacent files.
+   * Propagated from GitCommitObservation.exported_names.
+   * Optional — absent if not a seam-adjacent commit or if extraction produced nothing.
+   */
+  exported_names: z.array(z.string()).optional(),
+  /**
+   * Richer-signal: bounded excerpts of added type/function signature lines.
+   * Propagated from GitCommitObservation.signature_excerpts.
+   * Optional — absent if not a seam-adjacent commit or if extraction produced nothing.
+   */
+  signature_excerpts: z.array(signatureExcerptSchema).max(3).optional(),
+});
+
 export const candidateArtifactSchema = z.discriminatedUnion('artifact_type', [
   testBackedResolutionSchema,
   failureToFixJourneySchema,
   operatorWorkflowImprovementSchema,
+  protocolPrimitiveIntroductionSchema,
 ]);
 
 export type CandidateArtifact = z.infer<typeof candidateArtifactSchema>;
 export type TestBackedResolution = z.infer<typeof testBackedResolutionSchema>;
 export type FailureToFixJourney = z.infer<typeof failureToFixJourneySchema>;
 export type OperatorWorkflowImprovement = z.infer<typeof operatorWorkflowImprovementSchema>;
+export type ProtocolPrimitiveIntroduction = z.infer<typeof protocolPrimitiveIntroductionSchema>;
