@@ -6,6 +6,12 @@ These vectors pin consensus-critical primitives before independent implementatio
 - ed25519-rfc8032-v1.json reproduces the first RFC 8032 Ed25519 test vector;
 - future releases must add full RFC canonicalization edge cases, domain-separated event signatures, Merkle construction, every state transition, negative cases, and cross-language outputs.
 
+`tokenless-reducer-v1.json` pins a synthetic initial state and register, empty-
+block, and owner-tombstone transitions. Its invalid companion declares every
+executed rejection case. The checker reruns exact IDs, Ed25519 messages, state
+and result roots, repeat determinism, 35 adversarial cases, and atomic prefix
+rollback. These vectors are pilot-only and confer no Genesis or token authority.
+
 Run `npm ci` before `npm run check`; the pinned Ajv dependency is part of the
 reproducible validation path. The included JavaScript remains neither the
 required independent second implementation nor a security certification.

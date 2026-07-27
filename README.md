@@ -43,6 +43,7 @@ Brainstorms, pitch decks, private notes, implementation comments, and token mark
 - [`PHOENIX-ORIGIN.md`](PHOENIX-ORIGIN.md) - one-page recovery truth card and authenticity boundary
 - [`RATIFICATION.md`](RATIFICATION.md) - release, tokenless Genesis, token activation, and Phoenix ceremonies
 - [`CONSENSUS-SUBSTRATE-DECISION.md`](CONSENSUS-SUBSTRATE-DECISION.md) - replaceable pilot consensus adapter and permanent-substrate gate
+- [`TOKENLESS-REDUCER.md`](TOKENLESS-REDUCER.md) - deterministic pilot state kernel, exact roots, replay rules, and ratification blockers
 - [`GENESIS-VALIDATION.md`](GENESIS-VALIDATION.md) - implemented Genesis checks and explicit activation blockers
 - [`ECONOMIC-SIMULATION.md`](ECONOMIC-SIMULATION.md) - deterministic comparison model and rejection rules
 - [`GENESIS-TOKEN-AUDIT.md`](GENESIS-TOKEN-AUDIT.md) - Genesis, token, money, liquidity, and legacy-design audit

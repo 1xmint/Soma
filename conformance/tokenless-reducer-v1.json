@@ -1,0 +1,433 @@
+{
+  "schema_version": "somavera.tokenless-reducer-conformance.v1",
+  "profile_status": "synthetic_test_only_not_ratified",
+  "description": "Deterministic register, empty-block, and owner-tombstone replay.",
+  "public_key_base64": "IVL40Zt5HSRFMkLhXy6rbLfP+ntqXtMAl5YOBpiB2xI=",
+  "initial_state": {
+    "$schema": "../schemas/tokenless-reducer-state.schema.json",
+    "schema_version": "somavera.tokenless-reducer-state.v1",
+    "profile_status": "pilot_only_not_ratified",
+    "network_lineage_id": "somavera:network:v1:137a6bc09a5ba06fe2bbe8da291c637f07573cd57bf23cbf894b44f0f1895627",
+    "execution_context_id": "somavera:context:v1:9ae380d9b4f775756675370e80450618b7da6c8087e16a0c1e8ff0a632c361c2",
+    "context_epoch": 0,
+    "ledger_audience": "somavera:ledger:pilot-v1",
+    "height": "0",
+    "last_consensus_time_ms": "1798761600000",
+    "maximum_block_time_advance_ms": "60000",
+    "origin_hash": "274a4613deab82608b6eef1cd92d6708a4ef2ed01d806c8aa7e04aa842c80744",
+    "protocol_release_hash": "ce9acd9fb1cd97220fe4d54fc27b77c2ce9a69900b03441d78ef5dfd0ae2fc7e",
+    "last_block_id": "2ad6dd11fc162d56aa4a070ccc09c58474d1757cdec93842bc0c040d57467839",
+    "last_block_result_root": "1085ad87792d34b78e40804c69de6307f36831c9f90c0a654cb4b3f46bdd6073",
+    "authorized_keys": [
+      {
+        "actor_did": "did:example:somavera-pilot-alice",
+        "key_id": "did:example:somavera-pilot-alice#ledger-key-1",
+        "purpose": "pilot_ledger_signing",
+        "suite": "Ed25519-v1",
+        "public_key_base64": "IVL40Zt5HSRFMkLhXy6rbLfP+ntqXtMAl5YOBpiB2xI=",
+        "valid_from_ms": "1798675200000",
+        "valid_until_ms": "1798848000000",
+        "status": "active"
+      }
+    ],
+    "actor_sequences": [
+      {
+        "actor_did": "did:example:somavera-pilot-alice",
+        "next_sequence": "0"
+      }
+    ],
+    "consumed_transaction_ids": [],
+    "consumed_nonces": [],
+    "public_commitments": [],
+    "balances": [],
+    "balances_root": "2c0c1a5999c9cbcf6eb8786c218458fb1f0977217d729cb81f5250ea6aa6d6ba",
+    "token": {
+      "activated": false,
+      "activation_core_hash": null,
+      "asset_lineage_id": null,
+      "live_supply_grain": "0",
+      "lifetime_minted_grain": "0",
+      "lifetime_burned_grain": "0"
+    },
+    "state_root": "798acf80b76d1ddca4eadc1afe01ec531566be7e328742b4f9a95461f28954d3",
+    "app_hash": "331b94bbc7556c5e66158e81bbb9d5f9b37e4748bdb089f0ff668bc45a404d36"
+  },
+  "steps": [
+    {
+      "name": "register",
+      "block": {
+        "$schema": "../schemas/tokenless-reducer-block.schema.json",
+        "schema_version": "somavera.tokenless-block.v1",
+        "profile_status": "pilot_only_not_ratified",
+        "network_lineage_id": "somavera:network:v1:137a6bc09a5ba06fe2bbe8da291c637f07573cd57bf23cbf894b44f0f1895627",
+        "execution_context_id": "somavera:context:v1:9ae380d9b4f775756675370e80450618b7da6c8087e16a0c1e8ff0a632c361c2",
+        "height": "1",
+        "consensus_time_ms": "1798761601000",
+        "prior_app_hash": "331b94bbc7556c5e66158e81bbb9d5f9b37e4748bdb089f0ff668bc45a404d36",
+        "transactions": [
+          "eyJhY3Rpb24iOiJwaWxvdC5wdWJsaWMtY29tbWl0bWVudC5yZWdpc3RlciIsImFjdG9yX2RpZCI6ImRpZDpleGFtcGxlOnNvbWF2ZXJhLXBpbG90LWFsaWNlIiwiYWN0b3Jfa2V5X2lkIjoiZGlkOmV4YW1wbGU6c29tYXZlcmEtcGlsb3QtYWxpY2UjbGVkZ2VyLWtleS0xIiwiYXVkaWVuY2UiOiJzb21hdmVyYTpsZWRnZXI6cGlsb3QtdjEiLCJleGVjdXRpb25fY29udGV4dF9pZCI6InNvbWF2ZXJhOmNvbnRleHQ6djE6OWFlMzgwZDliNGY3NzU3NTY2NzUzNzBlODA0NTA2MThiN2RhNmM4MDg3ZTE2YTBjMWU4ZmYwYTYzMmMzNjFjMiIsImV4cGlyZXNfYXRfbXMiOiIxNzk4NzYxNjYwMDAwIiwiaXNzdWVkX2F0X21zIjoiMTc5ODc2MTYwMDAwMSIsIm5ldHdvcmtfbGluZWFnZV9pZCI6InNvbWF2ZXJhOm5ldHdvcms6djE6MTM3YTZiYzA5YTViYTA2ZmUyYmJlOGRhMjkxYzYzN2YwNzU3M2NkNTdiZjIzY2JmODk0YjQ0ZjBmMTg5NTYyNyIsIm5vbmNlIjoiNzhlMmM2MzEzMDRkMmYwZGMxNjc1NWFiMDBjMTI5ZTYiLCJwYXlsb2FkIjp7ImNvbnRlbnRfaGFzaCI6Ijc5NGY2NWU1NzI3NGZkZDQ5MTNiODViNTkwODNlNGE2MmZiNWVjZWMxNTcwNWM2OWEwMmNjOWE0Y2FjZjQ3NDgiLCJsaWNlbnNlX2hhc2giOiI0ZDdiMjgyYmJmNjQzODFhYmJmNzI1YjU4ZTRhMGI2MjU4MzQ2MGQzODJhZWJhNmQ2MDcyMDQzYTY4YTg5ODkzIiwib2JqZWN0X2lkIjoiYjk2MmZiNzcyOTZjOTcxNzk5MzdiZGNiMTYzMjlmNmE5YTdiMTg5MzRmZTg5NmQwOTRhMmRlZjgxYTllNWI4NSIsInNvdXJjZV9ldmVudF9pZCI6IjQ0MzkxZGMwZmU1YjBhZjQ0ZjkxOWMyMmRmMzcwZWI5OTA0MDdhYzNjYjZiMDU0Y2ViMjY0NjJlNjk5NGI1ZTgifSwicHJvZmlsZV9zdGF0dXMiOiJwaWxvdF9vbmx5X25vdF9yYXRpZmllZCIsInNjaGVtYV92ZXJzaW9uIjoic29tYXZlcmEudG9rZW5sZXNzLXRyYW5zYWN0aW9uLnYxIiwic2VxdWVuY2UiOiIwIiwic2lnbmF0dXJlIjp7InN1aXRlIjoiRWQyNTUxOS12MSIsInZhbHVlIjoiWmdud1FnNWhwa05Dbm53Z3N3c1RVc1lQZTVSYUVvbjdMc2JTb0JlT2Y1L3E1NWdUU29ZZXI2aGxnNXF0SHhUMXhuL2l5N0JoUGdQeTV3dUt2THFBQXc9PSJ9LCJ0cmFuc2FjdGlvbl9pZCI6IjkyOGViMDA4YTczNDQ5NGIyM2QwMGViZWQ0MWU1M2I2ZDFiZWVhNGVkYzI0ZWFjNzUzNDQxNDI1Zjc3NmU2MGIifQ=="
+        ],
+        "block_id": "2934bea5819e3b3f3efc5e243477deb810e735ea4b5ce685f9eef80dfc8885bc"
+      },
+      "expected_result": {
+        "$schema": "../schemas/tokenless-reducer-block-result.schema.json",
+        "schema_version": "somavera.tokenless-block-result.v1",
+        "profile_status": "pilot_only_not_ratified",
+        "accepted": true,
+        "block_id": "2934bea5819e3b3f3efc5e243477deb810e735ea4b5ce685f9eef80dfc8885bc",
+        "height": "1",
+        "pre_state_root": "798acf80b76d1ddca4eadc1afe01ec531566be7e328742b4f9a95461f28954d3",
+        "post_state_root": "b997b5307e468798069b31c34ab2118beb39a36948dcaf9313644a0885731bde",
+        "app_hash": "6d5e5f5f048570cbadb9552a09a6daa3f529910e887ddc171e6d9b94a0861763",
+        "block_result_root": "baf21639ce577304b41bf17e646087ec47dc39dd8910279e5e722b04f275c7cf",
+        "transaction_results": [
+          {
+            "transaction_id": "928eb008a734494b23d00ebed41e53b6d1beea4edc24eac753441425f776e60b",
+            "action": "pilot.public-commitment.register",
+            "code": "OK",
+            "state_change_hash": "d43a591f6971d3b628f89034ab491432b5a08839df2dabfbfcad29c299a0a570"
+          }
+        ]
+      },
+      "expected_state": {
+        "$schema": "../schemas/tokenless-reducer-state.schema.json",
+        "schema_version": "somavera.tokenless-reducer-state.v1",
+        "profile_status": "pilot_only_not_ratified",
+        "network_lineage_id": "somavera:network:v1:137a6bc09a5ba06fe2bbe8da291c637f07573cd57bf23cbf894b44f0f1895627",
+        "execution_context_id": "somavera:context:v1:9ae380d9b4f775756675370e80450618b7da6c8087e16a0c1e8ff0a632c361c2",
+        "context_epoch": 0,
+        "ledger_audience": "somavera:ledger:pilot-v1",
+        "height": "1",
+        "last_consensus_time_ms": "1798761601000",
+        "maximum_block_time_advance_ms": "60000",
+        "origin_hash": "274a4613deab82608b6eef1cd92d6708a4ef2ed01d806c8aa7e04aa842c80744",
+        "protocol_release_hash": "ce9acd9fb1cd97220fe4d54fc27b77c2ce9a69900b03441d78ef5dfd0ae2fc7e",
+        "last_block_id": "2934bea5819e3b3f3efc5e243477deb810e735ea4b5ce685f9eef80dfc8885bc",
+        "last_block_result_root": "baf21639ce577304b41bf17e646087ec47dc39dd8910279e5e722b04f275c7cf",
+        "authorized_keys": [
+          {
+            "actor_did": "did:example:somavera-pilot-alice",
+            "key_id": "did:example:somavera-pilot-alice#ledger-key-1",
+            "purpose": "pilot_ledger_signing",
+            "suite": "Ed25519-v1",
+            "public_key_base64": "IVL40Zt5HSRFMkLhXy6rbLfP+ntqXtMAl5YOBpiB2xI=",
+            "valid_from_ms": "1798675200000",
+            "valid_until_ms": "1798848000000",
+            "status": "active"
+          }
+        ],
+        "actor_sequences": [
+          {
+            "actor_did": "did:example:somavera-pilot-alice",
+            "next_sequence": "1"
+          }
+        ],
+        "consumed_transaction_ids": [
+          "928eb008a734494b23d00ebed41e53b6d1beea4edc24eac753441425f776e60b"
+        ],
+        "consumed_nonces": [
+          {
+            "nonce_key": "b59a3d56792983de130da30ca204e947df5558994af20ba99ed07ed0a95da64a",
+            "transaction_id": "928eb008a734494b23d00ebed41e53b6d1beea4edc24eac753441425f776e60b"
+          }
+        ],
+        "public_commitments": [
+          {
+            "object_id": "b962fb77296c97179937bdcb16329f6a9a7b18934fe896d094a2def81a9e5b85",
+            "owner_did": "did:example:somavera-pilot-alice",
+            "content_hash": "794f65e57274fdd4913b85b59083e4a62fb5ecec15705c69a02cc9a4cacf4748",
+            "license_hash": "4d7b282bbf64381abbf725b58e4a0b62583460d382aeba6d6072043a68a89893",
+            "source_event_id": "44391dc0fe5b0af44f919c22df370eb990407ac3cb6b054ceb26462e6994b5e8",
+            "registered_height": "1",
+            "status": "active",
+            "tombstone_event_id": null,
+            "tombstone_reason": null,
+            "tombstoned_height": null
+          }
+        ],
+        "balances": [],
+        "balances_root": "2c0c1a5999c9cbcf6eb8786c218458fb1f0977217d729cb81f5250ea6aa6d6ba",
+        "token": {
+          "activated": false,
+          "activation_core_hash": null,
+          "asset_lineage_id": null,
+          "live_supply_grain": "0",
+          "lifetime_minted_grain": "0",
+          "lifetime_burned_grain": "0"
+        },
+        "state_root": "b997b5307e468798069b31c34ab2118beb39a36948dcaf9313644a0885731bde",
+        "app_hash": "6d5e5f5f048570cbadb9552a09a6daa3f529910e887ddc171e6d9b94a0861763"
+      }
+    },
+    {
+      "name": "empty_block",
+      "block": {
+        "$schema": "../schemas/tokenless-reducer-block.schema.json",
+        "schema_version": "somavera.tokenless-block.v1",
+        "profile_status": "pilot_only_not_ratified",
+        "network_lineage_id": "somavera:network:v1:137a6bc09a5ba06fe2bbe8da291c637f07573cd57bf23cbf894b44f0f1895627",
+        "execution_context_id": "somavera:context:v1:9ae380d9b4f775756675370e80450618b7da6c8087e16a0c1e8ff0a632c361c2",
+        "height": "2",
+        "consensus_time_ms": "1798761602000",
+        "prior_app_hash": "6d5e5f5f048570cbadb9552a09a6daa3f529910e887ddc171e6d9b94a0861763",
+        "transactions": [],
+        "block_id": "e27376fb25ad5dfe2b4e6427e410b45ec1fa68fe3def5e00a54f74636f8ed166"
+      },
+      "expected_result": {
+        "$schema": "../schemas/tokenless-reducer-block-result.schema.json",
+        "schema_version": "somavera.tokenless-block-result.v1",
+        "profile_status": "pilot_only_not_ratified",
+        "accepted": true,
+        "block_id": "e27376fb25ad5dfe2b4e6427e410b45ec1fa68fe3def5e00a54f74636f8ed166",
+        "height": "2",
+        "pre_state_root": "b997b5307e468798069b31c34ab2118beb39a36948dcaf9313644a0885731bde",
+        "post_state_root": "a291567e2ad43153440e7424b4a5f3849402fba2a82b0597f8ba7663e11241c1",
+        "app_hash": "03f721a135d0207773afdfeaa452c75d864ebc01b127a0a5eeffab8eadcf2c33",
+        "block_result_root": "1085ad87792d34b78e40804c69de6307f36831c9f90c0a654cb4b3f46bdd6073",
+        "transaction_results": []
+      },
+      "expected_state": {
+        "$schema": "../schemas/tokenless-reducer-state.schema.json",
+        "schema_version": "somavera.tokenless-reducer-state.v1",
+        "profile_status": "pilot_only_not_ratified",
+        "network_lineage_id": "somavera:network:v1:137a6bc09a5ba06fe2bbe8da291c637f07573cd57bf23cbf894b44f0f1895627",
+        "execution_context_id": "somavera:context:v1:9ae380d9b4f775756675370e80450618b7da6c8087e16a0c1e8ff0a632c361c2",
+        "context_epoch": 0,
+        "ledger_audience": "somavera:ledger:pilot-v1",
+        "height": "2",
+        "last_consensus_time_ms": "1798761602000",
+        "maximum_block_time_advance_ms": "60000",
+        "origin_hash": "274a4613deab82608b6eef1cd92d6708a4ef2ed01d806c8aa7e04aa842c80744",
+        "protocol_release_hash": "ce9acd9fb1cd97220fe4d54fc27b77c2ce9a69900b03441d78ef5dfd0ae2fc7e",
+        "last_block_id": "e27376fb25ad5dfe2b4e6427e410b45ec1fa68fe3def5e00a54f74636f8ed166",
+        "last_block_result_root": "1085ad87792d34b78e40804c69de6307f36831c9f90c0a654cb4b3f46bdd6073",
+        "authorized_keys": [
+          {
+            "actor_did": "did:example:somavera-pilot-alice",
+            "key_id": "did:example:somavera-pilot-alice#ledger-key-1",
+            "purpose": "pilot_ledger_signing",
+            "suite": "Ed25519-v1",
+            "public_key_base64": "IVL40Zt5HSRFMkLhXy6rbLfP+ntqXtMAl5YOBpiB2xI=",
+            "valid_from_ms": "1798675200000",
+            "valid_until_ms": "1798848000000",
+            "status": "active"
+          }
+        ],
+        "actor_sequences": [
+          {
+            "actor_did": "did:example:somavera-pilot-alice",
+            "next_sequence": "1"
+          }
+        ],
+        "consumed_transaction_ids": [
+          "928eb008a734494b23d00ebed41e53b6d1beea4edc24eac753441425f776e60b"
+        ],
+        "consumed_nonces": [
+          {
+            "nonce_key": "b59a3d56792983de130da30ca204e947df5558994af20ba99ed07ed0a95da64a",
+            "transaction_id": "928eb008a734494b23d00ebed41e53b6d1beea4edc24eac753441425f776e60b"
+          }
+        ],
+        "public_commitments": [
+          {
+            "object_id": "b962fb77296c97179937bdcb16329f6a9a7b18934fe896d094a2def81a9e5b85",
+            "owner_did": "did:example:somavera-pilot-alice",
+            "content_hash": "794f65e57274fdd4913b85b59083e4a62fb5ecec15705c69a02cc9a4cacf4748",
+            "license_hash": "4d7b282bbf64381abbf725b58e4a0b62583460d382aeba6d6072043a68a89893",
+            "source_event_id": "44391dc0fe5b0af44f919c22df370eb990407ac3cb6b054ceb26462e6994b5e8",
+            "registered_height": "1",
+            "status": "active",
+            "tombstone_event_id": null,
+            "tombstone_reason": null,
+            "tombstoned_height": null
+          }
+        ],
+        "balances": [],
+        "balances_root": "2c0c1a5999c9cbcf6eb8786c218458fb1f0977217d729cb81f5250ea6aa6d6ba",
+        "token": {
+          "activated": false,
+          "activation_core_hash": null,
+          "asset_lineage_id": null,
+          "live_supply_grain": "0",
+          "lifetime_minted_grain": "0",
+          "lifetime_burned_grain": "0"
+        },
+        "state_root": "a291567e2ad43153440e7424b4a5f3849402fba2a82b0597f8ba7663e11241c1",
+        "app_hash": "03f721a135d0207773afdfeaa452c75d864ebc01b127a0a5eeffab8eadcf2c33"
+      }
+    },
+    {
+      "name": "owner_tombstone",
+      "block": {
+        "$schema": "../schemas/tokenless-reducer-block.schema.json",
+        "schema_version": "somavera.tokenless-block.v1",
+        "profile_status": "pilot_only_not_ratified",
+        "network_lineage_id": "somavera:network:v1:137a6bc09a5ba06fe2bbe8da291c637f07573cd57bf23cbf894b44f0f1895627",
+        "execution_context_id": "somavera:context:v1:9ae380d9b4f775756675370e80450618b7da6c8087e16a0c1e8ff0a632c361c2",
+        "height": "3",
+        "consensus_time_ms": "1798761603000",
+        "prior_app_hash": "03f721a135d0207773afdfeaa452c75d864ebc01b127a0a5eeffab8eadcf2c33",
+        "transactions": [
+          "eyJhY3Rpb24iOiJwaWxvdC5wdWJsaWMtY29tbWl0bWVudC50b21ic3RvbmUiLCJhY3Rvcl9kaWQiOiJkaWQ6ZXhhbXBsZTpzb21hdmVyYS1waWxvdC1hbGljZSIsImFjdG9yX2tleV9pZCI6ImRpZDpleGFtcGxlOnNvbWF2ZXJhLXBpbG90LWFsaWNlI2xlZGdlci1rZXktMSIsImF1ZGllbmNlIjoic29tYXZlcmE6bGVkZ2VyOnBpbG90LXYxIiwiZXhlY3V0aW9uX2NvbnRleHRfaWQiOiJzb21hdmVyYTpjb250ZXh0OnYxOjlhZTM4MGQ5YjRmNzc1NzU2Njc1MzcwZTgwNDUwNjE4YjdkYTZjODA4N2UxNmEwYzFlOGZmMGE2MzJjMzYxYzIiLCJleHBpcmVzX2F0X21zIjoiMTc5ODc2MTY2MjAwMCIsImlzc3VlZF9hdF9tcyI6IjE3OTg3NjE2MDIwMDEiLCJuZXR3b3JrX2xpbmVhZ2VfaWQiOiJzb21hdmVyYTpuZXR3b3JrOnYxOjEzN2E2YmMwOWE1YmEwNmZlMmJiZThkYTI5MWM2MzdmMDc1NzNjZDU3YmYyM2NiZjg5NGI0NGYwZjE4OTU2MjciLCJub25jZSI6IjQxM2IyNDg2YWVkMmE5Yzg0ODE3NTgxYTVkYTcxNmJlIiwicGF5bG9hZCI6eyJvYmplY3RfaWQiOiJiOTYyZmI3NzI5NmM5NzE3OTkzN2JkY2IxNjMyOWY2YTlhN2IxODkzNGZlODk2ZDA5NGEyZGVmODFhOWU1Yjg1IiwicmVhc29uIjoib3duZXJfd2l0aGRyYXdhbCJ9LCJwcm9maWxlX3N0YXR1cyI6InBpbG90X29ubHlfbm90X3JhdGlmaWVkIiwic2NoZW1hX3ZlcnNpb24iOiJzb21hdmVyYS50b2tlbmxlc3MtdHJhbnNhY3Rpb24udjEiLCJzZXF1ZW5jZSI6IjEiLCJzaWduYXR1cmUiOnsic3VpdGUiOiJFZDI1NTE5LXYxIiwidmFsdWUiOiJ4OWhROUR0NFpmS2lVRitQSWROcG5mdmdyYjBlMjM2Ry9EQy9wNGNldHpER0xuSjU0azRVV041ZzB3czhRYTRTL0daZG9udlpLdk44Yi9rWThETEtCZz09In0sInRyYW5zYWN0aW9uX2lkIjoiNTZiOTBiYzJlNWZlODUxZjU0MjcwYjUxODBkZmY4NTlmNjRmMmZlZGJkOWJhMmRhNWEyNGVjNTM0ZjNmZTVmOCJ9"
+        ],
+        "block_id": "1361eb1b645e5abde8eeb5bd7582a18d3576781cdb9c2a15b7d6f8723ba7c422"
+      },
+      "expected_result": {
+        "$schema": "../schemas/tokenless-reducer-block-result.schema.json",
+        "schema_version": "somavera.tokenless-block-result.v1",
+        "profile_status": "pilot_only_not_ratified",
+        "accepted": true,
+        "block_id": "1361eb1b645e5abde8eeb5bd7582a18d3576781cdb9c2a15b7d6f8723ba7c422",
+        "height": "3",
+        "pre_state_root": "a291567e2ad43153440e7424b4a5f3849402fba2a82b0597f8ba7663e11241c1",
+        "post_state_root": "4c7c1e35364ee38beab5f4f7cf623decb620916dc29b7bb1c3df7d0463a08f4d",
+        "app_hash": "c133146b8da790c9d98372a3d7e2ecfb40cdc9d66dc751aed385324036b88c8d",
+        "block_result_root": "c19d9f8fb15a5f5a3b3853beaed357c04d4fae39d61ebbc4fb609fd605b93865",
+        "transaction_results": [
+          {
+            "transaction_id": "56b90bc2e5fe851f54270b5180dff859f64f2fedbd9ba2da5a24ec534f3fe5f8",
+            "action": "pilot.public-commitment.tombstone",
+            "code": "OK",
+            "state_change_hash": "fcd059b148331a20e49477c1ea0f3b26da66bf5e38578a1e7e5cc6ba0a2dc479"
+          }
+        ]
+      },
+      "expected_state": {
+        "$schema": "../schemas/tokenless-reducer-state.schema.json",
+        "schema_version": "somavera.tokenless-reducer-state.v1",
+        "profile_status": "pilot_only_not_ratified",
+        "network_lineage_id": "somavera:network:v1:137a6bc09a5ba06fe2bbe8da291c637f07573cd57bf23cbf894b44f0f1895627",
+        "execution_context_id": "somavera:context:v1:9ae380d9b4f775756675370e80450618b7da6c8087e16a0c1e8ff0a632c361c2",
+        "context_epoch": 0,
+        "ledger_audience": "somavera:ledger:pilot-v1",
+        "height": "3",
+        "last_consensus_time_ms": "1798761603000",
+        "maximum_block_time_advance_ms": "60000",
+        "origin_hash": "274a4613deab82608b6eef1cd92d6708a4ef2ed01d806c8aa7e04aa842c80744",
+        "protocol_release_hash": "ce9acd9fb1cd97220fe4d54fc27b77c2ce9a69900b03441d78ef5dfd0ae2fc7e",
+        "last_block_id": "1361eb1b645e5abde8eeb5bd7582a18d3576781cdb9c2a15b7d6f8723ba7c422",
+        "last_block_result_root": "c19d9f8fb15a5f5a3b3853beaed357c04d4fae39d61ebbc4fb609fd605b93865",
+        "authorized_keys": [
+          {
+            "actor_did": "did:example:somavera-pilot-alice",
+            "key_id": "did:example:somavera-pilot-alice#ledger-key-1",
+            "purpose": "pilot_ledger_signing",
+            "suite": "Ed25519-v1",
+            "public_key_base64": "IVL40Zt5HSRFMkLhXy6rbLfP+ntqXtMAl5YOBpiB2xI=",
+            "valid_from_ms": "1798675200000",
+            "valid_until_ms": "1798848000000",
+            "status": "active"
+          }
+        ],
+        "actor_sequences": [
+          {
+            "actor_did": "did:example:somavera-pilot-alice",
+            "next_sequence": "2"
+          }
+        ],
+        "consumed_transaction_ids": [
+          "56b90bc2e5fe851f54270b5180dff859f64f2fedbd9ba2da5a24ec534f3fe5f8",
+          "928eb008a734494b23d00ebed41e53b6d1beea4edc24eac753441425f776e60b"
+        ],
+        "consumed_nonces": [
+          {
+            "nonce_key": "5233a1e806d8e2fefc499f7838ffa2690a3a9b539e88ed103458d95d9fda46d6",
+            "transaction_id": "56b90bc2e5fe851f54270b5180dff859f64f2fedbd9ba2da5a24ec534f3fe5f8"
+          },
+          {
+            "nonce_key": "b59a3d56792983de130da30ca204e947df5558994af20ba99ed07ed0a95da64a",
+            "transaction_id": "928eb008a734494b23d00ebed41e53b6d1beea4edc24eac753441425f776e60b"
+          }
+        ],
+        "public_commitments": [
+          {
+            "object_id": "b962fb77296c97179937bdcb16329f6a9a7b18934fe896d094a2def81a9e5b85",
+            "owner_did": "did:example:somavera-pilot-alice",
+            "content_hash": "794f65e57274fdd4913b85b59083e4a62fb5ecec15705c69a02cc9a4cacf4748",
+            "license_hash": "4d7b282bbf64381abbf725b58e4a0b62583460d382aeba6d6072043a68a89893",
+            "source_event_id": "44391dc0fe5b0af44f919c22df370eb990407ac3cb6b054ceb26462e6994b5e8",
+            "registered_height": "1",
+            "status": "tombstoned",
+            "tombstone_event_id": "56b90bc2e5fe851f54270b5180dff859f64f2fedbd9ba2da5a24ec534f3fe5f8",
+            "tombstone_reason": "owner_withdrawal",
+            "tombstoned_height": "3"
+          }
+        ],
+        "balances": [],
+        "balances_root": "2c0c1a5999c9cbcf6eb8786c218458fb1f0977217d729cb81f5250ea6aa6d6ba",
+        "token": {
+          "activated": false,
+          "activation_core_hash": null,
+          "asset_lineage_id": null,
+          "live_supply_grain": "0",
+          "lifetime_minted_grain": "0",
+          "lifetime_burned_grain": "0"
+        },
+        "state_root": "4c7c1e35364ee38beab5f4f7cf623decb620916dc29b7bb1c3df7d0463a08f4d",
+        "app_hash": "c133146b8da790c9d98372a3d7e2ecfb40cdc9d66dc751aed385324036b88c8d"
+      }
+    }
+  ],
+  "transaction_projections": [
+    {
+      "name": "register",
+      "transaction": {
+        "schema_version": "somavera.tokenless-transaction.v1",
+        "profile_status": "pilot_only_not_ratified",
+        "network_lineage_id": "somavera:network:v1:137a6bc09a5ba06fe2bbe8da291c637f07573cd57bf23cbf894b44f0f1895627",
+        "execution_context_id": "somavera:context:v1:9ae380d9b4f775756675370e80450618b7da6c8087e16a0c1e8ff0a632c361c2",
+        "actor_did": "did:example:somavera-pilot-alice",
+        "actor_key_id": "did:example:somavera-pilot-alice#ledger-key-1",
+        "sequence": "0",
+        "audience": "somavera:ledger:pilot-v1",
+        "action": "pilot.public-commitment.register",
+        "nonce": "78e2c631304d2f0dc16755ab00c129e6",
+        "issued_at_ms": "1798761600001",
+        "expires_at_ms": "1798761660000",
+        "payload": {
+          "object_id": "b962fb77296c97179937bdcb16329f6a9a7b18934fe896d094a2def81a9e5b85",
+          "content_hash": "794f65e57274fdd4913b85b59083e4a62fb5ecec15705c69a02cc9a4cacf4748",
+          "license_hash": "4d7b282bbf64381abbf725b58e4a0b62583460d382aeba6d6072043a68a89893",
+          "source_event_id": "44391dc0fe5b0af44f919c22df370eb990407ac3cb6b054ceb26462e6994b5e8"
+        },
+        "transaction_id": "928eb008a734494b23d00ebed41e53b6d1beea4edc24eac753441425f776e60b",
+        "signature": {
+          "suite": "Ed25519-v1",
+          "value": "ZgnwQg5hpkNCnnwgswsTUsYPe5RaEon7LsbSoBeOf5/q55gTSoYer6hlg5qtHxT1xn/iy7BhPgPy5wuKvLqAAw=="
+        }
+      },
+      "canonical_transaction_utf8": "{\"action\":\"pilot.public-commitment.register\",\"actor_did\":\"did:example:somavera-pilot-alice\",\"actor_key_id\":\"did:example:somavera-pilot-alice#ledger-key-1\",\"audience\":\"somavera:ledger:pilot-v1\",\"execution_context_id\":\"somavera:context:v1:9ae380d9b4f775756675370e80450618b7da6c8087e16a0c1e8ff0a632c361c2\",\"expires_at_ms\":\"1798761660000\",\"issued_at_ms\":\"1798761600001\",\"network_lineage_id\":\"somavera:network:v1:137a6bc09a5ba06fe2bbe8da291c637f07573cd57bf23cbf894b44f0f1895627\",\"nonce\":\"78e2c631304d2f0dc16755ab00c129e6\",\"payload\":{\"content_hash\":\"794f65e57274fdd4913b85b59083e4a62fb5ecec15705c69a02cc9a4cacf4748\",\"license_hash\":\"4d7b282bbf64381abbf725b58e4a0b62583460d382aeba6d6072043a68a89893\",\"object_id\":\"b962fb77296c97179937bdcb16329f6a9a7b18934fe896d094a2def81a9e5b85\",\"source_event_id\":\"44391dc0fe5b0af44f919c22df370eb990407ac3cb6b054ceb26462e6994b5e8\"},\"profile_status\":\"pilot_only_not_ratified\",\"schema_version\":\"somavera.tokenless-transaction.v1\",\"sequence\":\"0\",\"signature\":{\"suite\":\"Ed25519-v1\",\"value\":\"ZgnwQg5hpkNCnnwgswsTUsYPe5RaEon7LsbSoBeOf5/q55gTSoYer6hlg5qtHxT1xn/iy7BhPgPy5wuKvLqAAw==\"},\"transaction_id\":\"928eb008a734494b23d00ebed41e53b6d1beea4edc24eac753441425f776e60b\"}",
+      "encoded_transaction_base64": "eyJhY3Rpb24iOiJwaWxvdC5wdWJsaWMtY29tbWl0bWVudC5yZWdpc3RlciIsImFjdG9yX2RpZCI6ImRpZDpleGFtcGxlOnNvbWF2ZXJhLXBpbG90LWFsaWNlIiwiYWN0b3Jfa2V5X2lkIjoiZGlkOmV4YW1wbGU6c29tYXZlcmEtcGlsb3QtYWxpY2UjbGVkZ2VyLWtleS0xIiwiYXVkaWVuY2UiOiJzb21hdmVyYTpsZWRnZXI6cGlsb3QtdjEiLCJleGVjdXRpb25fY29udGV4dF9pZCI6InNvbWF2ZXJhOmNvbnRleHQ6djE6OWFlMzgwZDliNGY3NzU3NTY2NzUzNzBlODA0NTA2MThiN2RhNmM4MDg3ZTE2YTBjMWU4ZmYwYTYzMmMzNjFjMiIsImV4cGlyZXNfYXRfbXMiOiIxNzk4NzYxNjYwMDAwIiwiaXNzdWVkX2F0X21zIjoiMTc5ODc2MTYwMDAwMSIsIm5ldHdvcmtfbGluZWFnZV9pZCI6InNvbWF2ZXJhOm5ldHdvcms6djE6MTM3YTZiYzA5YTViYTA2ZmUyYmJlOGRhMjkxYzYzN2YwNzU3M2NkNTdiZjIzY2JmODk0YjQ0ZjBmMTg5NTYyNyIsIm5vbmNlIjoiNzhlMmM2MzEzMDRkMmYwZGMxNjc1NWFiMDBjMTI5ZTYiLCJwYXlsb2FkIjp7ImNvbnRlbnRfaGFzaCI6Ijc5NGY2NWU1NzI3NGZkZDQ5MTNiODViNTkwODNlNGE2MmZiNWVjZWMxNTcwNWM2OWEwMmNjOWE0Y2FjZjQ3NDgiLCJsaWNlbnNlX2hhc2giOiI0ZDdiMjgyYmJmNjQzODFhYmJmNzI1YjU4ZTRhMGI2MjU4MzQ2MGQzODJhZWJhNmQ2MDcyMDQzYTY4YTg5ODkzIiwib2JqZWN0X2lkIjoiYjk2MmZiNzcyOTZjOTcxNzk5MzdiZGNiMTYzMjlmNmE5YTdiMTg5MzRmZTg5NmQwOTRhMmRlZjgxYTllNWI4NSIsInNvdXJjZV9ldmVudF9pZCI6IjQ0MzkxZGMwZmU1YjBhZjQ0ZjkxOWMyMmRmMzcwZWI5OTA0MDdhYzNjYjZiMDU0Y2ViMjY0NjJlNjk5NGI1ZTgifSwicHJvZmlsZV9zdGF0dXMiOiJwaWxvdF9vbmx5X25vdF9yYXRpZmllZCIsInNjaGVtYV92ZXJzaW9uIjoic29tYXZlcmEudG9rZW5sZXNzLXRyYW5zYWN0aW9uLnYxIiwic2VxdWVuY2UiOiIwIiwic2lnbmF0dXJlIjp7InN1aXRlIjoiRWQyNTUxOS12MSIsInZhbHVlIjoiWmdud1FnNWhwa05Dbm53Z3N3c1RVc1lQZTVSYUVvbjdMc2JTb0JlT2Y1L3E1NWdUU29ZZXI2aGxnNXF0SHhUMXhuL2l5N0JoUGdQeTV3dUt2THFBQXc9PSJ9LCJ0cmFuc2FjdGlvbl9pZCI6IjkyOGViMDA4YTczNDQ5NGIyM2QwMGViZWQ0MWU1M2I2ZDFiZWVhNGVkYzI0ZWFjNzUzNDQxNDI1Zjc3NmU2MGIifQ==",
+      "signature_message_hex": "736f6d61766572613a746f6b656e6c6573732d7472616e73616374696f6e2d7369676e61747572653a76310a928eb008a734494b23d00ebed41e53b6d1beea4edc24eac753441425f776e60b"
+    },
+    {
+      "name": "owner_tombstone",
+      "transaction": {
+        "schema_version": "somavera.tokenless-transaction.v1",
+        "profile_status": "pilot_only_not_ratified",
+        "network_lineage_id": "somavera:network:v1:137a6bc09a5ba06fe2bbe8da291c637f07573cd57bf23cbf894b44f0f1895627",
+        "execution_context_id": "somavera:context:v1:9ae380d9b4f775756675370e80450618b7da6c8087e16a0c1e8ff0a632c361c2",
+        "actor_did": "did:example:somavera-pilot-alice",
+        "actor_key_id": "did:example:somavera-pilot-alice#ledger-key-1",
+        "sequence": "1",
+        "audience": "somavera:ledger:pilot-v1",
+        "action": "pilot.public-commitment.tombstone",
+        "nonce": "413b2486aed2a9c84817581a5da716be",
+        "issued_at_ms": "1798761602001",
+        "expires_at_ms": "1798761662000",
+        "payload": {
+          "object_id": "b962fb77296c97179937bdcb16329f6a9a7b18934fe896d094a2def81a9e5b85",
+          "reason": "owner_withdrawal"
+        },
+        "transaction_id": "56b90bc2e5fe851f54270b5180dff859f64f2fedbd9ba2da5a24ec534f3fe5f8",
+        "signature": {
+          "suite": "Ed25519-v1",
+          "value": "x9hQ9Dt4ZfKiUF+PIdNpnfvgrb0e236G/DC/p4cetzDGLnJ54k4UWN5g0ws8Qa4S/GZdonvZKvN8b/kY8DLKBg=="
+        }
+      },
+      "canonical_transaction_utf8": "{\"action\":\"pilot.public-commitment.tombstone\",\"actor_did\":\"did:example:somavera-pilot-alice\",\"actor_key_id\":\"did:example:somavera-pilot-alice#ledger-key-1\",\"audience\":\"somavera:ledger:pilot-v1\",\"execution_context_id\":\"somavera:context:v1:9ae380d9b4f775756675370e80450618b7da6c8087e16a0c1e8ff0a632c361c2\",\"expires_at_ms\":\"1798761662000\",\"issued_at_ms\":\"1798761602001\",\"network_lineage_id\":\"somavera:network:v1:137a6bc09a5ba06fe2bbe8da291c637f07573cd57bf23cbf894b44f0f1895627\",\"nonce\":\"413b2486aed2a9c84817581a5da716be\",\"payload\":{\"object_id\":\"b962fb77296c97179937bdcb16329f6a9a7b18934fe896d094a2def81a9e5b85\",\"reason\":\"owner_withdrawal\"},\"profile_status\":\"pilot_only_not_ratified\",\"schema_version\":\"somavera.tokenless-transaction.v1\",\"sequence\":\"1\",\"signature\":{\"suite\":\"Ed25519-v1\",\"value\":\"x9hQ9Dt4ZfKiUF+PIdNpnfvgrb0e236G/DC/p4cetzDGLnJ54k4UWN5g0ws8Qa4S/GZdonvZKvN8b/kY8DLKBg==\"},\"transaction_id\":\"56b90bc2e5fe851f54270b5180dff859f64f2fedbd9ba2da5a24ec534f3fe5f8\"}",
+      "encoded_transaction_base64": "eyJhY3Rpb24iOiJwaWxvdC5wdWJsaWMtY29tbWl0bWVudC50b21ic3RvbmUiLCJhY3Rvcl9kaWQiOiJkaWQ6ZXhhbXBsZTpzb21hdmVyYS1waWxvdC1hbGljZSIsImFjdG9yX2tleV9pZCI6ImRpZDpleGFtcGxlOnNvbWF2ZXJhLXBpbG90LWFsaWNlI2xlZGdlci1rZXktMSIsImF1ZGllbmNlIjoic29tYXZlcmE6bGVkZ2VyOnBpbG90LXYxIiwiZXhlY3V0aW9uX2NvbnRleHRfaWQiOiJzb21hdmVyYTpjb250ZXh0OnYxOjlhZTM4MGQ5YjRmNzc1NzU2Njc1MzcwZTgwNDUwNjE4YjdkYTZjODA4N2UxNmEwYzFlOGZmMGE2MzJjMzYxYzIiLCJleHBpcmVzX2F0X21zIjoiMTc5ODc2MTY2MjAwMCIsImlzc3VlZF9hdF9tcyI6IjE3OTg3NjE2MDIwMDEiLCJuZXR3b3JrX2xpbmVhZ2VfaWQiOiJzb21hdmVyYTpuZXR3b3JrOnYxOjEzN2E2YmMwOWE1YmEwNmZlMmJiZThkYTI5MWM2MzdmMDc1NzNjZDU3YmYyM2NiZjg5NGI0NGYwZjE4OTU2MjciLCJub25jZSI6IjQxM2IyNDg2YWVkMmE5Yzg0ODE3NTgxYTVkYTcxNmJlIiwicGF5bG9hZCI6eyJvYmplY3RfaWQiOiJiOTYyZmI3NzI5NmM5NzE3OTkzN2JkY2IxNjMyOWY2YTlhN2IxODkzNGZlODk2ZDA5NGEyZGVmODFhOWU1Yjg1IiwicmVhc29uIjoib3duZXJfd2l0aGRyYXdhbCJ9LCJwcm9maWxlX3N0YXR1cyI6InBpbG90X29ubHlfbm90X3JhdGlmaWVkIiwic2NoZW1hX3ZlcnNpb24iOiJzb21hdmVyYS50b2tlbmxlc3MtdHJhbnNhY3Rpb24udjEiLCJzZXF1ZW5jZSI6IjEiLCJzaWduYXR1cmUiOnsic3VpdGUiOiJFZDI1NTE5LXYxIiwidmFsdWUiOiJ4OWhROUR0NFpmS2lVRitQSWROcG5mdmdyYjBlMjM2Ry9EQy9wNGNldHpER0xuSjU0azRVV041ZzB3czhRYTRTL0daZG9udlpLdk44Yi9rWThETEtCZz09In0sInRyYW5zYWN0aW9uX2lkIjoiNTZiOTBiYzJlNWZlODUxZjU0MjcwYjUxODBkZmY4NTlmNjRmMmZlZGJkOWJhMmRhNWEyNGVjNTM0ZjNmZTVmOCJ9",
+      "signature_message_hex": "736f6d61766572613a746f6b656e6c6573732d7472616e73616374696f6e2d7369676e61747572653a76310a56b90bc2e5fe851f54270b5180dff859f64f2fedbd9ba2da5a24ec534f3fe5f8"
+    }
+  ]
+}

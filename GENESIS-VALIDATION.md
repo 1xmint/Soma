@@ -25,6 +25,11 @@ validator that:
 Positive and adversarial fixtures are synthetic and generated in memory from the
 structural example. Passing them proves only these named semantics.
 
+A separate tokenless reducer now reproduces exact synthetic bootstrap state,
+transaction, block, result, state-root, and application-hash vectors. Its pilot
+key table is supplied directly as state. It does not derive that table from a
+ratified Genesis, so it closes deterministic execution—not bootstrap authority.
+
 ## Still activation-blocking
 
 A production Genesis validator must additionally:

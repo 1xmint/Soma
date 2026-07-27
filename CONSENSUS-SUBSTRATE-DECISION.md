@@ -18,7 +18,7 @@ of Somavera's constitutional identity.
 The authoritative application artifact is a deterministic reducer:
 
 ```text
-(prior committed state, ordered block, execution context) -> (new state, results)
+(prior committed state, ordered proposed block) -> (new state, results)
 ```
 
 The reducer, transaction validity rules, state encoding, application hash, and
@@ -55,7 +55,22 @@ No-native-token settlement on an established chain remains a serious candidate
 for later valuable operation. The pilot must generate evidence that permits that
 choice; it must not quietly foreclose it.
 
-## 4. Pilot consensus profile
+## 4. Implemented kernel boundary
+
+The Origin capsule now includes a JavaScript reference reducer, four closed
+schemas, deterministic Ed25519 fixtures, three accepted replay steps, and an
+executed adversarial corpus. `TOKENLESS-REDUCER.md` freezes its exact input,
+output, ordering, atomicity, replay, error, state-root, result-root, block-ID,
+and application-hash rules. The only state-changing actions register and
+owner-tombstone synthetic public commitments. Balances remain empty and every
+token counter remains zero.
+
+This is evidence for the application boundary, not a consensus network. No
+CometBFT adapter, Rust implementation, durable store, snapshot/state-sync
+profile, validator ceremony, or production Genesis authority mapping exists.
+Those omissions remain release blockers.
+
+## 5. Pilot consensus profile
 
 `somavera-pilot-cometbft-0.39-abci-v1` requires:
 
@@ -80,7 +95,7 @@ Wall clocks, random number generation, map iteration order, thread scheduling,
 host-local paths, network results, locale, and platform-dependent serialization
 must never affect committed state.
 
-## 5. Adapter boundary
+## 6. Adapter boundary
 
 The consensus adapter may:
 
@@ -102,7 +117,7 @@ Every adapter release binds an exact build, dependency, configuration, state
 encoding, reducer, and consensus profile hash in the Genesis or successor
 substrate manifest.
 
-## 6. Failure and exit tests
+## 7. Failure and exit tests
 
 The pilot profile is not eligible for Gate F until automated or witnessed tests
 cover:
@@ -119,7 +134,7 @@ cover:
 9. ambiguous old/new substrate liveness causing succession rejection;
 10. Origin-only Phoenix producing a new lineage and no inherited state or asset.
 
-## 7. Mainnet decision gate
+## 8. Mainnet decision gate
 
 The permanent substrate remains unselected. Before valuable operation, publish a
 decision record comparing at least:

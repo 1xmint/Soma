@@ -28,6 +28,9 @@ await import("./lib/full-schema-conformance.mjs");
 // Partial Genesis identity/tokenless semantics; authority and signatures remain blocking.
 await import("./lib/genesis-validation-conformance.mjs");
 
+// Pure, atomic, tokenless pilot reducer with fixed replay and adversarial vectors.
+await import("./lib/tokenless-reducer-conformance.mjs");
+
 // Integer-only economic comparisons whose bundled synthetic corpus rejects activation.
 await import("./lib/economic-simulation-conformance.mjs");
 

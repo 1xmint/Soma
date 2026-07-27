@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:somavera:schema:tokenless-reducer-block:v1",
+  "title": "Somavera Tokenless Reducer Block v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "profile_status",
+    "network_lineage_id",
+    "execution_context_id",
+    "height",
+    "consensus_time_ms",
+    "prior_app_hash",
+    "transactions",
+    "block_id"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": { "const": "somavera.tokenless-block.v1" },
+    "profile_status": { "const": "pilot_only_not_ratified" },
+    "network_lineage_id": {
+      "type": "string",
+      "pattern": "^somavera:network:v1:[a-f0-9]{64}$"
+    },
+    "execution_context_id": {
+      "type": "string",
+      "pattern": "^somavera:context:v1:[a-f0-9]{64}$"
+    },
+    "height": { "$ref": "#/$defs/uint" },
+    "consensus_time_ms": { "$ref": "#/$defs/uint" },
+    "prior_app_hash": { "$ref": "#/$defs/hash" },
+    "transactions": {
+      "type": "array",
+      "maxItems": 256,
+      "items": {
+        "type": "string",
+        "contentEncoding": "base64",
+        "minLength": 4,
+        "maxLength": 87384
+      }
+    },
+    "block_id": { "$ref": "#/$defs/hash" }
+  },
+  "$defs": {
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "uint": { "type": "string", "pattern": "^(0|[1-9][0-9]*)$" }
+  }
+}

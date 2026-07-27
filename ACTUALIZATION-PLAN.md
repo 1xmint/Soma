@@ -1,6 +1,6 @@
 # SOMAVERA ACTUALIZATION PLAN
 
-Status: **execution draft - July 16, 2026**
+Status: **execution draft - July 26, 2026**
 Rule: activate a safe network pilot before considering a valuable token.
 
 ## 1. The product shape
@@ -210,6 +210,10 @@ Do not reuse current prototype/VPS keys or databases. The pilot starts with fres
 Only after every launch gate in `TOKEN-SPEC.md`, `TOKEN-OPERATIONS.md`, and `ECONOMY.md` passes, followed by independent security, economic, privacy, and jurisdiction-specific legal review. A calendar date, website page, exchange offer, or founder confidence cannot override a failed gate.
 
 ## 9. Immediate implementation backlog
+
+Current foundation: the tokenless JavaScript reducer and its replay/adversarial
+vectors close one deterministic application-kernel slice. It is not a network
+adapter, full ledger, second implementation, or Genesis authority validator.
 
 | Order | Deliverable | Acceptance evidence |
 |---:|---|---|
