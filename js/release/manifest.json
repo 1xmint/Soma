@@ -386,8 +386,8 @@
     },
     {
       "path": "src/receipt.mjs",
-      "bytes": 8373,
-      "sha256": "9767fe5e190c351f7e751289a387d043cfb0d391418ac2342078634bfe449c45"
+      "bytes": 9672,
+      "sha256": "82c7549176c863a11b16c5c3ebf50dec84e6ef1efc79e6d990bb63227c265a2d"
     },
     {
       "path": "src/release.mjs",
@@ -451,8 +451,8 @@
     },
     {
       "path": "test/receipt.test.mjs",
-      "bytes": 9025,
-      "sha256": "c45dd68e8087a0914e845241fdd5439fd0319d0283028829c17d42cc4f021d15"
+      "bytes": 10961,
+      "sha256": "c4ddefb82767a677efa4a256bda3738dba21d0a8581d741e48dca769365caf5c"
     }
   ]
 }

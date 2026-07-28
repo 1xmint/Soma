@@ -43,7 +43,7 @@ test("a verified receipt binds a named attester to another party's work", () => 
   const subject = party();
 
   const receipt = createReceipt(core(attester, subject), attester.privateKeyBase64);
-  const verified = verifyReceipt(receipt, attester.publicKeyMultibase);
+  const verified = verifyReceipt(receipt);
 
   assert.equal(verified.attester_did, attester.did);
   assert.equal(verified.subject_did, subject.did);
@@ -73,7 +73,7 @@ test("a subject cannot forge a receipt about itself, even holding its own keys",
   };
 
   assert.throws(
-    () => verifyReceipt(forged, subject.publicKeyMultibase),
+    () => verifyReceipt(forged),
     (error) => error.code === "RECEIPT_SELF_ATTESTED",
     "a hand-assembled self-receipt must fail verification"
   );
@@ -89,8 +89,61 @@ test("a receipt signed by anyone other than its named attester fails", () => {
   const receipt = createReceipt(core(attester, subject), impostor.privateKeyBase64);
 
   assert.throws(
-    () => verifyReceipt(receipt, attester.publicKeyMultibase),
+    () => verifyReceipt(receipt),
     (error) => error.code === "RECEIPT_SIGNATURE_INVALID"
+  );
+});
+
+// The verifier derives the attester's key from attester_did rather than
+// accepting one. An earlier revision took the key as a parameter, which meant a
+// receipt naming Alice could be verified against Mallory's key if the caller
+// supplied it — attribution, the only thing a receipt establishes, depended on
+// the caller getting that right. It cannot be got wrong now.
+test("a receipt cannot be verified against a key other than the one its DID commits to", () => {
+  const impostor = party();
+  const subject = party();
+
+  // Impostor signs, then relabels the receipt as coming from a victim DID.
+  const signed = createReceipt(core(impostor, subject), impostor.privateKeyBase64);
+  const victim = party();
+  const relabelled = { ...signed, attester_did: victim.did };
+
+  assert.throws(
+    () => verifyReceipt(relabelled),
+    (error) => error.code === "RECEIPT_ID_MISMATCH" || error.code === "RECEIPT_SIGNATURE_INVALID",
+    "a relabelled attester must not verify"
+  );
+
+  // Even with receipt_id recomputed so the relabelling is internally consistent,
+  // the signature is checked against the key committed to by the new DID.
+  const consistentCore = { ...core(impostor, subject), attester_did: victim.did };
+  const laundered = {
+    ...consistentCore,
+    receipt_id: deriveReceiptId(consistentCore),
+    signature: signed.signature
+  };
+
+  assert.throws(
+    () => verifyReceipt(laundered),
+    (error) => error.code === "RECEIPT_SIGNATURE_INVALID",
+    "a self-consistent relabelling must still fail against the DID's committed key"
+  );
+});
+
+test("a DID that does not commit to a key is refused outright", () => {
+  const attester = party();
+  const subject = party();
+  const opaqueCore = { ...core(attester, subject), attester_did: "did:soma:opaque-identifier" };
+  const receipt = {
+    ...opaqueCore,
+    receipt_id: deriveReceiptId(opaqueCore),
+    signature: createReceipt(core(attester, subject), attester.privateKeyBase64).signature
+  };
+
+  assert.throws(
+    () => verifyReceipt(receipt),
+    (error) => error.code === "RECEIPT_DID_UNSUPPORTED",
+    "an attester whose key cannot be recovered offline must be refused, not assumed"
   );
 });
 
@@ -111,7 +164,7 @@ test("mutating any core field invalidates the receipt", () => {
   for (const [field, value] of Object.entries(mutations)) {
     const tampered = { ...receipt, [field]: value };
     assert.throws(
-      () => verifyReceipt(tampered, attester.publicKeyMultibase),
+      () => verifyReceipt(tampered),
       (error) => error.code === "RECEIPT_ID_MISMATCH",
       `mutating ${field} was not detected`
     );
@@ -124,7 +177,7 @@ test("receipt_id is derived, so a chosen one is rejected", () => {
   const receipt = createReceipt(core(attester, subject), attester.privateKeyBase64);
 
   assert.throws(
-    () => verifyReceipt({ ...receipt, receipt_id: "c".repeat(64) }, attester.publicKeyMultibase),
+    () => verifyReceipt({ ...receipt, receipt_id: "c".repeat(64) }),
     (error) => error.code === "RECEIPT_ID_MISMATCH"
   );
 });
@@ -148,13 +201,13 @@ test("unknown and missing fields both fail closed", () => {
   const receipt = createReceipt(core(attester, subject), attester.privateKeyBase64);
 
   assert.throws(
-    () => verifyReceipt({ ...receipt, priority: "high" }, attester.publicKeyMultibase),
+    () => verifyReceipt({ ...receipt, priority: "high" }),
     (error) => error.code === "RECEIPT_SHAPE_INVALID"
   );
 
   const { task_id, ...missing } = receipt;
   assert.throws(
-    () => verifyReceipt(missing, attester.publicKeyMultibase),
+    () => verifyReceipt(missing),
     (error) => error.code === "RECEIPT_SHAPE_INVALID"
   );
 });
@@ -165,7 +218,7 @@ test("only succeeded, failed and disputed are outcomes", () => {
 
   for (const outcome of ["succeeded", "failed", "disputed"]) {
     const receipt = createReceipt(core(attester, subject, { outcome }), attester.privateKeyBase64);
-    assert.equal(verifyReceipt(receipt, attester.publicKeyMultibase).outcome, outcome);
+    assert.equal(verifyReceipt(receipt).outcome, outcome);
   }
 
   assert.throws(

@@ -35,6 +35,35 @@ const NAME = /^[a-z][a-z0-9-]{0,63}$/;
 const DID = /^did:[a-z0-9]+:[A-Za-z0-9._:-]{1,512}$/;
 const ISO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
 
+const DID_KEY_PREFIX = "did:key:";
+
+/**
+ * Recover the attester's public key from its DID.
+ *
+ * Soma DIDs are `did:key:z…`, where the fingerprint is the multibase-encoded
+ * public key. The identifier *is* the key commitment, so verification needs no
+ * network, no registry and no key distribution.
+ *
+ * This is why the key is never a parameter. Accepting one would let a caller
+ * verify a receipt naming one attester against a different attester's key, and
+ * attribution — the only thing a receipt actually establishes — would depend on
+ * the caller passing the right key. Here it cannot be got wrong.
+ */
+export function attesterKeyFromDid(did) {
+  if (typeof did !== "string" || !did.startsWith(DID_KEY_PREFIX)) {
+    throw new SomaError(
+      "receipts require a self-certifying did:key attester; no other method resolves offline",
+      2,
+      "RECEIPT_DID_UNSUPPORTED"
+    );
+  }
+  const fingerprint = did.slice(DID_KEY_PREFIX.length);
+  if (!/^z[1-9A-HJ-NP-Za-km-z]{40,120}$/.test(fingerprint)) {
+    throw new SomaError("attester DID does not carry a valid multibase key", 2, "RECEIPT_DID_INVALID");
+  }
+  return fingerprint;
+}
+
 function exactObject(value, fields, code, label) {
   if (value === null || typeof value !== "object" || Array.isArray(value)) {
     throw new SomaError(`${label} must be an object`, 2, code);
@@ -127,12 +156,16 @@ export function createReceipt(core, attesterPrivateKeyBase64) {
 }
 
 /**
- * Verify a receipt against the attester's published key.
+ * Verify a receipt.
+ *
+ * The attester's key is derived from `attester_did` and is deliberately not a
+ * parameter: see attesterKeyFromDid. A receipt therefore cannot be verified
+ * against anyone but the party it names.
  *
  * Returns the parsed receipt. Throws on any failure — there is no partial
  * success, and no boolean that a caller can accidentally ignore.
  */
-export function verifyReceipt(receipt, attesterPublicKeyMultibase) {
+export function verifyReceipt(receipt) {
   exactObject(receipt, RECEIPT_FIELDS, "RECEIPT_SHAPE_INVALID", "receipt");
 
   const core = receiptCore(receipt);
@@ -144,7 +177,7 @@ export function verifyReceipt(receipt, attesterPublicKeyMultibase) {
     throw new SomaError("receipt_id does not match its contents", 7, "RECEIPT_ID_MISMATCH");
   }
 
-  if (!verifyEd25519(attesterPublicKeyMultibase, signaturePreimage(expectedId), receipt.signature)) {
+  if (!verifyEd25519(attesterKeyFromDid(core.attester_did), signaturePreimage(expectedId), receipt.signature)) {
     throw new SomaError("receipt signature does not verify against the attester key", 7, "RECEIPT_SIGNATURE_INVALID");
   }
 

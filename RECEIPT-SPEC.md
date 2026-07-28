@@ -125,6 +125,22 @@ record success produces reputation that is meaningless by construction, because
 the absence of a receipt is indistinguishable between "never worked" and
 "worked badly."
 
+## The attester's key is never a parameter
+
+Soma DIDs are `did:key:z…`, where the fingerprint is the multibase-encoded
+public key. **The identifier is the key commitment**, so a receipt verifies
+offline with no network, no registry and no key distribution.
+
+The verifier therefore derives the attester's key from `attester_did` and
+refuses to accept one from the caller. An earlier revision took the key as a
+parameter, which meant a receipt naming Alice would verify against Mallory's key
+if the caller supplied it — attribution, the only thing a receipt establishes,
+depended on the caller getting that right.
+
+An attester DID that does not commit to a key is refused outright rather than
+assumed resolvable later. Deferring that check would mean accepting a receipt
+whose attribution cannot be checked at all.
+
 ## Verification obligations
 
 A conforming verifier:
@@ -134,7 +150,7 @@ A conforming verifier:
 2. Rejects `attester_did === subject_did` **before** checking the signature. A
    self-receipt is malformed, not merely unauthorized, and saying so costs
    nothing and leaks nothing.
-3. Verifies Ed25519 against the attester's key.
+3. Verifies Ed25519 against the key committed to by `attester_did`.
 4. Recomputes `receipt_id` and rejects a mismatch.
 5. Rejects `observed_at` after `issued_at`.
 6. Computes the independence label from lineage. Never reads it from input.
