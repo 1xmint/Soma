@@ -161,8 +161,8 @@
     },
     {
       "path": "package.json",
-      "bytes": 854,
-      "sha256": "459905633c8c4918833a9f661b6b6127685a8752623dea038fbc805775e28d96"
+      "bytes": 876,
+      "sha256": "baaac1f939d1afcef827f53060cffb7e5210892e12989215dc033087720a69cc"
     },
     {
       "path": "release/origin-capsule-manifest.json",
@@ -385,6 +385,11 @@
       "sha256": "24ab3df7ba9dde4e8ecc657e1b590f238791588b197d83feed85aed772834c36"
     },
     {
+      "path": "src/receipt.mjs",
+      "bytes": 8373,
+      "sha256": "9767fe5e190c351f7e751289a387d043cfb0d391418ac2342078634bfe449c45"
+    },
+    {
       "path": "src/release.mjs",
       "bytes": 3277,
       "sha256": "601b24e5b5a2fe8de022f1464fffb7ff8a1987fa4332a805dd8778be32b5bd84"
@@ -443,6 +448,11 @@
       "path": "test/no-network-preload.mjs",
       "bytes": 916,
       "sha256": "87a8dd84f0f7378b1612fb7f76da1050522924153742199794f51b9ffb1685c1"
+    },
+    {
+      "path": "test/receipt.test.mjs",
+      "bytes": 9025,
+      "sha256": "c45dd68e8087a0914e845241fdd5439fd0319d0283028829c17d42cc4f021d15"
     }
   ]
 }
