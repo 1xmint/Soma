@@ -1,0 +1,91 @@
+{
+  "vector_version": "somavera.host-descriptor-succession-invalid.v1",
+  "base_vector": "host-descriptor-succession-v1.json",
+  "cases": [
+    {
+      "name": "sequence-skip",
+      "mutation": "sequence_skip",
+      "expected_error": "SUCCESSOR_SEQUENCE_INVALID"
+    },
+    {
+      "name": "wrong-predecessor",
+      "mutation": "wrong_predecessor",
+      "expected_error": "PREDECESSOR_MISMATCH"
+    },
+    {
+      "name": "immutable-origin-change",
+      "mutation": "immutable_origin_change",
+      "expected_error": "IMMUTABLE_DESCRIPTOR_FIELD_CHANGED"
+    },
+    {
+      "name": "unprecommitted-signing-key",
+      "mutation": "unprecommitted_signing_key",
+      "expected_error": "SUCCESSOR_SIGNING_KEY_NOT_PRECOMMITTED"
+    },
+    {
+      "name": "unprecommitted-ingestion-key",
+      "mutation": "unprecommitted_ingestion_key",
+      "expected_error": "SUCCESSOR_INGESTION_KEY_NOT_PRECOMMITTED"
+    },
+    {
+      "name": "expired-signing-key-precommit",
+      "mutation": "expired_precommit",
+      "expected_error": "SUCCESSOR_SIGNING_KEY_NOT_PRECOMMITTED"
+    },
+    {
+      "name": "declared-scope-mismatch",
+      "mutation": "scope_mismatch",
+      "expected_error": "CHANGE_SCOPE_MISMATCH"
+    },
+    {
+      "name": "proof-too-long",
+      "mutation": "proof_too_long",
+      "expected_error": "SUCCESSION_LIFETIME_INVALID"
+    },
+    {
+      "name": "role-signature-replay",
+      "mutation": "role_signature_replay",
+      "expected_error": "PRIOR_SUCCESSION_SIGNATURE_INVALID"
+    },
+    {
+      "name": "successor-signature-corruption",
+      "mutation": "successor_signature_corruption",
+      "expected_error": "SUCCESSOR_SUCCESSION_SIGNATURE_INVALID"
+    },
+    {
+      "name": "historic-key-removal",
+      "mutation": "historic_key_removal",
+      "expected_error": "HISTORIC_KEY_REMOVED"
+    },
+    {
+      "name": "historic-lifecycle-rewrite",
+      "mutation": "historic_lifecycle_rewrite",
+      "expected_error": "HISTORIC_KEY_LIFECYCLE_CHANGED"
+    },
+    {
+      "name": "ambiguous-active-signing-key",
+      "mutation": "ambiguous_active_key",
+      "expected_error": "SUCCESSOR_ACTIVE_KEY_AMBIGUOUS"
+    },
+    {
+      "name": "emergency-revocation-smuggling",
+      "mutation": "emergency_revocation_smuggling",
+      "expected_error": "EMERGENCY_RECOVERY_UNSUPPORTED"
+    },
+    {
+      "name": "overlap-window-too-long",
+      "mutation": "overlap_window_too_long",
+      "expected_error": "KEY_OVERLAP_WINDOW_INVALID"
+    },
+    {
+      "name": "descriptor-signature-corruption",
+      "mutation": "descriptor_signature_corruption",
+      "expected_error": "PRIOR_DESCRIPTOR_SIGNATURE_INVALID"
+    },
+    {
+      "name": "authority-escalation",
+      "mutation": "authority_escalation",
+      "expected_error": "SUCCESSION_AUTHORITY_INVALID"
+    }
+  ]
+}

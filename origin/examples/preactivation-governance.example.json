@@ -1,0 +1,134 @@
+{
+  "$schema": "../schemas/preactivation-governance.schema.json",
+  "schema_version": "somavera.preactivation-governance.v1",
+  "proposal_class": "G2",
+  "valid_from_height": 0,
+  "expires_at_height": 15000000,
+  "chambers": [
+    {
+      "chamber": "economic",
+      "quorum_basis_points": 7500,
+      "approval_basis_points": 7500
+    },
+    {
+      "chamber": "operator_contributor",
+      "quorum_basis_points": 7500,
+      "approval_basis_points": 7500
+    },
+    {
+      "chamber": "public_data_rights",
+      "quorum_basis_points": 7500,
+      "approval_basis_points": 7500
+    }
+  ],
+  "seats": [
+    {
+      "chamber": "economic",
+      "key_id": "did:key:bootstrap-economic-1#key-1",
+      "public_key": "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE=",
+      "voting_weight": "1",
+      "active": true,
+      "controller_id": "controller-bootstrap-economic-1",
+      "organization_id": "organization-bootstrap-economic-1"
+    },
+    {
+      "chamber": "economic",
+      "key_id": "did:key:bootstrap-economic-2#key-1",
+      "public_key": "AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI=",
+      "voting_weight": "1",
+      "active": true,
+      "controller_id": "controller-bootstrap-economic-2",
+      "organization_id": "organization-bootstrap-economic-2"
+    },
+    {
+      "chamber": "economic",
+      "key_id": "did:key:bootstrap-economic-3#key-1",
+      "public_key": "AwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwM=",
+      "voting_weight": "1",
+      "active": true,
+      "controller_id": "controller-bootstrap-economic-3",
+      "organization_id": "organization-bootstrap-economic-3"
+    },
+    {
+      "chamber": "economic",
+      "key_id": "did:key:bootstrap-economic-4#key-1",
+      "public_key": "BAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQ=",
+      "voting_weight": "1",
+      "active": true,
+      "controller_id": "controller-bootstrap-economic-4",
+      "organization_id": "organization-bootstrap-economic-4"
+    },
+    {
+      "chamber": "operator_contributor",
+      "key_id": "did:key:bootstrap-operator-1#key-1",
+      "public_key": "BQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQU=",
+      "voting_weight": "1",
+      "active": true,
+      "controller_id": "controller-bootstrap-operator-1",
+      "organization_id": "organization-bootstrap-operator-1"
+    },
+    {
+      "chamber": "operator_contributor",
+      "key_id": "did:key:bootstrap-operator-2#key-1",
+      "public_key": "BgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgY=",
+      "voting_weight": "1",
+      "active": true,
+      "controller_id": "controller-bootstrap-operator-2",
+      "organization_id": "organization-bootstrap-operator-2"
+    },
+    {
+      "chamber": "operator_contributor",
+      "key_id": "did:key:bootstrap-operator-3#key-1",
+      "public_key": "BwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwc=",
+      "voting_weight": "1",
+      "active": true,
+      "controller_id": "controller-bootstrap-operator-3",
+      "organization_id": "organization-bootstrap-operator-3"
+    },
+    {
+      "chamber": "operator_contributor",
+      "key_id": "did:key:bootstrap-operator-4#key-1",
+      "public_key": "CAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg=",
+      "voting_weight": "1",
+      "active": true,
+      "controller_id": "controller-bootstrap-operator-4",
+      "organization_id": "organization-bootstrap-operator-4"
+    },
+    {
+      "chamber": "public_data_rights",
+      "key_id": "did:key:bootstrap-rights-1#key-1",
+      "public_key": "CQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQk=",
+      "voting_weight": "1",
+      "active": true,
+      "controller_id": "controller-bootstrap-rights-1",
+      "organization_id": "organization-bootstrap-rights-1"
+    },
+    {
+      "chamber": "public_data_rights",
+      "key_id": "did:key:bootstrap-rights-2#key-1",
+      "public_key": "CgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgo=",
+      "voting_weight": "1",
+      "active": true,
+      "controller_id": "controller-bootstrap-rights-2",
+      "organization_id": "organization-bootstrap-rights-2"
+    },
+    {
+      "chamber": "public_data_rights",
+      "key_id": "did:key:bootstrap-rights-3#key-1",
+      "public_key": "CwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCws=",
+      "voting_weight": "1",
+      "active": true,
+      "controller_id": "controller-bootstrap-rights-3",
+      "organization_id": "organization-bootstrap-rights-3"
+    },
+    {
+      "chamber": "public_data_rights",
+      "key_id": "did:key:bootstrap-rights-4#key-1",
+      "public_key": "DAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAw=",
+      "voting_weight": "1",
+      "active": true,
+      "controller_id": "controller-bootstrap-rights-4",
+      "organization_id": "organization-bootstrap-rights-4"
+    }
+  ]
+}

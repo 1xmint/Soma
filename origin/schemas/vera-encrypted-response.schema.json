@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:somavera:schema:vera-encrypted-response:v1",
+  "title": "Somavera Encrypted Private Vera Response v1",
+  "$comment": "Freeze-blocking draft. The exact signed action-specific object is encrypted; response-envelope ID, signature, HPKE, AAD, and chunk projections are in ID-DERIVATION.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "profile_status",
+    "response_envelope_id",
+    "network_lineage_id",
+    "execution_context_id",
+    "request_event_id",
+    "response_event_id",
+    "response_action",
+    "host_did",
+    "destination_soma_did",
+    "recipient_return_key_id",
+    "return_descriptor_id",
+    "return_key_commitment",
+    "hpke_suite",
+    "hpke_enc",
+    "wrapped_response_dek",
+    "chunk_bytes",
+    "chunk_count",
+    "plaintext_bytes",
+    "aad_hash",
+    "ciphertext_root",
+    "issued_at",
+    "expires_at",
+    "chunks",
+    "outer_signature"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": { "const": "somavera.vera-encrypted-response.v1" },
+    "profile_status": { "const": "freeze_blocking_draft" },
+    "response_envelope_id": { "$ref": "#/$defs/hash" },
+    "network_lineage_id": { "$ref": "#/$defs/network" },
+    "execution_context_id": { "$ref": "#/$defs/context" },
+    "request_event_id": { "$ref": "#/$defs/hash" },
+    "response_event_id": { "$ref": "#/$defs/hash" },
+    "response_action": {
+      "type": "string",
+      "enum": [
+        "host.registered",
+        "host.challenge-result",
+        "consent.accepted",
+        "consent.withdrawn",
+        "contribution.accepted",
+        "contribution.rejected",
+        "answer.source-bundle",
+        "export.ready",
+        "status.result",
+        "content.deleted",
+        "tombstone.result",
+        "private.error"
+      ]
+    },
+    "host_did": { "$ref": "#/$defs/did" },
+    "destination_soma_did": { "$ref": "#/$defs/did" },
+    "recipient_return_key_id": { "$ref": "#/$defs/keyId" },
+    "return_descriptor_id": { "$ref": "#/$defs/hash" },
+    "return_key_commitment": { "$ref": "#/$defs/hash" },
+    "hpke_suite": { "const": "HPKE-Base-X25519-HKDF-SHA256-AES256GCM-v1" },
+    "hpke_enc": { "$ref": "#/$defs/x25519" },
+    "wrapped_response_dek": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9+/]{64}$",
+      "minLength": 64,
+      "maxLength": 64,
+      "contentEncoding": "base64"
+    },
+    "chunk_bytes": { "const": 65536 },
+    "chunk_count": { "type": "integer", "minimum": 1, "maximum": 16 },
+    "plaintext_bytes": { "type": "integer", "minimum": 1, "maximum": 1048576 },
+    "aad_hash": { "$ref": "#/$defs/hash" },
+    "ciphertext_root": { "$ref": "#/$defs/hash" },
+    "issued_at": { "type": "string", "format": "date-time" },
+    "expires_at": { "type": "string", "format": "date-time" },
+    "chunks": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 16,
+      "items": { "$ref": "#/$defs/chunk" }
+    },
+    "outer_signature": { "$ref": "#/$defs/signature" }
+  },
+  "$defs": {
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "network": { "type": "string", "pattern": "^somavera:network:v1:[a-f0-9]{64}$" },
+    "context": { "type": "string", "pattern": "^somavera:context:v1:[a-f0-9]{64}$" },
+    "did": { "type": "string", "pattern": "^did:[a-z0-9]+:.+$", "maxLength": 512 },
+    "keyId": { "type": "string", "minLength": 3, "maxLength": 512 },
+    "x25519": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9+/]{43}=$",
+      "minLength": 44,
+      "maxLength": 44,
+      "contentEncoding": "base64"
+    },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["suite", "key_id", "value"],
+      "properties": {
+        "suite": { "const": "Ed25519-v1" },
+        "key_id": { "$ref": "#/$defs/keyId" },
+        "value": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9+/]{86}==$",
+          "minLength": 88,
+          "maxLength": 88,
+          "contentEncoding": "base64"
+        }
+      }
+    },
+    "chunk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["index", "plaintext_bytes", "nonce", "ciphertext_hash", "ciphertext"],
+      "properties": {
+        "index": { "type": "integer", "minimum": 0, "maximum": 15 },
+        "plaintext_bytes": { "type": "integer", "minimum": 1, "maximum": 65536 },
+        "nonce": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9+/]{16}$",
+          "minLength": 16,
+          "maxLength": 16,
+          "contentEncoding": "base64"
+        },
+        "ciphertext_hash": { "$ref": "#/$defs/hash" },
+        "ciphertext": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9+/]+={0,2}$",
+          "minLength": 24,
+          "maxLength": 87404,
+          "contentEncoding": "base64"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "schema_version": "somavera.recovery-domain-vectors.v1",
+  "description": "Expected SHA-256 outputs for the exact domain-separated projections over the named non-live example fixtures. Example embedded IDs and signatures remain placeholders; these values pin recomputation.",
+  "fixtures": {
+    "governance": "preactivation-governance.example.json",
+    "recovery_authority": "recovery-authority.example.json",
+    "death_policy": "recovery-death-policy.example.json",
+    "death_evidence": "recovery-death-evidence.example.json",
+    "state_package": "checkpoint-state-package.example.json",
+    "recovery_certificate": "recovery-certificate.example.json"
+  },
+  "expected": {
+    "preactivation_governance_manifest_hash": "91afde8f059219e2f135c42c0c3e10b8cd2e3289954bb9680137db65bb561c39",
+    "recovery_authority_manifest_hash": "004b5b5ae7b25b85d25f9256b3fb95087e83ab8f0184a24d6e4732fb48c80760",
+    "recovery_death_policy_id": "5515544e104b4869e93bdc224038108c0680dd3de35d66c691773bc8e1357666",
+    "observer_report_hash": "8176c16fd42bb44485963a0af14a28342633d7ed5cd75d99c34d1e1b028e5090",
+    "recovery_death_evidence_id": "ea5cd4a089d26c2a0e830bad35135ca6e1091b04d920272d64881563511ac6f5",
+    "fetch_receipt_hash": "88c9a42f4c97f1a13c072eea89f0b75e156da9c2e4969c68b175db6afbfdd306",
+    "reproduction_result_hash": "87dde2d130bb2bccfe34cd01e21517231d6bfecd180affacf494ff499fdb4a59",
+    "checkpoint_state_package_id": "9d2f4dd8a8ad6a474fa95bfc6fce2dd449c4b63f9f65a2f89fc782f6f2732711",
+    "package_publisher_signature_message_hash": "b0c18328a553243e7ad76a3f800add598ce95655a0ca27a5860422f4605e9bc9",
+    "recovery_certificate_id": "859f6f9629865d5c498642c288a3178a98de49f7fa0c8f5ccf9e5555e32c75d9",
+    "recovery_ratification_signature_message_hash": "dc0832eb5d1a3666261fa1a1d9cdf59f04cb8f62ba49d81f94029c36a3ef08ae"
+  }
+}

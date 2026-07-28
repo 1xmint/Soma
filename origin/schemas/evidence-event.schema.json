@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:somavera:schema:evidence-event:v1",
+  "title": "Soma Evidence Event v1",
+  "$comment": "evidence_id and signature domain are defined in ID-DERIVATION.md",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "evidence_id",
+    "network_lineage_id",
+    "kind",
+    "subject_did",
+    "issuer_did",
+    "task_id",
+    "capability",
+    "domain",
+    "claim_hash",
+    "artifact_hashes",
+    "receipt_ids",
+    "occurred_at",
+    "issued_at",
+    "supersedes",
+    "signature"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": { "const": "soma.evidence-event.v1" },
+    "evidence_id": { "$ref": "#/$defs/hash" },
+    "network_lineage_id": {
+      "type": "string",
+      "pattern": "^somavera:network:v1:[a-f0-9]{64}$"
+    },
+    "kind": {
+      "enum": [
+        "assertion",
+        "execution",
+        "outcome",
+        "factual_verification",
+        "dispute"
+      ]
+    },
+    "subject_did": { "$ref": "#/$defs/did" },
+    "issuer_did": { "$ref": "#/$defs/did" },
+    "task_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "capability": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_.-]{1,127}$"
+    },
+    "domain": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_.-]{1,127}$"
+    },
+    "claim_hash": { "$ref": "#/$defs/hash" },
+    "artifact_hashes": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/hash" }
+    },
+    "receipt_ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/hash" }
+    },
+    "occurred_at": { "type": "string", "format": "date-time" },
+    "issued_at": { "type": "string", "format": "date-time" },
+    "supersedes": {
+      "oneOf": [
+        { "$ref": "#/$defs/hash" },
+        { "type": "null" }
+      ]
+    },
+    "signature": { "$ref": "#/$defs/signature" }
+  },
+  "$defs": {
+    "hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "did": {
+      "type": "string",
+      "pattern": "^did:[a-z0-9]+:.+$"
+    },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["suite", "key_id", "value"],
+      "properties": {
+        "suite": { "const": "Ed25519-v1" },
+        "key_id": { "type": "string", "minLength": 3, "maxLength": 512 },
+        "value": {
+          "type": "string",
+          "contentEncoding": "base64",
+          "minLength": 80,
+          "maxLength": 128
+        }
+      }
+    }
+  }
+}
+

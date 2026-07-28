@@ -1,0 +1,61 @@
+{
+  "$schema": "../schemas/soma-controller-key-rotation.schema.json",
+  "schema_version": "somavera.soma-controller-key-rotation.v1",
+  "profile_status": "freeze_blocking_draft",
+  "rotation_id": "ffa16ccfc1f8913bb08c1b2d7f146749db7572516c63f8d13eae481d5f3dffd8",
+  "proposal_id": "5f27675e52dc7429d1ed5594496a669d2a7e7cf2c9e752032fcaaa4526a7f318",
+  "controller_did": "did:key:z6MkehRgf7yJbgaGfYsdoAsKdBPE3dj2CYhowQdcjqSJgvVd",
+  "rotation_sequence": 1,
+  "previous_rotation_id": null,
+  "prior_key": {
+    "key_id": "did:key:z6MkehRgf7yJbgaGfYsdoAsKdBPE3dj2CYhowQdcjqSJgvVd#z6MkehRgf7yJbgaGfYsdoAsKdBPE3dj2CYhowQdcjqSJgvVd",
+    "role": "controller_signing",
+    "suite": "Ed25519-v1",
+    "public_key_multibase": "z6MkehRgf7yJbgaGfYsdoAsKdBPE3dj2CYhowQdcjqSJgvVd",
+    "public_key_sha256": "56475aa75463474c0285df5dbf2bcab73da651358839e9b77481b2eab107708c",
+    "valid_from": "2027-01-01T00:00:00.000Z",
+    "valid_until": "2027-01-01T12:05:00.000Z",
+    "status": "retired"
+  },
+  "successor_key": {
+    "key_id": "did:key:z6MkhFwXNFWosLeugvSf4wcL9t3uuRXueGSFTRgSvHhWj5G2#z6MkhFwXNFWosLeugvSf4wcL9t3uuRXueGSFTRgSvHhWj5G2",
+    "role": "controller_signing",
+    "suite": "Ed25519-v1",
+    "public_key_multibase": "z6MkhFwXNFWosLeugvSf4wcL9t3uuRXueGSFTRgSvHhWj5G2",
+    "public_key_sha256": "24f6ed6acbfe1009c030d7ca567c33ca4830911498236b5561a6c82abec5de28",
+    "valid_from": "2027-01-01T12:05:00.000Z",
+    "valid_until": null,
+    "status": "active"
+  },
+  "prepared_at": "2027-01-01T12:00:00.000Z",
+  "effective_at": "2027-01-01T12:05:00.000Z",
+  "reason": "scheduled owner-initiated controller-key rotation",
+  "decision": "replace_online_controller_signing_key_only",
+  "prior_private_key_disposition": "destroy_after_committed_successor_is_recoverable",
+  "rollback_assurance": "local_consistency_only_unless_exact_history_is_externally_preserved",
+  "authority": {
+    "authorizes_controller_key_rotation": true,
+    "authorizes_agent_key_rotation": false,
+    "authorizes_observer_key_rotation": false,
+    "authorizes_identity_recovery": false,
+    "authorizes_emergency_recovery": false,
+    "authorizes_connection": false,
+    "authorizes_consent": false,
+    "authorizes_disclosure": false,
+    "authorizes_send": false,
+    "authorizes_token_action": false,
+    "authorizes_governance": false
+  },
+  "signatures": {
+    "prior": {
+      "suite": "Ed25519-v1",
+      "key_id": "did:key:z6MkehRgf7yJbgaGfYsdoAsKdBPE3dj2CYhowQdcjqSJgvVd#z6MkehRgf7yJbgaGfYsdoAsKdBPE3dj2CYhowQdcjqSJgvVd",
+      "value": "zng0+FMb4041VBG1gmi9KWmEN1XtVG/OD9MApT8DTHYBqQKBLsPdm45I0G8cfiA0Jt8WdKNAyVEXqhJm9IdtDA=="
+    },
+    "successor": {
+      "suite": "Ed25519-v1",
+      "key_id": "did:key:z6MkhFwXNFWosLeugvSf4wcL9t3uuRXueGSFTRgSvHhWj5G2#z6MkhFwXNFWosLeugvSf4wcL9t3uuRXueGSFTRgSvHhWj5G2",
+      "value": "wfvdhhKScWHCa3GIKPuN7AHEUb5snN0kVcXvafa7F4U95QrL5ORGpUvS08SeXsE3QrUKQPhcr9RShe4N+a1cCA=="
+    }
+  }
+}

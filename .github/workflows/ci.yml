@@ -31,3 +31,40 @@ jobs:
 
       - name: Clippy
         run: cargo clippy -- -D warnings
+
+  # The JavaScript implementation is a peer of the Rust one, not a satellite.
+  # It runs on Windows because its keystore binds DPAPI and its permission
+  # profile binds Windows ACLs; those paths have no meaning on Linux and are
+  # exactly the ones worth gating on.
+  js:
+    name: JS implementation
+    runs-on: windows-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: js
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: js/package-lock.json
+
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Prepare direct-volume secure test root
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path C:\soma-ci-temp | Out-Null
+          "TEMP=C:\soma-ci-temp" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "TMP=C:\soma-ci-temp" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Verify Origin binding, release, and security behavior
+        shell: cmd
+        run: |
+          set "PSModulePath="
+          npm run check

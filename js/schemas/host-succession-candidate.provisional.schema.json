@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:somavera:soma:host-succession-candidate:provisional-v1",
+  "title": "Soma Offline Host Succession Candidate Provisional v1",
+  "$comment": "Controller-signed inert local preview. It cannot replace a pin or authorize connection, consent, disclosure, or send.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "candidate_id",
+    "created_at",
+    "controller_did",
+    "prior_pin_id",
+    "host_did",
+    "prior_descriptor_id",
+    "successor_descriptor_id",
+    "succession_id",
+    "change_scope",
+    "successor_active_signing_key_sha256",
+    "successor_descriptor",
+    "succession_proof",
+    "confirmed",
+    "connected",
+    "authority",
+    "signature"
+  ],
+  "properties": {
+    "schema_version": { "const": "soma.host-succession-candidate.provisional-v1" },
+    "candidate_id": { "$ref": "#/$defs/hash" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "controller_did": { "$ref": "#/$defs/did" },
+    "prior_pin_id": { "$ref": "#/$defs/hash" },
+    "host_did": { "$ref": "#/$defs/did" },
+    "prior_descriptor_id": { "$ref": "#/$defs/hash" },
+    "successor_descriptor_id": { "$ref": "#/$defs/hash" },
+    "succession_id": { "$ref": "#/$defs/hash" },
+    "change_scope": {
+      "enum": [
+        "renewal_only",
+        "signing_key_rotation",
+        "ingestion_key_rotation",
+        "signing_and_ingestion_key_rotation"
+      ]
+    },
+    "successor_active_signing_key_sha256": { "$ref": "#/$defs/hash" },
+    "successor_descriptor": { "type": "object" },
+    "succession_proof": { "type": "object" },
+    "confirmed": { "const": false },
+    "connected": { "const": false },
+    "authority": { "const": "offline_candidate_only_no_pin_replacement_no_connection_no_consent_no_send" },
+    "signature": { "$ref": "#/$defs/signature" }
+  },
+  "$defs": {
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "did": { "type": "string", "maxLength": 512, "pattern": "^did:[a-z0-9]+:(?:[A-Za-z0-9._-]|%[0-9A-Fa-f]{2})+(?::(?:[A-Za-z0-9._-]|%[0-9A-Fa-f]{2})+)*$" },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["suite", "key_id", "value"],
+      "properties": {
+        "suite": { "const": "Ed25519-v1" },
+        "key_id": { "type": "string", "minLength": 3, "maxLength": 512 },
+        "value": { "type": "string", "pattern": "^[A-Za-z0-9+/]{86}==$", "contentEncoding": "base64" }
+      }
+    }
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "vector_version": "somavera.soma-host-trust-capsule-invalid.v1",
+  "base_vector": "host-trust-capsule-v1.json",
+  "cases": [
+    {
+      "name": "object_bytes_mutated",
+      "mutation": "object_bytes_mutated",
+      "expected_error": "CAPSULE_OBJECT_HASH_INVALID"
+    },
+    {
+      "name": "object_size_mutated",
+      "mutation": "object_size_mutated",
+      "expected_error": "CAPSULE_OBJECT_SIZE_INVALID"
+    },
+    {
+      "name": "object_order_reversed",
+      "mutation": "object_order_reversed",
+      "expected_error": "CAPSULE_OBJECT_ORDER_INVALID"
+    },
+    {
+      "name": "object_path_duplicated",
+      "mutation": "object_path_duplicated",
+      "expected_error": "CAPSULE_OBJECT_PATH_INVALID"
+    },
+    {
+      "name": "host_order_duplicated",
+      "mutation": "host_order_duplicated",
+      "expected_error": "CAPSULE_HOST_ORDER_INVALID"
+    },
+    {
+      "name": "history_root_mutated",
+      "mutation": "history_root_mutated",
+      "expected_error": "CAPSULE_HISTORY_ROOT_INVALID"
+    },
+    {
+      "name": "current_set_root_mutated",
+      "mutation": "current_set_root_mutated",
+      "expected_error": "CAPSULE_CURRENT_SET_ROOT_INVALID"
+    },
+    {
+      "name": "object_set_root_mutated",
+      "mutation": "object_set_root_mutated",
+      "expected_error": "CAPSULE_OBJECT_SET_ROOT_INVALID"
+    },
+    {
+      "name": "host_count_mutated",
+      "mutation": "host_count_mutated",
+      "expected_error": "CAPSULE_COUNT_INVALID"
+    },
+    {
+      "name": "transition_count_mutated",
+      "mutation": "transition_count_mutated",
+      "expected_error": "CAPSULE_COUNT_INVALID"
+    },
+    {
+      "name": "controller_did_substituted",
+      "mutation": "controller_did_substituted",
+      "expected_error": "CAPSULE_CONTROLLER_INVALID"
+    },
+    {
+      "name": "controller_key_hash_mutated",
+      "mutation": "controller_key_hash_mutated",
+      "expected_error": "CAPSULE_CONTROLLER_KEY_INVALID"
+    },
+    {
+      "name": "external_anchor_claim_escalated",
+      "mutation": "external_anchor_claim_escalated",
+      "expected_error": "CAPSULE_CLAIMS_INVALID"
+    },
+    {
+      "name": "restore_claim_escalated",
+      "mutation": "restore_claim_escalated",
+      "expected_error": "CAPSULE_CLAIMS_INVALID"
+    },
+    {
+      "name": "capsule_id_mutated",
+      "mutation": "capsule_id_mutated",
+      "expected_error": "CAPSULE_ID_INVALID"
+    },
+    {
+      "name": "signature_corrupted",
+      "mutation": "signature_corrupted",
+      "expected_error": "CAPSULE_SIGNATURE_INVALID"
+    }
+  ]
+}

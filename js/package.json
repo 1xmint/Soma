@@ -1,0 +1,21 @@
+{
+  "name": "somavera-reference",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Clean tokenless Somavera reference implementation",
+  "type": "module",
+  "bin": {
+    "soma": "./bin/soma.mjs"
+  },
+  "scripts": {
+    "manifest": "node scripts/build-release-manifest.mjs",
+    "verify-origin-lock": "node scripts/verify-origin-lock.mjs",
+    "verify-release": "node scripts/verify-release.mjs",
+    "test": "node --test --test-concurrency=1 test/cli.test.mjs test/evidence.test.mjs test/membrane.test.mjs test/host.test.mjs test/host-succession.test.mjs test/host-confirmation.test.mjs test/host-trust-capsule.test.mjs test/host-trust-capsule-v2.test.mjs test/controller-rotation.test.mjs test/receipt.test.mjs",
+    "check": "npm run verify-origin-lock && npm run verify-release && npm test"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "license": "Apache-2.0"
+}

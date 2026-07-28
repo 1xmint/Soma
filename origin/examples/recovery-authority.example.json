@@ -1,0 +1,102 @@
+{
+  "$schema": "../schemas/recovery-authority.schema.json",
+  "schema_version": "somavera.recovery-authority.v1",
+  "origin_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "protocol_release_hash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "purpose": "exact_continuity_succession_only",
+  "valid_from_height": 0,
+  "expires_at_height": 50000000,
+  "threshold_count": 5,
+  "minimum_distinct_controllers": 5,
+  "minimum_distinct_organizations": 5,
+  "minimum_distinct_jurisdictions": 3,
+  "controller_reuse_allowed": false,
+  "self_extension_allowed": false,
+  "successor_target_keys_may_authorize": false,
+  "guardians": [
+    {
+      "guardian_id": "guardian-1",
+      "key_id": "did:key:recovery-guardian-1#key-1",
+      "public_key": "DQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0=",
+      "controller_id": "controller-recovery-guardian-1",
+      "organization_id": "organization-recovery-guardian-1",
+      "jurisdiction": "US-NY",
+      "purpose": "exact_continuity_succession",
+      "valid_from_height": 0,
+      "expires_at_height": 50000000,
+      "active": true
+    },
+    {
+      "guardian_id": "guardian-2",
+      "key_id": "did:key:recovery-guardian-2#key-1",
+      "public_key": "Dg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4=",
+      "controller_id": "controller-recovery-guardian-2",
+      "organization_id": "organization-recovery-guardian-2",
+      "jurisdiction": "CA-ON",
+      "purpose": "exact_continuity_succession",
+      "valid_from_height": 0,
+      "expires_at_height": 50000000,
+      "active": true
+    },
+    {
+      "guardian_id": "guardian-3",
+      "key_id": "did:key:recovery-guardian-3#key-1",
+      "public_key": "Dw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8=",
+      "controller_id": "controller-recovery-guardian-3",
+      "organization_id": "organization-recovery-guardian-3",
+      "jurisdiction": "DE-BE",
+      "purpose": "exact_continuity_succession",
+      "valid_from_height": 0,
+      "expires_at_height": 50000000,
+      "active": true
+    },
+    {
+      "guardian_id": "guardian-4",
+      "key_id": "did:key:recovery-guardian-4#key-1",
+      "public_key": "EBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBA=",
+      "controller_id": "controller-recovery-guardian-4",
+      "organization_id": "organization-recovery-guardian-4",
+      "jurisdiction": "US-CA",
+      "purpose": "exact_continuity_succession",
+      "valid_from_height": 0,
+      "expires_at_height": 50000000,
+      "active": true
+    },
+    {
+      "guardian_id": "guardian-5",
+      "key_id": "did:key:recovery-guardian-5#key-1",
+      "public_key": "ERERERERERERERERERERERERERERERERERERERERERE=",
+      "controller_id": "controller-recovery-guardian-5",
+      "organization_id": "organization-recovery-guardian-5",
+      "jurisdiction": "JP-13",
+      "purpose": "exact_continuity_succession",
+      "valid_from_height": 0,
+      "expires_at_height": 50000000,
+      "active": true
+    },
+    {
+      "guardian_id": "guardian-6",
+      "key_id": "did:key:recovery-guardian-6#key-1",
+      "public_key": "EhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhI=",
+      "controller_id": "controller-recovery-guardian-6",
+      "organization_id": "organization-recovery-guardian-6",
+      "jurisdiction": "GB-LND",
+      "purpose": "exact_continuity_succession",
+      "valid_from_height": 0,
+      "expires_at_height": 50000000,
+      "active": true
+    },
+    {
+      "guardian_id": "guardian-7",
+      "key_id": "did:key:recovery-guardian-7#key-1",
+      "public_key": "ExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExM=",
+      "controller_id": "controller-recovery-guardian-7",
+      "organization_id": "organization-recovery-guardian-7",
+      "jurisdiction": "AU-NSW",
+      "purpose": "exact_continuity_succession",
+      "valid_from_height": 0,
+      "expires_at_height": 50000000,
+      "active": true
+    }
+  ]
+}

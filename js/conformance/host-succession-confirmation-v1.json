@@ -1,0 +1,59 @@
+{
+  "vector_version": "somavera.host-succession-confirmation.v1",
+  "description": "Deterministic controller confirmation of one exact inert ordinary host succession subject.",
+  "source_succession_vector": "host-descriptor-succession-v1.json",
+  "expected_controller_did": "did:key:example-soma-controller",
+  "expected_controller_signing_key_id": "did:key:example-soma-controller#controller-1",
+  "controller_public_key_base64": "JUO5L/EJVRFHatyDadtt3JM2ZaEZeN2hQE7hBmypVZ0=",
+  "domains": {
+    "subject_id": "somavera:soma-host-succession-confirmation-subject:v1",
+    "confirmation_id": "somavera:soma-host-succession-confirmation:v1",
+    "confirmation_signature": "somavera:soma-host-succession-confirmation-signature:v1"
+  },
+  "expected": {
+    "subject_core_jcs": "{\"change_scope\":\"signing_and_ingestion_key_rotation\",\"execution_context_id\":\"somavera:context:v1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"host_did\":\"did:key:example-vera-host\",\"network_lineage_id\":\"somavera:network:v1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"origin\":\"https://vera.example.test\",\"prior_descriptor_id\":\"3483cb9841ab443e8ec8b57e9f208f42259f7f537c99e419746afbabaefb0c9d\",\"prior_descriptor_sequence\":7,\"succession_id\":\"fe06159bcb2d1a128cb98271cc78d669d5599ff53fb7a94e5e3de43cf3b447f6\",\"successor_active_host_signing_key_id\":\"did:key:example-vera-host#signing-8\",\"successor_active_host_signing_key_sha256\":\"24f6ed6acbfe1009c030d7ca567c33ca4830911498236b5561a6c82abec5de28\",\"successor_active_ingestion_key_id\":\"did:key:example-vera-host#ingestion-8\",\"successor_active_ingestion_key_sha256\":\"0d6ba19b62531ccb0deb8804313eca283c69560f66f1b7b8a2c1592ae8c35c6b\",\"successor_descriptor_id\":\"c40e76035bb61d4d3757a7aff1af3c5a5d6e82868c9645ec397301d3d85ee68d\",\"successor_descriptor_sequence\":8}",
+    "confirmation_core_jcs": "{\"authority\":{\"authorizes_connection\":false,\"authorizes_consent\":false,\"authorizes_disclosure\":false,\"authorizes_emergency_recovery\":false,\"authorizes_pin_replacement\":true,\"authorizes_send\":false},\"change_scope\":\"signing_and_ingestion_key_rotation\",\"confirmed_at\":\"2027-01-01T12:06:00Z\",\"controller_did\":\"did:key:example-soma-controller\",\"controller_signing_key_id\":\"did:key:example-soma-controller#controller-1\",\"decision\":\"replace_inert_pin_only\",\"execution_context_id\":\"somavera:context:v1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"host_did\":\"did:key:example-vera-host\",\"network_lineage_id\":\"somavera:network:v1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"origin\":\"https://vera.example.test\",\"prior_descriptor_id\":\"3483cb9841ab443e8ec8b57e9f208f42259f7f537c99e419746afbabaefb0c9d\",\"prior_descriptor_sequence\":7,\"profile_status\":\"freeze_blocking_draft\",\"schema_version\":\"somavera.soma-host-succession-confirmation.v1\",\"subject_id\":\"8ce526a16af8fc36773f1c29c085310c9870a811bec008560ad90a8a3dc8dcfc\",\"succession_id\":\"fe06159bcb2d1a128cb98271cc78d669d5599ff53fb7a94e5e3de43cf3b447f6\",\"successor_active_host_signing_key_id\":\"did:key:example-vera-host#signing-8\",\"successor_active_host_signing_key_sha256\":\"24f6ed6acbfe1009c030d7ca567c33ca4830911498236b5561a6c82abec5de28\",\"successor_active_ingestion_key_id\":\"did:key:example-vera-host#ingestion-8\",\"successor_active_ingestion_key_sha256\":\"0d6ba19b62531ccb0deb8804313eca283c69560f66f1b7b8a2c1592ae8c35c6b\",\"successor_descriptor_id\":\"c40e76035bb61d4d3757a7aff1af3c5a5d6e82868c9645ec397301d3d85ee68d\",\"successor_descriptor_sequence\":8}",
+    "subject_id": "8ce526a16af8fc36773f1c29c085310c9870a811bec008560ad90a8a3dc8dcfc",
+    "confirmation_id": "efc2f8ba13d88dc5bc89f7fc8019febcf9c1341a20aa09b7ae0f1387c88232ca",
+    "signature_message_hex": "736f6d61766572613a736f6d612d686f73742d73756363657373696f6e2d636f6e6669726d6174696f6e2d7369676e61747572653a76310aefc2f8ba13d88dc5bc89f7fc8019febcf9c1341a20aa09b7ae0f1387c88232ca",
+    "result": "accept_inert_pin_replacement_only"
+  },
+  "confirmation": {
+    "$schema": "../schemas/soma-host-succession-confirmation.schema.json",
+    "schema_version": "somavera.soma-host-succession-confirmation.v1",
+    "profile_status": "freeze_blocking_draft",
+    "confirmation_id": "efc2f8ba13d88dc5bc89f7fc8019febcf9c1341a20aa09b7ae0f1387c88232ca",
+    "subject_id": "8ce526a16af8fc36773f1c29c085310c9870a811bec008560ad90a8a3dc8dcfc",
+    "network_lineage_id": "somavera:network:v1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "execution_context_id": "somavera:context:v1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "controller_did": "did:key:example-soma-controller",
+    "controller_signing_key_id": "did:key:example-soma-controller#controller-1",
+    "host_did": "did:key:example-vera-host",
+    "origin": "https://vera.example.test",
+    "prior_descriptor_id": "3483cb9841ab443e8ec8b57e9f208f42259f7f537c99e419746afbabaefb0c9d",
+    "prior_descriptor_sequence": 7,
+    "successor_descriptor_id": "c40e76035bb61d4d3757a7aff1af3c5a5d6e82868c9645ec397301d3d85ee68d",
+    "successor_descriptor_sequence": 8,
+    "succession_id": "fe06159bcb2d1a128cb98271cc78d669d5599ff53fb7a94e5e3de43cf3b447f6",
+    "change_scope": "signing_and_ingestion_key_rotation",
+    "successor_active_host_signing_key_id": "did:key:example-vera-host#signing-8",
+    "successor_active_host_signing_key_sha256": "24f6ed6acbfe1009c030d7ca567c33ca4830911498236b5561a6c82abec5de28",
+    "successor_active_ingestion_key_id": "did:key:example-vera-host#ingestion-8",
+    "successor_active_ingestion_key_sha256": "0d6ba19b62531ccb0deb8804313eca283c69560f66f1b7b8a2c1592ae8c35c6b",
+    "confirmed_at": "2027-01-01T12:06:00Z",
+    "decision": "replace_inert_pin_only",
+    "authority": {
+      "authorizes_pin_replacement": true,
+      "authorizes_connection": false,
+      "authorizes_consent": false,
+      "authorizes_disclosure": false,
+      "authorizes_send": false,
+      "authorizes_emergency_recovery": false
+    },
+    "signature": {
+      "suite": "Ed25519-v1",
+      "key_id": "did:key:example-soma-controller#controller-1",
+      "value": "dcXIVX2utoQvGcyVWiM2tR8gn1XkCE0J/IUtr8bVWfMca5VIe/XkRJ92Zvlk+R4td9CQ6THHDqUWCFvT5y1OAQ=="
+    }
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "$schema": "../schemas/vera-answer-source-bundle.schema.json",
+  "schema_version": "somavera.vera-answer-source-bundle.v1",
+  "response_event_id": "2222222222222222222222222222222222222222222222222222222222222222",
+  "network_lineage_id": "somavera:network:v1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "execution_context_id": "somavera:context:v1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "protocol": "vera",
+  "action": "answer.source-bundle",
+  "host_did": "did:key:example-vera-host",
+  "host_signing_key_id": "did:key:example-vera-host#signing-1",
+  "request_event_id": "1313131313131313131313131313131313131313131313131313131313131313",
+  "query_authority": {
+    "mode": "delegated",
+    "controller_did": "did:key:example-controller",
+    "requester_did": "did:key:example-soma-agent",
+    "delegation_id": "4141414141414141414141414141414141414141414141414141414141414141"
+  },
+  "query_hash": "4242424242424242424242424242424242424242424242424242424242424242",
+  "return_descriptor_id": "1111111111111111111111111111111111111111111111111111111111111111",
+  "answer_status": "answered",
+  "answer_text": "The test mechanism keeps private request bodies inside recipient ciphertext.",
+  "citations": [
+    {
+      "citation_id": "4343434343434343434343434343434343434343434343434343434343434343",
+      "source_id": "4444444444444444444444444444444444444444444444444444444444444444",
+      "claim_hash": "4545454545454545454545454545454545454545454545454545454545454545",
+      "excerpt_hash": "4646464646464646464646464646464646464646464646464646464646464646"
+    }
+  ],
+  "sources": [
+    {
+      "source_id": "4444444444444444444444444444444444444444444444444444444444444444",
+      "artifact_id": "4747474747474747474747474747474747474747474747474747474747474747",
+      "content_hash": "4848484848484848484848484848484848484848484848484848484848484848",
+      "source_event_ids": ["4949494949494949494949494949494949494949494949494949494949494949"],
+      "evidence_ids": ["5050505050505050505050505050505050505050505050505050505050505050"],
+      "receipt_ids": [],
+      "provenance_edge_ids": ["5151515151515151515151515151515151515151515151515151515151515151"],
+      "evaluation_ids": ["5252525252525252525252525252525252525252525252525252525252525252"],
+      "producer_did": "did:key:example-source-producer",
+      "artifact_status": "reinforced",
+      "rights": "controller_confidential",
+      "license": "LicenseRef-Somavera-Private-Test",
+      "tombstone_state": "none",
+      "excerpt": "Private request bodies are recipient encrypted.",
+      "excerpt_hash": "4646464646464646464646464646464646464646464646464646464646464646"
+    }
+  ],
+  "uncertainty": {
+    "level": "low",
+    "basis": ["one independently evaluated test artifact"]
+  },
+  "contradictions": [],
+  "abstention_reasons": [],
+  "policy": {
+    "policy_hash": "0404040404040404040404040404040404040404040404040404040404040404",
+    "retrieval_version": "retrieve-v0",
+    "retrieval_kind": "local_lexical",
+    "model_provider": null,
+    "as_of": "2027-01-01T00:00:00Z"
+  },
+  "issued_at": "2027-01-01T00:00:01Z",
+  "expires_at": "2027-01-01T00:15:00Z",
+  "signature": {
+    "suite": "Ed25519-v1",
+    "key_id": "did:key:example-vera-host#signing-1",
+    "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+  }
+}

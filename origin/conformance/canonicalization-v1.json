@@ -1,0 +1,50 @@
+{
+  "vector_version": "somavera.canonicalization.v1",
+  "algorithm": "RFC8785-JCS-with-Somavera-I-JSON-rejections",
+  "vectors": [
+    {
+      "name": "object-key-order",
+      "input": {
+        "b": 2,
+        "a": 1
+      },
+      "canonical": "{\"a\":1,\"b\":2}",
+      "sha256": "43258cff783fe7036d8a43033f830adfc60ec037382473548ac742b888292777"
+    },
+    {
+      "name": "unicode-array-and-control-escape",
+      "input": {
+        "z": "Ω",
+        "a": [
+          true,
+          null,
+          "line\nbreak"
+        ]
+      },
+      "canonical": "{\"a\":[true,null,\"line\\nbreak\"],\"z\":\"Ω\"}",
+      "sha256": "25818218ced92e68eee0543744e64939b8e2643352857b4ec18be5793f8d995a"
+    },
+    {
+      "name": "nested-and-max-safe-integer",
+      "input": {
+        "n": 9007199254740991,
+        "s": "Somavera",
+        "o": {
+          "y": 0,
+          "x": false
+        }
+      },
+      "canonical": "{\"n\":9007199254740991,\"o\":{\"x\":false,\"y\":0},\"s\":\"Somavera\"}",
+      "sha256": "29fd030442259e544dcdcac5039c2af7fe82a273ae1772062c953eeab3bab5f9"
+    }
+  ],
+  "must_reject": [
+    "duplicate object keys",
+    "NaN and Infinity",
+    "negative zero",
+    "lone UTF-16 surrogates",
+    "integers outside the exact IEEE-754 safe range",
+    "undefined values"
+  ]
+}
+

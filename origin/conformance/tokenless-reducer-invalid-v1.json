@@ -1,0 +1,146 @@
+{
+  "schema_version": "somavera.tokenless-reducer-invalid-cases.v1",
+  "profile_status": "synthetic_test_only_not_ratified",
+  "cases": [
+    {
+      "name": "noncanonical_transaction_bytes",
+      "expected_code": "TRANSACTION_CANONICAL_BYTES_INVALID"
+    },
+    {
+      "name": "schema_locator_in_consensus_bytes",
+      "expected_code": "TRANSACTION_SCHEMA_LOCATOR_FORBIDDEN"
+    },
+    {
+      "name": "noncanonical_base64",
+      "expected_code": "TRANSACTION_BASE64_INVALID"
+    },
+    {
+      "name": "invalid_utf8",
+      "expected_code": "TRANSACTION_UTF8_INVALID"
+    },
+    {
+      "name": "invalid_json",
+      "expected_code": "TRANSACTION_JSON_INVALID"
+    },
+    {
+      "name": "wrong_network",
+      "expected_code": "TRANSACTION_NETWORK_MISMATCH"
+    },
+    {
+      "name": "wrong_context",
+      "expected_code": "TRANSACTION_CONTEXT_MISMATCH"
+    },
+    {
+      "name": "wrong_audience",
+      "expected_code": "TRANSACTION_AUDIENCE_MISMATCH"
+    },
+    {
+      "name": "wrong_transaction_id",
+      "expected_code": "TRANSACTION_ID_MISMATCH"
+    },
+    {
+      "name": "bad_signature",
+      "expected_code": "TRANSACTION_SIGNATURE_INVALID"
+    },
+    {
+      "name": "stale_sequence",
+      "expected_code": "TRANSACTION_SEQUENCE_MISMATCH"
+    },
+    {
+      "name": "replayed_transaction",
+      "expected_code": "TRANSACTION_REPLAY"
+    },
+    {
+      "name": "reused_nonce",
+      "expected_code": "TRANSACTION_NONCE_REUSE"
+    },
+    {
+      "name": "unknown_action",
+      "expected_code": "TRANSACTION_ACTION_UNSUPPORTED"
+    },
+    {
+      "name": "wrong_object_id",
+      "expected_code": "PUBLIC_COMMITMENT_ID_INVALID"
+    },
+    {
+      "name": "duplicate_object",
+      "expected_code": "PUBLIC_COMMITMENT_EXISTS"
+    },
+    {
+      "name": "missing_object",
+      "expected_code": "PUBLIC_COMMITMENT_NOT_FOUND"
+    },
+    {
+      "name": "missing_key",
+      "expected_code": "TRANSACTION_KEY_ACTOR_MISMATCH"
+    },
+    {
+      "name": "retired_key",
+      "expected_code": "TRANSACTION_KEY_NOT_ACTIVE"
+    },
+    {
+      "name": "revoked_key",
+      "expected_code": "TRANSACTION_KEY_NOT_ACTIVE"
+    },
+    {
+      "name": "out_of_window_key",
+      "expected_code": "TRANSACTION_KEY_WINDOW_INVALID"
+    },
+    {
+      "name": "actor_key_mismatch",
+      "expected_code": "TRANSACTION_KEY_ACTOR_MISMATCH"
+    },
+    {
+      "name": "skipped_sequence",
+      "expected_code": "TRANSACTION_SEQUENCE_MISMATCH"
+    },
+    {
+      "name": "wrong_owner",
+      "expected_code": "PUBLIC_COMMITMENT_OWNER_MISMATCH"
+    },
+    {
+      "name": "second_tombstone",
+      "expected_code": "PUBLIC_COMMITMENT_ALREADY_TOMBSTONED"
+    },
+    {
+      "name": "unknown_field",
+      "expected_code": "TRANSACTION_SHAPE_INVALID"
+    },
+    {
+      "name": "oversized_transaction",
+      "expected_code": "TRANSACTION_BASE64_INVALID"
+    },
+    {
+      "name": "invalid_prior_key_purpose",
+      "expected_code": "STATE_KEY_INVALID"
+    },
+    {
+      "name": "wrong_block_network",
+      "expected_code": "BLOCK_NETWORK_MISMATCH"
+    },
+    {
+      "name": "wrong_block_context",
+      "expected_code": "BLOCK_CONTEXT_MISMATCH"
+    },
+    {
+      "name": "wrong_block_height",
+      "expected_code": "BLOCK_HEIGHT_MISMATCH"
+    },
+    {
+      "name": "wrong_prior_app_hash",
+      "expected_code": "BLOCK_PRIOR_APP_HASH_MISMATCH"
+    },
+    {
+      "name": "wrong_block_time",
+      "expected_code": "BLOCK_TIME_INVALID"
+    },
+    {
+      "name": "wrong_block_id",
+      "expected_code": "BLOCK_ID_MISMATCH"
+    },
+    {
+      "name": "too_many_transactions",
+      "expected_code": "BLOCK_TRANSACTION_COUNT_INVALID"
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "$schema": "../schemas/tokenless-reducer-transaction.schema.json",
+  "schema_version": "somavera.tokenless-transaction.v1",
+  "profile_status": "pilot_only_not_ratified",
+  "network_lineage_id": "somavera:network:v1:137a6bc09a5ba06fe2bbe8da291c637f07573cd57bf23cbf894b44f0f1895627",
+  "execution_context_id": "somavera:context:v1:9ae380d9b4f775756675370e80450618b7da6c8087e16a0c1e8ff0a632c361c2",
+  "actor_did": "did:example:somavera-pilot-alice",
+  "actor_key_id": "did:example:somavera-pilot-alice#ledger-key-1",
+  "sequence": "0",
+  "audience": "somavera:ledger:pilot-v1",
+  "action": "pilot.public-commitment.register",
+  "nonce": "78e2c631304d2f0dc16755ab00c129e6",
+  "issued_at_ms": "1798761600001",
+  "expires_at_ms": "1798761660000",
+  "payload": {
+    "object_id": "b962fb77296c97179937bdcb16329f6a9a7b18934fe896d094a2def81a9e5b85",
+    "content_hash": "794f65e57274fdd4913b85b59083e4a62fb5ecec15705c69a02cc9a4cacf4748",
+    "license_hash": "4d7b282bbf64381abbf725b58e4a0b62583460d382aeba6d6072043a68a89893",
+    "source_event_id": "44391dc0fe5b0af44f919c22df370eb990407ac3cb6b054ceb26462e6994b5e8"
+  },
+  "transaction_id": "928eb008a734494b23d00ebed41e53b6d1beea4edc24eac753441425f776e60b",
+  "signature": {
+    "suite": "Ed25519-v1",
+    "value": "ZgnwQg5hpkNCnnwgswsTUsYPe5RaEon7LsbSoBeOf5/q55gTSoYer6hlg5qtHxT1xn/iy7BhPgPy5wuKvLqAAw=="
+  }
+}

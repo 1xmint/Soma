@@ -1,0 +1,204 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:somavera:schema:recovery-certificate:v1",
+  "title": "Somavera Exact-Continuity Recovery Certificate v1",
+  "$comment": "A RecoveryCertificate is exact-continuity only. Phoenix and disclosed forks use new-genesis or fork records, not this certificate. certificate_id and signature domains are defined in ID-DERIVATION.md; cross-manifest equality and threshold invariants require semantic checks.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "certificate_id",
+    "mode",
+    "reason",
+    "old_network_lineage_id",
+    "new_network_lineage_id",
+    "old_execution_context_id",
+    "new_execution_context_id",
+    "old_context_epoch",
+    "new_context_epoch",
+    "last_checkpoint_id",
+    "last_checkpoint_height",
+    "checkpoint_state_package_id",
+    "imported_state_root",
+    "post_succession_state_root",
+    "old_asset_lineage_id",
+    "new_asset_lineage_id",
+    "origin_hash",
+    "protocol_release_hash",
+    "death_policy_id",
+    "death_evidence_id",
+    "pre_state_authority",
+    "successor_genesis_hash",
+    "successor_binding_hash",
+    "recovery_succession_transition_hash",
+    "governance_decision_hash",
+    "challenge_started_at",
+    "challenge_ends_at",
+    "activation_not_before",
+    "conflict_abort_status",
+    "successor_target_keys",
+    "ratification_signatures"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": { "const": "somavera.recovery-certificate.v1" },
+    "certificate_id": { "$ref": "#/$defs/hash" },
+    "mode": { "const": "exact_continuity" },
+    "reason": { "type": "string", "minLength": 20, "maxLength": 4096 },
+    "old_network_lineage_id": { "$ref": "#/$defs/network_id" },
+    "new_network_lineage_id": { "$ref": "#/$defs/network_id" },
+    "old_execution_context_id": { "$ref": "#/$defs/context_id" },
+    "new_execution_context_id": { "$ref": "#/$defs/context_id" },
+    "old_context_epoch": { "type": "integer", "minimum": 0 },
+    "new_context_epoch": { "type": "integer", "minimum": 1 },
+    "last_checkpoint_id": { "$ref": "#/$defs/hash" },
+    "last_checkpoint_height": { "type": "integer", "minimum": 0 },
+    "checkpoint_state_package_id": { "$ref": "#/$defs/hash" },
+    "imported_state_root": { "$ref": "#/$defs/hash" },
+    "post_succession_state_root": { "$ref": "#/$defs/hash" },
+    "old_asset_lineage_id": {
+      "oneOf": [
+        { "$ref": "#/$defs/asset_id" },
+        { "type": "null" }
+      ]
+    },
+    "new_asset_lineage_id": {
+      "oneOf": [
+        { "$ref": "#/$defs/asset_id" },
+        { "type": "null" }
+      ]
+    },
+    "origin_hash": { "$ref": "#/$defs/hash" },
+    "protocol_release_hash": { "$ref": "#/$defs/hash" },
+    "death_policy_id": { "$ref": "#/$defs/hash" },
+    "death_evidence_id": { "$ref": "#/$defs/hash" },
+    "pre_state_authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "checkpoint_id",
+        "height",
+        "public_state_root",
+        "governance_manifest_hash",
+        "recovery_authority_manifest_hash",
+        "validator_set_hash",
+        "key_history_hash"
+      ],
+      "properties": {
+        "source": { "const": "reproduced_checkpoint_pre_state" },
+        "checkpoint_id": { "$ref": "#/$defs/hash" },
+        "height": { "type": "integer", "minimum": 0 },
+        "public_state_root": { "$ref": "#/$defs/hash" },
+        "governance_manifest_hash": { "$ref": "#/$defs/hash" },
+        "recovery_authority_manifest_hash": { "$ref": "#/$defs/hash" },
+        "validator_set_hash": { "$ref": "#/$defs/hash" },
+        "key_history_hash": { "$ref": "#/$defs/hash" }
+      }
+    },
+    "successor_genesis_hash": { "$ref": "#/$defs/hash" },
+    "successor_binding_hash": { "$ref": "#/$defs/hash" },
+    "recovery_succession_transition_hash": { "$ref": "#/$defs/hash" },
+    "governance_decision_hash": { "$ref": "#/$defs/hash" },
+    "challenge_started_at": { "type": "string", "format": "date-time" },
+    "challenge_ends_at": { "type": "string", "format": "date-time" },
+    "activation_not_before": { "type": "string", "format": "date-time" },
+    "conflict_abort_status": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "checked_through",
+        "fresh_finality_detected",
+        "conflicting_finality_detected",
+        "competing_succession_detected",
+        "abort_on_later_valid_proof"
+      ],
+      "properties": {
+        "checked_through": { "type": "string", "format": "date-time" },
+        "fresh_finality_detected": { "const": false },
+        "conflicting_finality_detected": { "const": false },
+        "competing_succession_detected": { "const": false },
+        "abort_on_later_valid_proof": { "const": true }
+      }
+    },
+    "successor_target_keys": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 1000,
+      "items": { "$ref": "#/$defs/target_key" }
+    },
+    "ratification_signatures": {
+      "type": "array",
+      "minItems": 8,
+      "maxItems": 1000,
+      "items": { "$ref": "#/$defs/signature" }
+    }
+  },
+  "$defs": {
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "network_id": { "type": "string", "pattern": "^somavera:network:v1:[a-f0-9]{64}$" },
+    "asset_id": { "type": "string", "pattern": "^vera:rpa:v1:[a-f0-9]{64}$" },
+    "context_id": { "type": "string", "pattern": "^somavera:context:v1:[a-f0-9]{64}$" },
+    "public_key": {
+      "type": "string",
+      "contentEncoding": "base64",
+      "minLength": 40,
+      "maxLength": 48
+    },
+    "signature_value": {
+      "type": "string",
+      "contentEncoding": "base64",
+      "minLength": 80,
+      "maxLength": 128
+    },
+    "target_key": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "purpose",
+        "key_id",
+        "public_key",
+        "suite",
+        "proof_of_possession",
+        "counts_toward_authorization"
+      ],
+      "properties": {
+        "purpose": { "enum": ["operational_validator", "recovery_guardian", "substrate_binding"] },
+        "key_id": { "type": "string", "minLength": 3, "maxLength": 512 },
+        "public_key": { "$ref": "#/$defs/public_key" },
+        "suite": { "const": "Ed25519-v1" },
+        "proof_of_possession": { "$ref": "#/$defs/signature_value" },
+        "counts_toward_authorization": { "const": false }
+      }
+    },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "role",
+        "authority_source",
+        "authority_manifest_hash",
+        "key_id",
+        "controller_id",
+        "suite",
+        "value"
+      ],
+      "properties": {
+        "role": {
+          "enum": [
+            "recovery_guardian",
+            "economic_chamber",
+            "operator_contributor_chamber",
+            "public_data_rights_chamber"
+          ]
+        },
+        "authority_source": { "const": "checkpoint_pre_state" },
+        "authority_manifest_hash": { "$ref": "#/$defs/hash" },
+        "key_id": { "type": "string", "minLength": 3, "maxLength": 512 },
+        "controller_id": { "type": "string", "minLength": 3, "maxLength": 256 },
+        "suite": { "const": "Ed25519-v1" },
+        "value": { "$ref": "#/$defs/signature_value" }
+      }
+    }
+  }
+}

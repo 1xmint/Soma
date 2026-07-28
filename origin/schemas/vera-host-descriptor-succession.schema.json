@@ -1,0 +1,200 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://somavera.org/schemas/vera-host-descriptor-succession.schema.json",
+  "title": "Somavera Vera Host Descriptor Ordinary Succession Proof",
+  "description": "A closed, dual-signed continuity proof for an ordinary Vera host descriptor renewal or precommitted key rotation. This proof never authorizes connection, consent, disclosure, or emergency compromise recovery.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "profile_status",
+    "succession_id",
+    "network_lineage_id",
+    "execution_context_id",
+    "host_did",
+    "origin",
+    "prior_descriptor_id",
+    "prior_descriptor_sequence",
+    "successor_descriptor_id",
+    "successor_descriptor_sequence",
+    "change_scope",
+    "prior_active_host_signing_key_id",
+    "successor_active_host_signing_key_id",
+    "prior_active_ingestion_key_id",
+    "successor_active_ingestion_key_id",
+    "issued_at",
+    "expires_at",
+    "controller_confirmation_required",
+    "authority",
+    "signatures"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "const": "../schemas/vera-host-descriptor-succession.schema.json"
+    },
+    "schema_version": {
+      "const": "somavera.vera-host-descriptor-succession.v1"
+    },
+    "profile_status": {
+      "const": "freeze_blocking_draft"
+    },
+    "succession_id": {
+      "$ref": "#/$defs/hash"
+    },
+    "network_lineage_id": {
+      "$ref": "#/$defs/networkLineageId"
+    },
+    "execution_context_id": {
+      "$ref": "#/$defs/executionContextId"
+    },
+    "host_did": {
+      "$ref": "#/$defs/did"
+    },
+    "origin": {
+      "type": "string",
+      "pattern": "^https://[^/?#]+(?::[0-9]{1,5})?$"
+    },
+    "prior_descriptor_id": {
+      "$ref": "#/$defs/hash"
+    },
+    "prior_descriptor_sequence": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740990
+    },
+    "successor_descriptor_id": {
+      "$ref": "#/$defs/hash"
+    },
+    "successor_descriptor_sequence": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "change_scope": {
+      "enum": [
+        "renewal_only",
+        "signing_key_rotation",
+        "ingestion_key_rotation",
+        "signing_and_ingestion_key_rotation"
+      ]
+    },
+    "prior_active_host_signing_key_id": {
+      "$ref": "#/$defs/keyId"
+    },
+    "successor_active_host_signing_key_id": {
+      "$ref": "#/$defs/keyId"
+    },
+    "prior_active_ingestion_key_id": {
+      "$ref": "#/$defs/keyId"
+    },
+    "successor_active_ingestion_key_id": {
+      "$ref": "#/$defs/keyId"
+    },
+    "issued_at": {
+      "$ref": "#/$defs/timestamp"
+    },
+    "expires_at": {
+      "$ref": "#/$defs/timestamp"
+    },
+    "controller_confirmation_required": {
+      "const": true
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "continuity_only",
+        "authorizes_connection",
+        "authorizes_consent",
+        "authorizes_disclosure",
+        "authorizes_emergency_recovery"
+      ],
+      "properties": {
+        "continuity_only": {
+          "const": true
+        },
+        "authorizes_connection": {
+          "const": false
+        },
+        "authorizes_consent": {
+          "const": false
+        },
+        "authorizes_disclosure": {
+          "const": false
+        },
+        "authorizes_emergency_recovery": {
+          "const": false
+        }
+      }
+    },
+    "signatures": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "prior_active_key_signature",
+        "successor_active_key_signature"
+      ],
+      "properties": {
+        "prior_active_key_signature": {
+          "$ref": "#/$defs/roleSignature"
+        },
+        "successor_active_key_signature": {
+          "$ref": "#/$defs/roleSignature"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "networkLineageId": {
+      "type": "string",
+      "pattern": "^somavera:network:v1:[a-f0-9]{64}$"
+    },
+    "executionContextId": {
+      "type": "string",
+      "pattern": "^somavera:context:v1:[a-f0-9]{64}$"
+    },
+    "did": {
+      "type": "string",
+      "pattern": "^did:[a-z0-9]+:.+$",
+      "maxLength": 512
+    },
+    "keyId": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 512
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "roleSignature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "suite",
+        "key_id",
+        "value"
+      ],
+      "properties": {
+        "suite": {
+          "const": "Ed25519-v1"
+        },
+        "key_id": {
+          "$ref": "#/$defs/keyId"
+        },
+        "value": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9+/]{86}==$",
+          "minLength": 88,
+          "maxLength": 88,
+          "contentEncoding": "base64"
+        }
+      }
+    }
+  }
+}

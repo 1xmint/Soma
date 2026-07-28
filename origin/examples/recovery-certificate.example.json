@@ -1,0 +1,202 @@
+{
+  "$schema": "../schemas/recovery-certificate.schema.json",
+  "schema_version": "somavera.recovery-certificate.v1",
+  "certificate_id": "1111111111111111111111111111111111111111111111111111111111111111",
+  "mode": "exact_continuity",
+  "reason": "Example exact-continuity substrate replacement after the former chain satisfied its genesis-bound death predicate.",
+  "old_network_lineage_id": "somavera:network:v1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "new_network_lineage_id": "somavera:network:v1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "old_execution_context_id": "somavera:context:v1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "new_execution_context_id": "somavera:context:v1:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+  "old_context_epoch": 0,
+  "new_context_epoch": 1,
+  "last_checkpoint_id": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "last_checkpoint_height": 28800,
+  "checkpoint_state_package_id": "9999999999999999999999999999999999999999999999999999999999999999",
+  "imported_state_root": "3333333333333333333333333333333333333333333333333333333333333333",
+  "post_succession_state_root": "5555555555555555555555555555555555555555555555555555555555555555",
+  "old_asset_lineage_id": null,
+  "new_asset_lineage_id": null,
+  "origin_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "protocol_release_hash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "death_policy_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "death_evidence_id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "pre_state_authority": {
+    "source": "reproduced_checkpoint_pre_state",
+    "checkpoint_id": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "height": 28800,
+    "public_state_root": "3333333333333333333333333333333333333333333333333333333333333333",
+    "governance_manifest_hash": "91afde8f059219e2f135c42c0c3e10b8cd2e3289954bb9680137db65bb561c39",
+    "recovery_authority_manifest_hash": "004b5b5ae7b25b85d25f9256b3fb95087e83ab8f0184a24d6e4732fb48c80760",
+    "validator_set_hash": "5555555555555555555555555555555555555555555555555555555555555555",
+    "key_history_hash": "7777777777777777777777777777777777777777777777777777777777777777"
+  },
+  "successor_genesis_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+  "successor_binding_hash": "6666666666666666666666666666666666666666666666666666666666666666",
+  "recovery_succession_transition_hash": "8888888888888888888888888888888888888888888888888888888888888888",
+  "governance_decision_hash": "4444444444444444444444444444444444444444444444444444444444444444",
+  "challenge_started_at": "2028-05-08T00:00:00Z",
+  "challenge_ends_at": "2028-08-06T00:00:00Z",
+  "activation_not_before": "2028-08-06T00:00:00Z",
+  "conflict_abort_status": {
+    "checked_through": "2028-08-06T00:00:00Z",
+    "fresh_finality_detected": false,
+    "conflicting_finality_detected": false,
+    "competing_succession_detected": false,
+    "abort_on_later_valid_proof": true
+  },
+  "successor_target_keys": [
+    {
+      "purpose": "operational_validator",
+      "key_id": "did:key:successor-validator-1#key-1",
+      "public_key": "FBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQ=",
+      "suite": "Ed25519-v1",
+      "proof_of_possession": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+      "counts_toward_authorization": false
+    },
+    {
+      "purpose": "recovery_guardian",
+      "key_id": "did:key:successor-recovery-1#key-1",
+      "public_key": "FRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRU=",
+      "suite": "Ed25519-v1",
+      "proof_of_possession": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+      "counts_toward_authorization": false
+    },
+    {
+      "purpose": "substrate_binding",
+      "key_id": "did:key:successor-substrate-1#key-1",
+      "public_key": "FhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhY=",
+      "suite": "Ed25519-v1",
+      "proof_of_possession": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+      "counts_toward_authorization": false
+    }
+  ],
+  "ratification_signatures": [
+    {
+      "role": "recovery_guardian",
+      "authority_source": "checkpoint_pre_state",
+      "authority_manifest_hash": "004b5b5ae7b25b85d25f9256b3fb95087e83ab8f0184a24d6e4732fb48c80760",
+      "key_id": "did:key:recovery-guardian-1#key-1",
+      "controller_id": "controller-recovery-guardian-1",
+      "suite": "Ed25519-v1",
+      "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    },
+    {
+      "role": "recovery_guardian",
+      "authority_source": "checkpoint_pre_state",
+      "authority_manifest_hash": "004b5b5ae7b25b85d25f9256b3fb95087e83ab8f0184a24d6e4732fb48c80760",
+      "key_id": "did:key:recovery-guardian-2#key-1",
+      "controller_id": "controller-recovery-guardian-2",
+      "suite": "Ed25519-v1",
+      "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    },
+    {
+      "role": "recovery_guardian",
+      "authority_source": "checkpoint_pre_state",
+      "authority_manifest_hash": "004b5b5ae7b25b85d25f9256b3fb95087e83ab8f0184a24d6e4732fb48c80760",
+      "key_id": "did:key:recovery-guardian-3#key-1",
+      "controller_id": "controller-recovery-guardian-3",
+      "suite": "Ed25519-v1",
+      "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    },
+    {
+      "role": "recovery_guardian",
+      "authority_source": "checkpoint_pre_state",
+      "authority_manifest_hash": "004b5b5ae7b25b85d25f9256b3fb95087e83ab8f0184a24d6e4732fb48c80760",
+      "key_id": "did:key:recovery-guardian-4#key-1",
+      "controller_id": "controller-recovery-guardian-4",
+      "suite": "Ed25519-v1",
+      "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    },
+    {
+      "role": "recovery_guardian",
+      "authority_source": "checkpoint_pre_state",
+      "authority_manifest_hash": "004b5b5ae7b25b85d25f9256b3fb95087e83ab8f0184a24d6e4732fb48c80760",
+      "key_id": "did:key:recovery-guardian-5#key-1",
+      "controller_id": "controller-recovery-guardian-5",
+      "suite": "Ed25519-v1",
+      "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    },
+    {
+      "role": "economic_chamber",
+      "authority_source": "checkpoint_pre_state",
+      "authority_manifest_hash": "91afde8f059219e2f135c42c0c3e10b8cd2e3289954bb9680137db65bb561c39",
+      "key_id": "did:key:bootstrap-economic-1#key-1",
+      "controller_id": "controller-bootstrap-economic-1",
+      "suite": "Ed25519-v1",
+      "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    },
+    {
+      "role": "economic_chamber",
+      "authority_source": "checkpoint_pre_state",
+      "authority_manifest_hash": "91afde8f059219e2f135c42c0c3e10b8cd2e3289954bb9680137db65bb561c39",
+      "key_id": "did:key:bootstrap-economic-2#key-1",
+      "controller_id": "controller-bootstrap-economic-2",
+      "suite": "Ed25519-v1",
+      "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    },
+    {
+      "role": "economic_chamber",
+      "authority_source": "checkpoint_pre_state",
+      "authority_manifest_hash": "91afde8f059219e2f135c42c0c3e10b8cd2e3289954bb9680137db65bb561c39",
+      "key_id": "did:key:bootstrap-economic-3#key-1",
+      "controller_id": "controller-bootstrap-economic-3",
+      "suite": "Ed25519-v1",
+      "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    },
+    {
+      "role": "operator_contributor_chamber",
+      "authority_source": "checkpoint_pre_state",
+      "authority_manifest_hash": "91afde8f059219e2f135c42c0c3e10b8cd2e3289954bb9680137db65bb561c39",
+      "key_id": "did:key:bootstrap-operator-1#key-1",
+      "controller_id": "controller-bootstrap-operator-1",
+      "suite": "Ed25519-v1",
+      "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    },
+    {
+      "role": "operator_contributor_chamber",
+      "authority_source": "checkpoint_pre_state",
+      "authority_manifest_hash": "91afde8f059219e2f135c42c0c3e10b8cd2e3289954bb9680137db65bb561c39",
+      "key_id": "did:key:bootstrap-operator-2#key-1",
+      "controller_id": "controller-bootstrap-operator-2",
+      "suite": "Ed25519-v1",
+      "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    },
+    {
+      "role": "operator_contributor_chamber",
+      "authority_source": "checkpoint_pre_state",
+      "authority_manifest_hash": "91afde8f059219e2f135c42c0c3e10b8cd2e3289954bb9680137db65bb561c39",
+      "key_id": "did:key:bootstrap-operator-3#key-1",
+      "controller_id": "controller-bootstrap-operator-3",
+      "suite": "Ed25519-v1",
+      "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    },
+    {
+      "role": "public_data_rights_chamber",
+      "authority_source": "checkpoint_pre_state",
+      "authority_manifest_hash": "91afde8f059219e2f135c42c0c3e10b8cd2e3289954bb9680137db65bb561c39",
+      "key_id": "did:key:bootstrap-rights-1#key-1",
+      "controller_id": "controller-bootstrap-rights-1",
+      "suite": "Ed25519-v1",
+      "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    },
+    {
+      "role": "public_data_rights_chamber",
+      "authority_source": "checkpoint_pre_state",
+      "authority_manifest_hash": "91afde8f059219e2f135c42c0c3e10b8cd2e3289954bb9680137db65bb561c39",
+      "key_id": "did:key:bootstrap-rights-2#key-1",
+      "controller_id": "controller-bootstrap-rights-2",
+      "suite": "Ed25519-v1",
+      "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    },
+    {
+      "role": "public_data_rights_chamber",
+      "authority_source": "checkpoint_pre_state",
+      "authority_manifest_hash": "91afde8f059219e2f135c42c0c3e10b8cd2e3289954bb9680137db65bb561c39",
+      "key_id": "did:key:bootstrap-rights-3#key-1",
+      "controller_id": "controller-bootstrap-rights-3",
+      "suite": "Ed25519-v1",
+      "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    }
+  ]
+}

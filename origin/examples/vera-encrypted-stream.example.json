@@ -1,0 +1,61 @@
+{
+  "$schema": "../schemas/vera-encrypted-stream.schema.json",
+  "schema_version": "somavera.vera-encrypted-stream.v1",
+  "profile_status": "freeze_blocking_draft",
+  "outer_envelope": {
+    "schema_version": "somavera.vera-application-envelope.v1",
+    "profile_status": "freeze_blocking_draft",
+    "envelope_id": "1212121212121212121212121212121212121212121212121212121212121212",
+    "network_lineage_id": "somavera:network:v1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "execution_context_id": "somavera:context:v1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "sender_did": "did:key:example-soma-agent",
+    "destination_host_did": "did:key:example-vera-host",
+    "recipient_ingestion_key_id": "did:key:example-vera-host#ingestion-1",
+    "inner_event_id": "1313131313131313131313131313131313131313131313131313131313131313",
+    "consent_grant_id": null,
+    "stream_id": "1414141414141414141414141414141414141414141414141414141414141414",
+    "ciphertext_root": "1515151515151515151515151515151515151515151515151515151515151515",
+    "plaintext_bytes": 2,
+    "outer_nonce": "1234567890abcdef1234567890abcdef",
+    "issued_at": "2027-01-01T00:00:00Z",
+    "expires_at": "2027-01-01T00:05:00Z",
+    "signing_key_id": "did:key:example-soma-agent#signing-1",
+    "signature": {
+      "suite": "Ed25519-v1",
+      "key_id": "did:key:example-soma-agent#signing-1",
+      "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    }
+  },
+  "stream_header": {
+    "schema_version": "somavera.vera-encrypted-stream-header.v1",
+    "profile_status": "freeze_blocking_draft",
+    "stream_id": "1414141414141414141414141414141414141414141414141414141414141414",
+    "network_lineage_id": "somavera:network:v1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "execution_context_id": "somavera:context:v1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "sender_did": "did:key:example-soma-agent",
+    "destination_host_did": "did:key:example-vera-host",
+    "recipient_ingestion_key_id": "did:key:example-vera-host#ingestion-1",
+    "inner_event_id": "1313131313131313131313131313131313131313131313131313131313131313",
+    "consent_grant_id": null,
+    "outer_nonce": "1234567890abcdef1234567890abcdef",
+    "issued_at": "2027-01-01T00:00:00Z",
+    "expires_at": "2027-01-01T00:05:00Z",
+    "hpke_suite": "HPKE-Base-X25519-HKDF-SHA256-AES256GCM-v1",
+    "hpke_enc": "AwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwM=",
+    "wrapped_object_dek": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "chunk_bytes": 65536,
+    "chunk_count": 1,
+    "plaintext_bytes": 2,
+    "aad_hash": "1717171717171717171717171717171717171717171717171717171717171717",
+    "ciphertext_root": "1515151515151515151515151515151515151515151515151515151515151515"
+  },
+  "chunks": [
+    {
+      "index": 0,
+      "plaintext_bytes": 2,
+      "nonce": "BAQEBAQEBAQEBAQE",
+      "ciphertext_hash": "1818181818181818181818181818181818181818181818181818181818181818",
+      "ciphertext": "AAAAAAAAAAAAAAAAAAAAAAAA"
+    }
+  ]
+}

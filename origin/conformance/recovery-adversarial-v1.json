@@ -1,0 +1,18 @@
+{
+  "schema_version": "somavera.recovery-adversarial.v1",
+  "cases": [
+    { "name": "missing state chunk", "mutation": "remove_state_chunk", "expected_codes": ["STATE_CHUNK_COUNT_MISMATCH"] },
+    { "name": "missing replay chunk", "mutation": "remove_replay_chunk", "expected_codes": ["REPLAY_CHUNK_COUNT_MISMATCH"] },
+    { "name": "reordered state chunks", "mutation": "swap_state_chunks", "expected_codes": ["STATE_CHUNK_ORDER_INVALID"] },
+    { "name": "corrupt fetched chunk", "mutation": "corrupt_fetch_hash", "expected_codes": ["FETCH_HASH_MISMATCH"] },
+    { "name": "successor key authorizes itself", "mutation": "self_authorize_successor_key", "expected_codes": ["SUCCESSOR_KEY_SELF_AUTHORIZATION", "SIGNER_NOT_PRESTATE_AUTHORIZED"] },
+    { "name": "recovery threshold minus one", "mutation": "remove_guardian_signature", "expected_codes": ["RECOVERY_GUARDIAN_THRESHOLD_NOT_MET"] },
+    { "name": "stale finality observation", "mutation": "stale_finality_observation", "expected_codes": ["FINALITY_OBSERVATION_STALE"] },
+    { "name": "late fresh finality", "mutation": "late_fresh_finality", "expected_codes": ["LATE_FRESH_FINALITY_ABORT"] },
+    { "name": "conflicting finality", "mutation": "conflicting_finality", "expected_codes": ["CONFLICTING_FINALITY_ABORT"] },
+    { "name": "mismatched validator set", "mutation": "mismatched_validator_set", "expected_codes": ["AUTHORITY_VALIDATOR_SET_MISMATCH"] },
+    { "name": "substituted governance manifest", "mutation": "substituted_governance_manifest", "expected_codes": ["AUTHORITY_GOVERNANCE_MANIFEST_MISMATCH"] },
+    { "name": "substituted recovery manifest", "mutation": "substituted_recovery_manifest", "expected_codes": ["AUTHORITY_RECOVERY_MANIFEST_MISMATCH"] },
+    { "name": "package and certificate authority substitution", "mutation": "joint_authority_substitution", "expected_codes": ["AUTHORITY_GOVERNANCE_MANIFEST_MISMATCH", "CERTIFICATE_PRESTATE_AUTHORITY_MISMATCH"] }
+  ]
+}

@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:somavera:schema:recovery-authority:v1",
+  "title": "Somavera Recovery Authority Manifest v1",
+  "$comment": "This manifest is materialized in checkpoint pre-state. The exact threshold counts distinct active checkpoint-era controllers; proposed successor keys never count.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "origin_hash",
+    "protocol_release_hash",
+    "purpose",
+    "valid_from_height",
+    "expires_at_height",
+    "threshold_count",
+    "minimum_distinct_controllers",
+    "minimum_distinct_organizations",
+    "minimum_distinct_jurisdictions",
+    "controller_reuse_allowed",
+    "self_extension_allowed",
+    "successor_target_keys_may_authorize",
+    "guardians"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": { "const": "somavera.recovery-authority.v1" },
+    "origin_hash": { "$ref": "#/$defs/hash" },
+    "protocol_release_hash": { "$ref": "#/$defs/hash" },
+    "purpose": { "const": "exact_continuity_succession_only" },
+    "valid_from_height": { "type": "integer", "minimum": 0 },
+    "expires_at_height": { "type": "integer", "minimum": 1 },
+    "threshold_count": { "type": "integer", "minimum": 3, "maximum": 100 },
+    "minimum_distinct_controllers": { "type": "integer", "minimum": 3, "maximum": 100 },
+    "minimum_distinct_organizations": { "type": "integer", "minimum": 3, "maximum": 100 },
+    "minimum_distinct_jurisdictions": { "type": "integer", "minimum": 2, "maximum": 100 },
+    "controller_reuse_allowed": { "const": false },
+    "self_extension_allowed": { "const": false },
+    "successor_target_keys_may_authorize": { "const": false },
+    "guardians": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 100,
+      "items": { "$ref": "#/$defs/guardian" }
+    }
+  },
+  "$defs": {
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "guardian": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "guardian_id",
+        "key_id",
+        "public_key",
+        "controller_id",
+        "organization_id",
+        "jurisdiction",
+        "purpose",
+        "valid_from_height",
+        "expires_at_height",
+        "active"
+      ],
+      "properties": {
+        "guardian_id": { "type": "string", "minLength": 3, "maxLength": 256 },
+        "key_id": { "type": "string", "minLength": 3, "maxLength": 512 },
+        "public_key": {
+          "type": "string",
+          "contentEncoding": "base64",
+          "minLength": 40,
+          "maxLength": 48
+        },
+        "controller_id": { "type": "string", "minLength": 3, "maxLength": 256 },
+        "organization_id": { "type": "string", "minLength": 3, "maxLength": 256 },
+        "jurisdiction": { "type": "string", "minLength": 2, "maxLength": 128 },
+        "purpose": { "const": "exact_continuity_succession" },
+        "valid_from_height": { "type": "integer", "minimum": 0 },
+        "expires_at_height": { "type": "integer", "minimum": 1 },
+        "active": { "const": true }
+      }
+    }
+  }
+}

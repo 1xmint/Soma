@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:somavera:schema:preactivation-governance:v1",
+  "title": "Somavera Preactivation Bootstrap Governance Manifest v1",
+  "$comment": "The manifest hash is domain-separated over the canonical semantic core, which is every manifest field except the optional transport-only $schema locator. expires_at_height is the absolute, non-self-extendable sunset. Cross-seat controller, organization, threshold, and signature-set invariants require semantic conformance checks.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "proposal_class",
+    "valid_from_height",
+    "expires_at_height",
+    "chambers",
+    "seats"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": { "const": "somavera.preactivation-governance.v1" },
+    "proposal_class": { "const": "G2" },
+    "valid_from_height": { "type": "integer", "minimum": 0 },
+    "expires_at_height": { "type": "integer", "minimum": 1 },
+    "chambers": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": { "$ref": "#/$defs/chamber" }
+    },
+    "seats": {
+      "type": "array",
+      "minItems": 12,
+      "maxItems": 300,
+      "items": { "$ref": "#/$defs/seat" }
+    }
+  },
+  "$defs": {
+    "chamber_name": {
+      "enum": ["economic", "operator_contributor", "public_data_rights"]
+    },
+    "chamber": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["chamber", "quorum_basis_points", "approval_basis_points"],
+      "properties": {
+        "chamber": { "$ref": "#/$defs/chamber_name" },
+        "quorum_basis_points": { "type": "integer", "minimum": 7500, "maximum": 10000 },
+        "approval_basis_points": { "type": "integer", "minimum": 7500, "maximum": 10000 }
+      }
+    },
+    "seat": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "chamber",
+        "key_id",
+        "public_key",
+        "voting_weight",
+        "active",
+        "controller_id",
+        "organization_id"
+      ],
+      "properties": {
+        "chamber": { "$ref": "#/$defs/chamber_name" },
+        "key_id": { "type": "string", "minLength": 3, "maxLength": 512 },
+        "public_key": {
+          "type": "string",
+          "contentEncoding": "base64",
+          "minLength": 40,
+          "maxLength": 48
+        },
+        "voting_weight": { "type": "string", "pattern": "^[1-9][0-9]*$" },
+        "active": { "const": true },
+        "controller_id": { "type": "string", "minLength": 3, "maxLength": 256 },
+        "organization_id": { "type": "string", "minLength": 3, "maxLength": 256 }
+      }
+    }
+  }
+}

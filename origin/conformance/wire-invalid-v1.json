@@ -1,0 +1,158 @@
+{
+  "schema_version": "somavera.wire-invalid-vectors.v1",
+  "description": "Mutation vectors. Each base example is valid; every mutation must be rejected by strict shape or cross-field semantics.",
+  "cases": [
+    {
+      "name": "descriptor discovery path substitution",
+      "base_example": "vera-host-descriptor.example.json",
+      "schema": "vera-host-descriptor.schema.json",
+      "validation": "schema",
+      "mutations": [{ "op": "replace", "path": "/discovery/path", "value": "/vera-host.json" }],
+      "expected": "schema constant"
+    },
+    {
+      "name": "descriptor reuses signing ID as ingestion ID",
+      "base_example": "vera-host-descriptor.example.json",
+      "schema": "vera-host-descriptor.schema.json",
+      "validation": "semantic",
+      "mutations": [{ "op": "replace", "path": "/active_ingestion_key_id", "value": "did:key:example-vera-host#signing-1" }],
+      "expected": "WIRE_KEY_ROLE_REUSE"
+    },
+    {
+      "name": "descriptor omits a private action",
+      "base_example": "vera-host-descriptor.example.json",
+      "schema": "vera-host-descriptor.schema.json",
+      "validation": "schema",
+      "mutations": [{ "op": "remove", "path": "/capabilities/private_request_actions/9" }],
+      "expected": "fewer than minItems"
+    },
+    {
+      "name": "descriptor capability limit contradicts endpoint",
+      "base_example": "vera-host-descriptor.example.json",
+      "schema": "vera-host-descriptor.schema.json",
+      "validation": "semantic",
+      "mutations": [{ "op": "replace", "path": "/capability_limits/maximum_contribution_plaintext_bytes", "value": 131072 }],
+      "expected": "WIRE_LIMIT_BINDING_MISMATCH"
+    },
+    {
+      "name": "descriptor enables undisclosed model inference",
+      "base_example": "vera-host-descriptor.example.json",
+      "schema": "vera-host-descriptor.schema.json",
+      "validation": "schema",
+      "mutations": [{ "op": "replace", "path": "/model_use_disclosure/inference_enabled", "value": true }],
+      "expected": "schema constant"
+    },
+    {
+      "name": "return descriptor circular request event field",
+      "base_example": "return-encryption-descriptor.example.json",
+      "schema": "return-encryption-descriptor.schema.json",
+      "validation": "schema",
+      "mutations": [{ "op": "add", "path": "/request_event_id", "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" }],
+      "expected": "unknown property"
+    },
+    {
+      "name": "query return descriptor authorizes contribution response",
+      "base_example": "return-encryption-descriptor.example.json",
+      "schema": "return-encryption-descriptor.schema.json",
+      "validation": "schema",
+      "mutations": [{ "op": "replace", "path": "/allowed_response_actions/0", "value": "contribution.accepted" }],
+      "expected": "allowed enum"
+    },
+    {
+      "name": "clear request plaintext fingerprint",
+      "base_example": "vera-application-envelope.example.json",
+      "schema": "vera-application-envelope.schema.json",
+      "validation": "schema",
+      "mutations": [{ "op": "add", "path": "/plaintext_content_hash", "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" }],
+      "expected": "unknown property"
+    },
+    {
+      "name": "stream outer and header context mismatch",
+      "base_example": "vera-encrypted-stream.example.json",
+      "schema": "vera-encrypted-stream.schema.json",
+      "validation": "semantic",
+      "mutations": [{ "op": "replace", "path": "/stream_header/execution_context_id", "value": "somavera:context:v1:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" }],
+      "expected": "WIRE_BINDING_MISMATCH"
+    },
+    {
+      "name": "stream chunk count mismatch",
+      "base_example": "vera-encrypted-stream.example.json",
+      "schema": "vera-encrypted-stream.schema.json",
+      "validation": "semantic",
+      "mutations": [{ "op": "replace", "path": "/stream_header/chunk_count", "value": 2 }],
+      "expected": "WIRE_CHUNK_COUNT"
+    },
+    {
+      "name": "clear response plaintext fingerprint",
+      "base_example": "vera-encrypted-response.example.json",
+      "schema": "vera-encrypted-response.schema.json",
+      "validation": "schema",
+      "mutations": [{ "op": "add", "path": "/content_hash", "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" }],
+      "expected": "unknown property"
+    },
+    {
+      "name": "response return commitment substitution",
+      "base_example": "vera-encrypted-response.example.json",
+      "schema": "vera-encrypted-response.schema.json",
+      "validation": "semantic",
+      "mutations": [{ "op": "replace", "path": "/return_key_commitment", "value": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" }],
+      "expected": "WIRE_RETURN_COMMITMENT"
+    },
+    {
+      "name": "accepted acknowledgement claims no mutation",
+      "base_example": "vera-contribution-acknowledgement.example.json",
+      "schema": "vera-contribution-acknowledgement.schema.json",
+      "validation": "schema",
+      "mutations": [{ "op": "replace", "path": "/authoritative_mutation", "value": false }],
+      "expected": "oneOf"
+    },
+    {
+      "name": "acknowledgement signing key mismatch",
+      "base_example": "vera-contribution-acknowledgement.example.json",
+      "schema": "vera-contribution-acknowledgement.schema.json",
+      "validation": "semantic",
+      "mutations": [{ "op": "replace", "path": "/signature/key_id", "value": "did:key:example-vera-host#signing-2" }],
+      "expected": "WIRE_SIGNING_KEY_MISMATCH"
+    },
+    {
+      "name": "root query delegation claims a parent",
+      "base_example": "query-delegation.example.json",
+      "schema": "query-delegation.schema.json",
+      "validation": "schema",
+      "mutations": [{ "op": "replace", "path": "/parent_delegation_id", "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" }],
+      "expected": "oneOf"
+    },
+    {
+      "name": "answer cites missing source",
+      "base_example": "vera-answer-source-bundle.example.json",
+      "schema": "vera-answer-source-bundle.schema.json",
+      "validation": "semantic",
+      "mutations": [{ "op": "replace", "path": "/citations/0/source_id", "value": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" }],
+      "expected": "WIRE_CITATION_SOURCE_MISSING"
+    },
+    {
+      "name": "delegated answer omits delegation",
+      "base_example": "vera-answer-source-bundle.example.json",
+      "schema": "vera-answer-source-bundle.schema.json",
+      "validation": "schema",
+      "mutations": [{ "op": "replace", "path": "/query_authority/delegation_id", "value": null }],
+      "expected": "oneOf"
+    },
+    {
+      "name": "acknowledgement request and contribution mismatch",
+      "base_example": "vera-contribution-acknowledgement.example.json",
+      "schema": "vera-contribution-acknowledgement.schema.json",
+      "validation": "semantic",
+      "mutations": [{ "op": "replace", "path": "/request_event_id", "value": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" }],
+      "expected": "WIRE_ACK_REQUEST_BINDING_MISMATCH"
+    },
+    {
+      "name": "legacy nested received envelope alias",
+      "base_example": "vera-contribution-acknowledgement.example.json",
+      "schema": "vera-contribution-acknowledgement.schema.json",
+      "validation": "schema",
+      "mutations": [{ "op": "add", "path": "/received_envelope", "value": {} }],
+      "expected": "unknown property"
+    }
+  ]
+}

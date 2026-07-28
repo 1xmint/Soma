@@ -1,0 +1,177 @@
+# Counter-signed receipts — v1 (draft)
+
+Status: **draft, not ratified.** This document is the reasoning; `js/src/receipt.mjs`
+is the mechanism.
+
+This is the load-bearing property of Soma: *an agent cannot fake trust without
+the evidence being obvious.* Everything else in the system — Vera's corpus, the
+marketplace, any future token — assumes it. Until this exists, Soma is an
+identity and consent client, not a trust system.
+
+## What is broken today
+
+Every artifact Soma produces is signed by its own subject. `evidence.mjs` says
+so plainly:
+
+```
+assurance:   "self_signed_attribution_only"
+truth_claim: "signature_proves_attribution_and_integrity_not_truth"
+```
+
+That is accurate and it is worth very little. "I did excellent work" signed by
+me proves only that my key emitted that string. `receipt_ids` is deliberately
+nailed shut (`EVIDENCE_RECEIPTS_UNSUPPORTED`) rather than pretending otherwise,
+which was the right call.
+
+## What a receipt buys, precisely
+
+A receipt is a second party's signed statement *about* a subject's work.
+
+It does **not** make the claim true. It changes who is exposed if it is false:
+the attester is now named, and their own standing is on the line. That is the
+entire mechanism. Attestation transfers stake, it does not manufacture truth.
+
+A receipt therefore proves exactly one thing: **this specific identity said this
+specific thing about this specific work at this specific time.** Everything
+useful is built on top of that by the evaluator, not by the protocol.
+
+## The Sybil problem, stated honestly
+
+Identities are keypairs. Keypairs are free. This has a consequence most
+reputation systems refuse to state:
+
+> **No global reputation score can be Sybil-resistant in an open system with
+> free identities.**
+
+Any global aggregate — a score, a tier, a rank, a count of attestations — can be
+inflated by manufacturing attesters. A parent spawning 500 children is the
+*cheap* version and is detectable, because lineage is cryptographically
+explicit. But an attacker who simply generates 500 unrelated root identities
+produces a graph indistinguishable from 500 genuine strangers. There is no
+algorithm that separates them, because there is no information that separates
+them.
+
+So Soma must not compute a global reputation score. Not "not yet" — not ever,
+under this identity model.
+
+### What replaces it
+
+Reputation is **relative to the evaluator**.
+
+The question is never "what is X's reputation?" It is "how much should *I* trust
+X, given attesters *I* already trust?" Manufactured attesters are not in the
+evaluator's graph, so they contribute nothing. Sybil resistance comes from the
+evaluator's own trust roots, not from detection.
+
+An evaluator with no trust roots gets `insufficient_basis`. **Not zero, and not
+a default score** — the honest answer to "should I trust this stranger, knowing
+nothing and nobody?" is that the system cannot tell you.
+
+## Lineage: label, do not reject
+
+An earlier draft of this design said receipts from within one lineage "count for
+nothing." That is wrong, and the mistake is worth recording.
+
+A parent attesting to its child's work is *genuinely informative* — the parent
+has the most direct knowledge of what the child did. Discarding it destroys real
+information. What it is not is **independent**. The failure mode is a lineage
+receipt being counted as though it came from a stranger.
+
+So independence is computed and labelled, never asserted by the submitter, and
+the protocol refuses to collapse the labels into a number.
+
+| Label | Meaning |
+|---|---|
+| `self` | attester equals subject. **Rejected** — this is not a receipt |
+| `shared_lineage` | attester and subject share an ancestor, or one is an ancestor of the other. Informative, not independent |
+| `no_known_common_ancestor` | no shared ancestor is visible |
+
+That third label is deliberately not called "independent." Roots are free, so
+the absence of a known common ancestor is not evidence of independence — only
+the absence of evidence of relation. Naming it "independent" would launder an
+unknown into a guarantee, which is the exact failure this whole document exists
+to prevent.
+
+## Receipt structure
+
+Signed bytes follow the convention already used across Soma's twelve signing
+contexts:
+
+```
+signed_bytes = "somavera:soma-work-receipt:v1\n" || canonical_json(receipt_core)
+```
+
+`receipt_core` carries exactly:
+
+| Field | Rule |
+|---|---|
+| `attester_did` | Who is attesting. Must differ from `subject_did` |
+| `capability` | The capability exercised |
+| `claim_hash` | Hash of the claim being attested |
+| `domain` | The domain of work |
+| `issued_at` | RFC 3339 UTC, second precision |
+| `observed_at` | When the attester observed the work. Not after `issued_at` |
+| `outcome` | `succeeded`, `failed`, or `disputed` |
+| `schema_version` | `soma.work-receipt.provisional-v1` |
+| `subject_did` | Whose work is attested |
+| `task_id` | The task |
+
+`receipt_id` is **derived** from the canonical bytes, never asserted — matching
+how Soma derives every other identifier. A submitter cannot choose it, so it
+cannot be used as a covert channel or collided deliberately.
+
+`outcome` includes `failed` and `disputed` on purpose. A system that can only
+record success produces reputation that is meaningless by construction, because
+the absence of a receipt is indistinguishable between "never worked" and
+"worked badly."
+
+## The attester's key is never a parameter
+
+Soma DIDs are `did:key:z…`, where the fingerprint is the multibase-encoded
+public key. **The identifier is the key commitment**, so a receipt verifies
+offline with no network, no registry and no key distribution.
+
+The verifier therefore derives the attester's key from `attester_did` and
+refuses to accept one from the caller. An earlier revision took the key as a
+parameter, which meant a receipt naming Alice would verify against Mallory's key
+if the caller supplied it — attribution, the only thing a receipt establishes,
+depended on the caller getting that right.
+
+An attester DID that does not commit to a key is refused outright rather than
+assumed resolvable later. Deferring that check would mean accepting a receipt
+whose attribution cannot be checked at all.
+
+## Verification obligations
+
+A conforming verifier:
+
+1. Recomputes canonical bytes from the parsed receipt. Never verifies over
+   received bytes.
+2. Rejects `attester_did === subject_did` **before** checking the signature. A
+   self-receipt is malformed, not merely unauthorized, and saying so costs
+   nothing and leaks nothing.
+3. Verifies Ed25519 against the key committed to by `attester_did`.
+4. Recomputes `receipt_id` and rejects a mismatch.
+5. Rejects `observed_at` after `issued_at`.
+6. Computes the independence label from lineage. Never reads it from input.
+
+## What this deliberately does not do
+
+- **No score.** No tier, rank, percentage, or star rating anywhere in the protocol.
+- **No aggregation.** Combining receipts is evaluator policy, above the protocol.
+- **No global registry.** There is no canonical list of receipts to consult, and
+  therefore nothing to capture.
+- **No truth claim.** A receipt records that someone said something. Whether it
+  is true is not a cryptographic question.
+
+## Open questions
+
+- Should receipts be revocable by their attester? An attester who learns they
+  were deceived has no way to withdraw. Revocation needs a distribution
+  mechanism, which needs the network layer that does not exist yet.
+- Should a subject be able to decline a receipt about itself? A malicious
+  attester can currently attach a `failed` receipt to any DID. Since nothing
+  aggregates, this is inert today, but it will not stay inert.
+- Cross-lineage collusion between unrelated roots is indistinguishable from
+  genuine mutual attestation. This is not solvable at the protocol layer and
+  should not be claimed as solved.

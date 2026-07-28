@@ -1,0 +1,256 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:somavera:schema:economic-simulation-suite:v1",
+  "title": "Somavera Economic Simulation Suite v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "engine_profile",
+    "corpus_status",
+    "quote_unit_id",
+    "activation_evidence",
+    "limits",
+    "required_coverage",
+    "profiles",
+    "scenarios"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": { "const": "somavera.economic-simulation-suite.v1" },
+    "engine_profile": { "const": "somavera-economic-simulator-integer-v1" },
+    "corpus_status": {
+      "enum": [
+        "synthetic_unattested",
+        "empirical_independently_attested"
+      ]
+    },
+    "quote_unit_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._:-]{2,127}$"
+    },
+    "activation_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "launch_gates",
+        "security_review_hash",
+        "economic_review_hash",
+        "privacy_review_hash",
+        "legal_review_hash",
+        "recovery_report_hash",
+        "independent_attestation_hash"
+      ],
+      "properties": {
+        "launch_gates": { "enum": ["not_passed", "passed"] },
+        "security_review_hash": { "$ref": "#/$defs/nullableHash" },
+        "economic_review_hash": { "$ref": "#/$defs/nullableHash" },
+        "privacy_review_hash": { "$ref": "#/$defs/nullableHash" },
+        "legal_review_hash": { "$ref": "#/$defs/nullableHash" },
+        "recovery_report_hash": { "$ref": "#/$defs/nullableHash" },
+        "independent_attestation_hash": { "$ref": "#/$defs/nullableHash" }
+      }
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "minimum_validator_cost_coverage_basis_points",
+        "maximum_fee_burden_basis_points",
+        "maximum_validator_controller_share_basis_points",
+        "maximum_host_controller_share_basis_points",
+        "maximum_sybil_claim_share_basis_points"
+      ],
+      "properties": {
+        "minimum_validator_cost_coverage_basis_points": {
+          "type": "integer",
+          "minimum": 10000,
+          "maximum": 100000
+        },
+        "maximum_fee_burden_basis_points": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "maximum_validator_controller_share_basis_points": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3333
+        },
+        "maximum_host_controller_share_basis_points": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000
+        },
+        "maximum_sybil_claim_share_basis_points": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        }
+      }
+    },
+    "required_coverage": {
+      "type": "array",
+      "minItems": 20,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/tag" }
+    },
+    "profiles": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 64,
+      "items": { "$ref": "#/$defs/profile" }
+    },
+    "scenarios": {
+      "type": "array",
+      "minItems": 10,
+      "maxItems": 256,
+      "items": { "$ref": "#/$defs/scenario" }
+    }
+  },
+  "$defs": {
+    "uint": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)$"
+    },
+    "hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "nullableHash": {
+      "oneOf": [
+        { "$ref": "#/$defs/hash" },
+        { "type": "null" }
+      ]
+    },
+    "tag": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_]{2,63}$"
+    },
+    "basisPointShares": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1000,
+      "items": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 10000
+      }
+    },
+    "profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile_id",
+        "architecture",
+        "token_decimals",
+        "network_fee_grain_per_service_unit",
+        "validator_fee_share_basis_points",
+        "validator_issuance_grain_per_period",
+        "external_security_budget_quote_microunits_per_period",
+        "native_bond_requirement_grain",
+        "public_intelligence_requires_native_token",
+        "identity_consent_export_or_exit_requires_native_token"
+      ],
+      "properties": {
+        "profile_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"
+        },
+        "architecture": {
+          "enum": ["no_native_token", "native_token"]
+        },
+        "token_decimals": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 18
+        },
+        "network_fee_grain_per_service_unit": { "$ref": "#/$defs/uint" },
+        "validator_fee_share_basis_points": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "validator_issuance_grain_per_period": { "$ref": "#/$defs/uint" },
+        "external_security_budget_quote_microunits_per_period": { "$ref": "#/$defs/uint" },
+        "native_bond_requirement_grain": { "$ref": "#/$defs/uint" },
+        "public_intelligence_requires_native_token": { "type": "boolean" },
+        "identity_consent_export_or_exit_requires_native_token": { "type": "boolean" }
+      }
+    },
+    "scenario": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scenario_id",
+        "coverage_tags",
+        "service_units",
+        "service_value_quote_microunits_per_unit",
+        "token_price_quote_microunits_per_whole_token",
+        "validator_operating_cost_quote_microunits",
+        "safe_service_capacity_units",
+        "validator_controller_shares_basis_points",
+        "host_controller_shares_basis_points",
+        "hostile_validator_power_basis_points",
+        "hostile_host_share_basis_points",
+        "sybil_claim_share_basis_points",
+        "issuance_claim_basis_points",
+        "direct_native_fee_access",
+        "paymaster_available",
+        "external_liquidity_available",
+        "external_settlement_available",
+        "bootstrap_status",
+        "succession_status"
+      ],
+      "properties": {
+        "scenario_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"
+        },
+        "coverage_tags": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/tag" }
+        },
+        "service_units": { "$ref": "#/$defs/uint" },
+        "service_value_quote_microunits_per_unit": { "$ref": "#/$defs/uint" },
+        "token_price_quote_microunits_per_whole_token": { "$ref": "#/$defs/uint" },
+        "validator_operating_cost_quote_microunits": { "$ref": "#/$defs/uint" },
+        "safe_service_capacity_units": { "$ref": "#/$defs/uint" },
+        "validator_controller_shares_basis_points": { "$ref": "#/$defs/basisPointShares" },
+        "host_controller_shares_basis_points": { "$ref": "#/$defs/basisPointShares" },
+        "hostile_validator_power_basis_points": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "hostile_host_share_basis_points": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "sybil_claim_share_basis_points": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "issuance_claim_basis_points": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "direct_native_fee_access": { "type": "boolean" },
+        "paymaster_available": { "type": "boolean" },
+        "external_liquidity_available": { "type": "boolean" },
+        "external_settlement_available": { "type": "boolean" },
+        "bootstrap_status": {
+          "enum": ["within_window", "sunset_passed", "sunset_missed"]
+        },
+        "succession_status": {
+          "enum": ["not_applicable", "exact_single_context", "ambiguous_double_spend"]
+        }
+      }
+    }
+  }
+}

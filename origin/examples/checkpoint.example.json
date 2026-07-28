@@ -1,0 +1,49 @@
+{
+  "$schema": "../schemas/checkpoint.schema.json",
+  "schema_version": "somavera.checkpoint.v1",
+  "checkpoint_id": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "network_lineage_id": "somavera:network:v1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "execution_context_id": "somavera:context:v1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "context_epoch": 0,
+  "height": 28800,
+  "finalized_at": "2027-01-02T00:00:00Z",
+  "block_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+  "app_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+  "public_state_root": "3333333333333333333333333333333333333333333333333333333333333333",
+  "balances_root": "4444444444444444444444444444444444444444444444444444444444444444",
+  "live_supply_grain": "0",
+  "lifetime_minted_grain": "0",
+  "lifetime_burned_grain": "0",
+  "validator_set_hash": "5555555555555555555555555555555555555555555555555555555555555555",
+  "governance_state_hash": "6666666666666666666666666666666666666666666666666666666666666666",
+  "governance_manifest_hash": "91afde8f059219e2f135c42c0c3e10b8cd2e3289954bb9680137db65bb561c39",
+  "recovery_authority_manifest_hash": "004b5b5ae7b25b85d25f9256b3fb95087e83ab8f0184a24d6e4732fb48c80760",
+  "key_history_hash": "7777777777777777777777777777777777777777777777777777777777777777",
+  "protocol_release_hash": "7777777777777777777777777777777777777777777777777777777777777777",
+  "origin_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "asset_lineage_id": null,
+  "public_artifact_roots": [
+    "8888888888888888888888888888888888888888888888888888888888888888"
+  ],
+  "previous_checkpoint_id": null,
+  "external_anchors": [
+    {
+      "uri": "https://mirror-one.example.invalid/checkpoints/28800",
+      "reference": "example-anchor-one",
+      "anchored_at": "2027-01-02T00:01:00Z"
+    },
+    {
+      "uri": "https://mirror-two.example.invalid/checkpoints/28800",
+      "reference": "example-anchor-two",
+      "anchored_at": "2027-01-02T00:02:00Z"
+    }
+  ],
+  "finality_signatures": [
+    {
+      "validator_id": "did:key:example-validator-1",
+      "suite": "Ed25519-v1",
+      "key_id": "did:key:example-validator-1#key-1",
+      "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    }
+  ]
+}
