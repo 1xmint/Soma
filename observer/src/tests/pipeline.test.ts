@@ -374,8 +374,10 @@ describe('runSubmissionPipeline', () => {
     const identity = generateTestIdentity();
     let submittedCount = 0;
     globalThis.fetch = async (input, init) => {
-      const body = JSON.parse((init as RequestInit).body as string) as { observations: unknown[] };
-      submittedCount = body.observations.length;
+      const body = JSON.parse((init as RequestInit).body as string) as {
+        envelope: { observations: unknown[] };
+      };
+      submittedCount = body.envelope.observations.length;
       return makeJsonResponse(201, {
         batch: {
           id: batchId,
@@ -892,15 +894,15 @@ describe('runArtifactPipeline', () => {
     let submittedRepoPath: string | undefined;
     globalThis.fetch = async (_input, init) => {
       const body = JSON.parse((init as RequestInit).body as string) as {
-        observations: Array<{ content?: { repo_path?: string } }>;
+        envelope: { observations: Array<{ content?: { repo_path?: string } }> };
       };
-      submittedRepoPath = body.observations[0]?.content?.repo_path;
+      submittedRepoPath = body.envelope.observations[0]?.content?.repo_path;
       return makeJsonResponse(201, {
         batch: {
           id: 'artifact-batch-repo-path',
           user_id: 'user-1',
           source_type: 'artifact',
-          observation_count: body.observations.length,
+          observation_count: body.envelope.observations.length,
           created_at: '2026-01-01T00:00:00Z',
         },
       });

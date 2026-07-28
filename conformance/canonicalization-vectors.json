@@ -1,0 +1,145 @@
+{
+  "schema_version": "somavera.vera-canonicalization-vectors.v1",
+  "normative_reference": "RFC 8785 (JCS), with Soma strictness. Reference implementation: js/src/canonicalize.mjs in hey-vera/soma.",
+  "note": "These vectors exist to catch a subtly wrong implementation, not to demonstrate a correct one. Every accept case is chosen because a plausible implementation gets it wrong; every reject case is chosen because a permissive implementation silently repairs it.",
+  "accept": [
+    {
+      "name": "key order is UTF-16 code unit, not locale or insertion",
+      "input": { "b": 1, "a": 2, "C": 3, "\u00e4": 4, "Z": 5 },
+      "canonical": "{\"C\":3,\"Z\":5,\"a\":2,\"b\":1,\"ä\":4}",
+      "catches": "locale-aware sorting, which places 'ä' next to 'a' and lowercases before uppercase"
+    },
+    {
+      "name": "nested objects sort independently at each level",
+      "input": { "z": { "b": 1, "a": 2 }, "a": { "d": 3, "c": 4 } },
+      "canonical": "{\"a\":{\"c\":4,\"d\":3},\"z\":{\"a\":2,\"b\":1}}",
+      "catches": "sorting only the top level"
+    },
+    {
+      "name": "arrays preserve order and are not sorted",
+      "input": { "x": [3, 1, 2] },
+      "canonical": "{\"x\":[3,1,2]}",
+      "catches": "over-eager canonicalization that sorts array elements"
+    },
+    {
+      "name": "integer-valued floats lose the fractional part",
+      "input": { "n": 1.0 },
+      "canonical": "{\"n\":1}",
+      "catches": "implementations that preserve a trailing .0, common in Rust and Python"
+    },
+    {
+      "name": "small magnitude switches to exponential at 1e-7",
+      "input": { "n": 1e-7 },
+      "canonical": "{\"n\":1e-7}",
+      "catches": "no '+' on a negative exponent, and no leading zero padding"
+    },
+    {
+      "name": "shortest round-trip representation, not full precision",
+      "input": { "n": 0.1 },
+      "canonical": "{\"n\":0.1}",
+      "catches": "printing 0.1000000000000000055511151231257827, the exact double value"
+    },
+    {
+      "name": "maximum safe integer is accepted exactly",
+      "input": { "n": 9007199254740991 },
+      "canonical": "{\"n\":9007199254740991}",
+      "catches": "off-by-one in the safe-integer boundary check"
+    },
+    {
+      "name": "solidus is not escaped",
+      "input": { "s": "a/b" },
+      "canonical": "{\"s\":\"a/b\"}",
+      "catches": "implementations that escape / as \\/, which is legal JSON but not canonical"
+    },
+    {
+      "name": "control characters use short forms where they exist",
+      "input": { "s": "\b\t\n\f\r" },
+      "canonical": "{\"s\":\"\\b\\t\\n\\f\\r\"}",
+      "catches": "emitting \\u0008 instead of \\b"
+    },
+    {
+      "name": "control characters without short forms use lowercase hex \\u",
+      "input": { "s": "\u0001\u001f" },
+      "canonical": "{\"s\":\"\\u0001\\u001f\"}",
+      "catches": "uppercase hex digits"
+    },
+    {
+      "name": "non-ASCII is emitted literally, not escaped",
+      "input": { "s": "é日本語" },
+      "canonical": "{\"s\":\"é日本語\"}",
+      "catches": "ASCII-safe output that escapes everything above 0x7f"
+    },
+    {
+      "name": "astral plane characters survive as surrogate pairs",
+      "input": { "s": "🔑" },
+      "canonical": "{\"s\":\"🔑\"}",
+      "catches": "implementations that mishandle characters outside the BMP"
+    },
+    {
+      "name": "empty containers",
+      "input": { "o": {}, "a": [] },
+      "canonical": "{\"a\":[],\"o\":{}}",
+      "catches": "special-casing that emits null or omits the member"
+    },
+    {
+      "name": "null is a value, not an absence",
+      "input": { "a": null, "b": 1 },
+      "canonical": "{\"a\":null,\"b\":1}",
+      "catches": "implementations that drop null members the way undefined ones are dropped"
+    }
+  ],
+  "reject": [
+    {
+      "name": "lone high surrogate",
+      "input_json": "{\"s\":\"\\ud800\"}",
+      "reason": "lone high surrogate",
+      "catches": "silently substituting U+FFFD, which changes the signed bytes without telling anyone"
+    },
+    {
+      "name": "lone low surrogate",
+      "input_json": "{\"s\":\"\\udc00\"}",
+      "reason": "lone low surrogate",
+      "catches": "the same substitution on the other half of the pair"
+    },
+    {
+      "name": "negative zero",
+      "description": "-0 and 0 serialize identically but are distinguishable values",
+      "reason": "negative zero",
+      "catches": "normalizing -0 to 0, which rewrites data during canonicalization"
+    },
+    {
+      "name": "integer beyond the safe range",
+      "description": "9007199254740993 cannot be represented exactly as a double",
+      "reason": "unsafe integer; encode exact quantities as decimal strings",
+      "catches": "accepting a value that has already lost precision before canonicalization ran"
+    },
+    {
+      "name": "large magnitude is unreachable, not exponential",
+      "description": "1e21. JCS would render this 1e+21, but every double at or above 2^53 is integer-valued, so the safe-integer rule rejects it first.",
+      "reason": "unsafe integer; encode exact quantities as decimal strings",
+      "catches": "implementations that port JCS number formatting faithfully and then accept values this profile forbids"
+    },
+    {
+      "name": "large magnitude below the JCS exponential threshold is also unreachable",
+      "description": "1e20. Positional under JCS, still beyond the safe-integer range here.",
+      "reason": "unsafe integer; encode exact quantities as decimal strings",
+      "catches": "the assumption that the exponential threshold is where the profile's boundary lies"
+    },
+    {
+      "name": "non-finite: Infinity",
+      "reason": "non-finite number",
+      "catches": "emitting Infinity or null, neither of which is valid JSON"
+    },
+    {
+      "name": "non-finite: NaN",
+      "reason": "non-finite number",
+      "catches": "emitting NaN or null"
+    },
+    {
+      "name": "undefined object member",
+      "description": "{ a: undefined }",
+      "reason": "undefined object member",
+      "catches": "silently dropping the member, matching JSON.stringify rather than rejecting"
+    }
+  ]
+}

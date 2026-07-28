@@ -1,21 +1,35 @@
 /**
- * Submission client — signs and POSTs observation batches to vera-knowledge.
+ * Submission client — signs and POSTs observation batches to a Vera host.
  *
- * Signing contract (must match veraAI/src/lib/soma-verify.ts):
- *   signed payload = JSON.stringify(observations)  (the ObservationItem array)
- *   algorithm      = Ed25519 via getCryptoProvider().signing.sign()
- *   encoding       = Base64 via getCryptoProvider().encoding.encodeBase64()
+ * Signing contract: SIGNING-SPEC.md, v1.
+ *   signed bytes = "somavera:vera-observation-batch:v1\n" || canonical_json(envelope)
+ *   algorithm    = Ed25519 via getCryptoProvider().signing.sign()
+ *   encoding     = Base64 via getCryptoProvider().encoding.encodeBase64()
  *
- * HTTP contract (must match veraAI/src/routes/observations.ts):
+ * The v0 contract signed JSON.stringify(observations): no domain separation,
+ * no canonicalization, and it left source_type unauthenticated even though
+ * provenance is the point of the system. It is gone, not deprecated — both
+ * ends live in this repository and ship together, so there is no window in
+ * which a v0 sender meets a v1 host.
+ *
+ * HTTP contract:
  *   POST /v1/observations
- *   Body: { soma_did, source_type, signature, observations }
- *   Success: 201 { batch: { id, user_id, source_type, observation_count, created_at } }
- *   Errors:  400 (bad body), 403 (bad signature), 404 (user not found)
+ *   Body: { envelope, signature }
+ *   Success: 201 created, or 200 when the batch_id was already accepted
+ *   Errors:  400 (bad envelope), 403 (bad signature or stale), 404 (unknown DID)
  */
 
 import { getCryptoProvider } from 'soma-heart/crypto-provider';
+import { randomBytes } from 'node:crypto';
 import type { ObservationItem } from './types.js';
 import type { SomaIdentity } from './identity.js';
+import {
+  OBSERVATION_BATCH_SCHEMA,
+  assertValidEnvelope,
+  formatSubmittedAt,
+  signedBytes,
+  type ObservationEnvelope,
+} from './envelope.js';
 
 // ---- Types ----
 
@@ -69,18 +83,41 @@ export async function submitObservations(
   const provider = getCryptoProvider();
   const { identity, veraKnowledgeUrl, sourceType = 'git' } = config;
 
-  // Sign exactly: JSON.stringify(observations) — the array, not the full body
-  const signedPayload = JSON.stringify(observations);
-  const payloadBytes = new TextEncoder().encode(signedPayload);
-  const signatureBytes = provider.signing.sign(payloadBytes, identity.secretKey);
-  const signature = provider.encoding.encodeBase64(signatureBytes);
-
-  const body = {
+  // batch_id is random, not a hash of the content: two honest batches with
+  // identical observations must remain distinguishable, and a content hash
+  // would make an honest resubmission indistinguishable from a replay.
+  const envelope: ObservationEnvelope = {
+    batch_id: randomBytes(16).toString('hex'),
+    observations,
+    schema_version: OBSERVATION_BATCH_SCHEMA,
     soma_did: identity.somaDid,
     source_type: sourceType,
-    signature,
-    observations,
+    submitted_at: formatSubmittedAt(new Date()),
   };
+
+  // Validate before signing. Signing something this end would itself reject on
+  // receipt produces a batch no host can accept and no operator can diagnose.
+  try {
+    assertValidEnvelope(envelope);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    return { success: false, error: `envelope invalid: ${message}`, statusCode: 0 };
+  }
+
+  let signature: string;
+  try {
+    signature = provider.encoding.encodeBase64(
+      provider.signing.sign(signedBytes(envelope), identity.secretKey),
+    );
+  } catch (err: unknown) {
+    // Canonicalization rejects rather than repairs, so an observation carrying
+    // a lone surrogate or an unsafe integer fails here. That is the design:
+    // better an unsent batch than a signature over silently rewritten data.
+    const message = err instanceof Error ? err.message : String(err);
+    return { success: false, error: `not canonicalizable: ${message}`, statusCode: 0 };
+  }
+
+  const body = { envelope, signature };
 
   let response: Response;
   try {
@@ -94,7 +131,9 @@ export async function submitObservations(
     return { success: false, error: `network error: ${message}`, statusCode: 0 };
   }
 
-  if (response.status === 201) {
+  // 200 means this batch_id was already accepted. A retry after a network
+  // timeout must not be punished, so replay is idempotent rather than fatal.
+  if (response.status === 201 || response.status === 200) {
     let data: VeraKnowledgeBatchResponse;
     try {
       data = (await response.json()) as VeraKnowledgeBatchResponse;
