@@ -1,0 +1,201 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:somavera:schema:checkpoint-state-package:v1",
+  "title": "Somavera Complete Checkpoint State and Replay Package v1",
+  "$comment": "package_id is H(domain || JCS(core)) excluding $schema, schema_version, package_id, and publisher_signatures. A root without every ordered chunk, independently signed fetch evidence, and independent reproduction evidence is not a recovery package.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "package_id", "checkpoint", "recovery_claims", "encoding", "state_chunk_count", "state_chunks", "replay", "authority_snapshot", "availability", "reproduction_results", "publisher_signatures"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": { "const": "somavera.checkpoint-state-package.v1" },
+    "package_id": { "$ref": "#/$defs/hash" },
+    "checkpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["network_lineage_id", "execution_context_id", "context_epoch", "checkpoint_id", "height", "block_hash", "app_hash", "public_state_root", "finality_proof_hash"],
+      "properties": {
+        "network_lineage_id": { "$ref": "#/$defs/network_id" },
+        "execution_context_id": { "$ref": "#/$defs/context_id" },
+        "context_epoch": { "type": "integer", "minimum": 0 },
+        "checkpoint_id": { "$ref": "#/$defs/hash" },
+        "height": { "type": "integer", "minimum": 0 },
+        "block_hash": { "$ref": "#/$defs/hash" },
+        "app_hash": { "$ref": "#/$defs/hash" },
+        "public_state_root": { "$ref": "#/$defs/hash" },
+        "finality_proof_hash": { "$ref": "#/$defs/hash" }
+      }
+    },
+    "recovery_claims": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["root_alone_sufficient", "all_state_chunks_required", "all_replay_chunks_required", "ordered_replay_required", "availability_receipts_required", "missing_chunk_policy"],
+      "properties": {
+        "root_alone_sufficient": { "const": false },
+        "all_state_chunks_required": { "const": true },
+        "all_replay_chunks_required": { "const": true },
+        "ordered_replay_required": { "const": true },
+        "availability_receipts_required": { "const": true },
+        "missing_chunk_policy": { "const": "reject_exact_continuity" }
+      }
+    },
+    "encoding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state_profile", "replay_profile", "hash_algorithm", "compression", "chunk_order"],
+      "properties": {
+        "state_profile": { "type": "string", "minLength": 3, "maxLength": 128 },
+        "replay_profile": { "type": "string", "minLength": 3, "maxLength": 128 },
+        "hash_algorithm": { "const": "sha-256" },
+        "compression": { "enum": ["none", "zstd-deterministic-v1"] },
+        "chunk_order": { "const": "manifest_order_ascending" }
+      }
+    },
+    "state_chunk_count": { "type": "integer", "minimum": 1, "maximum": 10000000 },
+    "state_chunks": { "type": "array", "minItems": 1, "maxItems": 10000000, "items": { "$ref": "#/$defs/state_chunk" } },
+    "replay": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["base", "chunk_count", "chunks"],
+      "properties": {
+        "base": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "height", "state_root", "checkpoint_id"],
+          "properties": {
+            "kind": { "enum": ["genesis", "authenticated_checkpoint"] },
+            "height": { "type": "integer", "minimum": 0 },
+            "state_root": { "$ref": "#/$defs/hash" },
+            "checkpoint_id": { "oneOf": [{ "$ref": "#/$defs/hash" }, { "type": "null" }] }
+          }
+        },
+        "chunk_count": { "type": "integer", "minimum": 1, "maximum": 10000000 },
+        "chunks": { "type": "array", "minItems": 1, "maxItems": 10000000, "items": { "$ref": "#/$defs/replay_chunk" } }
+      }
+    },
+    "authority_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "checkpoint_id", "height", "public_state_root", "governance_manifest_hash", "recovery_authority_manifest_hash", "validator_set_hash", "key_history_hash"],
+      "properties": {
+        "source": { "const": "reproduced_checkpoint_pre_state" },
+        "checkpoint_id": { "$ref": "#/$defs/hash" },
+        "height": { "type": "integer", "minimum": 0 },
+        "public_state_root": { "$ref": "#/$defs/hash" },
+        "governance_manifest_hash": { "$ref": "#/$defs/hash" },
+        "recovery_authority_manifest_hash": { "$ref": "#/$defs/hash" },
+        "validator_set_hash": { "$ref": "#/$defs/hash" },
+        "key_history_hash": { "$ref": "#/$defs/hash" }
+      }
+    },
+    "availability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minimum_independent_locations", "minimum_distinct_fetch_controllers", "required_successful_fetches_per_chunk", "verified_at", "locations", "fetch_receipts"],
+      "properties": {
+        "minimum_independent_locations": { "type": "integer", "minimum": 2, "maximum": 100 },
+        "minimum_distinct_fetch_controllers": { "type": "integer", "minimum": 2, "maximum": 100 },
+        "required_successful_fetches_per_chunk": { "type": "integer", "minimum": 2, "maximum": 100 },
+        "verified_at": { "type": "string", "format": "date-time" },
+        "locations": { "type": "array", "minItems": 2, "maxItems": 100, "items": { "$ref": "#/$defs/location" } },
+        "fetch_receipts": { "type": "array", "minItems": 2, "maxItems": 20000000, "items": { "$ref": "#/$defs/fetch_receipt" } }
+      }
+    },
+    "reproduction_results": { "type": "array", "minItems": 2, "maxItems": 20, "items": { "$ref": "#/$defs/reproduction" } },
+    "publisher_signatures": { "type": "array", "minItems": 2, "maxItems": 100, "items": { "$ref": "#/$defs/publisher_signature" } }
+  },
+  "$defs": {
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "network_id": { "type": "string", "pattern": "^somavera:network:v1:[a-f0-9]{64}$" },
+    "context_id": { "type": "string", "pattern": "^somavera:context:v1:[a-f0-9]{64}$" },
+    "signature_value": { "type": "string", "contentEncoding": "base64", "minLength": 80, "maxLength": 128 },
+    "state_chunk": {
+      "type": "object", "additionalProperties": false,
+      "required": ["order", "path", "sha256", "byte_length", "uncompressed_byte_length", "encoding"],
+      "properties": {
+        "order": { "type": "integer", "minimum": 0 },
+        "path": { "type": "string", "pattern": "^state/[a-zA-Z0-9._/-]+$", "maxLength": 512 },
+        "sha256": { "$ref": "#/$defs/hash" },
+        "byte_length": { "type": "integer", "minimum": 1 },
+        "uncompressed_byte_length": { "type": "integer", "minimum": 1 },
+        "encoding": { "enum": ["raw", "zstd-deterministic-v1"] }
+      }
+    },
+    "replay_chunk": {
+      "type": "object", "additionalProperties": false,
+      "required": ["order", "path", "sha256", "byte_length", "first_height", "last_height", "pre_state_root", "post_state_root"],
+      "properties": {
+        "order": { "type": "integer", "minimum": 0 },
+        "path": { "type": "string", "pattern": "^replay/[a-zA-Z0-9._/-]+$", "maxLength": 512 },
+        "sha256": { "$ref": "#/$defs/hash" },
+        "byte_length": { "type": "integer", "minimum": 1 },
+        "first_height": { "type": "integer", "minimum": 1 },
+        "last_height": { "type": "integer", "minimum": 1 },
+        "pre_state_root": { "$ref": "#/$defs/hash" },
+        "post_state_root": { "$ref": "#/$defs/hash" }
+      }
+    },
+    "location": {
+      "type": "object", "additionalProperties": false,
+      "required": ["location_id", "operator_id", "organization_id", "jurisdiction", "uri", "content_addressed"],
+      "properties": {
+        "location_id": { "type": "string", "minLength": 3, "maxLength": 256 },
+        "operator_id": { "type": "string", "minLength": 3, "maxLength": 256 },
+        "organization_id": { "type": "string", "minLength": 3, "maxLength": 256 },
+        "jurisdiction": { "type": "string", "minLength": 2, "maxLength": 128 },
+        "uri": { "type": "string", "format": "uri", "maxLength": 1024 },
+        "content_addressed": { "const": true }
+      }
+    },
+    "fetch_receipt": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "order", "location_id", "fetcher_controller_id", "fetcher_organization_id", "observed_sha256", "observed_byte_length", "fetched_at", "transcript_hash", "success", "suite", "signature"],
+      "properties": {
+        "kind": { "enum": ["state", "replay"] },
+        "order": { "type": "integer", "minimum": 0 },
+        "location_id": { "type": "string", "minLength": 3, "maxLength": 256 },
+        "fetcher_controller_id": { "type": "string", "minLength": 3, "maxLength": 256 },
+        "fetcher_organization_id": { "type": "string", "minLength": 3, "maxLength": 256 },
+        "observed_sha256": { "$ref": "#/$defs/hash" },
+        "observed_byte_length": { "type": "integer", "minimum": 1 },
+        "fetched_at": { "type": "string", "format": "date-time" },
+        "transcript_hash": { "$ref": "#/$defs/hash" },
+        "success": { "const": true },
+        "suite": { "const": "Ed25519-v1" },
+        "signature": { "$ref": "#/$defs/signature_value" }
+      }
+    },
+    "reproduction": {
+      "type": "object", "additionalProperties": false,
+      "required": ["implementation_id", "controller_id", "organization_id", "jurisdiction", "implementation_release_hash", "checkpoint_id", "reproduced_height", "reproduced_public_state_root", "reproduced_app_hash", "reproduced_governance_manifest_hash", "reproduced_recovery_authority_manifest_hash", "reproduced_validator_set_hash", "reproduced_key_history_hash", "transcript_hash", "suite", "signature"],
+      "properties": {
+        "implementation_id": { "type": "string", "minLength": 3, "maxLength": 256 },
+        "controller_id": { "type": "string", "minLength": 3, "maxLength": 256 },
+        "organization_id": { "type": "string", "minLength": 3, "maxLength": 256 },
+        "jurisdiction": { "type": "string", "minLength": 2, "maxLength": 128 },
+        "implementation_release_hash": { "$ref": "#/$defs/hash" },
+        "checkpoint_id": { "$ref": "#/$defs/hash" },
+        "reproduced_height": { "type": "integer", "minimum": 0 },
+        "reproduced_public_state_root": { "$ref": "#/$defs/hash" },
+        "reproduced_app_hash": { "$ref": "#/$defs/hash" },
+        "reproduced_governance_manifest_hash": { "$ref": "#/$defs/hash" },
+        "reproduced_recovery_authority_manifest_hash": { "$ref": "#/$defs/hash" },
+        "reproduced_validator_set_hash": { "$ref": "#/$defs/hash" },
+        "reproduced_key_history_hash": { "$ref": "#/$defs/hash" },
+        "transcript_hash": { "$ref": "#/$defs/hash" },
+        "suite": { "const": "Ed25519-v1" },
+        "signature": { "$ref": "#/$defs/signature_value" }
+      }
+    },
+    "publisher_signature": {
+      "type": "object", "additionalProperties": false,
+      "required": ["role", "key_id", "suite", "value"],
+      "properties": {
+        "role": { "enum": ["archive_operator", "independent_recovery_auditor"] },
+        "key_id": { "type": "string", "minLength": 3, "maxLength": 512 },
+        "suite": { "const": "Ed25519-v1" },
+        "value": { "$ref": "#/$defs/signature_value" }
+      }
+    }
+  }
+}

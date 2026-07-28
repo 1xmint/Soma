@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:somavera:schema:tokenless-reducer-block-result:v1",
+  "title": "Somavera Tokenless Reducer Accepted Block Result v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "profile_status",
+    "accepted",
+    "block_id",
+    "height",
+    "pre_state_root",
+    "post_state_root",
+    "app_hash",
+    "block_result_root",
+    "transaction_results"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": { "const": "somavera.tokenless-block-result.v1" },
+    "profile_status": { "const": "pilot_only_not_ratified" },
+    "accepted": { "const": true },
+    "block_id": { "$ref": "#/$defs/hash" },
+    "height": { "$ref": "#/$defs/uint" },
+    "pre_state_root": { "$ref": "#/$defs/hash" },
+    "post_state_root": { "$ref": "#/$defs/hash" },
+    "app_hash": { "$ref": "#/$defs/hash" },
+    "block_result_root": { "$ref": "#/$defs/hash" },
+    "transaction_results": {
+      "type": "array",
+      "maxItems": 256,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["transaction_id", "action", "code", "state_change_hash"],
+        "properties": {
+          "transaction_id": { "$ref": "#/$defs/hash" },
+          "action": {
+            "enum": [
+              "pilot.public-commitment.register",
+              "pilot.public-commitment.tombstone"
+            ]
+          },
+          "code": { "const": "OK" },
+          "state_change_hash": { "$ref": "#/$defs/hash" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "uint": { "type": "string", "pattern": "^(0|[1-9][0-9]*)$" }
+  }
+}

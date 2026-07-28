@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:somavera:schema:vera-application-envelope:v1",
+  "title": "Somavera Signed Vera Application Envelope v1",
+  "$comment": "Freeze-blocking draft. This is the minimum clear routing envelope; the complete signed application event remains encrypted. ID and signature projections are in ID-DERIVATION.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "profile_status",
+    "envelope_id",
+    "network_lineage_id",
+    "execution_context_id",
+    "sender_did",
+    "destination_host_did",
+    "recipient_ingestion_key_id",
+    "inner_event_id",
+    "consent_grant_id",
+    "stream_id",
+    "ciphertext_root",
+    "plaintext_bytes",
+    "outer_nonce",
+    "issued_at",
+    "expires_at",
+    "signing_key_id",
+    "signature"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": { "const": "somavera.vera-application-envelope.v1" },
+    "profile_status": { "const": "freeze_blocking_draft" },
+    "envelope_id": { "$ref": "#/$defs/hash" },
+    "network_lineage_id": { "$ref": "#/$defs/network" },
+    "execution_context_id": { "$ref": "#/$defs/context" },
+    "sender_did": { "$ref": "#/$defs/did" },
+    "destination_host_did": { "$ref": "#/$defs/did" },
+    "recipient_ingestion_key_id": { "$ref": "#/$defs/keyId" },
+    "inner_event_id": { "$ref": "#/$defs/hash" },
+    "consent_grant_id": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+    "stream_id": { "$ref": "#/$defs/hash" },
+    "ciphertext_root": { "$ref": "#/$defs/hash" },
+    "plaintext_bytes": { "type": "integer", "minimum": 1, "maximum": 262144 },
+    "outer_nonce": { "type": "string", "pattern": "^[a-f0-9]{32,128}$" },
+    "issued_at": { "type": "string", "format": "date-time" },
+    "expires_at": { "type": "string", "format": "date-time" },
+    "signing_key_id": { "$ref": "#/$defs/keyId" },
+    "signature": { "$ref": "#/$defs/signature" }
+  },
+  "$defs": {
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "network": { "type": "string", "pattern": "^somavera:network:v1:[a-f0-9]{64}$" },
+    "context": { "type": "string", "pattern": "^somavera:context:v1:[a-f0-9]{64}$" },
+    "did": { "type": "string", "pattern": "^did:[a-z0-9]+:.+$", "maxLength": 512 },
+    "keyId": { "type": "string", "minLength": 3, "maxLength": 512 },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["suite", "key_id", "value"],
+      "properties": {
+        "suite": { "const": "Ed25519-v1" },
+        "key_id": { "$ref": "#/$defs/keyId" },
+        "value": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9+/]{86}==$",
+          "minLength": 88,
+          "maxLength": 88,
+          "contentEncoding": "base64"
+        }
+      }
+    }
+  }
+}

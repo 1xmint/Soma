@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:somavera:schema:tokenless-reducer-transaction:v1",
+  "title": "Somavera Tokenless Reducer Transaction v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "profile_status",
+    "network_lineage_id",
+    "execution_context_id",
+    "transaction_id",
+    "actor_did",
+    "actor_key_id",
+    "sequence",
+    "audience",
+    "action",
+    "nonce",
+    "issued_at_ms",
+    "expires_at_ms",
+    "payload",
+    "signature"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": { "const": "somavera.tokenless-transaction.v1" },
+    "profile_status": { "const": "pilot_only_not_ratified" },
+    "network_lineage_id": { "$ref": "#/$defs/network" },
+    "execution_context_id": { "$ref": "#/$defs/context" },
+    "transaction_id": { "$ref": "#/$defs/hash" },
+    "actor_did": { "$ref": "#/$defs/did" },
+    "actor_key_id": { "type": "string", "minLength": 3, "maxLength": 512 },
+    "sequence": { "$ref": "#/$defs/uint" },
+    "audience": {
+      "type": "string",
+      "pattern": "^somavera:ledger:[a-z0-9][a-z0-9._-]{2,127}$"
+    },
+    "action": {
+      "enum": [
+        "pilot.public-commitment.register",
+        "pilot.public-commitment.tombstone"
+      ]
+    },
+    "nonce": { "type": "string", "pattern": "^[a-f0-9]{32,128}$" },
+    "issued_at_ms": { "$ref": "#/$defs/uint" },
+    "expires_at_ms": { "$ref": "#/$defs/uint" },
+    "payload": {
+      "oneOf": [
+        { "$ref": "#/$defs/registerPayload" },
+        { "$ref": "#/$defs/tombstonePayload" }
+      ]
+    },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["suite", "value"],
+      "properties": {
+        "suite": { "const": "Ed25519-v1" },
+        "value": {
+          "type": "string",
+          "contentEncoding": "base64",
+          "minLength": 88,
+          "maxLength": 88
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "action": { "const": "pilot.public-commitment.register" }
+        },
+        "required": ["action"]
+      },
+      "then": {
+        "properties": {
+          "payload": { "$ref": "#/$defs/registerPayload" }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "action": { "const": "pilot.public-commitment.tombstone" }
+        },
+        "required": ["action"]
+      },
+      "then": {
+        "properties": {
+          "payload": { "$ref": "#/$defs/tombstonePayload" }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "uint": { "type": "string", "pattern": "^(0|[1-9][0-9]*)$" },
+    "did": { "type": "string", "pattern": "^did:[a-z0-9]+:.+$", "maxLength": 512 },
+    "network": {
+      "type": "string",
+      "pattern": "^somavera:network:v1:[a-f0-9]{64}$"
+    },
+    "context": {
+      "type": "string",
+      "pattern": "^somavera:context:v1:[a-f0-9]{64}$"
+    },
+    "registerPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["object_id", "content_hash", "license_hash", "source_event_id"],
+      "properties": {
+        "object_id": { "$ref": "#/$defs/hash" },
+        "content_hash": { "$ref": "#/$defs/hash" },
+        "license_hash": { "$ref": "#/$defs/hash" },
+        "source_event_id": { "$ref": "#/$defs/hash" }
+      }
+    },
+    "tombstonePayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["object_id", "reason"],
+      "properties": {
+        "object_id": { "$ref": "#/$defs/hash" },
+        "reason": {
+          "enum": ["owner_withdrawal", "superseded", "invalid_fixture"]
+        }
+      }
+    }
+  }
+}

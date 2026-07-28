@@ -1,0 +1,90 @@
+{
+  "$schema": "../schemas/token-activation.schema.json",
+  "schema_version": "vera.token-activation.v1",
+  "activation_core": {
+    "origin_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "network_lineage_id": "somavera:network:v1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "activation_time": "2028-01-01T00:00:00Z",
+    "activation_height": 10000000,
+    "preactivation_governance_manifest_hash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "token": {
+      "name": "Vera",
+      "symbol": "VERA",
+      "denom": "grain",
+      "decimals": 9,
+      "genesis_supply_grain": "0"
+    },
+    "issuance": {
+      "lifetime_mint_ceiling_grain": "1000000000000000000",
+      "epoch_seconds": 86400,
+      "schedule_year_seconds": 31557600,
+      "cumulative_ceilings": [
+        { "elapsed_year": 1, "max_grain": "100000000000000000" },
+        { "elapsed_year": 2, "max_grain": "180000000000000000" },
+        { "elapsed_year": 4, "max_grain": "300000000000000000" },
+        { "elapsed_year": 8, "max_grain": "450000000000000000" },
+        { "elapsed_year": 16, "max_grain": "600000000000000000" }
+      ],
+      "tail_annual_cap_basis_points": 100,
+      "tail_supply_basis": "live_supply_at_anniversary"
+    },
+    "epoch_allocation": [
+      { "recipient": "verified_services_hosts", "basis_points": 5000 },
+      { "recipient": "validators", "basis_points": 2500 },
+      { "recipient": "public_goods", "basis_points": 1500 },
+      { "recipient": "evaluation_recovery", "basis_points": 1000 }
+    ],
+    "fee_policy": {
+      "service_price_to_provider_basis_points": 10000,
+      "network_fee": [
+        { "recipient": "validators", "basis_points": 8000 },
+        { "recipient": "public_goods", "basis_points": 1800 },
+        { "recipient": "burn", "basis_points": 200 }
+      ]
+    },
+    "parameter_decision_hash": "0101010101010101010101010101010101010101010101010101010101010101",
+    "economic_simulation_hash": "0202020202020202020202020202020202020202020202020202020202020202",
+    "launch_gate_report_hash": "0303030303030303030303030303030303030303030303030303030303030303",
+    "external_settlement_policy_hash": "0404040404040404040404040404040404040404040404040404040404040404",
+    "bond_policy_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+    "governance_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+    "data_rights_hash": "3333333333333333333333333333333333333333333333333333333333333333",
+    "recovery_hash": "4444444444444444444444444444444444444444444444444444444444444444",
+    "protocol_release_hashes": [
+      "5555555555555555555555555555555555555555555555555555555555555555",
+      "6666666666666666666666666666666666666666666666666666666666666666"
+    ],
+    "bootstrap": {
+      "validator_manifest_hash": "7777777777777777777777777777777777777777777777777777777777777777",
+      "automatic_sunset_height": 20000000,
+      "permissionless_gate_hash": "8888888888888888888888888888888888888888888888888888888888888888"
+    },
+    "legal": {
+      "review_hash": "9999999999999999999999999999999999999999999999999999999999999999",
+      "disclosures_uri": "https://example.invalid/vera/disclosures"
+    },
+    "abort_conditions_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "activation_core_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+  "asset_lineage_id": "vera:rpa:v1:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "ratification_signatures": [
+    {
+      "chamber": "economic",
+      "key_id": "did:key:example-economic#key-1",
+      "suite": "Ed25519-v1",
+      "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    },
+    {
+      "chamber": "operator_contributor",
+      "key_id": "did:key:example-operator#key-1",
+      "suite": "Ed25519-v1",
+      "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    },
+    {
+      "chamber": "public_data_rights",
+      "key_id": "did:key:example-public#key-1",
+      "suite": "Ed25519-v1",
+      "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    }
+  ]
+}

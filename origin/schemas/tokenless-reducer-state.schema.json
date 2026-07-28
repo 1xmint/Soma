@@ -1,0 +1,200 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:somavera:schema:tokenless-reducer-state:v1",
+  "title": "Somavera Tokenless Reducer State v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "profile_status",
+    "network_lineage_id",
+    "execution_context_id",
+    "context_epoch",
+    "ledger_audience",
+    "height",
+    "last_consensus_time_ms",
+    "maximum_block_time_advance_ms",
+    "origin_hash",
+    "protocol_release_hash",
+    "last_block_id",
+    "last_block_result_root",
+    "authorized_keys",
+    "actor_sequences",
+    "consumed_transaction_ids",
+    "consumed_nonces",
+    "public_commitments",
+    "balances",
+    "balances_root",
+    "token",
+    "state_root",
+    "app_hash"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": { "const": "somavera.tokenless-reducer-state.v1" },
+    "profile_status": { "const": "pilot_only_not_ratified" },
+    "network_lineage_id": { "$ref": "#/$defs/network" },
+    "execution_context_id": { "$ref": "#/$defs/context" },
+    "context_epoch": { "type": "integer", "minimum": 0 },
+    "ledger_audience": {
+      "type": "string",
+      "pattern": "^somavera:ledger:[a-z0-9][a-z0-9._-]{2,127}$"
+    },
+    "height": { "$ref": "#/$defs/uint" },
+    "last_consensus_time_ms": { "$ref": "#/$defs/uint" },
+    "maximum_block_time_advance_ms": { "$ref": "#/$defs/uint" },
+    "origin_hash": { "$ref": "#/$defs/hash" },
+    "protocol_release_hash": { "$ref": "#/$defs/hash" },
+    "last_block_id": { "$ref": "#/$defs/hash" },
+    "last_block_result_root": { "$ref": "#/$defs/hash" },
+    "authorized_keys": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 10000,
+      "items": { "$ref": "#/$defs/key" }
+    },
+    "actor_sequences": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 10000,
+      "items": { "$ref": "#/$defs/actorSequence" }
+    },
+    "consumed_transaction_ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/hash" }
+    },
+    "consumed_nonces": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/consumedNonce" }
+    },
+    "public_commitments": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/publicCommitment" }
+    },
+    "balances": {
+      "type": "array",
+      "maxItems": 0
+    },
+    "balances_root": { "$ref": "#/$defs/hash" },
+    "token": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "activated",
+        "activation_core_hash",
+        "asset_lineage_id",
+        "live_supply_grain",
+        "lifetime_minted_grain",
+        "lifetime_burned_grain"
+      ],
+      "properties": {
+        "activated": { "const": false },
+        "activation_core_hash": { "type": "null" },
+        "asset_lineage_id": { "type": "null" },
+        "live_supply_grain": { "const": "0" },
+        "lifetime_minted_grain": { "const": "0" },
+        "lifetime_burned_grain": { "const": "0" }
+      }
+    },
+    "state_root": { "$ref": "#/$defs/hash" },
+    "app_hash": { "$ref": "#/$defs/hash" }
+  },
+  "$defs": {
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "uint": { "type": "string", "pattern": "^(0|[1-9][0-9]*)$" },
+    "did": { "type": "string", "pattern": "^did:[a-z0-9]+:.+$", "maxLength": 512 },
+    "network": {
+      "type": "string",
+      "pattern": "^somavera:network:v1:[a-f0-9]{64}$"
+    },
+    "context": {
+      "type": "string",
+      "pattern": "^somavera:context:v1:[a-f0-9]{64}$"
+    },
+    "key": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "actor_did",
+        "key_id",
+        "purpose",
+        "suite",
+        "public_key_base64",
+        "valid_from_ms",
+        "valid_until_ms",
+        "status"
+      ],
+      "properties": {
+        "actor_did": { "$ref": "#/$defs/did" },
+        "key_id": { "type": "string", "minLength": 3, "maxLength": 512 },
+        "purpose": { "const": "pilot_ledger_signing" },
+        "suite": { "const": "Ed25519-v1" },
+        "public_key_base64": {
+          "type": "string",
+          "contentEncoding": "base64",
+          "minLength": 44,
+          "maxLength": 44
+        },
+        "valid_from_ms": { "$ref": "#/$defs/uint" },
+        "valid_until_ms": { "$ref": "#/$defs/uint" },
+        "status": { "enum": ["active", "retired", "revoked"] }
+      }
+    },
+    "actorSequence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["actor_did", "next_sequence"],
+      "properties": {
+        "actor_did": { "$ref": "#/$defs/did" },
+        "next_sequence": { "$ref": "#/$defs/uint" }
+      }
+    },
+    "consumedNonce": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["nonce_key", "transaction_id"],
+      "properties": {
+        "nonce_key": { "$ref": "#/$defs/hash" },
+        "transaction_id": { "$ref": "#/$defs/hash" }
+      }
+    },
+    "publicCommitment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "object_id",
+        "owner_did",
+        "content_hash",
+        "license_hash",
+        "source_event_id",
+        "registered_height",
+        "status",
+        "tombstone_event_id",
+        "tombstone_reason",
+        "tombstoned_height"
+      ],
+      "properties": {
+        "object_id": { "$ref": "#/$defs/hash" },
+        "owner_did": { "$ref": "#/$defs/did" },
+        "content_hash": { "$ref": "#/$defs/hash" },
+        "license_hash": { "$ref": "#/$defs/hash" },
+        "source_event_id": { "$ref": "#/$defs/hash" },
+        "registered_height": { "$ref": "#/$defs/uint" },
+        "status": { "enum": ["active", "tombstoned"] },
+        "tombstone_event_id": {
+          "oneOf": [{ "$ref": "#/$defs/hash" }, { "type": "null" }]
+        },
+        "tombstone_reason": {
+          "oneOf": [
+            { "enum": ["owner_withdrawal", "superseded", "invalid_fixture"] },
+            { "type": "null" }
+          ]
+        },
+        "tombstoned_height": {
+          "oneOf": [{ "$ref": "#/$defs/uint" }, { "type": "null" }]
+        }
+      }
+    }
+  }
+}

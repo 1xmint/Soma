@@ -1,0 +1,205 @@
+{
+  "$schema": "../schemas/checkpoint-state-package.schema.json",
+  "schema_version": "somavera.checkpoint-state-package.v1",
+  "package_id": "9999999999999999999999999999999999999999999999999999999999999999",
+  "checkpoint": {
+    "network_lineage_id": "somavera:network:v1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "execution_context_id": "somavera:context:v1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "context_epoch": 0,
+    "checkpoint_id": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "height": 28800,
+    "block_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+    "app_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+    "public_state_root": "3333333333333333333333333333333333333333333333333333333333333333",
+    "finality_proof_hash": "abababababababababababababababababababababababababababababababab"
+  },
+  "recovery_claims": {
+    "root_alone_sufficient": false,
+    "all_state_chunks_required": true,
+    "all_replay_chunks_required": true,
+    "ordered_replay_required": true,
+    "availability_receipts_required": true,
+    "missing_chunk_policy": "reject_exact_continuity"
+  },
+  "encoding": {
+    "state_profile": "somavera-public-state-v1",
+    "replay_profile": "somavera-transition-log-v1",
+    "hash_algorithm": "sha-256",
+    "compression": "none",
+    "chunk_order": "manifest_order_ascending"
+  },
+  "state_chunk_count": 2,
+  "state_chunks": [
+    {
+      "order": 0,
+      "path": "state/chunk-000000.bin",
+      "sha256": "1010101010101010101010101010101010101010101010101010101010101010",
+      "byte_length": 1024,
+      "uncompressed_byte_length": 1024,
+      "encoding": "raw"
+    },
+    {
+      "order": 1,
+      "path": "state/chunk-000001.bin",
+      "sha256": "2020202020202020202020202020202020202020202020202020202020202020",
+      "byte_length": 2048,
+      "uncompressed_byte_length": 2048,
+      "encoding": "raw"
+    }
+  ],
+  "replay": {
+    "base": {
+      "kind": "genesis",
+      "height": 0,
+      "state_root": "0000000000000000000000000000000000000000000000000000000000000000",
+      "checkpoint_id": null
+    },
+    "chunk_count": 1,
+    "chunks": [
+      {
+        "order": 0,
+        "path": "replay/blocks-00000001-00028800.bin",
+        "sha256": "3030303030303030303030303030303030303030303030303030303030303030",
+        "byte_length": 4096,
+        "first_height": 1,
+        "last_height": 28800,
+        "pre_state_root": "0000000000000000000000000000000000000000000000000000000000000000",
+        "post_state_root": "3333333333333333333333333333333333333333333333333333333333333333"
+      }
+    ]
+  },
+  "authority_snapshot": {
+    "source": "reproduced_checkpoint_pre_state",
+    "checkpoint_id": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "height": 28800,
+    "public_state_root": "3333333333333333333333333333333333333333333333333333333333333333",
+    "governance_manifest_hash": "91afde8f059219e2f135c42c0c3e10b8cd2e3289954bb9680137db65bb561c39",
+    "recovery_authority_manifest_hash": "004b5b5ae7b25b85d25f9256b3fb95087e83ab8f0184a24d6e4732fb48c80760",
+    "validator_set_hash": "5555555555555555555555555555555555555555555555555555555555555555",
+    "key_history_hash": "7777777777777777777777777777777777777777777777777777777777777777"
+  },
+  "availability": {
+    "minimum_independent_locations": 2,
+    "minimum_distinct_fetch_controllers": 2,
+    "required_successful_fetches_per_chunk": 2,
+    "verified_at": "2028-05-07T12:00:00Z",
+    "locations": [
+      {
+        "location_id": "archive-location-1",
+        "operator_id": "archive-operator-1",
+        "organization_id": "archive-organization-1",
+        "jurisdiction": "US-NY",
+        "uri": "https://archive-one.example.invalid/somavera/checkpoint-package",
+        "content_addressed": true
+      },
+      {
+        "location_id": "archive-location-2",
+        "operator_id": "archive-operator-2",
+        "organization_id": "archive-organization-2",
+        "jurisdiction": "CA-ON",
+        "uri": "https://archive-two.example.invalid/somavera/checkpoint-package",
+        "content_addressed": true
+      },
+      {
+        "location_id": "archive-location-3",
+        "operator_id": "archive-operator-3",
+        "organization_id": "archive-organization-3",
+        "jurisdiction": "DE-BE",
+        "uri": "https://archive-three.example.invalid/somavera/checkpoint-package",
+        "content_addressed": true
+      }
+    ],
+    "fetch_receipts": [
+      {
+        "kind": "state", "order": 0, "location_id": "archive-location-1",
+        "fetcher_controller_id": "controller-fetch-a", "fetcher_organization_id": "organization-fetch-a",
+        "observed_sha256": "1010101010101010101010101010101010101010101010101010101010101010", "observed_byte_length": 1024,
+        "fetched_at": "2028-05-07T09:00:00Z", "transcript_hash": "4141414141414141414141414141414141414141414141414141414141414141",
+        "success": true, "suite": "Ed25519-v1", "signature": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+      },
+      {
+        "kind": "state", "order": 0, "location_id": "archive-location-2",
+        "fetcher_controller_id": "controller-fetch-b", "fetcher_organization_id": "organization-fetch-b",
+        "observed_sha256": "1010101010101010101010101010101010101010101010101010101010101010", "observed_byte_length": 1024,
+        "fetched_at": "2028-05-07T09:05:00Z", "transcript_hash": "4242424242424242424242424242424242424242424242424242424242424242",
+        "success": true, "suite": "Ed25519-v1", "signature": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+      },
+      {
+        "kind": "state", "order": 1, "location_id": "archive-location-1",
+        "fetcher_controller_id": "controller-fetch-a", "fetcher_organization_id": "organization-fetch-a",
+        "observed_sha256": "2020202020202020202020202020202020202020202020202020202020202020", "observed_byte_length": 2048,
+        "fetched_at": "2028-05-07T09:10:00Z", "transcript_hash": "4343434343434343434343434343434343434343434343434343434343434343",
+        "success": true, "suite": "Ed25519-v1", "signature": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+      },
+      {
+        "kind": "state", "order": 1, "location_id": "archive-location-2",
+        "fetcher_controller_id": "controller-fetch-b", "fetcher_organization_id": "organization-fetch-b",
+        "observed_sha256": "2020202020202020202020202020202020202020202020202020202020202020", "observed_byte_length": 2048,
+        "fetched_at": "2028-05-07T09:15:00Z", "transcript_hash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "success": true, "suite": "Ed25519-v1", "signature": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+      },
+      {
+        "kind": "replay", "order": 0, "location_id": "archive-location-1",
+        "fetcher_controller_id": "controller-fetch-a", "fetcher_organization_id": "organization-fetch-a",
+        "observed_sha256": "3030303030303030303030303030303030303030303030303030303030303030", "observed_byte_length": 4096,
+        "fetched_at": "2028-05-07T09:20:00Z", "transcript_hash": "4545454545454545454545454545454545454545454545454545454545454545",
+        "success": true, "suite": "Ed25519-v1", "signature": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+      },
+      {
+        "kind": "replay", "order": 0, "location_id": "archive-location-2",
+        "fetcher_controller_id": "controller-fetch-b", "fetcher_organization_id": "organization-fetch-b",
+        "observed_sha256": "3030303030303030303030303030303030303030303030303030303030303030", "observed_byte_length": 4096,
+        "fetched_at": "2028-05-07T09:25:00Z", "transcript_hash": "4646464646464646464646464646464646464646464646464646464646464646",
+        "success": true, "suite": "Ed25519-v1", "signature": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+      }
+    ]
+  },
+  "reproduction_results": [
+    {
+      "implementation_id": "somavera-reference-js",
+      "controller_id": "controller-reproducer-js",
+      "organization_id": "organization-reproducer-js",
+      "jurisdiction": "US-MA",
+      "implementation_release_hash": "8181818181818181818181818181818181818181818181818181818181818181",
+      "checkpoint_id": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "reproduced_height": 28800,
+      "reproduced_public_state_root": "3333333333333333333333333333333333333333333333333333333333333333",
+      "reproduced_app_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+      "reproduced_governance_manifest_hash": "91afde8f059219e2f135c42c0c3e10b8cd2e3289954bb9680137db65bb561c39",
+      "reproduced_recovery_authority_manifest_hash": "004b5b5ae7b25b85d25f9256b3fb95087e83ab8f0184a24d6e4732fb48c80760",
+      "reproduced_validator_set_hash": "5555555555555555555555555555555555555555555555555555555555555555",
+      "reproduced_key_history_hash": "7777777777777777777777777777777777777777777777777777777777777777",
+      "transcript_hash": "8282828282828282828282828282828282828282828282828282828282828282",
+      "suite": "Ed25519-v1",
+      "signature": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    },
+    {
+      "implementation_id": "somavera-reference-rust",
+      "controller_id": "controller-reproducer-rust",
+      "organization_id": "organization-reproducer-rust",
+      "jurisdiction": "DE-BY",
+      "implementation_release_hash": "8383838383838383838383838383838383838383838383838383838383838383",
+      "checkpoint_id": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "reproduced_height": 28800,
+      "reproduced_public_state_root": "3333333333333333333333333333333333333333333333333333333333333333",
+      "reproduced_app_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+      "reproduced_governance_manifest_hash": "91afde8f059219e2f135c42c0c3e10b8cd2e3289954bb9680137db65bb561c39",
+      "reproduced_recovery_authority_manifest_hash": "004b5b5ae7b25b85d25f9256b3fb95087e83ab8f0184a24d6e4732fb48c80760",
+      "reproduced_validator_set_hash": "5555555555555555555555555555555555555555555555555555555555555555",
+      "reproduced_key_history_hash": "7777777777777777777777777777777777777777777777777777777777777777",
+      "transcript_hash": "8484848484848484848484848484848484848484848484848484848484848484",
+      "suite": "Ed25519-v1",
+      "signature": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    }
+  ],
+  "publisher_signatures": [
+    {
+      "role": "archive_operator", "key_id": "did:key:archive-operator-1#key-1", "suite": "Ed25519-v1",
+      "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    },
+    {
+      "role": "independent_recovery_auditor", "key_id": "did:key:recovery-auditor-1#key-1", "suite": "Ed25519-v1",
+      "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    }
+  ]
+}

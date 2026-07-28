@@ -1,0 +1,28 @@
+{
+  "$schema": "../schemas/evidence-event.schema.json",
+  "schema_version": "soma.evidence-event.v1",
+  "evidence_id": "1111111111111111111111111111111111111111111111111111111111111111",
+  "network_lineage_id": "somavera:network:v1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "kind": "outcome",
+  "subject_did": "did:key:example-agent",
+  "issuer_did": "did:key:example-consumer",
+  "task_id": "example-task-42",
+  "capability": "code.review",
+  "domain": "software.security",
+  "claim_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+  "artifact_hashes": [
+    "3333333333333333333333333333333333333333333333333333333333333333"
+  ],
+  "receipt_ids": [
+    "4444444444444444444444444444444444444444444444444444444444444444"
+  ],
+  "occurred_at": "2027-01-01T01:00:00Z",
+  "issued_at": "2027-01-01T01:01:00Z",
+  "supersedes": null,
+  "signature": {
+    "suite": "Ed25519-v1",
+    "key_id": "did:key:example-consumer#key-1",
+    "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+  }
+}
+

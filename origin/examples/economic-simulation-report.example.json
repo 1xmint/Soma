@@ -1,0 +1,142 @@
+{
+  "$schema": "../schemas/economic-simulation-report.schema.json",
+  "schema_version": "somavera.economic-simulation-report.v1",
+  "engine_profile": "somavera-economic-simulator-integer-v1",
+  "suite_hash": "77f16397592e0340825da568daeb5b6d9b14f790f87e3429dc1ca5cb10127f9e",
+  "corpus_status": "synthetic_unattested",
+  "quote_unit_id": "synthetic-quote-microunit-v1",
+  "coverage": {
+    "required_count": 33,
+    "observed_count": 33,
+    "missing_tags": []
+  },
+  "profile_results": [
+    {
+      "profile_id": "capped-no-tail",
+      "scenario_count": 10,
+      "failed_scenario_count": 9,
+      "minimum_validator_cost_coverage_basis_points": "0",
+      "maximum_fee_burden_basis_points": "1000",
+      "native_fee_inaccessible_scenario_count": 2,
+      "failure_codes": [
+        "AMBIGUOUS_SUCCESSION",
+        "BOOTSTRAP_SUNSET_MISSED",
+        "FEE_BURDEN_HIGH",
+        "HOSTILE_HOST_THRESHOLD",
+        "HOSTILE_VALIDATOR_THRESHOLD",
+        "HOST_CONTROLLER_CONCENTRATION",
+        "NATIVE_FEE_ACCESS_UNAVAILABLE",
+        "SERVICE_CAPACITY_EXCEEDED",
+        "SYBIL_CLAIM_SHARE_HIGH",
+        "TOKEN_SECURITY_BUDGET_NOT_REALIZABLE",
+        "VALIDATOR_CONTROLLER_CONCENTRATION",
+        "VALIDATOR_COST_COVERAGE_LOW"
+      ],
+      "decision": "reject_activation"
+    },
+    {
+      "profile_id": "fee-only-native",
+      "scenario_count": 10,
+      "failed_scenario_count": 10,
+      "minimum_validator_cost_coverage_basis_points": "0",
+      "maximum_fee_burden_basis_points": "5000",
+      "native_fee_inaccessible_scenario_count": 2,
+      "failure_codes": [
+        "AMBIGUOUS_SUCCESSION",
+        "BOOTSTRAP_SUNSET_MISSED",
+        "FEE_BURDEN_HIGH",
+        "HOSTILE_HOST_THRESHOLD",
+        "HOSTILE_VALIDATOR_THRESHOLD",
+        "HOST_CONTROLLER_CONCENTRATION",
+        "NATIVE_FEE_ACCESS_UNAVAILABLE",
+        "SERVICE_CAPACITY_EXCEEDED",
+        "SYBIL_CLAIM_SHARE_HIGH",
+        "TOKEN_SECURITY_BUDGET_NOT_REALIZABLE",
+        "VALIDATOR_CONTROLLER_CONCENTRATION",
+        "VALIDATOR_COST_COVERAGE_LOW"
+      ],
+      "decision": "reject_activation"
+    },
+    {
+      "profile_id": "lower-cap-adaptive",
+      "scenario_count": 10,
+      "failed_scenario_count": 10,
+      "minimum_validator_cost_coverage_basis_points": "0",
+      "maximum_fee_burden_basis_points": "1000",
+      "native_fee_inaccessible_scenario_count": 2,
+      "failure_codes": [
+        "AMBIGUOUS_SUCCESSION",
+        "BOOTSTRAP_SUNSET_MISSED",
+        "FEE_BURDEN_HIGH",
+        "HOSTILE_HOST_THRESHOLD",
+        "HOSTILE_VALIDATOR_THRESHOLD",
+        "HOST_CONTROLLER_CONCENTRATION",
+        "NATIVE_FEE_ACCESS_UNAVAILABLE",
+        "SERVICE_CAPACITY_EXCEEDED",
+        "SYBIL_CLAIM_SHARE_HIGH",
+        "TOKEN_SECURITY_BUDGET_NOT_REALIZABLE",
+        "VALIDATOR_CONTROLLER_CONCENTRATION",
+        "VALIDATOR_COST_COVERAGE_LOW"
+      ],
+      "decision": "reject_activation"
+    },
+    {
+      "profile_id": "no-native-token-control",
+      "scenario_count": 10,
+      "failed_scenario_count": 8,
+      "minimum_validator_cost_coverage_basis_points": "2500",
+      "maximum_fee_burden_basis_points": "0",
+      "native_fee_inaccessible_scenario_count": 0,
+      "failure_codes": [
+        "AMBIGUOUS_SUCCESSION",
+        "BOOTSTRAP_SUNSET_MISSED",
+        "EXTERNAL_SECURITY_SETTLEMENT_UNAVAILABLE",
+        "HOSTILE_HOST_THRESHOLD",
+        "HOSTILE_VALIDATOR_THRESHOLD",
+        "HOST_CONTROLLER_CONCENTRATION",
+        "SERVICE_CAPACITY_EXCEEDED",
+        "SYBIL_CLAIM_SHARE_HIGH",
+        "VALIDATOR_CONTROLLER_CONCENTRATION",
+        "VALIDATOR_COST_COVERAGE_LOW"
+      ],
+      "decision": "reject_activation"
+    },
+    {
+      "profile_id": "scenario-a",
+      "scenario_count": 10,
+      "failed_scenario_count": 9,
+      "minimum_validator_cost_coverage_basis_points": "0",
+      "maximum_fee_burden_basis_points": "1000",
+      "native_fee_inaccessible_scenario_count": 2,
+      "failure_codes": [
+        "AMBIGUOUS_SUCCESSION",
+        "BOOTSTRAP_SUNSET_MISSED",
+        "FEE_BURDEN_HIGH",
+        "HOSTILE_HOST_THRESHOLD",
+        "HOSTILE_VALIDATOR_THRESHOLD",
+        "HOST_CONTROLLER_CONCENTRATION",
+        "NATIVE_FEE_ACCESS_UNAVAILABLE",
+        "SERVICE_CAPACITY_EXCEEDED",
+        "SYBIL_CLAIM_SHARE_HIGH",
+        "TOKEN_SECURITY_BUDGET_NOT_REALIZABLE",
+        "VALIDATOR_CONTROLLER_CONCENTRATION",
+        "VALIDATOR_COST_COVERAGE_LOW"
+      ],
+      "decision": "reject_activation"
+    }
+  ],
+  "engine_conformance": "pass",
+  "activation_decision": "reject_activation",
+  "global_reasons": [
+    "LAUNCH_GATES_NOT_PASSED",
+    "MISSING_ECONOMIC_REVIEW_HASH",
+    "MISSING_INDEPENDENT_ATTESTATION_HASH",
+    "MISSING_LEGAL_REVIEW_HASH",
+    "MISSING_PRIVACY_REVIEW_HASH",
+    "MISSING_RECOVERY_REPORT_HASH",
+    "MISSING_SECURITY_REVIEW_HASH",
+    "PROFILE_SCENARIO_FAILURES",
+    "SYNTHETIC_UNATTESTED_CORPUS"
+  ],
+  "report_hash": "c9d14873c23034c43eef5e17929be2ba4582f5c8966213ad41deea889d76e709"
+}

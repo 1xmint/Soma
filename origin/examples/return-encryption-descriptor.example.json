@@ -1,0 +1,22 @@
+{
+  "$schema": "../schemas/return-encryption-descriptor.schema.json",
+  "schema_version": "somavera.return-encryption-descriptor.v1",
+  "profile_status": "freeze_blocking_draft",
+  "descriptor_id": "1111111111111111111111111111111111111111111111111111111111111111",
+  "network_lineage_id": "somavera:network:v1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "execution_context_id": "somavera:context:v1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "request_action": "vera.query",
+  "request_nonce": "0123456789abcdef0123456789abcdef",
+  "requester_did": "did:key:example-soma-agent",
+  "authorized_host_did": "did:key:example-vera-host",
+  "destination_soma_did": "did:key:example-soma-agent",
+  "recipient_return_key_id": "did:key:example-soma-agent#return-1",
+  "recipient_return_public_key": "AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI=",
+  "key_role": "private_response_decryption",
+  "usage": "single_request_response_family",
+  "hpke_suite": "HPKE-Base-X25519-HKDF-SHA256-AES256GCM-v1",
+  "allowed_response_actions": ["answer.source-bundle", "private.error"],
+  "not_before": "2027-01-01T00:00:00Z",
+  "expires_at": "2027-01-01T00:15:00Z",
+  "maximum_plaintext_bytes": 1048576
+}

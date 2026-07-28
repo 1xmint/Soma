@@ -1,0 +1,98 @@
+{
+  "$schema": "../schemas/genesis.schema.json",
+  "schema_version": "somavera.network-genesis.v1",
+  "genesis_core_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "network_lineage_id": "somavera:network:v1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "execution_context_id": "somavera:context:v1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "context_epoch": 0,
+  "origin_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "protocol_release_hash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "genesis_time": "2027-01-01T00:00:00Z",
+  "chain": {
+    "consensus_profile": "example-bft-v1",
+    "block_time_ms": 3000,
+    "max_event_bytes": 1048576,
+    "checkpoint_max_blocks": 28800
+  },
+  "validator_set": [
+    {
+      "validator_id": "did:key:example-validator-1",
+      "public_key": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "voting_power": "1",
+      "organization": "Example Organization One",
+      "jurisdiction": "Example-J1"
+    },
+    {
+      "validator_id": "did:key:example-validator-2",
+      "public_key": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "voting_power": "1",
+      "organization": "Example Organization Two",
+      "jurisdiction": "Example-J2"
+    },
+    {
+      "validator_id": "did:key:example-validator-3",
+      "public_key": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "voting_power": "1",
+      "organization": "Example Organization Three",
+      "jurisdiction": "Example-J3"
+    },
+    {
+      "validator_id": "did:key:example-validator-4",
+      "public_key": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "voting_power": "1",
+      "organization": "Example Organization Four",
+      "jurisdiction": "Example-J4"
+    }
+  ],
+  "governance": {
+    "document_hash": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "chamber_policy_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "seat_manifest_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+    "governance_manifest_hash": "91afde8f059219e2f135c42c0c3e10b8cd2e3289954bb9680137db65bb561c39"
+  },
+  "recovery_policy": {
+    "document_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+    "guardian_manifest_hash": "004b5b5ae7b25b85d25f9256b3fb95087e83ab8f0184a24d6e4732fb48c80760",
+    "old_network_death_policy_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "threshold": 5,
+    "guardian_key_ids": [
+      "did:key:example-guardian-1#key-1",
+      "did:key:example-guardian-2#key-1",
+      "did:key:example-guardian-3#key-1",
+      "did:key:example-guardian-4#key-1",
+      "did:key:example-guardian-5#key-1",
+      "did:key:example-guardian-6#key-1",
+      "did:key:example-guardian-7#key-1"
+    ]
+  },
+  "token": {
+    "activated": false,
+    "activation_core_hash": null,
+    "asset_lineage_id": null,
+    "genesis_supply_grain": "0"
+  },
+  "external_anchors": [
+    "https://mirror-one.example.invalid/somavera",
+    "https://mirror-two.example.invalid/somavera"
+  ],
+  "ratification_signatures": [
+    {
+      "role": "economic_chamber",
+      "key_id": "did:key:example-economic#key-1",
+      "suite": "Ed25519-v1",
+      "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    },
+    {
+      "role": "operator_contributor_chamber",
+      "key_id": "did:key:example-operator#key-1",
+      "suite": "Ed25519-v1",
+      "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    },
+    {
+      "role": "public_data_rights_chamber",
+      "key_id": "did:key:example-public#key-1",
+      "suite": "Ed25519-v1",
+      "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    }
+  ]
+}

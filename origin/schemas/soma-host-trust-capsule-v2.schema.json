@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://somavera.org/schemas/soma-host-trust-capsule-v2.schema.json",
+  "title": "Somavera Portable Soma Host Trust Capsule v2",
+  "description": "A complete active-controller-signed offline copy of Soma host pins, ordinary host-succession history, and the dual-signed controller-key rotation chain from an independently expected initial controller key. It is not an external anchor or restore authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "profile_status", "capsule_id", "created_at", "controller", "source", "host_count", "transition_count", "controller_rotation_count", "current_set_root", "controller_history_root", "object_set_root", "hosts", "objects", "claims", "authority", "signature"],
+  "properties": {
+    "$schema": { "const": "../schemas/soma-host-trust-capsule-v2.schema.json" },
+    "schema_version": { "const": "somavera.soma-host-trust-capsule.v2" },
+    "profile_status": { "const": "freeze_blocking_draft" },
+    "capsule_id": { "$ref": "#/$defs/hash" },
+    "created_at": { "$ref": "#/$defs/timestamp" },
+    "controller": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["did", "initial_key", "active_signing_key_id", "rotation_sequence", "rotation_head", "rotation_ids"],
+      "properties": {
+        "did": { "$ref": "#/$defs/did" },
+        "initial_key": { "$ref": "#/$defs/initialKey" },
+        "active_signing_key_id": { "$ref": "#/$defs/keyId" },
+        "rotation_sequence": { "type": "integer", "minimum": 0, "maximum": 1048576 },
+        "rotation_head": {
+          "oneOf": [
+            { "$ref": "#/$defs/hash" },
+            { "type": "null" }
+          ]
+        },
+        "rotation_ids": {
+          "type": "array",
+          "maxItems": 1048576,
+          "items": { "$ref": "#/$defs/hash" },
+          "uniqueItems": true
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["origin_capsule_hash", "reference_release_manifest_hash", "reference_release_version"],
+      "properties": {
+        "origin_capsule_hash": { "$ref": "#/$defs/hash" },
+        "reference_release_manifest_hash": { "$ref": "#/$defs/hash" },
+        "reference_release_version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$", "maxLength": 64 }
+      }
+    },
+    "host_count": { "type": "integer", "minimum": 0, "maximum": 1024 },
+    "transition_count": { "type": "integer", "minimum": 0, "maximum": 1048576 },
+    "controller_rotation_count": { "type": "integer", "minimum": 0, "maximum": 1048576 },
+    "current_set_root": { "$ref": "#/$defs/hash" },
+    "controller_history_root": { "$ref": "#/$defs/hash" },
+    "object_set_root": { "$ref": "#/$defs/hash" },
+    "hosts": {
+      "type": "array",
+      "maxItems": 1024,
+      "items": { "$ref": "#/$defs/hostSummary" }
+    },
+    "objects": {
+      "type": "array",
+      "maxItems": 2098176,
+      "items": { "$ref": "#/$defs/object" }
+    },
+    "claims": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["complete_host_trust_state", "complete_controller_rotation_history", "contains_managed_secrets", "external_anchor_created", "rollback_detection_without_separately_preserved_capsule", "authorizes_restore", "authorizes_connection", "authorizes_consent", "authorizes_disclosure", "authorizes_send", "authorizes_emergency_recovery"],
+      "properties": {
+        "complete_host_trust_state": { "const": true },
+        "complete_controller_rotation_history": { "const": true },
+        "contains_managed_secrets": { "const": false },
+        "external_anchor_created": { "const": false },
+        "rollback_detection_without_separately_preserved_capsule": { "const": false },
+        "authorizes_restore": { "const": false },
+        "authorizes_connection": { "const": false },
+        "authorizes_consent": { "const": false },
+        "authorizes_disclosure": { "const": false },
+        "authorizes_send": { "const": false },
+        "authorizes_emergency_recovery": { "const": false }
+      }
+    },
+    "authority": { "const": "portable_offline_host_trust_capsule_not_external_anchor_not_restore_authority" },
+    "signature": { "$ref": "#/$defs/signature" }
+  },
+  "$defs": {
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "did": { "type": "string", "pattern": "^did:[a-z0-9]+:.+$", "maxLength": 512 },
+    "keyId": { "type": "string", "minLength": 3, "maxLength": 512 },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "initialKey": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key_id", "public_key_multibase", "public_key_sha256", "valid_from"],
+      "properties": {
+        "key_id": { "$ref": "#/$defs/keyId" },
+        "public_key_multibase": { "type": "string", "pattern": "^z[1-9A-HJ-NP-Za-km-z]{40,100}$" },
+        "public_key_sha256": { "$ref": "#/$defs/hash" },
+        "valid_from": { "$ref": "#/$defs/timestamp" }
+      }
+    },
+    "hostSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["host_did", "current_pin_id", "current_descriptor_id", "current_descriptor_sequence", "transition_ids", "history_chain_root"],
+      "properties": {
+        "host_did": { "$ref": "#/$defs/did" },
+        "current_pin_id": { "$ref": "#/$defs/hash" },
+        "current_descriptor_id": { "$ref": "#/$defs/hash" },
+        "current_descriptor_sequence": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+        "transition_ids": { "type": "array", "maxItems": 1048576, "items": { "$ref": "#/$defs/hash" }, "uniqueItems": true },
+        "history_chain_root": { "$ref": "#/$defs/hash" }
+      }
+    },
+    "object": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "kind", "byte_length", "sha256", "canonical_json_base64"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "pattern": "^(?:hosts(?:/history)?/[a-f0-9]{64}(?:/[a-f0-9]{64}\\.json|\\.json)|identity/rotations/[0-9]{12}-[a-f0-9]{64}\\.json)$",
+          "maxLength": 256
+        },
+        "kind": { "enum": ["current_pin", "history_transition", "controller_rotation"] },
+        "byte_length": { "type": "integer", "minimum": 2, "maximum": 2097152 },
+        "sha256": { "$ref": "#/$defs/hash" },
+        "canonical_json_base64": { "type": "string", "minLength": 4, "maxLength": 2796204, "contentEncoding": "base64" }
+      }
+    },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["suite", "key_id", "value"],
+      "properties": {
+        "suite": { "const": "Ed25519-v1" },
+        "key_id": { "$ref": "#/$defs/keyId" },
+        "value": { "type": "string", "pattern": "^[A-Za-z0-9+/]{86}==$", "minLength": 88, "maxLength": 88, "contentEncoding": "base64" }
+      }
+    }
+  }
+}

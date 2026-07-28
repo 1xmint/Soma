@@ -1,0 +1,152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:somavera:schema:consent-grant:v1",
+  "title": "Somavera Vera Consent Grant v1",
+  "$comment": "consent_grant_id and signature domain are defined in ID-DERIVATION.md",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "consent_grant_id",
+    "network_lineage_id",
+    "subject_did",
+    "controller_did",
+    "observer_did",
+    "purposes",
+    "data_classes",
+    "destinations",
+    "operations",
+    "retention_seconds",
+    "redistribution",
+    "model_training",
+    "public_release",
+    "license",
+    "issued_at",
+    "expires_at",
+    "withdrawal_mode",
+    "policy_version",
+    "signature"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": { "const": "somavera.consent-grant.v1" },
+    "consent_grant_id": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "network_lineage_id": {
+      "type": "string",
+      "pattern": "^somavera:network:v1:[a-f0-9]{64}$"
+    },
+    "subject_did": { "$ref": "#/$defs/did" },
+    "controller_did": { "$ref": "#/$defs/did" },
+    "observer_did": { "$ref": "#/$defs/did" },
+    "purposes": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "private_retrieval",
+          "aggregate_research",
+          "safety_evaluation",
+          "model_training",
+          "public_dataset",
+          "dispute_resolution"
+        ]
+      }
+    },
+    "data_classes": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "public_artifact",
+          "work_summary",
+          "objective_receipt"
+        ]
+      }
+    },
+    "destinations": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 3,
+        "maxLength": 512
+      }
+    },
+    "operations": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "collect",
+          "store_encrypted",
+          "decrypt_in_attested_process",
+          "derive",
+          "evaluate",
+          "train",
+          "aggregate",
+          "redistribute"
+        ]
+      }
+    },
+    "retention_seconds": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 31536000
+    },
+    "redistribution": {
+      "type": "string",
+      "enum": ["none", "aggregate_only", "licensed_artifact"]
+    },
+    "model_training": { "type": "boolean" },
+    "public_release": { "type": "boolean" },
+    "license": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "issued_at": { "type": "string", "format": "date-time" },
+    "expires_at": { "type": "string", "format": "date-time" },
+    "withdrawal_mode": {
+      "type": "string",
+      "enum": [
+        "delete_deletable_and_tombstone",
+        "stop_future_use_only"
+      ]
+    },
+    "policy_version": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_.-]{2,63}$"
+    },
+    "signature": { "$ref": "#/$defs/signature" }
+  },
+  "$defs": {
+    "did": {
+      "type": "string",
+      "pattern": "^did:[a-z0-9]+:.+$"
+    },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["suite", "key_id", "value"],
+      "properties": {
+        "suite": { "const": "Ed25519-v1" },
+        "key_id": { "type": "string", "minLength": 3, "maxLength": 512 },
+        "value": {
+          "type": "string",
+          "contentEncoding": "base64",
+          "minLength": 80,
+          "maxLength": 128
+        }
+      }
+    }
+  }
+}
+

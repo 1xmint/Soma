@@ -1,0 +1,769 @@
+{
+  "manifest_version": "somavera.capsule-manifest.v1",
+  "hash_algorithm": "sha256",
+  "canonicalization": "RFC8785-JCS-with-Somavera-I-JSON-rejections",
+  "excluded_paths": [
+    ".git/",
+    ".github/",
+    "node_modules/",
+    "CAPSULE-MANIFEST.json"
+  ],
+  "files": [
+    {
+      "path": ".gitattributes",
+      "bytes": 114,
+      "sha256": "6459c29da538ee328575903d2f0c0231fbf7c9ce21d9bdc50e63f155d9cd66ba"
+    },
+    {
+      "path": ".gitignore",
+      "bytes": 187,
+      "sha256": "5f20c020969563358f8e8fb152e96958a4eda8b0c24f0f93baac0b45c5db74d5"
+    },
+    {
+      "path": "ACTUALIZATION-PLAN.md",
+      "bytes": 14827,
+      "sha256": "289a2b4c216fca8cfe118d8fe454004573a1fbbd6053e856566a7f1b36a0da1a"
+    },
+    {
+      "path": "ASSURANCE-CASE.md",
+      "bytes": 13073,
+      "sha256": "6630099931844520f2340d6098cb45375ede07d2ee9688ed4dc9dcabbcb9df41"
+    },
+    {
+      "path": "CONFIDENTIAL-COMPUTE.md",
+      "bytes": 15236,
+      "sha256": "0c68122aa97027e3efa76b1944ed62c45be70449e7f8ddc45cca52350a1e535b"
+    },
+    {
+      "path": "CONSENSUS-SUBSTRATE-DECISION.md",
+      "bytes": 7331,
+      "sha256": "ba811e4eee2ef94bdb84c7279130dea75c51579578f609a5d7c173c93e4a6d40"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "bytes": 782,
+      "sha256": "008171ade14da7a98799fc73bafd4e9faac6f1302f0c470eb8a517882df6ff91"
+    },
+    {
+      "path": "DATA-RIGHTS.md",
+      "bytes": 9263,
+      "sha256": "87626b6caf04d13471b09e5228c65a1ec2aed0e3123b177f138aaf8adf08d7a3"
+    },
+    {
+      "path": "DECISIONS-NEEDED.md",
+      "bytes": 6914,
+      "sha256": "f278e5c87111b35106a61f7031152f93bae21cf12c1f7d0f235fff1955455066"
+    },
+    {
+      "path": "ECONOMIC-SIMULATION.md",
+      "bytes": 5260,
+      "sha256": "e35dfa4cd20aedaa4e2dfdd45de133a54037a97a776e398b27f2b9ebdf5802b4"
+    },
+    {
+      "path": "ECONOMY.md",
+      "bytes": 11176,
+      "sha256": "050b1c22f1590ba2278b11cf4c07b11f09d550adc0587f048c5a503ed916e77a"
+    },
+    {
+      "path": "GENESIS-TOKEN-AUDIT.md",
+      "bytes": 16128,
+      "sha256": "e9e08ef2d5a0be791008d2de92e7cec314b0cc8f242022d5688d54d9233350b1"
+    },
+    {
+      "path": "GENESIS-VALIDATION.md",
+      "bytes": 2790,
+      "sha256": "20f1d95c9666732837473df5a6287e29fe601d432679f34b51c4fc2b6b23e823"
+    },
+    {
+      "path": "GOVERNANCE.md",
+      "bytes": 10059,
+      "sha256": "dfc6579029424fb32e9f38b4bbd0aee4fe5b43720892c9477a1c0b563eadedf7"
+    },
+    {
+      "path": "ID-DERIVATION.md",
+      "bytes": 47126,
+      "sha256": "e528c52be1d8f8c8e3a8252518ea7f1c4e17380e0b128ccba577afca557bbe0b"
+    },
+    {
+      "path": "LICENSE",
+      "bytes": 11352,
+      "sha256": "9c3f330f81376681beeab80fc6f40a1f1ae9a211d1c2d0943c9ee9787cf0e3ad"
+    },
+    {
+      "path": "NOTICE",
+      "bytes": 250,
+      "sha256": "3c3234e87f9ac2550b51f6e83d2f8ff95acf93e01634a396a75391df4d2eb041"
+    },
+    {
+      "path": "ORIGIN-SPEC.md",
+      "bytes": 19530,
+      "sha256": "4f831bc034e657d471fa1dd582cff8cf37cc77874de8f98443737e483e232c18"
+    },
+    {
+      "path": "PHOENIX-ORIGIN.md",
+      "bytes": 3811,
+      "sha256": "7562c7c3421bfa97aebca53be4f0caf3f837effe6583eaf724c7a64627fbaaa7"
+    },
+    {
+      "path": "RATIFICATION.md",
+      "bytes": 15837,
+      "sha256": "855cc62bcaf6d05da32263960aee8b9f0e62b858d345a8d7410f8e7f8672908f"
+    },
+    {
+      "path": "README.md",
+      "bytes": 6665,
+      "sha256": "b68b222d28226d3c35e29de1ac224277f88d39a8f1362fc33fad25d42453deb8"
+    },
+    {
+      "path": "RECOVERY.md",
+      "bytes": 14442,
+      "sha256": "117b5fc185eede6cfea71a9058dab82fde1cb205840e0fb6d799bf779e96f749"
+    },
+    {
+      "path": "REPOSITORY-MAP.md",
+      "bytes": 4802,
+      "sha256": "352e3f7d64584409a957d36f89f4294a1424a4fcd361e77192dd6fc38d0f7e5d"
+    },
+    {
+      "path": "SECURITY.md",
+      "bytes": 1141,
+      "sha256": "41b4456c9adb1e3ecc8375b90c5a7810bb6bd67e0ff4f1acb0791d465f838a26"
+    },
+    {
+      "path": "SOURCES.md",
+      "bytes": 5161,
+      "sha256": "6a21434ed5469caea6807d95ea431b14bb8d9647a228406146b4b2f5f58acca2"
+    },
+    {
+      "path": "THREAT-MODEL.md",
+      "bytes": 8610,
+      "sha256": "3c1c078fb2a1e71cafb3c307a96e0876cbd9355acf2999c428496fe21609fae9"
+    },
+    {
+      "path": "TOKEN-OPERATIONS.md",
+      "bytes": 10114,
+      "sha256": "e505a200cf63b38d78afd8b551986a3989742ddec08111e36edd060194403232"
+    },
+    {
+      "path": "TOKEN-SPEC.md",
+      "bytes": 16870,
+      "sha256": "40e76f35d9c410ab8bdab05059eb3134679702052cc342478be136c446c34206"
+    },
+    {
+      "path": "TOKENLESS-REDUCER.md",
+      "bytes": 10182,
+      "sha256": "7f5693212cd006a8c5afd8aea6338bb7d09eb3282e3ff44a17c583dcf5d706af"
+    },
+    {
+      "path": "conformance/PROTOTYPE-ACCEPTANCE.md",
+      "bytes": 77944,
+      "sha256": "d55c3156cb2308edba7cd7839cf93b26c4c8a961fdb086e26847f702e2f5ffdb"
+    },
+    {
+      "path": "conformance/README.md",
+      "bytes": 3796,
+      "sha256": "31b3c01c14a73277c8106732b5eaaa011b39a96ece9c662a1e6f2f173a8312b1"
+    },
+    {
+      "path": "conformance/canonicalization-v1.json",
+      "bytes": 1294,
+      "sha256": "87c5f75f5e70afb43f58cb613ba8736b393414ffbe43594c50bf6a19bd58965f"
+    },
+    {
+      "path": "conformance/controller-key-rotation-invalid-v1.json",
+      "bytes": 4359,
+      "sha256": "9a4d2bdf9bb74c0ba983cfb69432cd50311ecb7cd33670d80658c1afd164f761"
+    },
+    {
+      "path": "conformance/controller-key-rotation-v1.json",
+      "bytes": 8249,
+      "sha256": "403651ac81ca239ed0cb5388c99ce60afa6bce292ccacf73c7a973682d038b6c"
+    },
+    {
+      "path": "conformance/ed25519-rfc8032-v1.json",
+      "bytes": 457,
+      "sha256": "56ba16b7555a516d56f2a61fee06b9fd0cd0745a7f8719784812ad9285f07cd0"
+    },
+    {
+      "path": "conformance/host-descriptor-succession-invalid-v1.json",
+      "bytes": 2794,
+      "sha256": "d0bdd2dc14f3222c13d63a5278f074b75e1429353a7c1f7437a47ae20a62d986"
+    },
+    {
+      "path": "conformance/host-descriptor-succession-v1.json",
+      "bytes": 30783,
+      "sha256": "d27d3d31a006944497cda1817ba18d22cafd1ddf78f76e5f9aa2201863b8e338"
+    },
+    {
+      "path": "conformance/host-succession-confirmation-invalid-v1.json",
+      "bytes": 5209,
+      "sha256": "e6bbc9f99072b37f5e97ba16e5a0d2711cc178b07b9d6d53ffe4acd759ddd3a4"
+    },
+    {
+      "path": "conformance/host-succession-confirmation-v1.json",
+      "bytes": 6302,
+      "sha256": "56320521ea80724b4a72c0b1f994cc117f1edf5208ae980ac40f1e9ad9874b69"
+    },
+    {
+      "path": "conformance/host-trust-capsule-invalid-v1.json",
+      "bytes": 2537,
+      "sha256": "c6eb3a38fbac8a439e54e6a6e60986c1e5213a82d2f5c050eba5bd953a408338"
+    },
+    {
+      "path": "conformance/host-trust-capsule-invalid-v2.json",
+      "bytes": 2000,
+      "sha256": "e24fb029cf77d0c842dcebe4f898ef059022f112408251c6b818a0c9e854f3ba"
+    },
+    {
+      "path": "conformance/host-trust-capsule-v1.json",
+      "bytes": 9013,
+      "sha256": "f6f59816a86116cd2cc48ae8c55a3ec67a60999297815e3fd4fa4de591b29af6"
+    },
+    {
+      "path": "conformance/host-trust-capsule-v2.json",
+      "bytes": 18083,
+      "sha256": "2c8a8c518220ace2676a8ac191c9fa65bc2c3b8912a645171e6ccb509406ee62"
+    },
+    {
+      "path": "conformance/recovery-adversarial-v1.json",
+      "bytes": 1956,
+      "sha256": "c742f1717b0f6228f28e224c49f8675ddcc259cc9f38ca4faa119161da177511"
+    },
+    {
+      "path": "conformance/recovery-domain-v1.json",
+      "bytes": 1840,
+      "sha256": "3c4ad0ffc6e4651cf54dcecb3b1694ea0d1fa26af0bca04d2c77b1ca06756f69"
+    },
+    {
+      "path": "conformance/tokenless-reducer-invalid-v1.json",
+      "bytes": 3647,
+      "sha256": "463b6ad8c012774333f614a496462f6137cf0fadb6db546e4e30ff3ec78426bc"
+    },
+    {
+      "path": "conformance/tokenless-reducer-v1.json",
+      "bytes": 29423,
+      "sha256": "578f4a6c8b3a871c7304576f8abcb09a1bd731ac079b6a01485d384bd8aeba7a"
+    },
+    {
+      "path": "conformance/wire-invalid-v1.json",
+      "bytes": 7528,
+      "sha256": "3d0b5dae823286dc4ea97d92c34172d82ea36378233bd877b4490da1a7052dcc"
+    },
+    {
+      "path": "examples/README.md",
+      "bytes": 1545,
+      "sha256": "622ddd6cf09fb5eafa56301dd43bb106052c0a0111af548d95ae0925b27bdb24"
+    },
+    {
+      "path": "examples/checkpoint-state-package.example.json",
+      "bytes": 11354,
+      "sha256": "5ccb1a5e16675385fb4c87d518cb35e4fcb54af14a2eef1d1102e5511e8b44de"
+    },
+    {
+      "path": "examples/checkpoint.example.json",
+      "bytes": 2406,
+      "sha256": "3e1324c413dfa120a555c18087ab800d891caafc0b9d208c76445a474e03e76a"
+    },
+    {
+      "path": "examples/consent-grant.example.json",
+      "bytes": 1304,
+      "sha256": "8056eff5f2c30cb8e16140e694570229e809cb8c92a93dc08487d8cb3fe89057"
+    },
+    {
+      "path": "examples/economic-simulation-report.example.json",
+      "bytes": 4930,
+      "sha256": "08e28d51ae0c3bcf1e603daa4900108486c5d9da1d8c675340c081d33be31346"
+    },
+    {
+      "path": "examples/economic-simulation-suite.example.json",
+      "bytes": 14364,
+      "sha256": "ad5beb7eff67274c267b2e5bdabaf9a31127ab8e860437319bdd7cbb4f692452"
+    },
+    {
+      "path": "examples/evidence-event.example.json",
+      "bytes": 1085,
+      "sha256": "f7bc7e19f4b7cb27a1bf49532c1aca4afc28c117b832ed95e18d9e858af027cc"
+    },
+    {
+      "path": "examples/network-genesis.example.json",
+      "bytes": 3913,
+      "sha256": "5ddb49c8e3985304335c678efeea0bc1ec9cce4eea4594bef89b72cc5bd92ff6"
+    },
+    {
+      "path": "examples/preactivation-governance.example.json",
+      "bytes": 4670,
+      "sha256": "65e45e087c4b2a3ae97ad8977b71d9e3a7f77246bdd4d5949927350c1b1c00c5"
+    },
+    {
+      "path": "examples/query-delegation.example.json",
+      "bytes": 1473,
+      "sha256": "e2faed079b739fbc47551a3de51be0835adf949d3db4638f59e76e141896c5c4"
+    },
+    {
+      "path": "examples/recovery-authority.example.json",
+      "bytes": 3863,
+      "sha256": "217f760d84762bd17452d768deaddce298e9e9d271758623f51aed6471c0c2f8"
+    },
+    {
+      "path": "examples/recovery-certificate.example.json",
+      "bytes": 10653,
+      "sha256": "b1c41b89e1d4957bc094900724402cbdc4eaf756fe218d4badffa5dc97d9b50c"
+    },
+    {
+      "path": "examples/recovery-death-evidence.example.json",
+      "bytes": 7948,
+      "sha256": "ff1a9329ca1f2ffb0d0a89e5ccfd9811fbc81c505336f0b4ed7af69bba7a3582"
+    },
+    {
+      "path": "examples/recovery-death-policy.example.json",
+      "bytes": 2221,
+      "sha256": "c64483c2550afd8534bf4abf469c4a5337c661d6a2ee8b36919ff7e279b99f12"
+    },
+    {
+      "path": "examples/return-encryption-descriptor.example.json",
+      "bytes": 1232,
+      "sha256": "92429fbd7439110337730367d667718809d58b00138b61efb589bccb7265c181"
+    },
+    {
+      "path": "examples/service-receipt.example.json",
+      "bytes": 1540,
+      "sha256": "435aaee4f2ff7092a0f9eb1046e9f7f8466d817d95d4dbf672ea5abe2ad133e1"
+    },
+    {
+      "path": "examples/signed-event.example.json",
+      "bytes": 1193,
+      "sha256": "c4dfd94328d34db4e6bb18f5ad587ed520bb3b141ba0438607dea9c7f0009197"
+    },
+    {
+      "path": "examples/soma-controller-key-rotation.example.json",
+      "bytes": 2905,
+      "sha256": "efab07a904a22243b618aab322cb400d571c8a73499c9f0d33f33dfc68af3eef"
+    },
+    {
+      "path": "examples/soma-host-succession-confirmation.example.json",
+      "bytes": 2135,
+      "sha256": "c6290966427c4f12753de59aad52bbfba1e882902c341f018d36866a2eaf1ede"
+    },
+    {
+      "path": "examples/soma-host-trust-capsule-v2.example.json",
+      "bytes": 8618,
+      "sha256": "11889e21ba5a10264b0e27f45fb19778787238780e519406acfe49c50ae4fedd"
+    },
+    {
+      "path": "examples/soma-host-trust-capsule.example.json",
+      "bytes": 4111,
+      "sha256": "1f978b98d5d09aff582e067f9c78608564882c2514a9dc879e9f75f1f5c7fd59"
+    },
+    {
+      "path": "examples/token-activation.example.json",
+      "bytes": 4320,
+      "sha256": "93072fccefa0584498461682675aa4e28da194a2df661c12d86fa6ef6c46d61b"
+    },
+    {
+      "path": "examples/tokenless-reducer-block-result.example.json",
+      "bytes": 949,
+      "sha256": "6f34e7e42889e26ce5d488dcf9681521fca97174403c1691e56a9e2d28d8050a"
+    },
+    {
+      "path": "examples/tokenless-reducer-block.example.json",
+      "bytes": 2233,
+      "sha256": "2114c567805a5f8d496b71c83eae9f26e0c1ffc2850aa6b5ab79a9d78c8b8fe1"
+    },
+    {
+      "path": "examples/tokenless-reducer-state.example.json",
+      "bytes": 2032,
+      "sha256": "96dbe79f9d1748d5cda18943bb2dd4c1a5daaaf3124b8b1cbae7534db2f0d6db"
+    },
+    {
+      "path": "examples/tokenless-reducer-transaction.example.json",
+      "bytes": 1359,
+      "sha256": "ab120b17c5b7c0c207d98c28e28b974c5bb658b5274aafdbf3de02f5bbeed14b"
+    },
+    {
+      "path": "examples/vera-answer-source-bundle.example.json",
+      "bytes": 3413,
+      "sha256": "e91b4b9ca919d2ad7acad3401afa0fb194d1c2cf81c87dfd006f64a92965bd2e"
+    },
+    {
+      "path": "examples/vera-application-envelope.example.json",
+      "bytes": 1372,
+      "sha256": "89979b83ed63142f71cf0cae3ea7514214c9f52b6c35e72fd61a4a6ced2f0cd3"
+    },
+    {
+      "path": "examples/vera-contribution-acknowledgement.example.json",
+      "bytes": 2539,
+      "sha256": "ee1bc899b97501a8484cac5a9679053e2721c228a783b078792a890377353c5b"
+    },
+    {
+      "path": "examples/vera-encrypted-response.example.json",
+      "bytes": 2071,
+      "sha256": "30c751d736a3d3b0099ff6439e18aafac6eeb849f09bc1318285477b5eee6a28"
+    },
+    {
+      "path": "examples/vera-encrypted-stream.example.json",
+      "bytes": 3151,
+      "sha256": "ab0edc4655a1b5f6ae0d461fdc833deaacaa9f5a69adddc8c4866cea79f12b30"
+    },
+    {
+      "path": "examples/vera-host-descriptor-succession.example.json",
+      "bytes": 2029,
+      "sha256": "47a91c620ea6b4ec05b46a3c968181dded113e224b2a0205f3cd39ce4073c0bd"
+    },
+    {
+      "path": "examples/vera-host-descriptor.example.json",
+      "bytes": 5908,
+      "sha256": "3aac1d8683802f4f946615a430e17da4c7e3787995fdeec1f7bba9e25093fae2"
+    },
+    {
+      "path": "package-lock.json",
+      "bytes": 3175,
+      "sha256": "60dbf1a748df0a22e13c0dc75ef31625da1c3a53a82fde652ed797117d1ba21e"
+    },
+    {
+      "path": "package.json",
+      "bytes": 807,
+      "sha256": "4361c391c8d931117c6575eed443f20b4df04d73566ca85917289c42b28c921c"
+    },
+    {
+      "path": "schemas/checkpoint-state-package.schema.json",
+      "bytes": 11464,
+      "sha256": "02343d9f5d236b23442b421dce9315ca107af9fde6d36758b72fe98d798bb471"
+    },
+    {
+      "path": "schemas/checkpoint.schema.json",
+      "bytes": 4106,
+      "sha256": "3c517a9c630cd71b76af8308be799c05f66235479b8ddc1039c8403392cd1865"
+    },
+    {
+      "path": "schemas/consent-grant.schema.json",
+      "bytes": 3706,
+      "sha256": "bb8f1c38e3a2deb052a5ac296237ad99c06fb6b81887666a1d808969de61018c"
+    },
+    {
+      "path": "schemas/economic-simulation-report.schema.json",
+      "bytes": 3212,
+      "sha256": "3ec3b66df6ca6723cae17e711c7559c6f184c6ac8304b7982c668ccf55d6c736"
+    },
+    {
+      "path": "schemas/economic-simulation-suite.schema.json",
+      "bytes": 8109,
+      "sha256": "697fd1ab72607bdbacdf30d0fabc999fd3f6ccc719d481c190f307a26d9c4151"
+    },
+    {
+      "path": "schemas/evidence-event.schema.json",
+      "bytes": 2601,
+      "sha256": "4008207e206df3cd350fe324ce535b10eb43c1097032e8cbb22fb14543d10fed"
+    },
+    {
+      "path": "schemas/genesis.schema.json",
+      "bytes": 5457,
+      "sha256": "d6d0f7add048d3e6cca68d5785765a07c13f5465b02cf30d9c1a4298aa1fe1a9"
+    },
+    {
+      "path": "schemas/preactivation-governance.schema.json",
+      "bytes": 2704,
+      "sha256": "ad7ad6d48c67edd5188814be7b2989ae84f5c8df317bb91db20e25ed402fba0b"
+    },
+    {
+      "path": "schemas/query-delegation.schema.json",
+      "bytes": 4815,
+      "sha256": "64cce5162a1dd690bacd25b6ede3c2ceee91cc852b0267284204437133af8c8f"
+    },
+    {
+      "path": "schemas/recovery-authority.schema.json",
+      "bytes": 3129,
+      "sha256": "d6471224765219fcfe9f9fd94c0afce780ec2623cab8e0c178b961b1f5df2ad3"
+    },
+    {
+      "path": "schemas/recovery-certificate.schema.json",
+      "bytes": 7351,
+      "sha256": "0de343a9efee3cba88f1927d968d28c6cb3591cc1c4da9c1c1c76dec267472b3"
+    },
+    {
+      "path": "schemas/recovery-death-evidence.schema.json",
+      "bytes": 8539,
+      "sha256": "2d59631380dc2e597b0e3516ce1ffd75385d5df68274c417d7ea32e1dda57f70"
+    },
+    {
+      "path": "schemas/recovery-death-policy.schema.json",
+      "bytes": 6357,
+      "sha256": "384533decf470dae76ce050da3b50675e1d10137ae2e83a1d42229435ee961e0"
+    },
+    {
+      "path": "schemas/return-encryption-descriptor.schema.json",
+      "bytes": 7841,
+      "sha256": "d50ea681c7eb0f988e3dbaad5ef75c83ce6b3f3c54673798350c74ee26c7a100"
+    },
+    {
+      "path": "schemas/service-receipt.schema.json",
+      "bytes": 3206,
+      "sha256": "5a737f17379632c4f0adc1eaa675c232435cc3d745d1f5a6612d17ae0da40399"
+    },
+    {
+      "path": "schemas/signed-event.schema.json",
+      "bytes": 2481,
+      "sha256": "91d09eb17574af566ad11cc1c990720563f64f470de1da675bd00ac8c4bdc934"
+    },
+    {
+      "path": "schemas/soma-controller-key-rotation.schema.json",
+      "bytes": 5649,
+      "sha256": "c7441867da3e1ef564097b2b6ade249db3b41dc9839d200e6e3911260cd6d91e"
+    },
+    {
+      "path": "schemas/soma-host-succession-confirmation.schema.json",
+      "bytes": 4452,
+      "sha256": "c6ddf82438897850f86f08de5ab0caabe95cb09ac51a42b2423cdccb1bc416db"
+    },
+    {
+      "path": "schemas/soma-host-trust-capsule-v2.schema.json",
+      "bytes": 6977,
+      "sha256": "c249df68a6411525be130a053fe37f8e43fdf84187c9b72afbbc3a2bb0db273a"
+    },
+    {
+      "path": "schemas/soma-host-trust-capsule.schema.json",
+      "bytes": 5715,
+      "sha256": "b8411300b2151221480d7416e9cae462f19cd9f9d7e70ebc4b561bb5eb35398b"
+    },
+    {
+      "path": "schemas/token-activation.schema.json",
+      "bytes": 7727,
+      "sha256": "94a6a8719823f61c7c79f4010a77b2c143d1565ee7f727556dc7e5793c2dd38f"
+    },
+    {
+      "path": "schemas/tokenless-reducer-block-result.schema.json",
+      "bytes": 1738,
+      "sha256": "89ce18019265f1df8853f3ce4d61d9f89042fe3c3ca4026e39372f46935d8d4b"
+    },
+    {
+      "path": "schemas/tokenless-reducer-block.schema.json",
+      "bytes": 1405,
+      "sha256": "61cfcc5aae99f917b5d9321bed6ccbd0808ece23973c0de4dd7cf80486c7da1d"
+    },
+    {
+      "path": "schemas/tokenless-reducer-state.schema.json",
+      "bytes": 6123,
+      "sha256": "de9e4dd7be9d9cd62c51fdb9c6db83503b99578bcdd545f22840aeab56d4e5b4"
+    },
+    {
+      "path": "schemas/tokenless-reducer-transaction.schema.json",
+      "bytes": 3733,
+      "sha256": "9f85c6209875c1b4031f9c70811f0eb94a4e277738d351d2bec214b64f68755c"
+    },
+    {
+      "path": "schemas/vera-answer-source-bundle.schema.json",
+      "bytes": 9008,
+      "sha256": "734858780bc2911bad34a7dd50a868abaead8122ba54bdb50f7f2cadc0de942e"
+    },
+    {
+      "path": "schemas/vera-application-envelope.schema.json",
+      "bytes": 2838,
+      "sha256": "d50abb2d2c4162cf53d933ed16a3dd38507cea4c266800f3009923351997fe2d"
+    },
+    {
+      "path": "schemas/vera-contribution-acknowledgement.schema.json",
+      "bytes": 7738,
+      "sha256": "8212d5a9474dcef8143780db7ba92a108f234b2e7b078e5c347144a99471b820"
+    },
+    {
+      "path": "schemas/vera-encrypted-response.schema.json",
+      "bytes": 4899,
+      "sha256": "346e52a972fca36a755152af2f47067b93c137832b8ae074b951011c9417d25e"
+    },
+    {
+      "path": "schemas/vera-encrypted-stream.schema.json",
+      "bytes": 6697,
+      "sha256": "b62b19a16aa669a137e857fdb1ebf7f3dbecf7aa49644da5e57e6713b9646997"
+    },
+    {
+      "path": "schemas/vera-host-descriptor-succession.schema.json",
+      "bytes": 5032,
+      "sha256": "73fd5fca6593f6c12b4b624aec1d985bafef4b5b86f324ce869af8ff582097be"
+    },
+    {
+      "path": "schemas/vera-host-descriptor.schema.json",
+      "bytes": 16079,
+      "sha256": "ced3211a317dfe3c858966318c8154bd0af529773b090f02361112c4a7474107"
+    },
+    {
+      "path": "scripts/build-economic-simulation-report.mjs",
+      "bytes": 773,
+      "sha256": "acc5252d548daa1f3108c49c42198e6eb57dbbf424d33a5bce1cdbcae4d547e4"
+    },
+    {
+      "path": "scripts/build-manifest.mjs",
+      "bytes": 1122,
+      "sha256": "5e88b92ae78c3e3a92c980387246d1c12cd12d2f2f1098b196c98d978fc1df98"
+    },
+    {
+      "path": "scripts/check-conformance-core.mjs",
+      "bytes": 22480,
+      "sha256": "3924e014d54bf0a605aefdc9b991d44e3e36d763d3e47768e275d8a6a0093f76"
+    },
+    {
+      "path": "scripts/check-conformance.mjs",
+      "bytes": 1873,
+      "sha256": "07b982b226d2e76139de61efc01ff5963bfc6b18208fc2cbfca764049dd3d066"
+    },
+    {
+      "path": "scripts/generate-controller-key-rotation-vector.mjs",
+      "bytes": 10768,
+      "sha256": "912b5bb79a6a4d03888daf283372cb478db68c025c86a09941d3cce01bcb4ac4"
+    },
+    {
+      "path": "scripts/generate-host-descriptor-succession-vector.mjs",
+      "bytes": 10333,
+      "sha256": "1d602699fd2002e560abfa892191e2dba8a29a7a27930af2fe5e4a8639732cfa"
+    },
+    {
+      "path": "scripts/generate-host-succession-confirmation-vector.mjs",
+      "bytes": 9100,
+      "sha256": "4d62e561383e55ab35cfee67972a58c32e79f68e26099f3c6eb24046f5c17a66"
+    },
+    {
+      "path": "scripts/generate-host-trust-capsule-v2-vector.mjs",
+      "bytes": 8608,
+      "sha256": "a4ebeb05392b3062a8340b66d798649c6fd3edabf97c7c6daf7fc000c5b153c9"
+    },
+    {
+      "path": "scripts/generate-host-trust-capsule-vector.mjs",
+      "bytes": 8250,
+      "sha256": "e36cd0f3bbe1a7e162407d541124f3544517179e3fc352ad6e8b0009f34e7c9b"
+    },
+    {
+      "path": "scripts/generate-tokenless-reducer-vectors.mjs",
+      "bytes": 10486,
+      "sha256": "8b27673496c47d5c672621fe5605c0811903f74d3e19597870ba927ea56cbeea"
+    },
+    {
+      "path": "scripts/lib/canonicalize.mjs",
+      "bytes": 1600,
+      "sha256": "1e01bde9f7cbfd072b31d74c6d0cd31ba4b09577b74f7550190e94f4087712e3"
+    },
+    {
+      "path": "scripts/lib/capsule-files.mjs",
+      "bytes": 1563,
+      "sha256": "b3a94a2ef59bf540205338f5bc5fe38be93eeff46064499196227bc945868492"
+    },
+    {
+      "path": "scripts/lib/controller-key-rotation-conformance.mjs",
+      "bytes": 11510,
+      "sha256": "5e10d6c88a25376d4c8e17c3f89559b6c819afbbd57104321ea8353b776ec6f3"
+    },
+    {
+      "path": "scripts/lib/document-json-conformance.mjs",
+      "bytes": 1420,
+      "sha256": "af1f657a6889d9db1579e6778226fec38a78eec7878552a79edafcb693ed6f8a"
+    },
+    {
+      "path": "scripts/lib/economic-simulation-conformance.mjs",
+      "bytes": 3212,
+      "sha256": "23bea3ee47337e6973da5e7001e4119eb826bd12bb650a5f08aad158f12653c5"
+    },
+    {
+      "path": "scripts/lib/economic-simulation.mjs",
+      "bytes": 12465,
+      "sha256": "3752d40c768757d03a7af3e1a98670e30f2beee8521f66c2a11885479b6d24af"
+    },
+    {
+      "path": "scripts/lib/full-schema-conformance.mjs",
+      "bytes": 2875,
+      "sha256": "ba2199fdbc3b85aaa68b74b42535f9249e30d278e9854ec89f6023a1ee2e8c50"
+    },
+    {
+      "path": "scripts/lib/genesis-validation-conformance.mjs",
+      "bytes": 3392,
+      "sha256": "c1689e02ef6add6ea38486ce18974f928207771caab943bdf9ea222c1c423c63"
+    },
+    {
+      "path": "scripts/lib/genesis-validation.mjs",
+      "bytes": 4104,
+      "sha256": "293c4d5d3b5e5df9945190836b7ba89c3d79df461959368c12faf798e2b89fbf"
+    },
+    {
+      "path": "scripts/lib/host-confirmation-conformance.mjs",
+      "bytes": 9379,
+      "sha256": "e14e3c85c1b24f259f5357dc6df1dacc53620c6a707dafd7d14114ccd7235374"
+    },
+    {
+      "path": "scripts/lib/host-succession-conformance.mjs",
+      "bytes": 17362,
+      "sha256": "a9fef2f9473c752275f6fe860dd7c4685a509a288eddff2036e33b9845a12eff"
+    },
+    {
+      "path": "scripts/lib/host-trust-capsule-conformance.mjs",
+      "bytes": 8065,
+      "sha256": "24eef3954f30a7bd50c34596c6a2b451e777a61da9031abdcb13e9de6fe0eaf2"
+    },
+    {
+      "path": "scripts/lib/host-trust-capsule-v2-conformance.mjs",
+      "bytes": 11601,
+      "sha256": "b0bcd6635978e46dab42fcd85c2267ff4b8cff769cfb15d08c43551e6f40a474"
+    },
+    {
+      "path": "scripts/lib/recovery-conformance.mjs",
+      "bytes": 25474,
+      "sha256": "3d1854dbc5bb3b4f26489e55ad209030d581a3a924840cd1d7cdbde7687217e9"
+    },
+    {
+      "path": "scripts/lib/recovery-domain-conformance.mjs",
+      "bytes": 7940,
+      "sha256": "e076f53cd9263666e8dc4151fd2c08c2087d59280e454a7e1988318969a97c26"
+    },
+    {
+      "path": "scripts/lib/schema-subset.mjs",
+      "bytes": 5876,
+      "sha256": "d0da304caa184884347888b73747f2ff81daf968d4b56b8dd89de4b4cf66ac26"
+    },
+    {
+      "path": "scripts/lib/token-activation.mjs",
+      "bytes": 29156,
+      "sha256": "5d36c9746baa0a9d58376a53ba0dd4d3d2a5670f18a3f85b08e8243e4b6fc6b1"
+    },
+    {
+      "path": "scripts/lib/tokenless-reducer-conformance.mjs",
+      "bytes": 16238,
+      "sha256": "6efd6d6f963b437656aa56a1e5e47e276afa4efaad487e57bca2bde6a48a2b22"
+    },
+    {
+      "path": "scripts/lib/tokenless-reducer.mjs",
+      "bytes": 24895,
+      "sha256": "86d91d235d1a58b259475c652ff4d87110f74c7da290b033400d51e230786140"
+    },
+    {
+      "path": "scripts/lib/wire-conformance.mjs",
+      "bytes": 11795,
+      "sha256": "f0a06a2e363d78baf27eb06c20f9bcaa6e64a31f70b08284d0491ee44035e520"
+    },
+    {
+      "path": "scripts/run-economic-simulations.mjs",
+      "bytes": 750,
+      "sha256": "22a9923940c04164c99844c8ef445bc4c31d33fcc451b0c15aee99aec9d7b3e5"
+    },
+    {
+      "path": "scripts/verify-capsule.mjs",
+      "bytes": 1729,
+      "sha256": "219de0269a165c87b3e722e04cf9ebc46f177ea31e9449d3ed8a6bba361e8cad"
+    },
+    {
+      "path": "specs/soma/ORIGIN-SPEC.md",
+      "bytes": 48273,
+      "sha256": "cafb0862f78a92a8a701638ea12890c23f5456a1c67c8601dbad241790e50040"
+    },
+    {
+      "path": "specs/soma/PROTOTYPE-SPEC.md",
+      "bytes": 79251,
+      "sha256": "338781d11edae8fadf3ed884a23981fb0ee36a2ce9944d1d11f01aca2742cd76"
+    },
+    {
+      "path": "specs/vera-host/ORIGIN-SPEC.md",
+      "bytes": 28976,
+      "sha256": "47d96f22f3364f327a9dfc554bb85d0e1512d9f9db4cc82346c072e05b634c3d"
+    },
+    {
+      "path": "specs/vera-host/PROTOTYPE-SPEC.md",
+      "bytes": 48104,
+      "sha256": "5d4bcfba15649b5040b40cc8e3aeb5d396b6d3d5f1abec1ca747f0af005c8dc4"
+    }
+  ],
+  "capsule_root": "48e45cb82cf27e0b3ad94d492c92cb6249ed7dc69734171e86c34ea424aed243"
+}

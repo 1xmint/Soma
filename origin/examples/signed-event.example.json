@@ -1,0 +1,26 @@
+{
+  "$schema": "../schemas/signed-event.schema.json",
+  "schema_version": "somavera.signed-event.v1",
+  "network_lineage_id": "somavera:network:v1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "execution_context_id": "somavera:context:v1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "protocol": "vera",
+  "action": "observation.submit",
+  "event_id": "1111111111111111111111111111111111111111111111111111111111111111",
+  "actor_did": "did:key:example-agent",
+  "audience": "did:key:example-vera-host",
+  "nonce": "0123456789abcdef0123456789abcdef",
+  "issued_at": "2027-01-01T00:00:00Z",
+  "expires_at": "2027-01-01T00:05:00Z",
+  "consent_grant_id": "2222222222222222222222222222222222222222222222222222222222222222",
+  "payload": {
+    "class": "work_summary",
+    "content_commitment": "3333333333333333333333333333333333333333333333333333333333333333"
+  },
+  "payload_hash": "4444444444444444444444444444444444444444444444444444444444444444",
+  "signature": {
+    "suite": "Ed25519-v1",
+    "key_id": "did:key:example-agent#key-1",
+    "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+  }
+}
+

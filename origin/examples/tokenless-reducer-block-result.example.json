@@ -1,0 +1,20 @@
+{
+  "$schema": "../schemas/tokenless-reducer-block-result.schema.json",
+  "schema_version": "somavera.tokenless-block-result.v1",
+  "profile_status": "pilot_only_not_ratified",
+  "accepted": true,
+  "block_id": "2934bea5819e3b3f3efc5e243477deb810e735ea4b5ce685f9eef80dfc8885bc",
+  "height": "1",
+  "pre_state_root": "798acf80b76d1ddca4eadc1afe01ec531566be7e328742b4f9a95461f28954d3",
+  "post_state_root": "b997b5307e468798069b31c34ab2118beb39a36948dcaf9313644a0885731bde",
+  "app_hash": "6d5e5f5f048570cbadb9552a09a6daa3f529910e887ddc171e6d9b94a0861763",
+  "block_result_root": "baf21639ce577304b41bf17e646087ec47dc39dd8910279e5e722b04f275c7cf",
+  "transaction_results": [
+    {
+      "transaction_id": "928eb008a734494b23d00ebed41e53b6d1beea4edc24eac753441425f776e60b",
+      "action": "pilot.public-commitment.register",
+      "code": "OK",
+      "state_change_hash": "d43a591f6971d3b628f89034ab491432b5a08839df2dabfbfcad29c299a0a570"
+    }
+  ]
+}
