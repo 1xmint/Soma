@@ -1,0 +1,38 @@
+name: Auto-merge
+
+# Arms GitHub's auto-merge on every pull request. GitHub then merges it only
+# once the required status checks on the protected branch pass; if they fail,
+# the PR simply sits there. Nothing here bypasses a check.
+#
+# The checks are therefore the only thing standing between a change and main.
+# That is why the hollow CI jobs had to be deleted before this workflow was
+# allowed to exist: a required check that always reports green is not a gate,
+# and automating merges on top of one automates merging unverified code.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: automerge-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  arm:
+    runs-on: ubuntu-latest
+    # Draft PRs are an explicit statement that the author is not finished.
+    if: github.event.pull_request.draft == false
+    steps:
+      - name: Enable auto-merge
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.html_url }}
+        # Squash keeps main readable: one commit per pull request.
+        # Failure is not fatal — a PR that cannot be armed (conflicts, or a
+        # protection rule that forbids it) should stay open for a human, not
+        # fail the build and imply the change itself is broken.
+        run: gh pr merge --auto --squash "$PR" || echo "could not arm auto-merge; leaving the pull request open"
