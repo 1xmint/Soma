@@ -311,8 +311,8 @@
     },
     {
       "path": "src/controller-rotation.mjs",
-      "bytes": 49554,
-      "sha256": "f67e2a1b297a2492371b766f84c43fb4c2879a017f3c8c60b265a6f00a0880cd"
+      "bytes": 50082,
+      "sha256": "8f12f570810712ac6dd34a4e4624c4fcee5cae35e29bcb5a5088205d430d12d4"
     },
     {
       "path": "src/crypto.mjs",

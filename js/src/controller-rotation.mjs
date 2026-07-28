@@ -154,7 +154,14 @@ async function acquireLock(home, timeoutMs = 120000) {
     } catch (error) {
       let busy = error.code === "EEXIST";
       if (!busy && ["EPERM", "EBUSY"].includes(error.code)) {
-        try { await stat(file); busy = true; } catch {}
+        // Windows reports EPERM/EBUSY from open() while a handle is still
+        // closing a lock another writer just unlinked, but stat() already
+        // reports ENOENT for that same path. Treating the missing file as
+        // "not busy" leaks a raw EPERM to the caller even though the lock is
+        // simply being released. Both outcomes are contention: retry until the
+        // deadline. Only a stat failure that is not ENOENT is a real denial.
+        try { await stat(file); busy = true; }
+        catch (statError) { if (statError.code === "ENOENT") busy = true; }
       }
       if (!busy) throw error;
       let owner;
