@@ -1,5 +1,11 @@
 import 'dotenv/config';
 import postgres from 'postgres';
+import { randomBytes } from 'node:crypto';
+import {
+  OBSERVATION_BATCH_SCHEMA,
+  formatSubmittedAt,
+  signedBytes,
+} from '../lib/envelope.js';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import * as schema from '../db/schema/index.js';
 import { enableExtensions } from '../db/extensions.js';
@@ -130,4 +136,47 @@ export async function cleanTables(db: Db): Promise<void> {
   // Drizzle exposes db.$client for the underlying postgres.js sql tagged-template.
   const sql = (db as unknown as { $client: ReturnType<typeof postgres> }).$client;
   await sql`TRUNCATE TABLE observations, observation_batches, teaching_entries, knowledge_entries, users CASCADE`;
+}
+
+/**
+ * Submit a signed v1 observation batch and return the created batch id.
+ *
+ * This lives here because four test files previously carried their own copy of
+ * it. When the wire format moved from v0 to v1 the copies drifted apart
+ * silently — one was updated and three were not, and the failure surfaced as
+ * "envelope must be a JSON object" in suites that have nothing to do with
+ * envelopes. One helper, one place to change.
+ */
+export async function ingestObservations(
+  ctx: TestContext,
+  did: string,
+  secretKey: Uint8Array,
+  obsItems: Array<{ type: string; content: Record<string, unknown>; observed_at: string }>,
+  sourceType = 'cortex',
+): Promise<string> {
+  const envelope = {
+    batch_id: randomBytes(16).toString('hex'),
+    observations: obsItems,
+    schema_version: OBSERVATION_BATCH_SCHEMA,
+    soma_did: did,
+    source_type: sourceType,
+    submitted_at: formatSubmittedAt(new Date()),
+  };
+
+  const provider = getCryptoProvider();
+  const signature = provider.encoding.encodeBase64(
+    provider.signing.sign(signedBytes(envelope), secretKey),
+  );
+
+  const response = await ctx.app.inject({
+    method: 'POST',
+    url: '/v1/observations',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ envelope, signature }),
+  });
+
+  if (response.statusCode !== 201) {
+    throw new Error(`ingestObservations failed: ${response.statusCode} ${response.body}`);
+  }
+  return response.json<{ batch: { id: string } }>().batch.id;
 }

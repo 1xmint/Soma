@@ -1,9 +1,9 @@
 import { describe, it, before, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  ingestObservations,
   setupTestContext,
   generateSomaIdentity,
-  signPayload,
   guardianHeaders,
   cleanTables,
   type TestContext,
@@ -32,33 +32,6 @@ async function registerUser(
  * Ingest a signed observation batch via POST /v1/observations.
  * Returns the batch_id from the response.
  */
-async function ingestBatch(
-  ctx: TestContext,
-  did: string,
-  secretKey: Uint8Array,
-  obsItems: Array<{ type: string; content: Record<string, unknown>; observed_at: string }>,
-): Promise<string> {
-  const signedPayload = JSON.stringify(obsItems);
-  const signature = signPayload(signedPayload, secretKey);
-
-  const response = await ctx.app.inject({
-    method: 'POST',
-    url: '/v1/observations',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
-      soma_did: did,
-      source_type: 'cortex',
-      signature,
-      observations: obsItems,
-    }),
-  });
-
-  if (response.statusCode !== 201) {
-    throw new Error(`ingestBatch failed: ${response.statusCode} ${response.body}`);
-  }
-
-  return response.json<{ batch: { id: string } }>().batch.id;
-}
 
 /** Aggregate a batch via POST /v1/aggregate — throws on non-201. */
 async function aggregateBatch(
@@ -108,7 +81,7 @@ describe('POST /v1/query', () => {
       },
     ];
 
-    const batchId = await ingestBatch(ctx, identity.did, identity.secretKey, obsItems);
+    const batchId = await ingestObservations(ctx, identity.did, identity.secretKey, obsItems);
     await aggregateBatch(ctx, identity, batchId);
 
     const queryReqBody = { soma_did: identity.did, query_text: 'code edit patterns', limit: 5 };
@@ -229,7 +202,7 @@ describe('POST /v1/query', () => {
       },
     ];
 
-    const batchId = await ingestBatch(ctx, identity.did, identity.secretKey, obsItems);
+    const batchId = await ingestObservations(ctx, identity.did, identity.secretKey, obsItems);
     await aggregateBatch(ctx, identity, batchId);
 
     // Each inject needs its own guardian headers (unique nonce per request)

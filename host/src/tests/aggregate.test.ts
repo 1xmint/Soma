@@ -8,9 +8,9 @@ import {
   signedBytes,
 } from '../lib/envelope.js';
 import {
+  ingestObservations,
   setupTestContext,
   generateSomaIdentity,
-  signPayload,
   guardianHeaders,
   cleanTables,
   type TestContext,
@@ -40,38 +40,6 @@ async function registerUser(
  * Ingest a signed observation batch via POST /v1/observations.
  * Returns the batch_id from the response.
  */
-async function ingestBatch(
-  ctx: TestContext,
-  did: string,
-  secretKey: Uint8Array,
-  obsItems: Array<{ type: string; content: Record<string, unknown>; observed_at: string }>,
-): Promise<string> {
-  const envelope = {
-    batch_id: randomBytes(16).toString('hex'),
-    observations: obsItems,
-    schema_version: OBSERVATION_BATCH_SCHEMA,
-    soma_did: did,
-    source_type: 'cortex',
-    submitted_at: formatSubmittedAt(new Date()),
-  };
-  const provider = getCryptoProvider();
-  const signature = provider.encoding.encodeBase64(
-    provider.signing.sign(signedBytes(envelope), secretKey),
-  );
-
-  const response = await ctx.app.inject({
-    method: 'POST',
-    url: '/v1/observations',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ envelope, signature }),
-  });
-
-  if (response.statusCode !== 201) {
-    throw new Error(`ingestBatch failed: ${response.statusCode} ${response.body}`);
-  }
-
-  return response.json<{ batch: { id: string } }>().batch.id;
-}
 
 describe('POST /v1/aggregate', () => {
   let ctx: TestContext;
@@ -105,7 +73,7 @@ describe('POST /v1/aggregate', () => {
       },
     ];
 
-    const batchId = await ingestBatch(ctx, identity.did, identity.secretKey, obsItems);
+    const batchId = await ingestObservations(ctx, identity.did, identity.secretKey, obsItems);
 
     const reqBody = { soma_did: identity.did, batch_id: batchId };
     const response = await ctx.app.inject({
@@ -164,7 +132,7 @@ describe('POST /v1/aggregate', () => {
     ];
 
     // User A creates the batch
-    const batchId = await ingestBatch(ctx, identityA.did, identityA.secretKey, obsItems);
+    const batchId = await ingestObservations(ctx, identityA.did, identityA.secretKey, obsItems);
 
     // User B tries to aggregate user A's batch (B is registered so guardian passes,
     // but the route handler rejects because the batch doesn't belong to B)

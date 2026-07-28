@@ -9,9 +9,9 @@
 import { describe, it, before, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  ingestObservations,
   setupTestContext,
   generateSomaIdentity,
-  signPayload,
   guardianHeaders,
   cleanTables,
   type TestContext,
@@ -41,35 +41,6 @@ async function registerUser(
 }
 
 /** Ingest a minimal observation batch — returns batch_id. */
-async function ingestBatch(
-  ctx: TestContext,
-  identity: SomaIdentity,
-): Promise<string> {
-  const obsItems = [
-    {
-      type: 'code_edit',
-      content: { file: 'guardian-test.ts' },
-      observed_at: new Date().toISOString(),
-    },
-  ];
-  const signature = signPayload(JSON.stringify(obsItems), identity.secretKey);
-
-  const response = await ctx.app.inject({
-    method: 'POST',
-    url: '/v1/observations',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
-      soma_did: identity.did,
-      source_type: 'cortex',
-      signature,
-      observations: obsItems,
-    }),
-  });
-  if (response.statusCode !== 201) {
-    throw new Error(`ingestBatch failed: ${response.statusCode} ${response.body}`);
-  }
-  return response.json<{ batch: { id: string } }>().batch.id;
-}
 
 describe('guardian module', () => {
   let ctx: TestContext;
@@ -91,7 +62,7 @@ describe('guardian module', () => {
   it('signer produces valid signed headers that pass server verification', async () => {
     const identity = generateSomaIdentity();
     await registerUser(ctx, identity.did, identity.publicKeyB64);
-    const batchId = await ingestBatch(ctx, identity);
+    const batchId = await ingestObservations(ctx, identity.did, identity.secretKey, [{ type: 'code_edit', content: { file: 'test.ts' }, observed_at: new Date().toISOString() }]);
 
     const policy = new ShareBoundaryPolicy({ allowAggregate: true, allowQuery: true });
     const signer = createGuardianSigner(

@@ -8,9 +8,9 @@ import { describe, it, before, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { getCryptoProvider } from 'soma-heart/crypto-provider';
 import {
+  ingestObservations,
   setupTestContext,
   generateSomaIdentity,
-  signPayload,
   guardianHeaders,
   cleanTables,
   type TestContext,
@@ -35,35 +35,6 @@ async function registerUser(
 }
 
 /** Ingest a minimal observation batch — returns batch_id. */
-async function ingestBatch(
-  ctx: TestContext,
-  identity: SomaIdentity,
-): Promise<string> {
-  const obsItems = [
-    {
-      type: 'code_edit',
-      content: { file: 'test.ts' },
-      observed_at: new Date().toISOString(),
-    },
-  ];
-  const signature = signPayload(JSON.stringify(obsItems), identity.secretKey);
-
-  const response = await ctx.app.inject({
-    method: 'POST',
-    url: '/v1/observations',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
-      soma_did: identity.did,
-      source_type: 'cortex',
-      signature,
-      observations: obsItems,
-    }),
-  });
-  if (response.statusCode !== 201) {
-    throw new Error(`ingestBatch failed: ${response.statusCode} ${response.body}`);
-  }
-  return response.json<{ batch: { id: string } }>().batch.id;
-}
 
 describe('guardian-auth middleware', () => {
   let ctx: TestContext;
@@ -85,7 +56,7 @@ describe('guardian-auth middleware', () => {
   it('aggregate: valid guardian headers → 201', async () => {
     const identity = generateSomaIdentity();
     await registerUser(ctx, identity.did, identity.publicKeyB64);
-    const batchId = await ingestBatch(ctx, identity);
+    const batchId = await ingestObservations(ctx, identity.did, identity.secretKey, [{ type: 'code_edit', content: { file: 'test.ts' }, observed_at: new Date().toISOString() }]);
 
     const reqBody = { soma_did: identity.did, batch_id: batchId };
     const response = await ctx.app.inject({
@@ -124,7 +95,7 @@ describe('guardian-auth middleware', () => {
   it('aggregate: no guardian headers → 401', async () => {
     const identity = generateSomaIdentity();
     await registerUser(ctx, identity.did, identity.publicKeyB64);
-    const batchId = await ingestBatch(ctx, identity);
+    const batchId = await ingestObservations(ctx, identity.did, identity.secretKey, [{ type: 'code_edit', content: { file: 'test.ts' }, observed_at: new Date().toISOString() }]);
 
     const response = await ctx.app.inject({
       method: 'POST',
@@ -159,7 +130,7 @@ describe('guardian-auth middleware', () => {
   it('aggregate: expired timestamp → 401', async () => {
     const identity = generateSomaIdentity();
     await registerUser(ctx, identity.did, identity.publicKeyB64);
-    const batchId = await ingestBatch(ctx, identity);
+    const batchId = await ingestObservations(ctx, identity.did, identity.secretKey, [{ type: 'code_edit', content: { file: 'test.ts' }, observed_at: new Date().toISOString() }]);
 
     const reqBody = { soma_did: identity.did, batch_id: batchId };
 
@@ -204,7 +175,7 @@ describe('guardian-auth middleware', () => {
   it('aggregate: wrong signing key → 401', async () => {
     const identity = generateSomaIdentity();
     await registerUser(ctx, identity.did, identity.publicKeyB64);
-    const batchId = await ingestBatch(ctx, identity);
+    const batchId = await ingestObservations(ctx, identity.did, identity.secretKey, [{ type: 'code_edit', content: { file: 'test.ts' }, observed_at: new Date().toISOString() }]);
 
     // Sign with a completely different keypair
     const wrongIdentity = generateSomaIdentity();
@@ -253,7 +224,7 @@ describe('guardian-auth middleware', () => {
     await registerUser(ctx, identityA.did, identityA.publicKeyB64);
     await registerUser(ctx, identityB.did, identityB.publicKeyB64);
 
-    const batchIdA = await ingestBatch(ctx, identityA);
+    const batchIdA = await ingestObservations(ctx, identityA.did, identityA.secretKey, [{ type: 'code_edit', content: { file: 'test.ts' }, observed_at: new Date().toISOString() }]);
 
     // Sign request for identity A's batch
     const signedBody = { soma_did: identityA.did, batch_id: batchIdA };
@@ -284,7 +255,7 @@ describe('guardian-auth middleware', () => {
     const identity = generateSomaIdentity();
     await registerUser(ctx, identity.did, identity.publicKeyB64);
 
-    const batchId1 = await ingestBatch(ctx, identity);
+    const batchId1 = await ingestObservations(ctx, identity.did, identity.secretKey, [{ type: 'code_edit', content: { file: 'test.ts' }, observed_at: new Date().toISOString() }]);
 
     // Build a fixed nonce manually so we can reuse it
     const provider = getCryptoProvider();
@@ -330,7 +301,7 @@ describe('guardian-auth middleware', () => {
     assert.equal(response1.statusCode, 201, 'first request with fresh nonce should succeed');
 
     // Second request with the SAME nonce — replay must be rejected
-    const batchId2 = await ingestBatch(ctx, identity);
+    const batchId2 = await ingestObservations(ctx, identity.did, identity.secretKey, [{ type: 'code_edit', content: { file: 'test.ts' }, observed_at: new Date().toISOString() }]);
     const reqBody2 = { soma_did: identity.did, batch_id: batchId2 };
 
     const response2 = await ctx.app.inject({
