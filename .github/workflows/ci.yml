@@ -86,3 +86,74 @@ jobs:
 
       - name: Build and test
         run: npm run test:build
+
+  # The end-to-end loop, run against a real host with a real database on every
+  # change. A loop that only works when someone remembers to run it by hand is
+  # not a loop anyone can rely on.
+  e2e:
+    name: End-to-end
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: vera
+          POSTGRES_PASSWORD: vera
+          POSTGRES_DB: vera_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U vera"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgres://vera:vera@localhost:5432/vera_e2e
+      PORT: 3100
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
+        with:
+          node-version: 22
+
+      - name: Install and build observer
+        working-directory: observer
+        run: npm ci --ignore-scripts && npm run build
+
+      - name: Install and build host
+        working-directory: host
+        run: npm ci --ignore-scripts && npm run build
+
+      - name: Prepare database
+        working-directory: host
+        run: |
+          psql "$DATABASE_URL" -c 'CREATE EXTENSION IF NOT EXISTS vector; CREATE EXTENSION IF NOT EXISTS pgcrypto;'
+          npm run db:migrate
+
+      - name: Start host
+        working-directory: host
+        run: |
+          nohup npm start > "$GITHUB_WORKSPACE/host.log" 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl -sf "http://localhost:3100/health" >/dev/null; then
+              echo "host is up after ${attempt}s"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "host did not become healthy; log follows"
+          cat "$GITHUB_WORKSPACE/host.log"
+          exit 1
+
+      - name: Run the loop
+        run: node e2e/loop.mjs http://localhost:3100
+
+      # Without this, a failing loop leaves no way to tell whether the host
+      # rejected something deliberately or simply fell over.
+      - name: Host log
+        if: always()
+        run: cat host.log || echo "no host log"
