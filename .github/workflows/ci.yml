@@ -39,7 +39,11 @@ jobs:
   js:
     name: JS implementation
     runs-on: windows-latest
-    timeout-minutes: 20
+    # The suite runs ~18.5 minutes of tests on its own: the controller-rotation
+    # races spawn a hundred concurrent writers, and the evidence and end-to-end
+    # suites drive the CLI as separate processes. 20 minutes left no room for
+    # checkout and install.
+    timeout-minutes: 35
     defaults:
       run:
         working-directory: js
