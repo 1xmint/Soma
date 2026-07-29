@@ -136,11 +136,17 @@ No domain, no metadata, no canonicalization, no replay binding. Stored
 
 ## Migration
 
-v0 and v1 are not compatible and no attempt should be made to make them so. The
-`schema_version` field is absent in v0 bodies, so a host can accept both during
-transition by routing on its presence, and must log v0 acceptance as a
-deprecation. No production data exists yet, so the transition window can be
-short.
+v0 and v1 are not compatible and no attempt was made to make them so.
+
+**There is no transition window, and the host accepts v1 only.** An earlier
+draft of this document described routing on the absence of `schema_version` so a
+host could accept both — that was never implemented and should not be. Both ends
+live in this repository and ship together, so no v0 sender can meet a v1 host,
+and no production data existed to migrate.
+
+A dual-accept path would have meant maintaining the exact scheme this document
+exists to replace, on the chance that something nobody deployed was still
+running.
 
 ## Open questions
 
