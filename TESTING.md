@@ -93,6 +93,38 @@ lets a future version's meaning past a host that does not understand it.
 
 See `SIGNING-SPEC.md` for the reasoning behind each rule.
 
+## Using a Soma identity — the seam, stated plainly
+
+Soma and Vera identities are the same kind of thing: `did:key`, self-certifying,
+byte-compatible. `observer/src/tests/soma-interop.test.ts` proves it against
+fixed vectors Soma generated — Vera recovers the key from a Soma DID and
+verifies a signature Soma made, using nothing but the identifier.
+
+**There is still no supported way to run the observer as an existing Soma
+agent.** Soma keeps private keys in a platform keystore (DPAPI on Windows) and
+has no export command, deliberately: an export path is a key-exfiltration path,
+and it deserves a design rather than a convenience flag.
+
+So for testing, generate a keypair and use it in both places:
+
+```js
+import { getCryptoProvider } from 'soma-heart/crypto-provider';
+import { didFromPublicKey } from './observer/dist/lib/did.js';
+
+const kp = getCryptoProvider().signing.generateKeyPair();
+const did = didFromPublicKey(kp.publicKey);   // register this with the host
+```
+
+That identity is a real `did:key` and the host accepts it exactly as it would a
+Soma agent's. What it is not is *the same identity as an agent doing work in
+Soma*, so an observation submitted this way is not linked to that agent's
+evidence chain.
+
+Closing this properly means deciding how an agent authorises an observer to
+speak for it — most likely a delegation rather than a key copy, so the observer
+gets a capability it can use and the agent keeps its key. That decision belongs
+with Soma's delegation model, not here.
+
 ## What passing does not mean
 
 The loop proves an identity can register, sign work, and have a running host
