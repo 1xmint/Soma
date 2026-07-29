@@ -29,29 +29,40 @@ Neither end is production ready.
   A redaction layer is required before any real deployment.
 - `host/` is recovered from the archived `veraAI` v1 TypeScript implementation.
 
-### The signing contract has four defects
+## The signing contract
 
-Both ends sign and verify `JSON.stringify(observations)`. They agree with each
-other; the problems are with the scheme itself.
+Batches are signed as a domain-separated, RFC 8785 canonical envelope. See
+`SIGNING-SPEC.md` for the reasoning behind each rule, and `TESTING.md` to run it.
 
-1. **The signature does not cover the metadata.** Only the observations array is
-   signed. `source_type` is stored but never authenticated, so provenance — the
-   thing this system exists to establish — can be relabelled in transit.
-   `soma_did` is incidentally protected because it selects the verifying key.
-2. **Nothing prevents replay.** `signedPayloadHash` is computed and stored but
-   never enforced unique. The same signed body can be submitted repeatedly, each
-   time creating another batch with another copy of the observations.
-3. **`JSON.stringify` is not a canonical form.** Two TypeScript ends agree today,
-   but Soma canonicalizes per RFC 8785 and rejects non-canonical input. A Rust
-   observer would serialize the same logical data to different bytes — key
-   order, escaping, number formatting — and its signatures would not verify.
-4. **No domain separation.** Soma applies it across all twelve of its signing
-   contexts. Vera signs bare payload bytes with the same identity key, so a
-   signature made for one purpose can be presented for another.
+```
+signed_bytes = "somavera:vera-observation-batch:v1\n" || canonical_json(envelope)
+```
 
-Fixing these means a signed envelope: domain-separated, RFC 8785 canonical,
-covering the metadata, and carrying a client batch identifier the host enforces
-as unique. It must land in shared conformance vectors so that a Rust observer
-and a TypeScript host are forced to agree rather than merely expected to.
+The envelope carries exactly six fields — `batch_id`, `observations`,
+`schema_version`, `soma_did`, `source_type`, `submitted_at`. An unknown field is
+rejected rather than ignored, because ignoring one lets a future version's
+meaning past a host that does not understand it.
+
+This replaced a v0 contract that signed `JSON.stringify(observations)`. Each of
+its four defects is now closed and pinned by a test in the end-to-end loop:
+
+| v0 defect | Closed by |
+|---|---|
+| Only the observations array was signed, so `source_type` — provenance, the product — could be relabelled in transit | Metadata inside the envelope |
+| `signedPayloadHash` was computed and never enforced unique, so a body could be replayed indefinitely | Client `batch_id` with a uniqueness index, plus a 300s window. A replay returns the original batch rather than an error, because a retry after a timeout is not an attack |
+| `JSON.stringify` is not canonical, so a Rust observer would produce different bytes for identical data | RFC 8785 in both ends, proven against shared conformance vectors |
+| No domain separation, so a signature made for one purpose could be presented for another | Domain prefix |
+
+Identities are `did:key`, so the identifier **is** the public key. Registration
+recomputes the commitment and refuses any mismatch — otherwise anyone could
+register their own key against someone else's identifier and sign as them.
+
+## Still missing before real data
+
+- The observer ships author emails, absolute local paths, and source excerpts in
+  plaintext. A redaction layer is required first.
+- `guardian-auth.ts` signs with the same identity key but carries no domain
+  prefix and builds its input with `JSON.stringify`. It binds a timestamp and
+  nonce, so replay is handled, but it should come under `SIGNING-SPEC.md`.
 
 Nothing here should be pointed at real user data yet.
