@@ -306,8 +306,8 @@
     },
     {
       "path": "src/constants.mjs",
-      "bytes": 1204,
-      "sha256": "c406588166baae507af9277ffb758d990e347b47deeebae1878f7c1773930255"
+      "bytes": 1181,
+      "sha256": "781d08695733c69e10835df7791ba04a51157172f036c0abbdad50f37970f2c8"
     },
     {
       "path": "src/controller-rotation.mjs",
@@ -391,8 +391,8 @@
     },
     {
       "path": "src/receipt.mjs",
-      "bytes": 9672,
-      "sha256": "82c7549176c863a11b16c5c3ebf50dec84e6ef1efc79e6d990bb63227c265a2d"
+      "bytes": 10659,
+      "sha256": "1abdc5083c99512a3ab2f3ba22d9eb8361f0989a2043cd923bf3e4ed8eb7e3fc"
     },
     {
       "path": "src/release.mjs",
@@ -466,8 +466,8 @@
     },
     {
       "path": "test/receipt.test.mjs",
-      "bytes": 10961,
-      "sha256": "c4ddefb82767a677efa4a256bda3738dba21d0a8581d741e48dca769365caf5c"
+      "bytes": 12404,
+      "sha256": "a0b3016f1cdfc8c89514b763931cbf1c7c176f5e3a849441287b18c021431b82"
     }
   ]
 }
