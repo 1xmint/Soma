@@ -55,8 +55,15 @@ comparison. See `CONTROLLER-ROTATION-PROFILE.md` and
 ## Evidence boundary
 
 The implemented evidence ledger is a provisional pre-network profile. It signs
-minimized local attribution, not truth or reputation; independent receipts and
-external rollback anchors remain unavailable. See `EVIDENCE-PROFILE.md` for the
+minimized local attribution, not truth or reputation.
+
+Counter-signed work receipts **are** implemented: a second party can attest to
+this agent's work, and an event citing verified receipts carries
+`self_signed_with_verified_counter_signatures`. What remains unavailable is
+*independence* — classifying whether an attester is unrelated to the subject
+needs lineage, which this implementation does not store — along with external
+rollback anchors. Reputation computation is deliberately absent and will stay
+absent: see `../RECEIPT-SPEC.md`. See `EVIDENCE-PROFILE.md` for the
 exact domains, input contract, crash behavior, and limits.
 
 ## Offline Vera Host pinning

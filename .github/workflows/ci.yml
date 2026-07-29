@@ -5,6 +5,13 @@ on:
     branches: [main, master]
   pull_request:
     branches: [main, master]
+  # Merges performed by the auto-merge workflow use GITHUB_TOKEN, and pushes
+  # made with that token do not trigger workflows. main therefore never gets a
+  # run of its own: its health is inferred entirely from checks that passed
+  # before the merge, against the merge preview rather than the merged result.
+  schedule:
+    - cron: "23 5 * * *"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -39,7 +46,11 @@ jobs:
   js:
     name: JS implementation
     runs-on: windows-latest
-    timeout-minutes: 20
+    # The suite runs ~18.5 minutes of tests on its own: the controller-rotation
+    # races spawn a hundred concurrent writers, and the evidence and end-to-end
+    # suites drive the CLI as separate processes. 20 minutes left no room for
+    # checkout and install.
+    timeout-minutes: 35
     defaults:
       run:
         working-directory: js

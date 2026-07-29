@@ -266,7 +266,11 @@ test("a summary reports counts and refuses to produce a score", () => {
   const subject = party();
   const receipt = createReceipt(core(attester, subject), attester.privateKeyBase64);
 
-  const entries = [{ receipt, independence: "no_known_common_ancestor" }];
+  const entries = [{
+    receipt,
+    attester_lineage: ["did:soma:root-a", attester.did],
+    subject_lineage: ["did:soma:root-b", subject.did]
+  }];
 
   const blind = summariseReceipts(entries, []);
   assert.equal(blind.score, null, "the protocol must never emit a score");
@@ -295,7 +299,8 @@ test("manufactured attesters cannot raise a summary for an evaluator who does no
     const sybil = party();
     entries.push({
       receipt: createReceipt(core(sybil, subject), sybil.privateKeyBase64),
-      independence: "no_known_common_ancestor"
+      attester_lineage: [`did:soma:sybil-root-${index}`, sybil.did],
+      subject_lineage: ["did:soma:honest-root", subject.did]
     });
   }
 
@@ -308,4 +313,38 @@ test("manufactured attesters cannot raise a summary for an evaluator who does no
     "a thousand strangers vouching is still no basis for an evaluator who trusts none of them"
   );
   assert.equal(summary.score, null);
+});
+
+// An earlier revision took the independence label as input. A label that can be
+// passed in is a label that can be wrong, and whether an attester is related to
+// the subject is the one thing worth lying about.
+test("independence cannot be asserted by the caller", () => {
+  const attester = party();
+  const subject = party();
+  const receipt = createReceipt(core(attester, subject), attester.privateKeyBase64);
+
+  const sameRoot = {
+    receipt,
+    attester_lineage: ["did:soma:operator", attester.did],
+    subject_lineage: ["did:soma:operator", subject.did],
+    independence: "no_known_common_ancestor"
+  };
+
+  const summary = summariseReceipts([sameRoot], []);
+  assert.equal(
+    summary.by_independence.shared_lineage,
+    1,
+    "the computed label must win over anything the caller supplied"
+  );
+  assert.equal(summary.by_independence.no_known_common_ancestor, 0);
+});
+
+test("absent lineage is reported as unknown, not assumed unrelated", () => {
+  const attester = party();
+  const subject = party();
+  const receipt = createReceipt(core(attester, subject), attester.privateKeyBase64);
+
+  const summary = summariseReceipts([{ receipt }], []);
+  assert.equal(summary.by_independence.unknown, 1);
+  assert.equal(summary.by_independence.no_known_common_ancestor, 0);
 });

@@ -218,20 +218,28 @@ export function classifyIndependence(attesterLineage, subjectLineage) {
 /**
  * Summarise a set of verified receipts for one subject.
  *
- * Deliberately returns counts by label and outcome, and nothing else. There is
- * no score, tier, rank, or percentage — combining these into a single number is
- * evaluator policy, and any global aggregate is inflatable by manufacturing
- * attesters, because identities are free.
+ * Independence is computed here from the lineages supplied alongside each
+ * receipt, never read from a caller-supplied label. A label that could be
+ * passed in is a label that can be wrong, and the one thing it would be worth
+ * lying about is whether an attester is related to the subject.
  *
- * `basis` is `insufficient` when nothing survives from an attester the
- * evaluator already trusts. That is not a zero score: it is the honest answer
- * that the system cannot tell you.
+ * Where lineage is unavailable the label is `unknown` — this implementation has
+ * no lineage store, so that is the honest answer rather than an optimistic one.
+ *
+ * Returns counts by label and outcome, and nothing else. There is deliberately
+ * no score, tier or rank: identities are free, so any global aggregate can be
+ * inflated by manufacturing attesters. Combining these into a judgement is the
+ * evaluator's policy, not the protocol's.
+ *
+ * `basis` is `insufficient` when nothing survives from an attester the evaluator
+ * already trusts. That is not a zero score: it is the honest answer that the
+ * system cannot tell them.
  */
 export function summariseReceipts(entries, trustedAttesterDids = []) {
   const trusted = new Set(trustedAttesterDids);
   const summary = {
     schema_version: "soma.receipt-summary.provisional-v1",
-    by_independence: { self: 0, shared_lineage: 0, no_known_common_ancestor: 0 },
+    by_independence: { self: 0, shared_lineage: 0, no_known_common_ancestor: 0, unknown: 0 },
     by_outcome: { succeeded: 0, failed: 0, disputed: 0 },
     from_trusted_attesters: 0,
     distinct_attesters: 0,
@@ -242,10 +250,22 @@ export function summariseReceipts(entries, trustedAttesterDids = []) {
 
   const attesters = new Set();
   for (const entry of entries) {
-    summary.by_independence[entry.independence] += 1;
-    summary.by_outcome[entry.receipt.outcome] += 1;
-    attesters.add(entry.receipt.attester_did);
-    if (trusted.has(entry.receipt.attester_did)) summary.from_trusted_attesters += 1;
+    const receipt = entry.receipt;
+    if (!receipt || typeof receipt.attester_did !== "string") {
+      throw new SomaError("each entry must carry a receipt", 2, "RECEIPT_SUMMARY_ENTRY_INVALID");
+    }
+    if (!(receipt.outcome in summary.by_outcome)) {
+      throw new SomaError("receipt outcome is not one of succeeded, failed, disputed", 2, "RECEIPT_OUTCOME_INVALID");
+    }
+
+    const label = entry.attester_lineage && entry.subject_lineage
+      ? classifyIndependence(entry.attester_lineage, entry.subject_lineage)
+      : "unknown";
+
+    summary.by_independence[label] += 1;
+    summary.by_outcome[receipt.outcome] += 1;
+    attesters.add(receipt.attester_did);
+    if (trusted.has(receipt.attester_did)) summary.from_trusted_attesters += 1;
   }
 
   summary.distinct_attesters = attesters.size;

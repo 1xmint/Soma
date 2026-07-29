@@ -2,6 +2,7 @@ import { open, readFile, rename, unlink } from "node:fs/promises";
 import { randomBytes } from "node:crypto";
 import path from "node:path";
 import { canonicalize, parseCanonicalJson } from "./canonicalize.mjs";
+import { verifyReceipt } from "./receipt.mjs";
 import { privateKeyForRole, sha256, signEd25519, verifyEd25519 } from "./crypto.mjs";
 import { EMPTY_HASH } from "./constants.mjs";
 import { SomaError } from "./errors.mjs";
@@ -11,7 +12,7 @@ import { restrictStatePath, restrictStateRoot } from "./platform.mjs";
 const HASH = /^[a-f0-9]{64}$/;
 const NAME = /^[a-z][a-z0-9_.-]{1,127}$/;
 const KINDS = new Set(["assertion", "execution", "outcome", "dispute"]);
-const INPUT_FIELDS = ["artifact_hashes", "capability", "claim_hash", "domain", "kind", "occurred_at", "receipt_ids", "schema_version", "supersedes", "task_id"];
+const INPUT_FIELDS = ["artifact_hashes", "capability", "claim_hash", "domain", "kind", "occurred_at", "receipts", "schema_version", "supersedes", "task_id"];
 const EVENT_FIELDS = ["artifact_hashes", "assurance", "capability", "claim_hash", "context_id", "domain", "evidence_id", "issuer_did", "issued_at", "kind", "occurred_at", "receipt_ids", "schema_version", "signature", "subject_did", "supersedes", "task_id"];
 const ENTRY_FIELDS = ["entry_hash", "evidence_event", "previous_entry_hash", "recorded_at", "schema_version", "sequence", "signature", "signer_key_id"];
 const HEAD_FIELDS = ["anchors", "assurance", "entry_count", "entry_hash", "head_hash", "issued_at", "schema_version", "sequence", "signature", "signer_key_id"];
@@ -76,12 +77,21 @@ function verifyLocalEvent(event, identity, history) {
   exactObject(event, EVENT_FIELDS, "EVIDENCE_EVENT_SHAPE_INVALID", "evidence event");
   if (event.schema_version !== "soma.local-evidence-event.provisional-v1" || !HASH.test(event.evidence_id)) throw new SomaError("evidence event version or ID is invalid", 7, "EVIDENCE_EVENT_SHAPE_INVALID");
   if (!/^soma:local-context:v1:[a-f0-9]{64}$/.test(event.context_id)) throw new SomaError("local evidence context is invalid", 7, "EVIDENCE_CONTEXT_INVALID");
-  if (!KINDS.has(event.kind) || event.assurance !== "self_signed_attribution_only") throw new SomaError("evidence kind or assurance is invalid", 7, "EVIDENCE_CLASS_INVALID");
+  // Assurance is derived, never asserted: re-deriving it here means an event
+  // claiming counter-signatures while citing no receipts is rejected, and so is
+  // one citing receipts while understating what it has.
+  const expectedAssurance = Array.isArray(event.receipt_ids) && event.receipt_ids.length
+    ? "self_signed_with_verified_counter_signatures"
+    : "self_signed_attribution_only";
+  if (!KINDS.has(event.kind) || event.assurance !== expectedAssurance) throw new SomaError("evidence kind or assurance is invalid", 7, "EVIDENCE_CLASS_INVALID");
   if (event.subject_did !== identity.agent_did || event.issuer_did !== identity.agent_did) throw new SomaError("local evidence actor differs from this identity", 7, "EVIDENCE_ACTOR_INVALID");
   if (typeof event.task_id !== "string" || event.task_id.length < 1 || event.task_id.length > 256 || !NAME.test(event.capability) || !NAME.test(event.domain) || !HASH.test(event.claim_hash)) throw new SomaError("evidence claim fields are invalid", 7, "EVIDENCE_CLAIM_INVALID");
   uniqueHashes(event.artifact_hashes, "EVIDENCE_ARTIFACTS_INVALID", "artifact_hashes");
+  // The receipts themselves were verified when the event was recorded; what is
+  // checked here is that the identifiers are well formed and unique. Re-verifying
+  // would require the receipt bodies, which the ledger deliberately does not
+  // inline — an event cites receipts, it does not carry them.
   uniqueHashes(event.receipt_ids, "EVIDENCE_RECEIPTS_INVALID", "receipt_ids");
-  if (event.receipt_ids.length !== 0) throw new SomaError("receipt verification is not implemented; receipt_ids must remain empty", 7, "EVIDENCE_RECEIPTS_UNSUPPORTED");
   if (event.supersedes !== null && !HASH.test(event.supersedes)) throw new SomaError("supersedes is invalid", 7, "EVIDENCE_SUPERSEDES_INVALID");
   const occurred = iso(event.occurred_at, "EVIDENCE_TIME_INVALID", "occurred_at");
   const issued = iso(event.issued_at, "EVIDENCE_TIME_INVALID", "issued_at");
@@ -341,13 +351,70 @@ export async function verifyEvidenceLedger(home, { repair = false, secretBundle 
   };
 }
 
+/**
+ * Verify every receipt cited by an evidence input and return their identifiers.
+ *
+ * Four bindings, each closing a different way a receipt could be misused:
+ *
+ *   subject   — the receipt must attest to *this* agent. A receipt about
+ *               someone else is not evidence of your work.
+ *   task      — it must attest to *this* task, not another one.
+ *   claim     — it must attest to *this* claim. Without this you could cite a
+ *               receipt earned on trivial work as evidence for important work,
+ *               which is the cheapest possible forgery and needs no keys.
+ *   signature — verified against the key committed to by attester_did.
+ *
+ * This implementation cannot classify independence: lineage lives in the Rust
+ * implementation and is not available here. So nothing in the resulting event
+ * claims the attesters are unrelated to the subject — only that they are named
+ * parties other than the subject, and that their signatures verify.
+ */
+function validateReceipts(input, identity) {
+  if (!Array.isArray(input.receipts)) {
+    throw new SomaError("receipts must be an array", 2, "EVIDENCE_INPUT_INVALID");
+  }
+
+  const ids = [];
+  const seen = new Set();
+
+  for (const receipt of input.receipts) {
+    let verified;
+    try {
+      verified = verifyReceipt(receipt);
+    } catch (error) {
+      throw new SomaError("a cited receipt does not verify", 7, "EVIDENCE_RECEIPT_INVALID", {
+        cause_code: error.code || null,
+        cause: error.message
+      });
+    }
+
+    if (verified.subject_did !== identity.agent_did) {
+      throw new SomaError("a cited receipt attests to a different subject", 7, "EVIDENCE_RECEIPT_SUBJECT_MISMATCH");
+    }
+    if (verified.task_id !== input.task_id) {
+      throw new SomaError("a cited receipt attests to a different task", 7, "EVIDENCE_RECEIPT_TASK_MISMATCH");
+    }
+    if (verified.claim_hash !== input.claim_hash) {
+      throw new SomaError("a cited receipt attests to a different claim", 7, "EVIDENCE_RECEIPT_CLAIM_MISMATCH");
+    }
+    if (seen.has(verified.receipt_id)) {
+      throw new SomaError("the same receipt is cited more than once", 2, "EVIDENCE_RECEIPT_DUPLICATE");
+    }
+
+    seen.add(verified.receipt_id);
+    ids.push(verified.receipt_id);
+  }
+
+  // Sorted so the event bytes do not depend on the order they were supplied in.
+  return ids.sort();
+}
+
 function validateInput(input, identity, issuedAt) {
   exactObject(input, INPUT_FIELDS, "EVIDENCE_INPUT_SHAPE_INVALID", "evidence input");
   if (input.schema_version !== "soma.local-evidence-input.provisional-v1" || !KINDS.has(input.kind)) throw new SomaError("unsupported evidence input version or kind", 2, "EVIDENCE_INPUT_INVALID");
   if (typeof input.task_id !== "string" || input.task_id.length < 1 || input.task_id.length > 256 || !NAME.test(input.capability) || !NAME.test(input.domain) || !HASH.test(input.claim_hash)) throw new SomaError("evidence input fields are invalid", 2, "EVIDENCE_INPUT_INVALID");
   uniqueHashes(input.artifact_hashes, "EVIDENCE_INPUT_INVALID", "artifact_hashes");
-  uniqueHashes(input.receipt_ids, "EVIDENCE_INPUT_INVALID", "receipt_ids");
-  if (input.receipt_ids.length) throw new SomaError("independent receipt verification is not implemented; receipt_ids must be empty", 8, "EVIDENCE_RECEIPTS_UNSUPPORTED");
+  const receiptIds = validateReceipts(input, identity);
   if (input.supersedes !== null && !HASH.test(input.supersedes)) throw new SomaError("supersedes is invalid", 2, "EVIDENCE_INPUT_INVALID");
   if (iso(input.occurred_at, "EVIDENCE_INPUT_INVALID", "occurred_at") > Date.parse(issuedAt)) throw new SomaError("occurred_at cannot be in the future", 2, "EVIDENCE_INPUT_INVALID");
   return {
@@ -361,11 +428,11 @@ function validateInput(input, identity, issuedAt) {
     domain: input.domain,
     claim_hash: input.claim_hash,
     artifact_hashes: input.artifact_hashes,
-    receipt_ids: input.receipt_ids,
+    receipt_ids: receiptIds,
     occurred_at: input.occurred_at,
     issued_at: issuedAt,
     supersedes: input.supersedes,
-    assurance: "self_signed_attribution_only"
+    assurance: receiptIds.length ? "self_signed_with_verified_counter_signatures" : "self_signed_attribution_only"
   };
 }
 
