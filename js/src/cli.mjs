@@ -5,6 +5,7 @@ import { asSomaError, SomaError } from "./errors.mjs";
 import { initialize, inspectState, resolveHome } from "./state.mjs";
 import { restrictStateRoot } from "./platform.mjs";
 import { recordEvidence, verifyAndRepairEvidence } from "./evidence.mjs";
+import { issueReceipt, verifyReceiptFile } from "./receipt-cli.mjs";
 import { observeStatus, previewObservation } from "./membrane.mjs";
 import { expectedHostBindings, hostStatus, pinHostDescriptor, verifyHostDescriptorFile } from "./host.mjs";
 import { hostSuccessionStatus, previewHostSuccession } from "./host-succession.mjs";
@@ -43,7 +44,7 @@ function help() {
   return `Soma reference ${VERSION}\n\nUsage:\n  soma init [--home PATH] [--label TEXT] --recovery none [--json]\n  soma doctor [--home PATH] [--network] [--json]\n  soma status [--home PATH] [--json]\n  soma identity status [--home PATH] [--json]
   soma identity controller-rotate-preview --reason TEXT [--home PATH] [--json]
   soma identity controller-rotate-confirm --proposal-id HASH --expect-successor-key-hash HASH --confirm-controller-rotation [--home PATH] [--json]
-  soma evidence record --input ABSOLUTE_EVENT.json [--home PATH] [--json]\n  soma evidence verify [--home PATH] [--json]\n  soma host status [--home PATH] [--json]\n  soma host verify --descriptor ABSOLUTE_DESCRIPTOR.json --expect-origin ORIGIN --expect-host-did DID --expect-network NETWORK --expect-context CONTEXT [--expect-key-hash HASH] [--home PATH] [--json]\n  soma host pin --descriptor ABSOLUTE_DESCRIPTOR.json --expect-origin ORIGIN --expect-host-did DID --expect-network NETWORK --expect-context CONTEXT --expect-key-hash HASH [--home PATH] [--json]\n  soma host succession-preview --successor ABSOLUTE_DESCRIPTOR.json --proof ABSOLUTE_PROOF.json [--home PATH] [--json]\n  soma host succession-confirm --candidate-id HASH --subject HASH --expect-successor-descriptor HASH --confirm-inert-pin-replacement [--home PATH] [--json]\n  soma host trust-export --out ABSOLUTE_CAPSULE.json [--home PATH] [--json]\n  soma host trust-verify --capsule ABSOLUTE_CAPSULE.json --expect-controller-did DID --expect-controller-key-hash HASH [--json]\n  soma host trust-compare --trusted TRUSTED_CAPSULE.json --candidate CANDIDATE_CAPSULE.json --expect-controller-did DID --expect-controller-key-hash HASH [--json]\n  soma observe status [--home PATH] [--json]\n  soma observe preview (--artifact ABSOLUTE_PATH | --evidence EVIDENCE_ID) --policy ABSOLUTE_POLICY.json [--home PATH] [--json]\n\nObservation preview is offline and creates no grant or send authority.\nEvidence is provisional, pre-network, self-signed attribution only. It is not truth, reputation, or independent rollback proof.\nObserver, telemetry, updates, retries, watchers, wallet, and token features are absent/off.`;
+  soma receipt issue --input ABSOLUTE_REQUEST.json --out ABSOLUTE_RECEIPT.json [--home PATH] [--json]\n  soma receipt verify --input ABSOLUTE_RECEIPT.json [--json]\n  soma evidence record --input ABSOLUTE_EVENT.json [--home PATH] [--json]\n  soma evidence verify [--home PATH] [--json]\n  soma host status [--home PATH] [--json]\n  soma host verify --descriptor ABSOLUTE_DESCRIPTOR.json --expect-origin ORIGIN --expect-host-did DID --expect-network NETWORK --expect-context CONTEXT [--expect-key-hash HASH] [--home PATH] [--json]\n  soma host pin --descriptor ABSOLUTE_DESCRIPTOR.json --expect-origin ORIGIN --expect-host-did DID --expect-network NETWORK --expect-context CONTEXT --expect-key-hash HASH [--home PATH] [--json]\n  soma host succession-preview --successor ABSOLUTE_DESCRIPTOR.json --proof ABSOLUTE_PROOF.json [--home PATH] [--json]\n  soma host succession-confirm --candidate-id HASH --subject HASH --expect-successor-descriptor HASH --confirm-inert-pin-replacement [--home PATH] [--json]\n  soma host trust-export --out ABSOLUTE_CAPSULE.json [--home PATH] [--json]\n  soma host trust-verify --capsule ABSOLUTE_CAPSULE.json --expect-controller-did DID --expect-controller-key-hash HASH [--json]\n  soma host trust-compare --trusted TRUSTED_CAPSULE.json --candidate CANDIDATE_CAPSULE.json --expect-controller-did DID --expect-controller-key-hash HASH [--json]\n  soma observe status [--home PATH] [--json]\n  soma observe preview (--artifact ABSOLUTE_PATH | --evidence EVIDENCE_ID) --policy ABSOLUTE_POLICY.json [--home PATH] [--json]\n\nObservation preview is offline and creates no grant or send authority.\nEvidence is provisional, pre-network, self-signed attribution only. It is not truth, reputation, or independent rollback proof.\nObserver, telemetry, updates, retries, watchers, wallet, and token features are absent/off.`;
 }
 
 function print(value, json) {
@@ -145,6 +146,23 @@ export async function runCli(argv) {
       }
       return 0;
     }
+    if (parsed.command === "receipt") {
+      const action = parsed.positionals[0];
+      if (!action || parsed.positionals.length !== 1 || !["issue", "verify"].includes(action)) throw new SomaError("receipt requires exactly one action: issue or verify", 2, "RECEIPT_ACTION_INVALID");
+      if (action === "issue") {
+        if (!parsed.options.input) throw new SomaError("receipt issue requires --input", 2, "RECEIPT_INPUT_REQUIRED");
+        if (!parsed.options.out) throw new SomaError("receipt issue requires --out", 2, "RECEIPT_OUTPUT_REQUIRED");
+        await inspectState(home, { verifyEvidence: false });
+        const result = await issueReceipt(home, parsed.options.input, parsed.options.out);
+        print({ ok: true, command: "receipt issue", home, ...result }, parsed.options.json);
+      } else {
+        if (!parsed.options.input) throw new SomaError("receipt verify requires --input", 2, "RECEIPT_INPUT_REQUIRED");
+        const result = await verifyReceiptFile(parsed.options.input);
+        print({ ok: true, command: "receipt verify", ...result }, parsed.options.json);
+      }
+      return 0;
+    }
+
     if (parsed.command === "evidence") {
       const action = parsed.positionals[0];
       if (!action || parsed.positionals.length !== 1 || !["record", "verify"].includes(action)) throw new SomaError("evidence requires exactly one action: record or verify", 2, "EVIDENCE_ACTION_INVALID");

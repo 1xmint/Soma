@@ -152,7 +152,7 @@ test("evidence preview exports only the exact minimized projection", async (cont
     domain: "software.security",
     claim_hash: sha256(Buffer.from("safe fixed claim")),
     artifact_hashes: [],
-    receipt_ids: [],
+    receipts: [],
     occurred_at: new Date(Date.now() - 1000).toISOString(),
     supersedes: null
   });

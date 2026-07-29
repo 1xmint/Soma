@@ -56,7 +56,7 @@ function input(taskId, claim = sha256(Buffer.from(taskId))) {
     domain: "software.security",
     claim_hash: claim,
     artifact_hashes: [],
-    receipt_ids: [],
+    receipts: [],
     occurred_at: new Date(Date.now() - 1000).toISOString(),
     supersedes: null
   };

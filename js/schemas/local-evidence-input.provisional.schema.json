@@ -2,24 +2,85 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:somavera:soma:local-evidence-input:provisional-v1",
   "title": "Soma local evidence input provisional v1",
-  "$comment": "Pre-network, self-attributed input. This is not the portable Somavera evidence-event schema.",
+  "$comment": "Pre-network, self-attributed input. Cited receipts are verified at record time and reduced to identifiers in the resulting event. This is not the portable Somavera evidence-event schema.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "kind", "task_id", "capability", "domain", "claim_hash", "artifact_hashes", "receipt_ids", "occurred_at", "supersedes"],
+  "required": [
+    "schema_version",
+    "kind",
+    "task_id",
+    "capability",
+    "domain",
+    "claim_hash",
+    "artifact_hashes",
+    "receipts",
+    "occurred_at",
+    "supersedes"
+  ],
   "properties": {
-    "schema_version": { "const": "soma.local-evidence-input.provisional-v1" },
-    "kind": { "enum": ["assertion", "execution", "outcome", "dispute"] },
-    "task_id": { "type": "string", "minLength": 1, "maxLength": 256 },
-    "capability": { "$ref": "#/$defs/name" },
-    "domain": { "$ref": "#/$defs/name" },
-    "claim_hash": { "$ref": "#/$defs/hash" },
-    "artifact_hashes": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/hash" } },
-    "receipt_ids": { "type": "array", "maxItems": 0 },
-    "occurred_at": { "type": "string", "format": "date-time" },
-    "supersedes": { "oneOf": [{ "$ref": "#/$defs/hash" }, { "type": "null" }] }
+    "schema_version": {
+      "const": "soma.local-evidence-input.provisional-v1"
+    },
+    "kind": {
+      "enum": [
+        "assertion",
+        "execution",
+        "outcome",
+        "dispute"
+      ]
+    },
+    "task_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "capability": {
+      "$ref": "#/$defs/name"
+    },
+    "domain": {
+      "$ref": "#/$defs/name"
+    },
+    "claim_hash": {
+      "$ref": "#/$defs/hash"
+    },
+    "artifact_hashes": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/hash"
+      }
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "supersedes": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/hash"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "receipts": {
+      "type": "array",
+      "uniqueItems": true,
+      "$comment": "Full counter-signed receipts, not identifiers. Verification needs the signed bytes, and an identifier alone cannot be checked against anything.",
+      "items": {
+        "type": "object"
+      }
+    }
   },
   "$defs": {
-    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
-    "name": { "type": "string", "pattern": "^[a-z][a-z0-9_.-]{1,127}$" }
+    "hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_.-]{1,127}$"
+    }
   }
 }
