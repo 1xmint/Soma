@@ -5,6 +5,13 @@ on:
     branches: [main, master]
   pull_request:
     branches: [main, master]
+  # Merges performed by the auto-merge workflow use GITHUB_TOKEN, and pushes
+  # made with that token do not trigger workflows. main therefore never gets a
+  # run of its own: its health is inferred entirely from checks that passed
+  # before the merge, against the merge preview rather than the merged result.
+  schedule:
+    - cron: "23 5 * * *"
+  workflow_dispatch:
 
 permissions:
   contents: read

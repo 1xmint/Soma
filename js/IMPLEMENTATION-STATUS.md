@@ -25,7 +25,8 @@ Release status: **early Windows-first slice; not protocol-conforming or producti
 
 ## Not implemented
 
-- Ratified portable network evidence, independent receipts, external rollback anchors, or reputation computation.
+- Ratified portable network evidence, external rollback anchors, or reputation computation. Reputation computation is not pending: it is deliberately excluded, because identities are free and any global aggregate can be inflated by manufacturing attesters.
+- Independence classification for receipts. Counter-signed receipts are implemented; deciding whether an attester is unrelated to the subject needs lineage, which is not stored here.
 - Network discovery, authenticated TLS connection/challenge, application encryption, query/response, or contribution flows.
 - External host-history anchor adapters, independent publication receipts, host-trust restore/import, or emergency host recovery.
 - Signed consent grants, sends, withdrawals, deletion, acknowledgements, or tombstone tracking.

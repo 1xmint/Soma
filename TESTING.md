@@ -40,6 +40,22 @@ substituted for it.
 
 ### 2. The reviewer attests to the worker's task
 
+**Input files must be canonical JSON**, not pretty-printed: object keys sorted,
+no insignificant whitespace, one trailing newline. `parseCanonicalJson` rejects
+anything else with `JSON_NOT_CANONICAL`, deliberately — a file that can be
+spelled two ways hashes two ways, and every identifier here is a hash of exact
+bytes.
+
+The examples below are shown indented for reading. Convert before use:
+
+```bash
+node -e "import('./src/canonicalize.mjs').then(m=>{
+  const v=JSON.parse(require('fs').readFileSync(process.argv[1],'utf8'));
+  process.stdout.write(m.canonicalize(v)+'
+');
+})" pretty.json > canonical.json
+```
+
 Write a request naming the worker as the subject:
 
 ```json

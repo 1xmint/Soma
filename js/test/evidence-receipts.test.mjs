@@ -231,19 +231,32 @@ test("the same receipt cannot be cited twice to inflate a count", async (context
 });
 
 test("receipt order does not change the recorded event", async (context) => {
-  const state = await temporaryHome(context);
   const claim = sha256(Buffer.from("task-order"));
-  const a = receiptFor(state.agentDid, "task-order", claim, attester());
-  const b = receiptFor(state.agentDid, "task-order", claim, attester());
 
-  const forward = await record(state, "task-order", [a, b], claim);
+  // Two homes so each records the same task independently. Citing the same
+  // receipts in opposite orders must produce the same event, which is what
+  // sorting receipt_ids before they enter the canonical bytes is for.
+  const forwardState = await temporaryHome(context);
+  const reverseState = await temporaryHome(context);
+
+  const a = receiptFor(forwardState.agentDid, "task-order", claim, attester());
+  const b = receiptFor(forwardState.agentDid, "task-order", claim, attester());
+  const a2 = receiptFor(reverseState.agentDid, "task-order", claim, attester());
+  const b2 = receiptFor(reverseState.agentDid, "task-order", claim, attester());
+
+  const forward = await record(forwardState, "task-order", [a, b], claim);
   assert.equal(forward.status, 0, forward.stderr || forward.stdout);
-  const first = (await lastEvent(state.home)).receipt_ids;
+  const reverse = await record(reverseState, "task-order", [b2, a2], claim);
+  assert.equal(reverse.status, 0, reverse.stderr || reverse.stdout);
 
-  const reverse = await record(state, "task-order-2", [b, a], sha256(Buffer.from("task-order-2")));
-  // Different task, so this one is expected to fail the task binding; what
-  // matters is that ordering is normalised, which the sorted list above shows.
-  assert.notEqual(reverse.status, 0);
+  const forwardIds = (await lastEvent(forwardState.home)).receipt_ids;
+  const reverseIds = (await lastEvent(reverseState.home)).receipt_ids;
 
-  assert.deepEqual(first, [a.receipt_id, b.receipt_id].sort(), "receipt_ids must be sorted, not input-ordered");
+  assert.deepEqual(forwardIds, [a.receipt_id, b.receipt_id].sort());
+  assert.deepEqual(reverseIds, [a2.receipt_id, b2.receipt_id].sort());
+  assert.deepEqual(
+    forwardIds.map((id) => forwardIds.indexOf(id)),
+    reverseIds.map((id) => reverseIds.indexOf(id)),
+    "both orders must normalise to the same arrangement"
+  );
 });

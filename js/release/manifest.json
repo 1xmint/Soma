@@ -46,8 +46,8 @@
     },
     {
       "path": "IMPLEMENTATION-STATUS.md",
-      "bytes": 4152,
-      "sha256": "7700651e272983cd7b301d626f2d01763af25a44e7f4aa3e772dabc8e5f5088d"
+      "bytes": 4478,
+      "sha256": "cfd8405f79fafdb65c636db65af8c2f058136a63ca0d74a811cf0f9f1ec27575"
     },
     {
       "path": "LICENSE",
@@ -61,8 +61,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 5270,
-      "sha256": "c0d377f806688f0046141ba6db4f4dba00be1da7da587399981dfd3a2c4820d2"
+      "bytes": 5691,
+      "sha256": "3fcc99f1c397f58efb553d02742afb209ac324fc0e1651cd4e9f9eaf7d9d2474"
     },
     {
       "path": "SECURITY.md",
@@ -421,8 +421,8 @@
     },
     {
       "path": "test/evidence-receipts.test.mjs",
-      "bytes": 10273,
-      "sha256": "429251bc712411ddc8fec179c73c5b8540c0a2cebcd3a36363982cdd884b6688"
+      "bytes": 10889,
+      "sha256": "5bea1beeeeaf64f07f868fbf904c229fbdb141f3d46bdc3721d8db508eb0d3a6"
     },
     {
       "path": "test/evidence.test.mjs",
