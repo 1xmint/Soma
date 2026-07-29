@@ -12,22 +12,39 @@ name: Auto-merge
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
+  # Pull-request events only fire for activity after this workflow existed, so
+  # anything opened earlier was never armed and sits forever. A daily sweep
+  # picks those up. It arms; it does not merge — required checks still decide.
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
 
 permissions:
   contents: write
   pull-requests: write
 
 concurrency:
-  group: automerge-${{ github.event.pull_request.number }}
+  group: automerge-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
 
 jobs:
   arm:
     runs-on: ubuntu-latest
     # Draft PRs are an explicit statement that the author is not finished.
-    if: github.event.pull_request.draft == false
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     steps:
+      - name: Arm every open pull request
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for url in $(gh pr list --repo "$GITHUB_REPOSITORY" --state open --json url,isDraft                 --jq '.[] | select(.isDraft == false) | .url'); do
+            echo "arming $url"
+            gh pr merge --auto --squash "$url" || echo "  could not arm; leaving it open"
+          done
+
       - name: Enable auto-merge
+        if: github.event_name == 'pull_request'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR: ${{ github.event.pull_request.html_url }}
