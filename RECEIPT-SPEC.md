@@ -85,12 +85,23 @@ the protocol refuses to collapse the labels into a number.
 | `self` | attester equals subject. **Rejected** — this is not a receipt |
 | `shared_lineage` | attester and subject share an ancestor, or one is an ancestor of the other. Informative, not independent |
 | `no_known_common_ancestor` | no shared ancestor is visible |
+| `unknown` | lineage was unavailable. Not the same as unrelated |
 
 That third label is deliberately not called "independent." Roots are free, so
 the absence of a known common ancestor is not evidence of independence — only
 the absence of evidence of relation. Naming it "independent" would launder an
 unknown into a guarantee, which is the exact failure this whole document exists
 to prevent.
+
+## "Receipt" means two different things in this protocol
+
+The Rust implementation has a `SpendReceipt`: budget accounting, and **signed by
+the subject** — its own comment says so. A work receipt is the opposite: signed
+by someone other than the subject, and worthless if it is not.
+
+Two things named "receipt" in one protocol, one self-signed and one
+counter-signed, is a collision someone will eventually resolve the wrong way and
+conclude that receipts prove nothing. They are unrelated mechanisms.
 
 ## Receipt structure
 
