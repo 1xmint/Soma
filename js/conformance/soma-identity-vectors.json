@@ -1,0 +1,28 @@
+{
+  "schema_version": "somavera.soma-identity-interop-vectors.v1",
+  "purpose": "Prove that Vera recovers the same key from a did:key that Soma committed to, and verifies a signature Soma produced. Vera and Soma implement base58btc, multicodec tagging and Ed25519 separately; porting an algorithm faithfully and agreeing byte-for-byte are different claims, and only the second one lets a Soma agent and a Vera observer be the same identity.",
+  "generated_by": "hey-vera/soma js/src/crypto.mjs — createInitialKeyMaterial + signEd25519",
+  "note": "These are fixed values, not regenerated at test time. A test that generates its own input on both sides proves only that one implementation agrees with itself.",
+  "vectors": [
+    {
+      "name": "soma agent identity round-trips through vera",
+      "did": "did:key:z6MkjDDPGYQdTcFQ8ecCf7zwP1rKvG7cdH5d8kxYqy7kaNBN",
+      "public_key_multibase": "z6MkjDDPGYQdTcFQ8ecCf7zwP1rKvG7cdH5d8kxYqy7kaNBN",
+      "public_key_length_bytes": 32,
+      "message_utf8": "interop-vector",
+      "signature_base64": "+MrzNvc/FGowK8bjPBa9a3pX/qhQ4Xx7BlSjOtBkvSyldaHJNx/CiUvD51C0fliZdyYfDXwmETA5d73Mt2FfBw=="
+    }
+  ],
+  "reject": [
+    {
+      "name": "opaque identifier commits to no key",
+      "did": "did:soma:test-deadbeef",
+      "reason": "not a did:key identifier; its key cannot be recovered"
+    },
+    {
+      "name": "did:key without multibase prefix",
+      "did": "did:key:6MkjDDPGYQdTcFQ8ecCf7zwP1rKvG7cdH5d8kxYqy7kaNBN",
+      "reason": "did:key fingerprint is not base58btc multibase"
+    }
+  ]
+}

@@ -145,6 +145,11 @@
       "sha256": "d1ca17da7f48da329c73da9b537005b5c5fba48be90c330c25df65fd6c5c82d2"
     },
     {
+      "path": "conformance/soma-identity-vectors.json",
+      "bytes": 1551,
+      "sha256": "299782f0f2ffcdc7875111e3d01521c304c8a822a938d5be71fea608ec8c03bb"
+    },
+    {
       "path": "conformance/vera-host-descriptor-provisional-v1.json",
       "bytes": 11910,
       "sha256": "845e9d52adee435da035a5ff1a84a4800ef8a6fdcba489c0f4c921c0f378478f"
@@ -161,8 +166,8 @@
     },
     {
       "path": "package.json",
-      "bytes": 937,
-      "sha256": "8c8f473ff6915ac4b8e67a5c81cf1e4cd4a5415f6eb990efff476edaebdf09c4"
+      "bytes": 964,
+      "sha256": "66b4753de11b857390bdb82c505799b64c7b208bf03501b84e87df2d83d6b3a3"
     },
     {
       "path": "release/origin-capsule-manifest.json",
@@ -468,6 +473,11 @@
       "path": "test/receipt.test.mjs",
       "bytes": 12404,
       "sha256": "a0b3016f1cdfc8c89514b763931cbf1c7c176f5e3a849441287b18c021431b82"
+    },
+    {
+      "path": "test/soma-interop.test.mjs",
+      "bytes": 2201,
+      "sha256": "25b4af82ebb7fea848dce3a7ec9d695fb73454405e5d5d83348e8b24a4a03bba"
     }
   ]
 }
