@@ -11,7 +11,7 @@
  */
 
 import { getCryptoProvider } from 'soma-heart/crypto-provider';
-import { randomBytes } from 'node:crypto';
+import { didFromPublicKey } from './did.js';
 
 // ---- Types ----
 
@@ -58,8 +58,10 @@ export function generateTestIdentity(): SomaIdentity {
   const provider = getCryptoProvider();
   const keyPair = provider.signing.generateKeyPair();
   const publicKeyB64 = provider.encoding.encodeBase64(keyPair.publicKey);
-  const testHex = randomBytes(8).toString('hex');
-  const somaDid = `did:soma:test-${testHex}`;
+  // Self-certifying, and byte-compatible with Soma. The previous form,
+  // did:soma:test-<random>, had no relationship to the key: it could not
+  // interoperate with Soma, and it let any key be bound to any identifier.
+  const somaDid = didFromPublicKey(keyPair.publicKey);
   return {
     somaDid,
     publicKeyB64,

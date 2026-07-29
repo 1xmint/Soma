@@ -100,3 +100,67 @@ describe('POST /v1/register', () => {
     assert.equal(body.error, 'validation_error');
   });
 });
+
+describe('did:key binding', () => {
+  let ctx: TestContext;
+
+  before(async () => {
+    ctx = await setupTestContext();
+  });
+
+  after(async () => {
+    await ctx.cleanup();
+  });
+
+  beforeEach(async () => {
+    await cleanTables(ctx.db);
+  });
+
+  // Without this check, anyone could register their own key against someone
+  // else's identifier, and every later signature check would verify against
+  // the registry rather than against the identity itself.
+  it('refuses a public key the DID does not commit to', async () => {
+    const victim = generateSomaIdentity();
+    const attacker = generateSomaIdentity();
+
+    const response = await ctx.app.inject({
+      method: 'POST',
+      url: '/v1/register',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ soma_did: victim.did, public_key: attacker.publicKeyB64 }),
+    });
+
+    assert.equal(response.statusCode, 400, response.body);
+    assert.equal(response.json<{ error: string }>().error, 'did_key_mismatch');
+  });
+
+  it('refuses an opaque DID whose key cannot be recovered', async () => {
+    const identity = generateSomaIdentity();
+
+    const response = await ctx.app.inject({
+      method: 'POST',
+      url: '/v1/register',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        soma_did: 'did:soma:test-deadbeef',
+        public_key: identity.publicKeyB64,
+      }),
+    });
+
+    assert.equal(response.statusCode, 400, response.body);
+    assert.equal(response.json<{ error: string }>().error, 'did_key_mismatch');
+  });
+
+  it('accepts a DID that commits to its key', async () => {
+    const identity = generateSomaIdentity();
+
+    const response = await ctx.app.inject({
+      method: 'POST',
+      url: '/v1/register',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ soma_did: identity.did, public_key: identity.publicKeyB64 }),
+    });
+
+    assert.equal(response.statusCode, 201, response.body);
+  });
+});

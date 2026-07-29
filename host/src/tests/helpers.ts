@@ -9,6 +9,7 @@ import {
 import { drizzle } from 'drizzle-orm/postgres-js';
 import * as schema from '../db/schema/index.js';
 import { enableExtensions } from '../db/extensions.js';
+import { didFromPublicKey } from '../lib/did.js';
 import { buildApp } from '../server.js';
 import { getCryptoProvider } from 'soma-heart/crypto-provider';
 import type { FastifyInstance } from 'fastify';
@@ -61,14 +62,9 @@ export function generateSomaIdentity(): SomaIdentity {
   const provider = getCryptoProvider();
   const keyPair = provider.signing.generateKeyPair();
 
-  // Produce a random hex suffix for uniqueness
-  const randomBytes = new Uint8Array(8);
-  crypto.getRandomValues(randomBytes);
-  const randomHex = Array.from(randomBytes)
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
-
-  const did = `did:soma:test-${randomHex}`;
+  // Self-certifying: the identifier is the key. Registration rejects any other
+  // form, and uniqueness comes from the keypair rather than a random suffix.
+  const did = didFromPublicKey(keyPair.publicKey);
   const publicKeyB64 = provider.encoding.encodeBase64(keyPair.publicKey);
 
   return { did, publicKeyB64, secretKey: keyPair.secretKey, keyPair };
