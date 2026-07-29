@@ -5,7 +5,7 @@
  * Run against a live host:
  *
  *   cd host && docker compose up -d && npm run db:migrate && npm start &
- *   node e2e/loop.mjs http://localhost:3000
+ *   node observer/e2e/loop.mjs http://localhost:3000
  *
  * This exercises the real HTTP surface with real signatures. It mocks nothing.
  * If it passes, the observation half of Vera works against a running server.
@@ -15,12 +15,12 @@
 
 import { getCryptoProvider } from 'soma-heart/crypto-provider';
 import { randomBytes } from 'node:crypto';
-import { didFromPublicKey } from '../observer/dist/lib/did.js';
+import { didFromPublicKey } from '../dist/lib/did.js';
 import {
   OBSERVATION_BATCH_SCHEMA,
   formatSubmittedAt,
   signedBytes,
-} from '../observer/dist/lib/envelope.js';
+} from '../dist/lib/envelope.js';
 
 const HOST = process.argv[2] ?? process.env.VERA_HOST ?? 'http://localhost:3000';
 

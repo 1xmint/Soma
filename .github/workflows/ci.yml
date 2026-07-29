@@ -150,6 +150,7 @@ jobs:
           exit 1
 
       - name: Run the loop
+        working-directory: observer
         run: node e2e/loop.mjs http://localhost:3100
 
       # Without this, a failing loop leaves no way to tell whether the host
