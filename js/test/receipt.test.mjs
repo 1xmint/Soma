@@ -28,6 +28,7 @@ function core(attester, subject, overrides = {}) {
     capability: "code-review",
     claim_hash: "a".repeat(64),
     domain: "software",
+    fault: "none",
     issued_at: "2026-07-28T12:00:00Z",
     observed_at: "2026-07-28T11:00:00Z",
     outcome: "succeeded",
@@ -165,7 +166,7 @@ test("mutating any core field invalidates the receipt", () => {
     const tampered = { ...receipt, [field]: value };
     assert.throws(
       () => verifyReceipt(tampered),
-      (error) => error.code === "RECEIPT_ID_MISMATCH",
+      (error) => error.code === "RECEIPT_ID_MISMATCH" || error.code === "RECEIPT_FAULT_INCONSISTENT",
       `mutating ${field} was not detected`
     );
   }
@@ -217,7 +218,8 @@ test("only succeeded, failed and disputed are outcomes", () => {
   const subject = party();
 
   for (const outcome of ["succeeded", "failed", "disputed"]) {
-    const receipt = createReceipt(core(attester, subject, { outcome }), attester.privateKeyBase64);
+    const fault = outcome === "succeeded" ? "none" : "unattributed";
+    const receipt = createReceipt(core(attester, subject, { outcome, fault }), attester.privateKeyBase64);
     assert.equal(verifyReceipt(receipt).outcome, outcome);
   }
 
@@ -347,4 +349,61 @@ test("absent lineage is reported as unknown, not assumed unrelated", () => {
   const summary = summariseReceipts([{ receipt }], []);
   assert.equal(summary.by_independence.unknown, 1);
   assert.equal(summary.by_independence.no_known_common_ancestor, 0);
+});
+
+// Outcome says what happened; fault says who it is attributable to. Conflating
+// them means an agent that correctly reported a broken upstream API is recorded
+// as having failed, and composed work — which is most agent work — becomes
+// unreadable.
+test("fault is separate from outcome, and the two must agree", () => {
+  const attester = party();
+  const subject = party();
+
+  const upstream = createReceipt(
+    core(attester, subject, { outcome: "failed", fault: "upstream_tool" }),
+    attester.privateKeyBase64
+  );
+  assert.equal(verifyReceipt(upstream).fault, "upstream_tool");
+
+  const delegated = createReceipt(
+    core(attester, subject, { outcome: "failed", fault: "delegate" }),
+    attester.privateKeyBase64
+  );
+  assert.equal(verifyReceipt(delegated).fault, "delegate");
+
+  // A success cannot blame anyone.
+  assert.throws(
+    () => createReceipt(core(attester, subject, { outcome: "succeeded", fault: "subject" }), attester.privateKeyBase64),
+    (e) => e.code === "RECEIPT_FAULT_INCONSISTENT"
+  );
+
+  // A failure cannot blame nobody. Where the attester genuinely cannot say,
+  // that is `unattributed` — an explicit statement of ignorance, not silence.
+  assert.throws(
+    () => createReceipt(core(attester, subject, { outcome: "failed", fault: "none" }), attester.privateKeyBase64),
+    (e) => e.code === "RECEIPT_FAULT_INCONSISTENT"
+  );
+
+  assert.throws(
+    () => createReceipt(core(attester, subject, { outcome: "failed", fault: "the-weather" }), attester.privateKeyBase64),
+    (e) => e.code === "RECEIPT_FAULT_INVALID"
+  );
+});
+
+test("a summary counts fault separately from outcome", () => {
+  const attester = party();
+  const subject = party();
+
+  const entries = [
+    { receipt: createReceipt(core(attester, subject, { outcome: "failed", fault: "upstream_tool" }), attester.privateKeyBase64) },
+    { receipt: createReceipt(core(attester, subject, { outcome: "failed", fault: "subject", task_id: "task-2" }), attester.privateKeyBase64) }
+  ];
+
+  const summary = summariseReceipts(entries, []);
+  assert.equal(summary.by_outcome.failed, 2);
+  assert.equal(summary.by_fault.upstream_tool, 1);
+  assert.equal(summary.by_fault.subject, 1);
+  // Two failures, but only one is the subject's. An evaluator reading only
+  // by_outcome would treat these identically.
+  assert.notEqual(summary.by_fault.subject, summary.by_outcome.failed);
 });

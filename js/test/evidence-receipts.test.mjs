@@ -50,6 +50,7 @@ function receiptFor(subjectDid, taskId, claimHash, party, overrides = {}) {
       capability: "code-review",
       claim_hash: claimHash,
       domain: "software",
+      fault: "none",
       issued_at: "2026-07-28T12:00:00Z",
       observed_at: "2026-07-28T11:00:00Z",
       outcome: "succeeded",

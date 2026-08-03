@@ -120,6 +120,7 @@ signed_bytes = "somavera:soma-work-receipt:v1\n" || canonical_json(receipt_core)
 | `capability` | The capability exercised |
 | `claim_hash` | Hash of the claim being attested |
 | `domain` | The domain of work |
+| `fault` | Who a failure is attributable to: `none`, `subject`, `delegate`, `upstream_tool`, `environment`, `unattributed`. Must be `none` when the outcome succeeded, and must not be when it did not |
 | `issued_at` | RFC 3339 UTC, second precision |
 | `observed_at` | When the attester observed the work. Not after `issued_at` |
 | `outcome` | `succeeded`, `failed`, or `disputed` |
@@ -135,6 +136,15 @@ cannot be used as a covert channel or collided deliberately.
 record success produces reputation that is meaningless by construction, because
 the absence of a receipt is indistinguishable between "never worked" and
 "worked badly."
+
+`fault` is a separate question from `outcome`, and conflating them destroys the
+evidence where it is most needed. Agents are composed: a subject calls models,
+tools and delegates it does not control. Recording every upstream failure as
+subject failure means an agent that correctly reported a broken API is
+indistinguishable from one that broke it. `unattributed` exists so that "I do
+not know whose fault this was" is an explicit statement rather than a silence,
+and fault is always the attester's judgement — worth exactly what that attester
+is worth, and never an established fact.
 
 ## The attester's key is never a parameter
 

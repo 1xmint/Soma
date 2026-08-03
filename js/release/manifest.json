@@ -401,13 +401,13 @@
     },
     {
       "path": "src/receipt-cli.mjs",
-      "bytes": 4635,
-      "sha256": "8757abda66cc4f1127367f80bb6e9bd22145d9154b8779236c88a39ed1fb5411"
+      "bytes": 4727,
+      "sha256": "8261645f4076bb0fa3772b932eff7c941d26ae44f211e17f66d8a0db13245eb2"
     },
     {
       "path": "src/receipt.mjs",
-      "bytes": 10659,
-      "sha256": "1abdc5083c99512a3ab2f3ba22d9eb8361f0989a2043cd923bf3e4ed8eb7e3fc"
+      "bytes": 12534,
+      "sha256": "95eb85373cb9de89881856150d2796a4c89a6a1092f236e115fceee9ff195829"
     },
     {
       "path": "src/release.mjs",
@@ -436,8 +436,8 @@
     },
     {
       "path": "test/e2e-trust-loop.test.mjs",
-      "bytes": 6270,
-      "sha256": "8f3c635cd830ab7fb9cbc9bdc42614990fc10f81d548803f9ef376f0df6de65e"
+      "bytes": 6312,
+      "sha256": "cc37b7038913a1707f11b3994113f46d97ade73c34607f8ca0c0ac1ac07f8bd2"
     },
     {
       "path": "test/equivocation.test.mjs",
@@ -446,8 +446,8 @@
     },
     {
       "path": "test/evidence-receipts.test.mjs",
-      "bytes": 10889,
-      "sha256": "5bea1beeeeaf64f07f868fbf904c229fbdb141f3d46bdc3721d8db508eb0d3a6"
+      "bytes": 10910,
+      "sha256": "adaeed00c210a38c6335ce290bcbf838891a6ff523711cac70e57575e5b9d429"
     },
     {
       "path": "test/evidence.test.mjs",
@@ -491,8 +491,8 @@
     },
     {
       "path": "test/receipt.test.mjs",
-      "bytes": 12404,
-      "sha256": "a0b3016f1cdfc8c89514b763931cbf1c7c176f5e3a849441287b18c021431b82"
+      "bytes": 14925,
+      "sha256": "a6ff98a79837703e4fef6cb5680312add3da3c3d9827cd10ca4f40eed914fc51"
     },
     {
       "path": "test/revival-drill.py",
