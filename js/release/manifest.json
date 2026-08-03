@@ -475,6 +475,11 @@
       "sha256": "a0b3016f1cdfc8c89514b763931cbf1c7c176f5e3a849441287b18c021431b82"
     },
     {
+      "path": "test/revival-drill.py",
+      "bytes": 8163,
+      "sha256": "388246fe848b04bb22d1c7b3ce1ba93ad665e9dc99a10108c2a6bbb397d7de2b"
+    },
+    {
       "path": "test/soma-interop.test.mjs",
       "bytes": 2201,
       "sha256": "25b4af82ebb7fea848dce3a7ec9d695fb73454405e5d5d83348e8b24a4a03bba"
