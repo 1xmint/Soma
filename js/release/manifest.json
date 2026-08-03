@@ -166,8 +166,8 @@
     },
     {
       "path": "package.json",
-      "bytes": 964,
-      "sha256": "66b4753de11b857390bdb82c505799b64c7b208bf03501b84e87df2d83d6b3a3"
+      "bytes": 1024,
+      "sha256": "23679ba5537f944ca8dace1432b854dfb9c0b9f4c28a59deac2a5c2284bd4adf"
     },
     {
       "path": "release/origin-capsule-manifest.json",
@@ -300,6 +300,11 @@
       "sha256": "1a13491766522becce056348874466c0435b0e00af7d44cfd55a25dc399bc1fc"
     },
     {
+      "path": "src/attester-structure.mjs",
+      "bytes": 4396,
+      "sha256": "c5ec69f190c5d885ac389db84d6f3056db1086d299c6a8b168f5ce16e435570a"
+    },
+    {
       "path": "src/canonicalize.mjs",
       "bytes": 2454,
       "sha256": "1275feefe38e336fc029b3ce5f37b19e641a983687c22cefb4df024ac22d50bf"
@@ -323,6 +328,11 @@
       "path": "src/crypto.mjs",
       "bytes": 7356,
       "sha256": "7537dd0bb7107d33054fd1e29c951a1b6af445f56114a2d537341a482813d2d6"
+    },
+    {
+      "path": "src/equivocation.mjs",
+      "bytes": 6238,
+      "sha256": "13676a80c0dd415783cb7c60e39347bd27387120df79b14ddf6fd2b1c6558208"
     },
     {
       "path": "src/errors.mjs",
@@ -410,6 +420,11 @@
       "sha256": "61663ef2912191692b0f42e911a0914c60b51f565e6f68cba6f2c2bd9eca1e9d"
     },
     {
+      "path": "test/attester-structure.test.mjs",
+      "bytes": 4723,
+      "sha256": "dedb0629399a4de1efb3ea3daafa604cb752eb716399dcfa94dc1d2a8d2f6149"
+    },
+    {
       "path": "test/cli.test.mjs",
       "bytes": 8742,
       "sha256": "03b56f48de0ccc2fbe47ebd0c5c0752433ad12b177dbcb0d902f121a168dbcb0"
@@ -423,6 +438,11 @@
       "path": "test/e2e-trust-loop.test.mjs",
       "bytes": 6270,
       "sha256": "8f3c635cd830ab7fb9cbc9bdc42614990fc10f81d548803f9ef376f0df6de65e"
+    },
+    {
+      "path": "test/equivocation.test.mjs",
+      "bytes": 6479,
+      "sha256": "d2f6283b598914020f003005125d299aa63a481817ad449dc5c979592994b4f8"
     },
     {
       "path": "test/evidence-receipts.test.mjs",
