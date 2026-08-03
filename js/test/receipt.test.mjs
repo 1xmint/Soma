@@ -461,3 +461,34 @@ test("a verifying host is an ordinary attester, not an authority", () => {
   assert.equal(blind.basis, "insufficient", "a host's verification is not authoritative by being a host");
   assert.equal(blind.score, null);
 });
+
+// Crypto agility here needs no negotiation. Records are verified asynchronously
+// by strangers years later, so there is no handshake to downgrade — only a
+// label the signer wrote and a set the verifier accepts.
+test("a signature names its suite, and an unknown suite is refused", () => {
+  const attester = party();
+  const subject = party();
+  const receipt = createReceipt(core(attester, subject), attester.privateKeyBase64);
+
+  assert.equal(receipt.signature.suite, "Ed25519-v1");
+  assert.equal(verifyReceipt(receipt).signature.suite, "Ed25519-v1");
+
+  // A suite this verifier does not know is refused, never assumed compatible.
+  // Guessing would mean verifying under an algorithm the signer did not choose.
+  assert.throws(
+    () => verifyReceipt({ ...receipt, signature: { suite: "Dilithium3-v1", value: receipt.signature.value } }),
+    (e) => e.code === "RECEIPT_SUITE_UNSUPPORTED"
+  );
+
+  // A bare string is the old shape, and is refused rather than silently
+  // treated as Ed25519 — which would defeat the point of naming the suite.
+  assert.throws(
+    () => verifyReceipt({ ...receipt, signature: receipt.signature.value }),
+    (e) => e.code === "RECEIPT_SIGNATURE_SHAPE_INVALID"
+  );
+
+  assert.throws(
+    () => verifyReceipt({ ...receipt, signature: { ...receipt.signature, extra: 1 } }),
+    (e) => e.code === "RECEIPT_SIGNATURE_SHAPE_INVALID"
+  );
+});

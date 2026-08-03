@@ -406,8 +406,8 @@
     },
     {
       "path": "src/receipt.mjs",
-      "bytes": 13668,
-      "sha256": "2c1cc7d1644535fff5484a1c756a58bbd4f1d3389840a9c3c4dd2372e474c6c5"
+      "bytes": 15148,
+      "sha256": "6f939ad67e7bf47a88bc4ef722f270d775c4fffa21c8fc4a9b1f9ebd80ee4c07"
     },
     {
       "path": "src/release.mjs",
@@ -491,8 +491,8 @@
     },
     {
       "path": "test/receipt.test.mjs",
-      "bytes": 16993,
-      "sha256": "c566ed23308ac6057b138db8387f163bf8cc6166fa5baebdaf36a94510f21451"
+      "bytes": 18377,
+      "sha256": "51a049cba81f759ff390bca3bc101e2c8737acd6caef44f0f4d2663fc130c86a"
     },
     {
       "path": "test/revival-drill.py",

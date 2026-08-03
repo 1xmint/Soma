@@ -60,6 +60,17 @@ const FAULTS = new Set(["none", "subject", "delegate", "upstream_tool", "environ
 // evaluator that cannot tell them apart is treating an opinion as a measurement.
 const BASES = new Set(["party", "witnessed", "verified"]);
 
+// A signature names the suite that produced it. Verifiers decide which suites
+// they accept; there is no handshake and therefore no downgrade attack, because
+// there is nothing to negotiate. Records are verified asynchronously by
+// strangers years later, so negotiation -- the standard answer to crypto
+// agility -- is the wrong shape for this problem.
+//
+// New suites are added. Old labels are never removed, or every record signed
+// under them becomes unverifiable, which is the one irreversible mistake
+// available here.
+const SUITES = new Set(["Ed25519-v1"]);
+
 const HASH = /^[a-f0-9]{64}$/;
 const NAME = /^[a-z][a-z0-9-]{0,63}$/;
 const DID = /^did:[a-z0-9]+:[A-Za-z0-9._:-]{1,512}$/;
@@ -210,7 +221,10 @@ export function createReceipt(core, attesterPrivateKeyBase64) {
   return {
     ...core,
     receipt_id,
-    signature: signEd25519(attesterPrivateKeyBase64, signaturePreimage(receipt_id))
+    signature: {
+      suite: "Ed25519-v1",
+      value: signEd25519(attesterPrivateKeyBase64, signaturePreimage(receipt_id))
+    }
   };
 }
 
@@ -236,7 +250,24 @@ export function verifyReceipt(receipt) {
     throw new SomaError("receipt_id does not match its contents", 7, "RECEIPT_ID_MISMATCH");
   }
 
-  if (!verifyEd25519(attesterKeyFromDid(core.attester_did), signaturePreimage(expectedId), receipt.signature)) {
+  const signature = receipt.signature;
+  if (signature === null || typeof signature !== "object" || Array.isArray(signature)) {
+    throw new SomaError("receipt signature must name its suite", 2, "RECEIPT_SIGNATURE_SHAPE_INVALID");
+  }
+  const signatureKeys = Object.keys(signature).sort();
+  if (signatureKeys.length !== 2 || signatureKeys[0] !== "suite" || signatureKeys[1] !== "value") {
+    throw new SomaError("receipt signature must carry exactly [suite, value]", 2, "RECEIPT_SIGNATURE_SHAPE_INVALID");
+  }
+  // An unrecognised suite is refused, never assumed compatible. Guessing would
+  // mean verifying under an algorithm the signer did not choose.
+  if (!SUITES.has(signature.suite)) {
+    throw new SomaError(
+      `receipt signature suite ${signature.suite} is not accepted by this verifier`,
+      7,
+      "RECEIPT_SUITE_UNSUPPORTED"
+    );
+  }
+  if (!verifyEd25519(attesterKeyFromDid(core.attester_did), signaturePreimage(expectedId), signature.value)) {
     throw new SomaError("receipt signature does not verify against the attester key", 7, "RECEIPT_SIGNATURE_INVALID");
   }
 
