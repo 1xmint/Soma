@@ -117,6 +117,7 @@ signed_bytes = "somavera:soma-work-receipt:v1\n" || canonical_json(receipt_core)
 | Field | Rule |
 |---|---|
 | `attester_did` | Who is attesting. Must differ from `subject_did` |
+| `basis` | How the attester knows: `party`, `witnessed`, or `verified` |
 | `capability` | The capability exercised |
 | `claim_hash` | Hash of the claim being attested |
 | `domain` | The domain of work |
@@ -145,6 +146,44 @@ indistinguishable from one that broke it. `unattributed` exists so that "I do
 not know whose fault this was" is an explicit statement rather than a silence,
 and fault is always the attester's judgement — worth exactly what that attester
 is worth, and never an established fact.
+
+## Basis — how the attester knows
+
+Three claims that look identical on the wire carry entirely different weight:
+
+- **`party`** — the attester took part. Subjective and interested; it may be
+  lying and nobody can check.
+- **`witnessed`** — the attester saw it without taking part. Less interested,
+  still not reproducible.
+- **`verified`** — the attester independently checked the claim against
+  something else, and anyone can redo that check.
+
+**Only `verified` is falsifiable.** A verified claim asserts something reality
+can contradict. The other two cannot be wrong in any checkable sense. An
+evaluator that cannot tell them apart is treating an opinion as a measurement,
+and that is the difference between "the data felt right" and "the data matches
+the source I queried".
+
+This is also what lets verification substitute for trust. Where a claim can be
+independently checked, no reputation is required at all — which matters because
+in a network of millions, almost nobody has a trust path to almost anybody.
+Shrinking the set of interactions that need trust is more valuable than trying
+to make trust reach further.
+
+A host that verifies is **not privileged by verifying**. It is an ordinary
+identity whose attestations happen to be verificational, and whose standing is
+at stake like anyone's. Nothing about being a host makes its verdict
+authoritative, and an evaluator that does not trust it gets nothing from it.
+
+### Method disclosure is deliberately not specified yet
+
+When a verification method turns out to be defeatable, every attestation that
+used it should be re-weighted at once — not just the ones from whoever was
+caught. That requires the method to be named in the receipt.
+
+It is left out of v1 because a bad method vocabulary frozen into the record is
+worse than none, and naming methods well needs more thought than this revision
+had. The gap is recorded so it is not mistaken for an oversight.
 
 ## The attester's key is never a parameter
 

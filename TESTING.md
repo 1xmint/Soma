@@ -60,6 +60,7 @@ Write a request naming the worker as the subject:
 
 ```json
 {
+  "basis": "party",
   "capability": "code-review",
   "claim_hash": "<64 hex characters>",
   "domain": "software",

@@ -62,6 +62,7 @@ test("two agents complete the trust loop through the CLI", async (context) => {
   await writeFile(
     requestFile,
     `${canonicalize({
+      basis: "party",
       capability: "code-review",
       claim_hash: claimHash,
       domain: "software",
@@ -137,6 +138,7 @@ test("two agents complete the trust loop through the CLI", async (context) => {
   await writeFile(
     selfRequest,
     `${canonicalize({
+      basis: "party",
       capability: "code-review",
       claim_hash: claimHash,
       domain: "software",

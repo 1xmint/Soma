@@ -14,6 +14,7 @@ const CORE_FIELDS = [
   "attester_did",
   "capability",
   "claim_hash",
+  "basis",
   "domain",
   "fault",
   "issued_at",
@@ -43,6 +44,21 @@ const OUTCOMES = new Set(["succeeded", "failed", "disputed"]);
 // one named party believes is answerable, which is worth exactly as much as
 // that party's own standing.
 const FAULTS = new Set(["none", "subject", "delegate", "upstream_tool", "environment", "unattributed"]);
+
+// How the attester came to know what it is claiming. This is not decoration:
+// the three carry entirely different evidential weight.
+//
+//   party      the attester took part. Subjective, and interested -- it may be
+//              lying and nobody can check.
+//   witnessed  the attester saw it happen without taking part. Less interested,
+//              still not reproducible.
+//   verified   the attester independently checked the claim against something
+//              else, and anyone can redo that check.
+//
+// Only `verified` is falsifiable. A verified claim makes an assertion reality
+// can contradict; the other two cannot be wrong in any checkable sense. An
+// evaluator that cannot tell them apart is treating an opinion as a measurement.
+const BASES = new Set(["party", "witnessed", "verified"]);
 
 const HASH = /^[a-f0-9]{64}$/;
 const NAME = /^[a-z][a-z0-9-]{0,63}$/;
@@ -135,6 +151,13 @@ function validateCore(core) {
 
   if (!OUTCOMES.has(core.outcome)) {
     throw new SomaError("receipt outcome is not one of succeeded, failed, disputed", 2, "RECEIPT_OUTCOME_INVALID");
+  }
+  if (!BASES.has(core.basis)) {
+    throw new SomaError(
+      "receipt basis is not one of party, witnessed, verified",
+      2,
+      "RECEIPT_BASIS_INVALID"
+    );
   }
   if (!FAULTS.has(core.fault)) {
     throw new SomaError(
@@ -278,6 +301,7 @@ export function summariseReceipts(entries, trustedAttesterDids = []) {
     by_independence: { self: 0, shared_lineage: 0, no_known_common_ancestor: 0, unknown: 0 },
     by_outcome: { succeeded: 0, failed: 0, disputed: 0 },
     by_fault: { none: 0, subject: 0, delegate: 0, upstream_tool: 0, environment: 0, unattributed: 0 },
+    by_basis: { party: 0, witnessed: 0, verified: 0 },
     from_trusted_attesters: 0,
     distinct_attesters: 0,
     basis: "insufficient",
@@ -302,6 +326,7 @@ export function summariseReceipts(entries, trustedAttesterDids = []) {
     summary.by_independence[label] += 1;
     summary.by_outcome[receipt.outcome] += 1;
     if (receipt.fault in summary.by_fault) summary.by_fault[receipt.fault] += 1;
+    if (receipt.basis in summary.by_basis) summary.by_basis[receipt.basis] += 1;
     attesters.add(receipt.attester_did);
     if (trusted.has(receipt.attester_did)) summary.from_trusted_attesters += 1;
   }

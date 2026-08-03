@@ -25,6 +25,7 @@ function party() {
 function core(attester, subject, overrides = {}) {
   return {
     attester_did: attester.did,
+    basis: "party",
     capability: "code-review",
     claim_hash: "a".repeat(64),
     domain: "software",
@@ -406,4 +407,57 @@ test("a summary counts fault separately from outcome", () => {
   // Two failures, but only one is the subject's. An evaluator reading only
   // by_outcome would treat these identically.
   assert.notEqual(summary.by_fault.subject, summary.by_outcome.failed);
+});
+
+// Agent Y saying "the data was good" and Vera saying "the data matches the
+// source" are not the same claim. Only the second is falsifiable — anyone can
+// redo the check. An evaluator that cannot tell them apart is treating an
+// opinion as a measurement.
+test("basis distinguishes a checkable claim from an opinion", () => {
+  const counterparty = party();
+  const verifier = party();
+  const subject = party();
+
+  const experience = createReceipt(
+    core(counterparty, subject, { basis: "party" }),
+    counterparty.privateKeyBase64
+  );
+  const verification = createReceipt(
+    core(verifier, subject, { basis: "verified" }),
+    verifier.privateKeyBase64
+  );
+
+  assert.equal(verifyReceipt(experience).basis, "party");
+  assert.equal(verifyReceipt(verification).basis, "verified");
+
+  const summary = summariseReceipts([{ receipt: experience }, { receipt: verification }], []);
+  assert.equal(summary.by_basis.party, 1);
+  assert.equal(summary.by_basis.verified, 1);
+
+  assert.throws(
+    () => createReceipt(core(counterparty, subject, { basis: "vibes" }), counterparty.privateKeyBase64),
+    (e) => e.code === "RECEIPT_BASIS_INVALID"
+  );
+});
+
+// A Vera host is not privileged. It is an ordinary identity whose attestations
+// happen to be verificational, and its standing is at stake like anyone's.
+// Nothing here makes it an adjudicator.
+test("a verifying host is an ordinary attester, not an authority", () => {
+  const host = party();
+  const subject = party();
+
+  const receipt = createReceipt(
+    core(host, subject, { basis: "verified", outcome: "failed", fault: "subject" }),
+    host.privateKeyBase64
+  );
+  const verified = verifyReceipt(receipt);
+
+  assert.equal(verified.basis, "verified");
+  assert.equal(verified.attester_did, host.did);
+
+  // An evaluator who does not trust this host gets nothing from its verdict.
+  const blind = summariseReceipts([{ receipt }], []);
+  assert.equal(blind.basis, "insufficient", "a host's verification is not authoritative by being a host");
+  assert.equal(blind.score, null);
 });

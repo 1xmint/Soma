@@ -47,6 +47,7 @@ function receiptFor(subjectDid, taskId, claimHash, party, overrides = {}) {
   return createReceipt(
     {
       attester_did: party.did,
+      basis: "party",
       capability: "code-review",
       claim_hash: claimHash,
       domain: "software",
