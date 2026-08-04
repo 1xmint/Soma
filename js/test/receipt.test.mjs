@@ -25,9 +25,11 @@ function party() {
 function core(attester, subject, overrides = {}) {
   return {
     attester_did: attester.did,
+    basis: "party",
     capability: "code-review",
     claim_hash: "a".repeat(64),
     domain: "software",
+    fault: "none",
     issued_at: "2026-07-28T12:00:00Z",
     observed_at: "2026-07-28T11:00:00Z",
     outcome: "succeeded",
@@ -165,7 +167,7 @@ test("mutating any core field invalidates the receipt", () => {
     const tampered = { ...receipt, [field]: value };
     assert.throws(
       () => verifyReceipt(tampered),
-      (error) => error.code === "RECEIPT_ID_MISMATCH",
+      (error) => error.code === "RECEIPT_ID_MISMATCH" || error.code === "RECEIPT_FAULT_INCONSISTENT",
       `mutating ${field} was not detected`
     );
   }
@@ -217,7 +219,8 @@ test("only succeeded, failed and disputed are outcomes", () => {
   const subject = party();
 
   for (const outcome of ["succeeded", "failed", "disputed"]) {
-    const receipt = createReceipt(core(attester, subject, { outcome }), attester.privateKeyBase64);
+    const fault = outcome === "succeeded" ? "none" : "unattributed";
+    const receipt = createReceipt(core(attester, subject, { outcome, fault }), attester.privateKeyBase64);
     assert.equal(verifyReceipt(receipt).outcome, outcome);
   }
 
@@ -347,4 +350,145 @@ test("absent lineage is reported as unknown, not assumed unrelated", () => {
   const summary = summariseReceipts([{ receipt }], []);
   assert.equal(summary.by_independence.unknown, 1);
   assert.equal(summary.by_independence.no_known_common_ancestor, 0);
+});
+
+// Outcome says what happened; fault says who it is attributable to. Conflating
+// them means an agent that correctly reported a broken upstream API is recorded
+// as having failed, and composed work — which is most agent work — becomes
+// unreadable.
+test("fault is separate from outcome, and the two must agree", () => {
+  const attester = party();
+  const subject = party();
+
+  const upstream = createReceipt(
+    core(attester, subject, { outcome: "failed", fault: "upstream_tool" }),
+    attester.privateKeyBase64
+  );
+  assert.equal(verifyReceipt(upstream).fault, "upstream_tool");
+
+  const delegated = createReceipt(
+    core(attester, subject, { outcome: "failed", fault: "delegate" }),
+    attester.privateKeyBase64
+  );
+  assert.equal(verifyReceipt(delegated).fault, "delegate");
+
+  // A success cannot blame anyone.
+  assert.throws(
+    () => createReceipt(core(attester, subject, { outcome: "succeeded", fault: "subject" }), attester.privateKeyBase64),
+    (e) => e.code === "RECEIPT_FAULT_INCONSISTENT"
+  );
+
+  // A failure cannot blame nobody. Where the attester genuinely cannot say,
+  // that is `unattributed` — an explicit statement of ignorance, not silence.
+  assert.throws(
+    () => createReceipt(core(attester, subject, { outcome: "failed", fault: "none" }), attester.privateKeyBase64),
+    (e) => e.code === "RECEIPT_FAULT_INCONSISTENT"
+  );
+
+  assert.throws(
+    () => createReceipt(core(attester, subject, { outcome: "failed", fault: "the-weather" }), attester.privateKeyBase64),
+    (e) => e.code === "RECEIPT_FAULT_INVALID"
+  );
+});
+
+test("a summary counts fault separately from outcome", () => {
+  const attester = party();
+  const subject = party();
+
+  const entries = [
+    { receipt: createReceipt(core(attester, subject, { outcome: "failed", fault: "upstream_tool" }), attester.privateKeyBase64) },
+    { receipt: createReceipt(core(attester, subject, { outcome: "failed", fault: "subject", task_id: "task-2" }), attester.privateKeyBase64) }
+  ];
+
+  const summary = summariseReceipts(entries, []);
+  assert.equal(summary.by_outcome.failed, 2);
+  assert.equal(summary.by_fault.upstream_tool, 1);
+  assert.equal(summary.by_fault.subject, 1);
+  // Two failures, but only one is the subject's. An evaluator reading only
+  // by_outcome would treat these identically.
+  assert.notEqual(summary.by_fault.subject, summary.by_outcome.failed);
+});
+
+// Agent Y saying "the data was good" and Vera saying "the data matches the
+// source" are not the same claim. Only the second is falsifiable — anyone can
+// redo the check. An evaluator that cannot tell them apart is treating an
+// opinion as a measurement.
+test("basis distinguishes a checkable claim from an opinion", () => {
+  const counterparty = party();
+  const verifier = party();
+  const subject = party();
+
+  const experience = createReceipt(
+    core(counterparty, subject, { basis: "party" }),
+    counterparty.privateKeyBase64
+  );
+  const verification = createReceipt(
+    core(verifier, subject, { basis: "verified" }),
+    verifier.privateKeyBase64
+  );
+
+  assert.equal(verifyReceipt(experience).basis, "party");
+  assert.equal(verifyReceipt(verification).basis, "verified");
+
+  const summary = summariseReceipts([{ receipt: experience }, { receipt: verification }], []);
+  assert.equal(summary.by_basis.party, 1);
+  assert.equal(summary.by_basis.verified, 1);
+
+  assert.throws(
+    () => createReceipt(core(counterparty, subject, { basis: "vibes" }), counterparty.privateKeyBase64),
+    (e) => e.code === "RECEIPT_BASIS_INVALID"
+  );
+});
+
+// A Vera host is not privileged. It is an ordinary identity whose attestations
+// happen to be verificational, and its standing is at stake like anyone's.
+// Nothing here makes it an adjudicator.
+test("a verifying host is an ordinary attester, not an authority", () => {
+  const host = party();
+  const subject = party();
+
+  const receipt = createReceipt(
+    core(host, subject, { basis: "verified", outcome: "failed", fault: "subject" }),
+    host.privateKeyBase64
+  );
+  const verified = verifyReceipt(receipt);
+
+  assert.equal(verified.basis, "verified");
+  assert.equal(verified.attester_did, host.did);
+
+  // An evaluator who does not trust this host gets nothing from its verdict.
+  const blind = summariseReceipts([{ receipt }], []);
+  assert.equal(blind.basis, "insufficient", "a host's verification is not authoritative by being a host");
+  assert.equal(blind.score, null);
+});
+
+// Crypto agility here needs no negotiation. Records are verified asynchronously
+// by strangers years later, so there is no handshake to downgrade — only a
+// label the signer wrote and a set the verifier accepts.
+test("a signature names its suite, and an unknown suite is refused", () => {
+  const attester = party();
+  const subject = party();
+  const receipt = createReceipt(core(attester, subject), attester.privateKeyBase64);
+
+  assert.equal(receipt.signature.suite, "Ed25519-v1");
+  assert.equal(verifyReceipt(receipt).signature.suite, "Ed25519-v1");
+
+  // A suite this verifier does not know is refused, never assumed compatible.
+  // Guessing would mean verifying under an algorithm the signer did not choose.
+  assert.throws(
+    () => verifyReceipt({ ...receipt, signature: { suite: "Dilithium3-v1", value: receipt.signature.value } }),
+    (e) => e.code === "RECEIPT_SUITE_UNSUPPORTED"
+  );
+
+  // A bare string is the old shape, and is refused rather than silently
+  // treated as Ed25519 — which would defeat the point of naming the suite.
+  assert.throws(
+    () => verifyReceipt({ ...receipt, signature: receipt.signature.value }),
+    (e) => e.code === "RECEIPT_SIGNATURE_SHAPE_INVALID"
+  );
+
+  assert.throws(
+    () => verifyReceipt({ ...receipt, signature: { ...receipt.signature, extra: 1 } }),
+    (e) => e.code === "RECEIPT_SIGNATURE_SHAPE_INVALID"
+  );
 });

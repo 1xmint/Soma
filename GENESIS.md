@@ -191,9 +191,26 @@ are never removed**, or every record signed under them becomes unverifiable.
 ### 6.4 Records
 
 **Work receipt** — a second party's statement about a subject's work. Fields:
-`attester_did`, `capability`, `claim_hash`, `domain`, `issued_at`, `observed_at`,
-`outcome`, `schema_version`, `subject_did`, `task_id`. The identifier is derived
-from the canonical bytes, never asserted, so a submitter cannot choose it.
+`attester_did`, `basis`, `capability`, `claim_hash`, `domain`, `fault`,
+`issued_at`, `observed_at`, `outcome`, `schema_version`, `subject_did`,
+`task_id`, plus a derived `receipt_id` and a `signature` carrying `{suite,
+value}`. The identifier is derived from the canonical bytes, never asserted, so a
+submitter cannot choose it.
+
+`basis` records **how the attester knows**: `party` (took part — subjective and
+interested), `witnessed` (saw it without taking part), or `verified` (checked
+independently, and anyone can redo the check). Only `verified` is falsifiable;
+the others cannot be wrong in any checkable sense. A verifier is not privileged
+by verifying — it is an ordinary identity whose standing is at stake like
+anyone's.
+
+`fault` records **who a failure is attributable to**: `none`, `subject`,
+`delegate`, `upstream_tool`, `environment`, `unattributed`. Agents are composed,
+calling models and tools they do not control, so conflating "the work failed"
+with "the subject failed" makes an agent that correctly reported a broken
+upstream indistinguishable from one that broke it. A success MUST carry `none`;
+a failure MUST NOT, using `unattributed` where the attester genuinely cannot say
+— an explicit statement of ignorance rather than a silence.
 
 Four bindings, each closing a distinct forgery:
 

@@ -60,9 +60,11 @@ Write a request naming the worker as the subject:
 
 ```json
 {
+  "basis": "party",
   "capability": "code-review",
   "claim_hash": "<64 hex characters>",
   "domain": "software",
+  "fault": "none",
   "observed_at": "2026-07-28T11:00:00Z",
   "outcome": "succeeded",
   "schema_version": "soma.work-receipt.provisional-v1",
@@ -86,6 +88,14 @@ so nobody can issue receipts in another agent's name.
 `outcome` may be `succeeded`, `failed` or `disputed`. A system that can only
 record success produces reputation meaningless by construction, because a
 missing receipt cannot be told apart from work that went badly.
+
+`fault` is separate, and says who a failure is attributable to: `none`,
+`subject`, `delegate`, `upstream_tool`, `environment`, or `unattributed`. Agents
+are composed — a subject calls models, tools and delegates it does not control —
+so without this every upstream flake would be recorded as subject failure, and
+the evidence would be least readable exactly where composed work matters most.
+A success must carry `none`; a failure must not, using `unattributed` where the
+attester genuinely cannot say. Fault is the attester's judgement, not a fact.
 
 ### 3. Anyone can verify it, with access to neither home
 
