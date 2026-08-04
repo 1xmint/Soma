@@ -25,12 +25,18 @@ exists.
 | A service that must stay running | **none in the protocol** — hosts are plural, and Soma is fully functional with every host absent |
 | Governance requiring approval | **none** — there is no approver |
 | A registry someone administers | **none** — the identifier is the key |
-| A licence permitting forks | **done** — MIT / Apache-2.0 dual |
+| **A licence permitting forks** | **MISSING at the repository root.** `Cargo.toml` declares `MIT OR Apache-2.0` but no MIT text exists anywhere; `js/` and `origin/` carry Apache-2.0; the root carries nothing, so the default is all rights reserved |
 | **A code-hosting account** | **MISSING** — everything lives in one organisation owned by one person |
 | **Off-platform copies of the specification** | **MISSING** — GENESIS.md exists in exactly one place |
 
-The last two are the same failure twice, and they are the only ones that would
-end the project. Everything else is already independent.
+Three unresolved, and they are the only ones that would end the project.
+
+The licence is the sharpest of them, and it was previously marked done here on
+the strength of a manifest declaration rather than a file. "Ownerless,
+forkable, uncapturable" requires that anyone may lawfully reimplement and
+redistribute. A protocol nobody may legally fork is not ownerless — it belongs
+to its author permanently, whatever the architecture says. It also leaves the
+mirror bundle legally ambiguous for the custodians being asked to hold it.
 
 **What closes it:** the specification and vectors held by custodians who are not
 the author, on infrastructure that is not the author's, in more than one
