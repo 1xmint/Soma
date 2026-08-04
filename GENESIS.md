@@ -291,6 +291,53 @@ Each fails a plausible-but-wrong implementation: locale key sorting, a trailing
 `.0`, an escaped solidus, `` instead of `\b`, uppercase hex, full double
 precision, dropped nulls.
 
+### 7.5 Work receipt
+
+The identifier is derived, so this vector needs no private key and any
+implementation can check itself against it.
+
+Core:
+
+```json
+{
+  "attester_did": "did:key:z6MkjDDPGYQdTcFQ8ecCf7zwP1rKvG7cdH5d8kxYqy7kaNBN",
+  "basis": "verified",
+  "capability": "code-review",
+  "claim_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "domain": "software",
+  "fault": "upstream_tool",
+  "issued_at": "2026-08-04T12:00:00Z",
+  "observed_at": "2026-08-04T11:00:00Z",
+  "outcome": "failed",
+  "schema_version": "soma.work-receipt.provisional-v1",
+  "subject_did": "did:key:z6MktcCgWP6EoLbhR1i4uhwJbs4pS3js5bdJaoxAcyPbGQ8o",
+  "task_id": "task-001"
+}
+```
+
+Canonical form — one line, no whitespace, keys in UTF-16 order:
+
+```
+{"attester_did":"did:key:z6MkjDDPGYQdTcFQ8ecCf7zwP1rKvG7cdH5d8kxYqy7kaNBN","basis":"verified","capability":"code-review","claim_hash":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","domain":"software","fault":"upstream_tool","issued_at":"2026-08-04T12:00:00Z","observed_at":"2026-08-04T11:00:00Z","outcome":"failed","schema_version":"soma.work-receipt.provisional-v1","subject_did":"did:key:z6MktcCgWP6EoLbhR1i4uhwJbs4pS3js5bdJaoxAcyPbGQ8o","task_id":"task-001"}
+```
+
+`receipt_id` = SHA-256 of `"somavera:soma-work-receipt:v1
+"` followed by those
+canonical bytes:
+
+```
+428623bdede8185d2d42c8e32467942bcc816e8652829cadb608646c0cbfcc5f
+```
+
+Then confirm the rules that make a receipt mean anything, each of which must be
+refused:
+
+- `attester_did` equal to `subject_did` — a receipt about oneself is not a receipt
+- `outcome` `succeeded` beside any `fault` other than `none`
+- `outcome` `failed` or `disputed` beside `fault` `none`
+- a `receipt_id` that does not match the derivation above
+- any field added or removed
+
 ### 7.4 Canonicalization — rejected
 
 Lone surrogate `\uD800`; negative zero; `9007199254740993`; `1e20`; `1e21`;

@@ -4,14 +4,23 @@ import { resolveWindowsPowerShell } from "./platform.mjs";
 
 const ENTROPY_LABEL = "Somavera/Soma/DPAPI/v1";
 
+// See platform.mjs: PowerShell startup time is a property of the machine, not of
+// the work. Protecting and unprotecting are both idempotent, so a timeout is
+// retried once with a longer deadline rather than failing the operation.
+const ATTEMPT_TIMEOUTS_MS = [15000, 45000];
+
 function runPowerShell(script, input) {
-  const result = spawnSync(resolveWindowsPowerShell(), ["-NoProfile", "-NonInteractive", "-Command", script], {
-    input,
-    encoding: "utf8",
-    windowsHide: true,
-    maxBuffer: 1024 * 1024,
-    timeout: 15000
-  });
+  let result = null;
+  for (const timeout of ATTEMPT_TIMEOUTS_MS) {
+    result = spawnSync(resolveWindowsPowerShell(), ["-NoProfile", "-NonInteractive", "-Command", script], {
+      input,
+      encoding: "utf8",
+      windowsHide: true,
+      maxBuffer: 1024 * 1024,
+      timeout
+    });
+    if (result.error?.code !== "ETIMEDOUT") break;
+  }
   if (result.error || result.status !== 0) {
     const message = result.error?.message || result.stderr.trim() || `PowerShell exited ${result.status}`;
     throw new SomaError("Windows secure storage operation failed", 8, "WINDOWS_DPAPI_FAILED", { cause: message });

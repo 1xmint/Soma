@@ -1,12 +1,19 @@
 # Release readiness — what must be true before walking away
 
-Status: **checklist, not a claim.** Items are marked done, partial, or missing
-against evidence, not intention.
+Status: **checklist, not a claim.** Items are marked against evidence, not
+intention.
 
 The goal is specific: **release the protocol, then have nothing left to do
 except participate.** That is only true if nothing about the network depends on
-one person. This document enumerates those dependencies so they can be removed
-rather than assumed away.
+one person. This enumerates those dependencies so they can be removed rather
+than assumed away.
+
+**Scope: the protocol only.** Products built on the network are businesses, and
+a business may depend on its owner indefinitely — that is what a business is.
+The distinction matters because it is the one thing that must never blur: a
+product that could charge for access to the protocol would eventually be tempted
+to, and the temptation would win. Nothing in the frozen layer knows any product
+exists.
 
 ---
 
@@ -16,17 +23,23 @@ rather than assumed away.
 |---|---|
 | A signing key that must stay live | **none** — records are signed by their own authors; no release key gates anything |
 | A service that must stay running | **none in the protocol** — hosts are plural, and Soma is fully functional with every host absent |
-| Governance requiring approval | **none** — there is no approver in the protocol |
+| Governance requiring approval | **none** — there is no approver |
 | A registry someone administers | **none** — the identifier is the key |
-| A licence permitting forks | **done** — MIT / Apache-2.0 dual |
-| **A code-hosting account** | **MISSING** — everything lives in one GitHub organisation owned by one person |
+| **A licence permitting forks** | **MISSING at the repository root.** `Cargo.toml` declares `MIT OR Apache-2.0` but no MIT text exists anywhere; `js/` and `origin/` carry Apache-2.0; the root carries nothing, so the default is all rights reserved |
+| **A code-hosting account** | **MISSING** — everything lives in one organisation owned by one person |
 | **Off-platform copies of the specification** | **MISSING** — GENESIS.md exists in exactly one place |
 
-The last two are the same failure twice, and they are the only ones that would
-end the project. Everything else is already independent.
+Three unresolved, and they are the only ones that would end the project.
 
-**What closes it:** the specification and vectors mirrored by custodians who are
-not the author, on infrastructure that is not the author's, in more than one
+The licence is the sharpest of them, and it was previously marked done here on
+the strength of a manifest declaration rather than a file. "Ownerless,
+forkable, uncapturable" requires that anyone may lawfully reimplement and
+redistribute. A protocol nobody may legally fork is not ownerless — it belongs
+to its author permanently, whatever the architecture says. It also leaves the
+mirror bundle legally ambiguous for the custodians being asked to hold it.
+
+**What closes it:** the specification and vectors held by custodians who are not
+the author, on infrastructure that is not the author's, in more than one
 jurisdiction. A mirror inside the same organisation protects against nothing the
 organisation is exposed to.
 
@@ -41,9 +54,9 @@ elegance.
 
 | | State |
 |---|---|
-| Frozen layer defined and justified | **done** — GENESIS §3, with the test that decides membership |
-| No tunable number frozen | **partial** — one violation found and recorded; a host's acceptance window was fixed by specification rather than declared per host |
-| Suite agility without a protocol change | **done** — every signature names its suite; new suites are additive and old labels are never removed |
+| Frozen layer defined, with the test that decides membership | **done** — GENESIS §3 |
+| No tunable number frozen | **partial** — one violation found and recorded: a host's acceptance window was fixed by specification rather than declared per host |
+| Suite agility without a protocol change | **done** — every signature names its suite; new suites are additive, old labels never removed |
 | Unknown fields rejected rather than ignored | **done** — the alternative lets the most permissive implementation silently become the specification |
 
 ---
@@ -54,17 +67,32 @@ A single implementation *is* the specification in practice: every bug becomes
 the protocol, and nobody can distinguish "the specification says X" from "the
 implementation happens to do X".
 
+**The requirement is not "maintain N implementations forever."** That ages
+badly: languages rise and die, and an implementation nobody runs provides no
+real check — its agreement is ceremony. If ninety percent of the network runs
+one language, a vestigial second implementation in another proves nothing.
+
+The property that actually matters is:
+
+> **Can someone build a conformant implementation from the document alone,
+> without asking anyone?**
+
+Two implementations was a crude proxy for that. The direct test is a **drill**:
+periodically, someone builds fresh from the document and runs the vectors. It is
+not a standing maintenance burden, and it survives any shift in which languages
+exist, because the document names none.
+
 | | State |
 |---|---|
-| Identity agreed across implementations, against fixed vectors | **done** — and it caught a real defect: one implementation encoded identifiers in base64 while labelling them base58btc, so every identity it produced was unrecognisable to every other |
-| Canonical bytes agreed | **partial** — proven in three languages, not yet in the fourth |
-| **Receipts in a second implementation** | **MISSING** — receipts exist in one language only |
+| Identity agreed across implementations against fixed vectors | **done** — and it caught a real defect: one implementation encoded identifiers in base64 while labelling them base58btc, so every identity it produced was unrecognisable to every other |
+| Canonical bytes agreed | **done** — proven in three languages |
+| **Vectors sufficient to build receipts from the document alone** | **done** — GENESIS §7.5 |
 | Vectors are the contract, not the code | **done** — an implementation is conformant if and only if it passes them |
 
-The base64 defect is the argument for this line item. It survived because its
-only test was a round trip, which passes under any encoding because both halves
-share the mistake. **Fixed expected output is the only check that catches a
-consistent error.**
+That base64 defect is the argument for this whole section. It survived because
+its only test was a round trip, which passes under any encoding because both
+halves share the mistake. **Fixed expected output is the only check that catches
+a consistent error.**
 
 ---
 
@@ -75,8 +103,8 @@ consistent error.**
 | No registration, allowlist, or invitation | **done** |
 | Identity obtainable offline, with no network | **done** — one command, no account |
 | Verification possible with no registry | **done** — the identifier carries the key |
-| The specification is findable without the author | **MISSING** — see §1 |
-| An implementation is obtainable | **partial** — source is public; nothing is published to a package registry |
+| The specification findable without the author | **MISSING** — see §1 |
+| An implementation obtainable | **partial** — source is public; nothing published to a package registry |
 
 ---
 
@@ -85,8 +113,8 @@ consistent error.**
 | | State |
 |---|---|
 | Specification self-contained: no file, URL, or language references | **done** |
-| Vectors inline, so a reimplementation can prove itself | **done** |
-| **A revival has actually been carried out** | **done** — implemented from the prose alone in a language the original was not written in, reproducing every vector and rejecting everything it should |
+| Vectors inline, so a reimplementation proves itself | **done** |
+| **A revival actually carried out** | **done** — implemented from the prose alone in a language the original was not written in, reproducing every vector and rejecting everything it should |
 | What a revival does *not* restore is stated | **done** — no balances, no history, no standing, no keys |
 
 A revival specification that has never revived anything is a claim, not a
@@ -99,8 +127,7 @@ capability. This one has now revived something.
 Listed because a checklist that grows without limit never completes, and because
 each of these would be a reason to stay involved forever.
 
-- **Adoption.** The protocol working does not require anyone to use it. If
-  nobody does, nothing was lost but effort.
+- **Adoption.** The protocol working does not require anyone to use it.
 - **A canonical implementation.** There must not be one. Whichever is most used
   acquires de facto control regardless of the specification, so plurality is a
   security property rather than a nicety.
