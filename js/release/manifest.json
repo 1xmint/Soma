@@ -445,11 +445,6 @@
       "sha256": "d2f6283b598914020f003005125d299aa63a481817ad449dc5c979592994b4f8"
     },
     {
-      "path": "test/equivocation.test.mjs",
-      "bytes": 6479,
-      "sha256": "d2f6283b598914020f003005125d299aa63a481817ad449dc5c979592994b4f8"
-    },
-    {
       "path": "test/evidence-receipts.test.mjs",
       "bytes": 10932,
       "sha256": "dba21624625d80ee17e9de0577e6c3281c91fe97bdec2a8800fdbf02266cd0d3"
