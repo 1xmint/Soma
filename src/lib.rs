@@ -5,6 +5,7 @@
 //! Used by Cortex and other HeyVera agents that need Soma integration
 //! without running a Node.js sidecar.
 
+pub mod base58;
 pub mod crypto;
 pub mod delegation;
 pub mod did;
