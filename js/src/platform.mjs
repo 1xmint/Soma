@@ -28,14 +28,36 @@ export function resolveWindowsPowerShell() {
   return resolvedPowerShell;
 }
 
+// PowerShell startup on a cold or loaded machine is unpredictable -- a
+// continuous-integration runner can take far longer to spawn it than a
+// developer's desktop. A single fixed deadline therefore fails for reasons that
+// have nothing to do with the operation being attempted.
+//
+// Both operations that use this are idempotent: reading an ACL, or setting one
+// to a value it may already hold. Retrying is safe, and the alternative is a
+// build that fails on machine speed.
+const POWERSHELL_ATTEMPT_TIMEOUTS_MS = [15000, 45000];
+
+function spawnPowerShell(script, input) {
+  let last = null;
+  for (const timeout of POWERSHELL_ATTEMPT_TIMEOUTS_MS) {
+    const result = spawnSync(resolveWindowsPowerShell(), ["-NoProfile", "-NonInteractive", "-Command", script], {
+      input,
+      encoding: "utf8",
+      windowsHide: true,
+      timeout,
+      maxBuffer: 1024 * 1024
+    });
+    // Only a timeout is retried. A non-zero exit is a real refusal and repeating
+    // it would just take longer to report the same answer.
+    if (result.error?.code !== "ETIMEDOUT") return result;
+    last = result;
+  }
+  return last;
+}
+
 function powershellJson(script, input) {
-  const result = spawnSync(resolveWindowsPowerShell(), ["-NoProfile", "-NonInteractive", "-Command", script], {
-    input,
-    encoding: "utf8",
-    windowsHide: true,
-    timeout: 15000,
-    maxBuffer: 1024 * 1024
-  });
+  const result = spawnPowerShell(script, input);
   if (result.error || result.status !== 0) {
     throw new SomaError("Windows ACL operation failed", 8, "WINDOWS_ACL_FAILED", {
       cause: result.error?.message || result.stderr.trim() || `PowerShell exited ${result.status}`

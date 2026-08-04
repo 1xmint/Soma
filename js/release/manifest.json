@@ -386,8 +386,8 @@
     },
     {
       "path": "src/keystore.mjs",
-      "bytes": 2795,
-      "sha256": "9fa9b3fcf5278f54fe1e49d491f11618db656d1c37e57f6d8811bd58c3f6102b"
+      "bytes": 3198,
+      "sha256": "fd0d1470dc0b125fbaba8df7c3e1dd8be52d011fbba353e69d6cad1be8be034b"
     },
     {
       "path": "src/membrane.mjs",
@@ -396,8 +396,8 @@
     },
     {
       "path": "src/platform.mjs",
-      "bytes": 7854,
-      "sha256": "24ab3df7ba9dde4e8ecc657e1b590f238791588b197d83feed85aed772834c36"
+      "bytes": 8809,
+      "sha256": "7df192939570397ffdb828544e3667a6dd23db3a84eb9f3eab6b93056571f43b"
     },
     {
       "path": "src/receipt-cli.mjs",
