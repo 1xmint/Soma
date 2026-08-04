@@ -39,7 +39,7 @@ export async function issueReceipt(home, requestFile, outputFile) {
   const request = parseCanonicalJson(await readFile(requestFile, "utf8"), "receipt request");
   const identity = JSON.parse(await readFile(path.join(home, "identity", "identity.json"), "utf8"));
 
-  const expected = ["capability", "claim_hash", "domain", "observed_at", "outcome", "schema_version", "subject_did", "task_id"];
+  const expected = ["basis", "capability", "claim_hash", "domain", "fault", "observed_at", "outcome", "schema_version", "subject_did", "task_id"];
   const present = Object.keys(request).sort();
   if (present.length !== expected.length || present.some((key, index) => key !== expected[index])) {
     throw new SomaError(`receipt request must carry exactly [${expected.join(", ")}]`, 2, "RECEIPT_REQUEST_SHAPE_INVALID");
@@ -59,9 +59,11 @@ export async function issueReceipt(home, requestFile, outputFile) {
     receipt = createReceipt(
       {
         attester_did: identity.agent_did,
+        basis: request.basis,
         capability: request.capability,
         claim_hash: request.claim_hash,
         domain: request.domain,
+        fault: request.fault,
         issued_at: issuedAt,
         observed_at: observedAt,
         outcome: request.outcome,
@@ -85,6 +87,8 @@ export async function issueReceipt(home, requestFile, outputFile) {
     subject_did: receipt.subject_did,
     task_id: receipt.task_id,
     outcome: receipt.outcome,
+    fault: receipt.fault,
+    basis: receipt.basis,
     out: outputFile,
     truth_claim: "a receipt records that a named party said this, never that it is true"
   };
@@ -106,6 +110,8 @@ export async function verifyReceiptFile(receiptFile) {
     subject_did: verified.subject_did,
     task_id: verified.task_id,
     outcome: verified.outcome,
+    fault: verified.fault,
+    basis: verified.basis,
     independence: "unknown_without_lineage",
     truth_claim: "a receipt records that a named party said this, never that it is true"
   };
