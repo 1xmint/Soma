@@ -62,9 +62,11 @@ test("two agents complete the trust loop through the CLI", async (context) => {
   await writeFile(
     requestFile,
     `${canonicalize({
+      basis: "party",
       capability: "code-review",
       claim_hash: claimHash,
       domain: "software",
+      fault: "none",
       observed_at: new Date(Date.now() - 60_000).toISOString().slice(0, 19) + "Z",
       outcome: "succeeded",
       schema_version: RECEIPT_SCHEMA,
@@ -136,9 +138,11 @@ test("two agents complete the trust loop through the CLI", async (context) => {
   await writeFile(
     selfRequest,
     `${canonicalize({
+      basis: "party",
       capability: "code-review",
       claim_hash: claimHash,
       domain: "software",
+      fault: "none",
       observed_at: new Date(Date.now() - 60_000).toISOString().slice(0, 19) + "Z",
       outcome: "succeeded",
       schema_version: RECEIPT_SCHEMA,

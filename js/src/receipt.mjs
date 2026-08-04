@@ -14,7 +14,9 @@ const CORE_FIELDS = [
   "attester_did",
   "capability",
   "claim_hash",
+  "basis",
   "domain",
+  "fault",
   "issued_at",
   "observed_at",
   "outcome",
@@ -29,6 +31,45 @@ const RECEIPT_FIELDS = [...CORE_FIELDS, "receipt_id", "signature"].sort();
 // produces reputation that is meaningless by construction, because a missing
 // receipt cannot be distinguished from work that went badly.
 const OUTCOMES = new Set(["succeeded", "failed", "disputed"]);
+
+// Outcome says what happened. Fault says who it is attributable to, and the two
+// are not the same question.
+//
+// Agents are composed: a subject calls models, tools and delegates it does not
+// control. Without this separation every upstream flake is recorded as subject
+// failure, and the evidence turns to noise exactly where composed work matters
+// most. An agent that correctly reported a broken upstream API did its job.
+//
+// Fault is the attester's judgement, not an established fact. It records who
+// one named party believes is answerable, which is worth exactly as much as
+// that party's own standing.
+const FAULTS = new Set(["none", "subject", "delegate", "upstream_tool", "environment", "unattributed"]);
+
+// How the attester came to know what it is claiming. This is not decoration:
+// the three carry entirely different evidential weight.
+//
+//   party      the attester took part. Subjective, and interested -- it may be
+//              lying and nobody can check.
+//   witnessed  the attester saw it happen without taking part. Less interested,
+//              still not reproducible.
+//   verified   the attester independently checked the claim against something
+//              else, and anyone can redo that check.
+//
+// Only `verified` is falsifiable. A verified claim makes an assertion reality
+// can contradict; the other two cannot be wrong in any checkable sense. An
+// evaluator that cannot tell them apart is treating an opinion as a measurement.
+const BASES = new Set(["party", "witnessed", "verified"]);
+
+// A signature names the suite that produced it. Verifiers decide which suites
+// they accept; there is no handshake and therefore no downgrade attack, because
+// there is nothing to negotiate. Records are verified asynchronously by
+// strangers years later, so negotiation -- the standard answer to crypto
+// agility -- is the wrong shape for this problem.
+//
+// New suites are added. Old labels are never removed, or every record signed
+// under them becomes unverifiable, which is the one irreversible mistake
+// available here.
+const SUITES = new Set(["Ed25519-v1"]);
 
 const HASH = /^[a-f0-9]{64}$/;
 const NAME = /^[a-z][a-z0-9-]{0,63}$/;
@@ -122,6 +163,35 @@ function validateCore(core) {
   if (!OUTCOMES.has(core.outcome)) {
     throw new SomaError("receipt outcome is not one of succeeded, failed, disputed", 2, "RECEIPT_OUTCOME_INVALID");
   }
+  if (!BASES.has(core.basis)) {
+    throw new SomaError(
+      "receipt basis is not one of party, witnessed, verified",
+      2,
+      "RECEIPT_BASIS_INVALID"
+    );
+  }
+  if (!FAULTS.has(core.fault)) {
+    throw new SomaError(
+      "receipt fault is not one of none, subject, delegate, upstream_tool, environment, unattributed",
+      2,
+      "RECEIPT_FAULT_INVALID"
+    );
+  }
+
+  // Outcome and fault must agree about whether anything went wrong. Allowing
+  // "succeeded" beside a blamed party, or "failed" beside no fault at all, would
+  // make the pair unreadable — and an evaluator reading one field without the
+  // other would draw the opposite conclusion from the one the attester meant.
+  if (core.outcome === "succeeded" && core.fault !== "none") {
+    throw new SomaError("a succeeded receipt cannot attribute fault", 2, "RECEIPT_FAULT_INCONSISTENT");
+  }
+  if (core.outcome !== "succeeded" && core.fault === "none") {
+    throw new SomaError(
+      "a failed or disputed receipt must attribute fault, using unattributed where the attester cannot say",
+      2,
+      "RECEIPT_FAULT_INCONSISTENT"
+    );
+  }
   if (typeof core.task_id !== "string" || core.task_id.length < 1 || core.task_id.length > 256) {
     throw new SomaError("receipt task_id is invalid", 2, "RECEIPT_FIELD_INVALID");
   }
@@ -151,7 +221,10 @@ export function createReceipt(core, attesterPrivateKeyBase64) {
   return {
     ...core,
     receipt_id,
-    signature: signEd25519(attesterPrivateKeyBase64, signaturePreimage(receipt_id))
+    signature: {
+      suite: "Ed25519-v1",
+      value: signEd25519(attesterPrivateKeyBase64, signaturePreimage(receipt_id))
+    }
   };
 }
 
@@ -177,7 +250,24 @@ export function verifyReceipt(receipt) {
     throw new SomaError("receipt_id does not match its contents", 7, "RECEIPT_ID_MISMATCH");
   }
 
-  if (!verifyEd25519(attesterKeyFromDid(core.attester_did), signaturePreimage(expectedId), receipt.signature)) {
+  const signature = receipt.signature;
+  if (signature === null || typeof signature !== "object" || Array.isArray(signature)) {
+    throw new SomaError("receipt signature must name its suite", 2, "RECEIPT_SIGNATURE_SHAPE_INVALID");
+  }
+  const signatureKeys = Object.keys(signature).sort();
+  if (signatureKeys.length !== 2 || signatureKeys[0] !== "suite" || signatureKeys[1] !== "value") {
+    throw new SomaError("receipt signature must carry exactly [suite, value]", 2, "RECEIPT_SIGNATURE_SHAPE_INVALID");
+  }
+  // An unrecognised suite is refused, never assumed compatible. Guessing would
+  // mean verifying under an algorithm the signer did not choose.
+  if (!SUITES.has(signature.suite)) {
+    throw new SomaError(
+      `receipt signature suite ${signature.suite} is not accepted by this verifier`,
+      7,
+      "RECEIPT_SUITE_UNSUPPORTED"
+    );
+  }
+  if (!verifyEd25519(attesterKeyFromDid(core.attester_did), signaturePreimage(expectedId), signature.value)) {
     throw new SomaError("receipt signature does not verify against the attester key", 7, "RECEIPT_SIGNATURE_INVALID");
   }
 
@@ -241,6 +331,8 @@ export function summariseReceipts(entries, trustedAttesterDids = []) {
     schema_version: "soma.receipt-summary.provisional-v1",
     by_independence: { self: 0, shared_lineage: 0, no_known_common_ancestor: 0, unknown: 0 },
     by_outcome: { succeeded: 0, failed: 0, disputed: 0 },
+    by_fault: { none: 0, subject: 0, delegate: 0, upstream_tool: 0, environment: 0, unattributed: 0 },
+    by_basis: { party: 0, witnessed: 0, verified: 0 },
     from_trusted_attesters: 0,
     distinct_attesters: 0,
     basis: "insufficient",
@@ -264,6 +356,8 @@ export function summariseReceipts(entries, trustedAttesterDids = []) {
 
     summary.by_independence[label] += 1;
     summary.by_outcome[receipt.outcome] += 1;
+    if (receipt.fault in summary.by_fault) summary.by_fault[receipt.fault] += 1;
+    if (receipt.basis in summary.by_basis) summary.by_basis[receipt.basis] += 1;
     attesters.add(receipt.attester_did);
     if (trusted.has(receipt.attester_did)) summary.from_trusted_attesters += 1;
   }
