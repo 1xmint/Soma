@@ -29,9 +29,13 @@ function receipt(attester, subject, opts = {}) {
   };
 }
 
+// method_disclosed defaults to true here so these fixtures mean what they say:
+// a `verified` receipt whose method nobody disclosed is deliberately weighed as
+// `witnessed` by the reference policy, which is tested explicitly below.
 const entry = (attester, subject, opts = {}) => ({
   receipt: receipt(attester, subject, opts),
-  independence: opts.independence ?? "no_known_common_ancestor"
+  independence: opts.independence ?? "no_known_common_ancestor",
+  method_disclosed: opts.method_disclosed ?? true
 });
 
 test("a stranger gets insufficient basis, which is not a score of zero", () => {
@@ -178,6 +182,35 @@ test("basis is ordered: verified outweighs witnessed outweighs party", () => {
   const cap = (basis) => edgeCapacities([entry(ROOT, s, { basis })], DEFAULT_POLICY).edges[0].capacity;
   assert.ok(cap("verified") > cap("witnessed"));
   assert.ok(cap("witnessed") > cap("party"));
+});
+
+test("a verified claim nobody can re-run is weighed as an opinion", () => {
+  const s = did("Worker");
+  const disclosed = edgeCapacities(
+    [entry(ROOT, s, { basis: "verified", method_disclosed: true })],
+    DEFAULT_POLICY
+  ).edges[0].capacity;
+  const undisclosed = edgeCapacities(
+    [entry(ROOT, s, { basis: "verified", method_disclosed: false })],
+    DEFAULT_POLICY
+  ).edges[0].capacity;
+  const witnessed = edgeCapacities(
+    [entry(ROOT, s, { basis: "witnessed", method_disclosed: false })],
+    DEFAULT_POLICY
+  ).edges[0].capacity;
+
+  assert.ok(undisclosed < disclosed, "an unfalsifiable 'verified' must not be worth a falsifiable one");
+  assert.equal(undisclosed, witnessed, "it should be weighed exactly as what it actually is: witnessed");
+});
+
+test("the downgrade can be turned off, and that is a choice with a name", () => {
+  const s = did("Worker");
+  const lenient = { ...DEFAULT_POLICY, requireDisclosedMethod: false };
+  const undisclosed = edgeCapacities(
+    [entry(ROOT, s, { basis: "verified", method_disclosed: false })],
+    lenient
+  ).edges[0].capacity;
+  assert.equal(undisclosed, DEFAULT_POLICY.basisWeight.verified);
 });
 
 test("shared lineage is discounted but not discarded", () => {

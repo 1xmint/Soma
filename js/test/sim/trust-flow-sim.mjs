@@ -64,7 +64,13 @@ export function buildWorld({ honest, sybils, attackEdges, seed = 1, sybilDensity
         outcome: "succeeded",
         fault: "none"
       },
-      independence: "no_known_common_ancestor"
+      independence: "no_known_common_ancestor",
+      // Disclosed on purpose. The sweeps are about how much a Sybil region can
+      // capture, not about basis weighting, so every receipt in the world gets
+      // the strongest honest treatment -- including the adversary's. Giving the
+      // attacker the benefit of the doubt is the only way the result means
+      // anything.
+      method_disclosed: true
     });
 
   // Roots vouch for the honest region.

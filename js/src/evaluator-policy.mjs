@@ -144,6 +144,20 @@ export const DEFAULT_POLICY = Object.freeze({
   }),
 
   /**
+   * A `verified` claim with no disclosed method is weighed as `witnessed`.
+   *
+   * `verified` means "anyone can redo this check". Without a method disclosure
+   * naming the procedure, nobody can, so the claim asserts falsifiability while
+   * being unfalsifiable -- and it costs exactly as much to write as an opinion.
+   * Taking it at face value is how the strongest basis becomes the cheapest
+   * lie.
+   *
+   * On by default. Turning it off is a decision to accept unfalsifiable claims
+   * at their author's valuation.
+   */
+  requireDisclosedMethod: true,
+
+  /**
    * The cap on any single relationship, and the lever that prices anchor
    * compromise. Without it, one corrupted trusted party is an unbounded hole;
    * with it, the adversary must corrupt proportionally many.
@@ -195,7 +209,7 @@ function requirePolicy(policy) {
  * nothing while its good news counted fully, which is how a reputation system
  * becomes a marketing channel.
  */
-export function receiptContribution(receipt, independence, policy) {
+export function receiptContribution(receipt, independence, policy, { methodDisclosed = false } = {}) {
   const p = requirePolicy(policy);
 
   if (!receipt || typeof receipt !== "object") {
@@ -217,7 +231,16 @@ export function receiptContribution(receipt, independence, policy) {
     throw new SomaError("decay must return a factor between 0 and 1", 2, "EVALUATOR_POLICY_INVALID");
   }
 
-  const base = p.basisWeight[receipt.basis] * lineage * decay;
+  // A `verified` claim nobody can re-run is an opinion wearing a measurement's
+  // name. Weighed as `witnessed` rather than refused outright, because the
+  // attester may well have checked -- they simply have not said how, and an
+  // evaluator should price what it can confirm, not what it is promised.
+  const effectiveBasis =
+    p.requireDisclosedMethod && receipt.basis === "verified" && !methodDisclosed
+      ? "witnessed"
+      : receipt.basis;
+
+  const base = p.basisWeight[effectiveBasis] * lineage * decay;
 
   if (receipt.outcome === "succeeded") return base;
   if (receipt.outcome === "disputed") return -base * p.disputedPenalty;
@@ -254,14 +277,16 @@ export function edgeCapacities(entries, policy) {
       // cannot be talked into scoring one.
       throw new SomaError("a receipt cannot name the same identity as attester and subject", 2, "EVALUATOR_SELF_RECEIPT");
     }
-    const key = `${receipt.attester_did} ${receipt.subject_did}`;
-    const contribution = receiptContribution(receipt, independence, p);
+    const key = `${receipt.attester_did}\u0000${receipt.subject_did}`;
+    const contribution = receiptContribution(receipt, independence, p, {
+      methodDisclosed: entry.method_disclosed === true
+    });
     net.set(key, (net.get(key) ?? 0) + contribution);
   }
 
   const edges = [];
   for (const [key, value] of net) {
-    const [from, to] = key.split(" ");
+    const [from, to] = key.split("\u0000");
     if (value < 0) adverse.push({ from, to, net: value });
     edges.push({ from, to, capacity: Math.min(Math.max(value, 0), p.perEdgeCap) });
   }
