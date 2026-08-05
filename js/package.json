@@ -11,7 +11,7 @@
     "manifest": "node scripts/build-release-manifest.mjs",
     "verify-origin-lock": "node scripts/verify-origin-lock.mjs",
     "verify-release": "node scripts/verify-release.mjs",
-    "test": "node --test --test-concurrency=1 test/cli.test.mjs test/evidence.test.mjs test/membrane.test.mjs test/host.test.mjs test/host-succession.test.mjs test/host-confirmation.test.mjs test/host-trust-capsule.test.mjs test/host-trust-capsule-v2.test.mjs test/controller-rotation.test.mjs test/receipt.test.mjs test/evidence-receipts.test.mjs test/e2e-trust-loop.test.mjs test/soma-interop.test.mjs test/equivocation.test.mjs test/attester-structure.test.mjs test/depth-clock.test.mjs",
+    "test": "node --test --test-concurrency=1 test/cli.test.mjs test/evidence.test.mjs test/membrane.test.mjs test/host.test.mjs test/host-succession.test.mjs test/host-confirmation.test.mjs test/host-trust-capsule.test.mjs test/host-trust-capsule-v2.test.mjs test/controller-rotation.test.mjs test/receipt.test.mjs test/evidence-receipts.test.mjs test/e2e-trust-loop.test.mjs test/soma-interop.test.mjs test/equivocation.test.mjs test/attester-structure.test.mjs test/depth-clock.test.mjs test/evaluator-policy.test.mjs test/trust-flow-sim.test.mjs",
     "check": "npm run verify-origin-lock && npm run verify-release && npm test"
   },
   "engines": {
