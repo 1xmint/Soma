@@ -146,14 +146,65 @@ export function witnessesOf(targetHash, heads) {
 }
 
 /**
- * Depth of a record, counted only over signers this evaluator trusts.
+ * How far apart are two signers' views of the network?
+ *
+ * Counting distinct signers treats one operator's thousand hosts as a thousand
+ * witnesses. Count is free: an organisation large enough can run a billion
+ * identities, have them do genuine work, and reference whatever it likes. Any
+ * measure whose unit is "how many" is bought outright at that scale.
+ *
+ * What is not free is *seeing differently*. Two genuinely separate observers
+ * are on different networks, with different peers and different latency, so
+ * they never hold quite the same view — each has referenced something the
+ * other never did. Hosts driven by one operator converge, because there is one
+ * view behind them.
+ *
+ * Returns 0 for identical viewpoints and 1 for wholly disjoint ones, or `null`
+ * when there is not enough history to say. `null` means unknown and must not
+ * be read as a middling correlation — absence of evidence is not evidence
+ * (P7). A new host that has said little yet is not thereby suspicious, and a
+ * numeric "neutral" here would quietly penalise every newcomer.
+ */
+export function viewDivergence(signerA, signerB, heads, minimumEvidence = 4) {
+  const refsOf = (signer) => {
+    const refs = new Set();
+    for (const head of heads) {
+      if (head.signer_did !== signer) continue;
+      for (const r of head.observed_head_hashes ?? []) refs.add(r);
+    }
+    return refs;
+  };
+  const a = refsOf(signerA);
+  const b = refsOf(signerB);
+  if (a.size < minimumEvidence || b.size < minimumEvidence) return null;
+
+  let shared = 0;
+  for (const r of a) if (b.has(r)) shared += 1;
+  const union = a.size + b.size - shared;
+  return union === 0 ? null : 1 - shared / union;
+}
+
+/**
+ * Depth of a record, counted over signers this evaluator trusts and discounted
+ * by how much they merely echo one another.
  *
  * `trustedSigners` is required rather than optional. There is no sensible
  * global default: counting over everyone is precisely the inflatable global
  * aggregate that the identity model makes meaningless, and making it optional
  * invites an implementation to supply one.
+ *
+ * The discount is what makes this resist scale. A signer contributes at most
+ * as much as its divergence from every signer already counted, so a bloc of a
+ * thousand hosts sharing one view contributes roughly what one host does. The
+ * adversary's advantage was count, and count is now worth nothing by itself.
+ *
+ * That does not make the attack impossible; it makes it expensive in the
+ * currency being attacked. To appear independent, a bloc must genuinely see
+ * differently — separate infrastructure, separate peers — which costs per
+ * identity rather than per bloc, while an honest participant pays nothing to
+ * be what it already is.
  */
-export function depthOf(targetHash, heads, trustedSigners) {
+export function depthOf(targetHash, heads, trustedSigners, { discountCorrelated = true } = {}) {
   if (!(trustedSigners instanceof Set) || trustedSigners.size === 0) {
     throw new SomaError(
       "depth must be counted over a non-empty set of signers the evaluator trusts",
@@ -161,9 +212,34 @@ export function depthOf(targetHash, heads, trustedSigners) {
       "DEPTH_TRUST_SET_REQUIRED"
     );
   }
+  const witnesses = [...witnessesOf(targetHash, heads)].filter((s) => trustedSigners.has(s));
+  if (!discountCorrelated) return witnesses.length;
+
+  // Most-divergent first, so redundancy is charged to the echo rather than to
+  // whichever signer happens to be enumerated first.
+  const spread = new Map();
+  for (const s of witnesses) {
+    let total = 0;
+    for (const other of witnesses) {
+      if (other === s) continue;
+      const d = viewDivergence(s, other, heads);
+      total += d === null ? 1 : d;
+    }
+    spread.set(s, total);
+  }
+  witnesses.sort((x, y) => spread.get(y) - spread.get(x));
+
   let depth = 0;
-  for (const signer of witnessesOf(targetHash, heads)) {
-    if (trustedSigners.has(signer)) depth += 1;
+  const counted = [];
+  for (const signer of witnesses) {
+    let factor = 1;
+    for (const prior of counted) {
+      const d = viewDivergence(signer, prior, heads);
+      // Unknown means unknown. Only measured redundancy discounts anything.
+      if (d !== null) factor = Math.min(factor, d);
+    }
+    depth += factor;
+    counted.push(signer);
   }
   return depth;
 }

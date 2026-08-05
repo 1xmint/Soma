@@ -1,6 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { witnessesOf, depthOf, precedes, currentWeight, referenceCommitment } from "../src/depth-clock.mjs";
+import { createHash } from "node:crypto";
+import { witnessesOf, depthOf, precedes, currentWeight, referenceCommitment, viewDivergence } from "../src/depth-clock.mjs";
+
+const sha = (s) => createHash("sha256").update(s).digest("hex");
 
 const A = "did:key:z6MkjDDPGYQdTcFQ8ecCf7zwP1rKvG7cdH5d8kxYqy7kaNBN";
 const B = "did:key:z6MktcCgWP6EoLbhR1i4uhwJbs4pS3js5bdJaoxAcyPbGQ8o";
@@ -69,6 +72,47 @@ test("an untrusted clique generates no depth for an evaluator who trusts none of
   ];
   assert.equal(depthOf(h(1), corpus, new Set([A])), 0);
   assert.equal(depthOf(h(1), corpus, new Set([B, C])), 2);
+});
+
+test("a large bloc sharing one view buys almost no depth, however many identities it runs", () => {
+  // The corporate attack: spin up many identities, have them do real work and
+  // reference genuinely. Every identity is real, every reference is honest.
+  // Their only shared property is that one operator drives them, so they all
+  // see the same thing.
+  const target = h(1);
+  const corpus = [head(target, A)];
+  const bloc = [];
+  for (let i = 0; i < 40; i += 1) {
+    const did = `did:key:z6Mkbloc${String(i).padStart(40, "0")}`;
+    bloc.push(did);
+    // Identical reference sets: one viewpoint behind forty faces.
+    corpus.push(head(h(2).slice(0, 60) + String(i).padStart(4, "0"), did, [target, h(3), h(4), h(5), h(6)]));
+  }
+
+  const undiscounted = depthOf(target, corpus, new Set(bloc), { discountCorrelated: false });
+  const discounted = depthOf(target, corpus, new Set(bloc));
+
+  assert.equal(undiscounted, 40, "count alone treats one operator as forty witnesses");
+  assert.ok(discounted < 2, `forty identical viewpoints must count as about one, got ${discounted}`);
+});
+
+test("genuinely separate observers keep their depth, so the discount is not just a cap", () => {
+  // Same size bloc, but each observer has actually seen different things --
+  // which is what being on a different network looks like. If the discount
+  // punished these too, it would be measuring group size rather than
+  // correlation, and would penalise honest participation at scale.
+  const target = h(1);
+  const corpus = [head(target, A)];
+  const independents = [];
+  for (let i = 0; i < 40; i += 1) {
+    const did = `did:key:z6Mkindep${String(i).padStart(39, "0")}`;
+    independents.push(did);
+    const own = [target];
+    for (let j = 0; j < 6; j += 1) own.push(sha(`observer-${i}-saw-${j}`));
+    corpus.push(head(sha(`head-${i}`), did, own));
+  }
+  const discounted = depthOf(target, corpus, new Set(independents));
+  assert.ok(discounted > 30, `divergent observers must retain their depth, got ${discounted}`);
 });
 
 test("precedes proves ordering only when the reference closure shows it", () => {

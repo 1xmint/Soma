@@ -326,8 +326,8 @@
     },
     {
       "path": "src/depth-clock.mjs",
-      "bytes": 8967,
-      "sha256": "7b23e6822d3a300041e6fc25ec522bd4f7016f8cbe059a21077bde2a46d8b05a"
+      "bytes": 12551,
+      "sha256": "011a0fb1b2e00c43e6036ca7bbd511be14760fbfc8cc1f298d4116f0c9cad654"
     },
     {
       "path": "src/equivocation.mjs",
@@ -436,8 +436,8 @@
     },
     {
       "path": "test/depth-clock.test.mjs",
-      "bytes": 5124,
-      "sha256": "7a4a37f091ccaee333355c6758e1c70f408e8d42d63ae891d96c3ee1de828330"
+      "bytes": 7272,
+      "sha256": "086909cfbba644fe6833ba9f27b3e9c08749affdd18c8013499cd58af33eba40"
     },
     {
       "path": "test/e2e-trust-loop.test.mjs",
