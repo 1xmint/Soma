@@ -4,6 +4,7 @@ import { canonicalize } from "../src/canonicalize.mjs";
 import { createInitialKeyMaterial, privateKeyForRole, sha256, signEd25519 } from "../src/crypto.mjs";
 import { RECEIPT_SCHEMA, createReceipt } from "../src/receipt.mjs";
 import { detectEquivocation } from "../src/equivocation.mjs";
+import { createKeyLinkage } from "../src/key-linkage.mjs";
 import {
   CONTRADICTION_KINDS,
   composeVouchingContradiction,
@@ -19,11 +20,11 @@ const CREATED_AT = "2026-07-28T00:00:00Z";
  * A party, exposing both the agent identity a receipt names and the controller
  * key that signs evidence heads.
  *
- * The tests below use the CONTROLLER did as the receipt subject, because that
- * is the only case where the composite binds without a third document. See the
- * key-binding gap documented in vouching-proof.mjs -- against stock artifacts,
- * where receipts name the agent DID and heads are controller-signed, this
- * composes to null, and one of these tests pins exactly that.
+ * Two bindings are exercised below. Where the receipt names the CONTROLLER did,
+ * the composite binds on exact equality with no third artifact. Where it names
+ * the agent DID -- the stock shape -- binding requires a mutual key-linkage
+ * record, and the tests cover both that it works and that it cannot be forged,
+ * stripped, or borrowed from a stranger.
  */
 function party() {
   const material = createInitialKeyMaterial(CREATED_AT);
@@ -86,6 +87,16 @@ function vouch(attester, subjectDid, overrides = {}) {
     },
     attester.agentPrivate
   );
+}
+
+/** The party's own two keys, each signing that the pair is one party. */
+function linkageFor(who) {
+  return createKeyLinkage({
+    keyIdA: who.controllerKeyId,
+    privateKeyA: who.controllerPrivate,
+    keyIdB: who.agentKeyId,
+    privateKeyB: who.agentPrivate
+  });
 }
 
 function equivocationOf(who) {
@@ -170,21 +181,64 @@ test("recording a FAILURE against a party who later equivocates costs the attest
   assert.equal(composed, null);
 });
 
-test("the stock artifact shapes do NOT bind, and that is recorded rather than hidden", () => {
-  // Receipts conventionally name the agent DID; heads are controller-signed.
-  // This is the key-binding gap. If this test ever starts failing, the gap has
-  // been closed and the documentation in vouching-proof.mjs must be updated.
+test("stock artifact shapes do not bind on their own", () => {
+  // Receipts name the agent DID; heads are controller-signed. Without a
+  // linkage there is nothing honest connecting them, and the composite must
+  // refuse rather than guess.
   const attester = party();
   const subject = party();
   const composed = composeVouchingContradiction({
     receipt: vouch(attester, subject.agentDid),
     equivocationProof: equivocationOf(subject)
   });
-  assert.equal(
-    composed,
-    null,
-    "the key-binding gap appears to be closed — update the module documentation"
+  assert.equal(composed, null, "an unbound pair must never become an accusation");
+});
+
+test("a mutual key linkage binds the stock shapes, and M2 bites", () => {
+  const attester = party();
+  const subject = party();
+  const linkage = linkageFor(subject);
+
+  const composed = composeVouchingContradiction({
+    receipt: vouch(attester, subject.agentDid),
+    equivocationProof: equivocationOf(subject),
+    linkages: [linkage]
+  });
+
+  assert.ok(composed, "a mutually signed linkage should bind agent DID to controller key");
+  assert.equal(composed.attester_did, attester.agentDid);
+  assert.equal(composed.subject_did, subject.agentDid);
+  assert.deepEqual(composed.linkage_ids, [linkage.linkage_id]);
+});
+
+test("a composite commits to the linkage it relied on, so it cannot be stripped", () => {
+  const attester = party();
+  const subject = party();
+  const linkage = linkageFor(subject);
+  const composed = composeVouchingContradiction({
+    receipt: vouch(attester, subject.agentDid),
+    equivocationProof: equivocationOf(subject),
+    linkages: [linkage]
+  });
+
+  const stripped = { ...composed, linkages: [] };
+  assert.throws(
+    () => verifyVouchingContradiction(stripped),
+    /do not compose/,
+    "an accusation whose binding was removed must not still verify"
   );
+});
+
+test("someone else's linkage cannot bind you to an equivocator", () => {
+  const attester = party();
+  const subject = party();
+  const unrelated = party();
+  const composed = composeVouchingContradiction({
+    receipt: vouch(attester, subject.agentDid),
+    equivocationProof: equivocationOf(subject),
+    linkages: [linkageFor(unrelated)]
+  });
+  assert.equal(composed, null, "an unrelated linkage bound two strangers together");
 });
 
 test("discounts compound with repeated contradictions", () => {

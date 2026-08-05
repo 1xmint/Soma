@@ -3,6 +3,7 @@ import { sha256 } from "./crypto.mjs";
 import { SomaError } from "./errors.mjs";
 import { verifyReceipt } from "./receipt.mjs";
 import { verifyEquivocationProof } from "./equivocation.mjs";
+import { sameParty, verifyKeyLinkage } from "./key-linkage.mjs";
 
 /**
  * Vouching, made collectable.
@@ -54,36 +55,31 @@ import { verifyEquivocationProof } from "./equivocation.mjs";
  * does not ban, and it renders no verdict -- consistent with a protocol that
  * never renders one.
  *
- * THE KEY-BINDING GAP -- read this before believing this mechanism bites today.
+ * THE KEY-BINDING PROBLEM, AND HOW IT IS CLOSED
  *
- * A composite only binds when the receipt's `subject_did` is the SAME DID that
- * signed the equivocating heads. Exact equality, no indirection. That is not a
- * simplification; it is the only binding that keeps the composite checkable by
- * a stranger holding nothing but the bytes.
+ * A composite binds only when the receipt's `subject_did` is the same party as
+ * the DID that signed the equivocating heads. That sounds trivial and was very
+ * nearly fatal: real artifacts split identity. `evidence.mjs` signs heads with
+ * `controller_signing` while receipts conventionally name `agent_did`, so on
+ * exact equality alone this composed to null against every stock artifact --
+ * a bond that fired against nothing.
  *
- * Today's default artifacts do not satisfy it. `evidence.mjs` signs heads with
- * `controller_signing`, while receipts conventionally name the party's
- * `agent_did`, and those are different keys with different DIDs. So against
- * stock artifacts this composes to null, and a mechanism that never fires is
- * worth exactly nothing however elegant it reads.
+ * The obvious repair was worse than the gap. The public identity document
+ * carries both DIDs and is UNSIGNED, so binding through it would let anyone
+ * forge a document pairing an honest party's agent DID with an equivocator's
+ * controller key: a tool for destroying honest attesters rather than a bond. An
+ * unsigned document must never be load-bearing in a proof.
  *
- * The obvious repair is worse than the gap. The public identity document does
- * carry both `controller_did` and `agent_did` -- and it is UNSIGNED,
- * self-asserted. Binding through it would let anyone forge a document pairing
- * an honest party's agent DID with an equivocator's controller key, and the
- * result would be a tool for destroying honest attesters rather than a bond.
- * An unsigned document must never be load-bearing in a proof.
+ * The binding used instead is a **mutual key-linkage record** (key-linkage.mjs)
+ * in which each key signs that the pair is one party. Forging it requires both
+ * private keys -- and a party holding both private keys genuinely is one party,
+ * so the forgery and the truth are the same event. That is the only indirection
+ * admitted here, because it is the only one that cannot be turned into a false
+ * accusation.
  *
- * Two honest ways to close it, neither done here:
- *
- *   1. Sign the identity document, so the controller/agent binding is the
- *      party's own attributable statement rather than anyone's assertion. This
- *      is the smaller change and probably the right one.
- *   2. Have receipts name the DID that actually signs the evidence.
- *
- * Until one of those lands, this composes only for parties whose receipts name
- * their signing DID. Recorded here so the limitation is not mistaken for an
- * oversight, and so nobody reports this as working when it is waiting.
+ * A composite commits to the linkage identifiers it relied on. Otherwise it
+ * could be re-presented later with the linkages stripped, leaving an accusation
+ * whose binding nobody could re-check.
  */
 
 export const VOUCHING_PROOF_DOMAIN = "somavera:soma-vouching-contradicted:v1";
@@ -123,7 +119,7 @@ export function deriveVouchingProofId(core) {
  * pair that does not compose is not an accusation and must not be reported as a
  * weaker one.
  */
-export function composeVouchingContradiction({ receipt, equivocationProof }) {
+export function composeVouchingContradiction({ receipt, equivocationProof, linkages = [] }) {
   // Both halves are re-verified from scratch. Taking either on faith would make
   // the composite only as good as whoever handed it over, which is the property
   // this whole construction exists to avoid.
@@ -136,7 +132,19 @@ export function composeVouchingContradiction({ receipt, equivocationProof }) {
   if (receipt.outcome !== "succeeded") return null;
 
   const equivocatorDid = didOfKeyId(verifiedEquivocation.signer_key_id);
-  if (equivocatorDid !== receipt.subject_did) return null;
+
+  // Exact equality, or a mutually-signed linkage joining the two. The linkage
+  // is the only indirection admitted here, because it is the only one that
+  // cannot be forged into an accusation: building it requires both private
+  // keys, and a party holding both private keys genuinely is one party.
+  // `sameParty` re-verifies every linkage it is handed.
+  const direct = equivocatorDid === receipt.subject_did;
+  const bound =
+    direct || (linkages.length > 0 && sameParty(equivocatorDid, receipt.subject_did, linkages));
+  if (!bound) return null;
+  const linkageIds = direct
+    ? []
+    : linkages.map((l) => verifyKeyLinkage(l).linkage_id).sort();
 
   // An attester cannot be charged for vouching for itself, because a
   // self-receipt is refused upstream and can never exist. Checked anyway: this
@@ -155,7 +163,12 @@ export function composeVouchingContradiction({ receipt, equivocationProof }) {
       signer_key_id: verifiedEquivocation.signer_key_id,
       sequence: verifiedEquivocation.sequence,
       head_hashes: verifiedEquivocation.head_hashes
-    }
+    },
+    // Which linkages the binding rested on, named in the identifier itself. A
+    // composite that relied on a linkage but did not commit to it could be
+    // re-presented later stripped of the linkage, leaving an accusation whose
+    // binding nobody could check.
+    linkage_ids: linkageIds
   };
 
   return {
@@ -163,6 +176,7 @@ export function composeVouchingContradiction({ receipt, equivocationProof }) {
     proof_id: deriveVouchingProofId(core),
     receipt,
     equivocation_proof: equivocationProof,
+    linkages: direct ? [] : linkages,
     claim: "this attester vouched for a party that is proven to equivocate",
     truth_claim:
       "both halves are self-authenticating; this establishes neither the attester's knowledge nor any ordering between the vouch and the equivocation"
@@ -186,7 +200,8 @@ export function verifyVouchingContradiction(proof) {
 
   const rebuilt = composeVouchingContradiction({
     receipt: proof.receipt,
-    equivocationProof: proof.equivocation_proof
+    equivocationProof: proof.equivocation_proof,
+    linkages: proof.linkages ?? []
   });
   if (rebuilt === null) {
     throw new SomaError("the cited receipt and proof do not compose", 7, "VOUCHING_PROOF_UNPROVEN");

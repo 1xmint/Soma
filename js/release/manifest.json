@@ -161,8 +161,8 @@
     },
     {
       "path": "package.json",
-      "bytes": 1171,
-      "sha256": "f78206fad85a5c716002fbdd8d3298f1175ba58f326b87cc75ad58984c3dc5b2"
+      "bytes": 1197,
+      "sha256": "0a3441802f3aaa315b62cd165ae619a63ed8436c2938d57337b7124223351d18"
     },
     {
       "path": "release/origin-capsule-manifest.json",
@@ -390,6 +390,11 @@
       "sha256": "2dff7f969aa3db143967ff806d005867406a142e8cd102f0cc078ece7c598a83"
     },
     {
+      "path": "src/key-linkage.mjs",
+      "bytes": 9177,
+      "sha256": "f7dd2ec270d1c8d9ccc96af26f04d67fb9431f8e0213935c48ff1d38f75ccffd"
+    },
+    {
       "path": "src/keystore.mjs",
       "bytes": 3198,
       "sha256": "fd0d1470dc0b125fbaba8df7c3e1dd8be52d011fbba353e69d6cad1be8be034b"
@@ -431,8 +436,8 @@
     },
     {
       "path": "src/vouching-proof.mjs",
-      "bytes": 11298,
-      "sha256": "8f96d9f9e57b3ac158570d376aac63b04cdc976758d911d4a6de9b5497ecbb57"
+      "bytes": 12085,
+      "sha256": "2f603afba9d93126ed4f64b224fe758fa084ca260d92b33d284d083b76a7545d"
     },
     {
       "path": "test/attester-structure.test.mjs",
@@ -505,6 +510,11 @@
       "sha256": "89df752738c0a1724cae97a686bcd1f89d65318a36d929801065871b75f68a02"
     },
     {
+      "path": "test/key-linkage.test.mjs",
+      "bytes": 5097,
+      "sha256": "f59e50fb865c0e860a26b6879ff0887a2a3fe4531100eca0e4027aef4e166c17"
+    },
+    {
       "path": "test/membrane.test.mjs",
       "bytes": 17658,
       "sha256": "725a81d1b14320b9b9265a5fd996c0262c0d019c9b68b56a5295f35959131754"
@@ -551,8 +561,8 @@
     },
     {
       "path": "test/vouching-proof.test.mjs",
-      "bytes": 9107,
-      "sha256": "f91b32ccd58522cb4fc13de3deb2afa2b7c9aeb2af200ade5b9eebce02fff8ab"
+      "bytes": 10925,
+      "sha256": "6acb6508b442d5ea9458fd8c5d48a1ab6e690ba0a080436b93e93024ef56e72d"
     }
   ]
 }
