@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    container_name: vera-knowledge-db
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: vera
+      POSTGRES_PASSWORD: vera_dev
+      POSTGRES_DB: vera_knowledge
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
