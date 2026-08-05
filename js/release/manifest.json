@@ -55,11 +55,6 @@
       "sha256": "dab8b60750a4c10944d4181dfaa715e535ce9410cef4abffe4b76e753dfb142b"
     },
     {
-      "path": "NOTICE",
-      "bytes": 105,
-      "sha256": "b2a9fafacfcd085ac15fc11b1c3b6138847517c3b54fe9ae76c6db74d93b201e"
-    },
-    {
       "path": "README.md",
       "bytes": 5691,
       "sha256": "3fcc99f1c397f58efb553d02742afb209ac324fc0e1651cd4e9f9eaf7d9d2474"
@@ -496,8 +491,8 @@
     },
     {
       "path": "test/revival-drill.py",
-      "bytes": 8163,
-      "sha256": "388246fe848b04bb22d1c7b3ce1ba93ad665e9dc99a10108c2a6bbb397d7de2b"
+      "bytes": 8705,
+      "sha256": "52539a7d9a1ee8cc5689ada8a7380a6a7c019ed9ddfb3bdf6c70588bc77d62ab"
     },
     {
       "path": "test/soma-interop.test.mjs",

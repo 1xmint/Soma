@@ -60,4 +60,11 @@ Soma signs:
 
 ## License
 
-MIT OR Apache-2.0
+Apache-2.0. See [LICENSE](LICENSE).
+
+Apache rather than MIT for one reason: it grants patent rights explicitly.
+A protocol nobody can be sued for implementing is a precondition for one
+nobody owns.
+
+`archive/v1-typescript/` is a historical snapshot under its own MIT terms and
+is not part of the current work.

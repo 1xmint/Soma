@@ -2,7 +2,7 @@
 name = "soma"
 version = "0.1.0"
 edition = "2021"
-license = "MIT OR Apache-2.0"
+license = "Apache-2.0"
 description = "Soma protocol — cryptographic identity, delegation, heartbeats, and spend tracking for the agent-native internet"
 repository = "https://github.com/hey-vera/Soma"
 keywords = ["identity", "delegation", "cryptography", "agents", "did"]
