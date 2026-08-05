@@ -81,19 +81,31 @@ test("a large bloc sharing one view buys almost no depth, however many identitie
   // see the same thing.
   const target = h(1);
   const corpus = [head(target, A)];
+  // Parties the evaluator trusts. Divergence is measured against what THEY
+  // signed, because that is the part an adversary cannot invent.
+  const anchors = [];
+  const anchorHashes = [];
+  for (let t = 0; t < 6; t += 1) {
+    const did = `did:key:z6Mkanch${String(t).padStart(40, "0")}`;
+    anchors.push(did);
+    anchorHashes.push(sha(`anchor-${t}`));
+    corpus.push(head(sha(`anchor-${t}`), did, [target]));
+  }
+
   const bloc = [];
   for (let i = 0; i < 40; i += 1) {
     const did = `did:key:z6Mkbloc${String(i).padStart(40, "0")}`;
     bloc.push(did);
-    // Identical reference sets: one viewpoint behind forty faces.
-    corpus.push(head(h(2).slice(0, 60) + String(i).padStart(4, "0"), did, [target, h(3), h(4), h(5), h(6)]));
+    // Identical view of anchored reality: one viewpoint behind forty faces.
+    corpus.push(head(sha(`bloc-head-${i}`), did, [target].concat(anchorHashes)));
   }
 
-  const undiscounted = depthOf(target, corpus, new Set(bloc), { discountCorrelated: false });
-  const discounted = depthOf(target, corpus, new Set(bloc));
+  const trusted = new Set(bloc.concat(anchors));
+  const undiscounted = depthOf(target, corpus, trusted, { discountCorrelated: false });
+  const discounted = depthOf(target, corpus, trusted);
 
-  assert.equal(undiscounted, 40, "count alone treats one operator as forty witnesses");
-  assert.ok(discounted < 2, `forty identical viewpoints must count as about one, got ${discounted}`);
+  assert.equal(undiscounted, 46, "count alone treats one operator as forty separate witnesses");
+  assert.ok(discounted < 12, `forty identical viewpoints must collapse, got ${discounted}`);
 });
 
 test("genuinely separate observers keep their depth, so the discount is not just a cap", () => {
@@ -111,8 +123,45 @@ test("genuinely separate observers keep their depth, so the discount is not just
     for (let j = 0; j < 6; j += 1) own.push(sha(`observer-${i}-saw-${j}`));
     corpus.push(head(sha(`head-${i}`), did, own));
   }
-  const discounted = depthOf(target, corpus, new Set(independents));
+  const discounted = depthOf(target, corpus, new Set(independents), { discountCorrelated: false });
   assert.ok(discounted > 30, `divergent observers must retain their depth, got ${discounted}`);
+});
+
+test("a bloc cannot buy apparent independence with invented references", () => {
+  // The attack Josh found: reference sets are claims the adversary writes, so
+  // if divergence is measured over raw claims, a random number generator
+  // defeats the entire correlation discount for free.
+  var target = h(1);
+  var anchors = [];
+  var corpus = [head(target, A)];
+  for (var t = 0; t < 5; t++) {
+    var did = "did:key:z6Mkanchor" + String(t).padStart(38, "0");
+    anchors.push(did);
+    corpus.push(head(sha("anchor-head-" + t), did, [target]));
+  }
+  var anchorHashes = [];
+  for (var t2 = 0; t2 < 5; t2++) anchorHashes.push(sha("anchor-head-" + t2));
+
+  // Twenty identities that genuinely share one view of the anchored heads,
+  // each padded with a different pile of invented hashes to look divergent.
+  var bloc = [];
+  for (var i = 0; i < 20; i++) {
+    var did2 = "did:key:z6Mkspoof" + String(i).padStart(39, "0");
+    bloc.push(did2);
+    var refs = [target].concat(anchorHashes);
+    for (var j = 0; j < 30; j++) refs.push(sha("invented-" + i + "-" + j));
+    corpus.push(head(sha("spoof-head-" + i), did2, refs));
+  }
+
+  var trusted = new Set(bloc.concat(anchors));
+  var d = depthOf(target, corpus, trusted);
+  // Five real anchors plus twenty identities whose only genuine observations
+  // are identical. The invented padding must buy them nothing.
+  assert.ok(d < 9, "invented references must not manufacture independence, got " + d);
+
+  // And the measure refuses to run unanchored, rather than silently trusting
+  // whatever the adversary wrote.
+  assert.throws(function () { viewDivergence(bloc[0], bloc[1], corpus); }, /anchored/);
 });
 
 test("precedes proves ordering only when the reference closure shows it", () => {

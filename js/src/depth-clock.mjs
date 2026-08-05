@@ -159,18 +159,49 @@ export function witnessesOf(targetHash, heads) {
  * other never did. Hosts driven by one operator converge, because there is one
  * view behind them.
  *
+ * SPOOFING, AND WHY DIVERGENCE IS ANCHORED
+ *
+ * Reference sets are claims. An adversary writes its own heads, so measuring
+ * divergence over raw claims is defeated by a random number generator: give
+ * every identity a different set of invented hashes and the whole bloc looks
+ * maximally divergent for nothing. The correlation discount would then be
+ * decoration.
+ *
+ * So divergence is computed ONLY over references to heads actually signed by
+ * parties in the ANCHOR SET -- signers the evaluator already trusts. Those
+ * heads cannot be invented, because inventing one means forging a signature.
+ * To appear divergent an adversary must differ in what it saw of a reality it
+ * does not control, which is the thing that costs money.
+ *
+ * The adversary can still reach the anchor set by doing real work for the
+ * evaluator. That is the intended outcome: the attack is priced, not blocked.
+ *
  * Returns 0 for identical viewpoints and 1 for wholly disjoint ones, or `null`
  * when there is not enough history to say. `null` means unknown and must not
  * be read as a middling correlation — absence of evidence is not evidence
  * (P7). A new host that has said little yet is not thereby suspicious, and a
  * numeric "neutral" here would quietly penalise every newcomer.
  */
-export function viewDivergence(signerA, signerB, heads, minimumEvidence = 4) {
+export function viewDivergence(signerA, signerB, heads, anchors, minimumEvidence = 4) {
+  if (!(anchors instanceof Set) || anchors.size === 0) {
+    throw new SomaError(
+      "divergence must be anchored to heads signed by parties the evaluator trusts, "
+      + "or it is computed over claims the adversary writes",
+      2,
+      "DEPTH_ANCHOR_SET_REQUIRED"
+    );
+  }
+  // Only heads an anchor actually signed. A reference to anything else is a
+  // claim about an unverifiable object and buys no apparent independence.
+  const anchored = new Set();
+  for (const head of heads) {
+    if (anchors.has(head.signer_did)) anchored.add(head.head_hash);
+  }
   const refsOf = (signer) => {
     const refs = new Set();
     for (const head of heads) {
       if (head.signer_did !== signer) continue;
-      for (const r of head.observed_head_hashes ?? []) refs.add(r);
+      for (const r of head.observed_head_hashes ?? []) if (anchored.has(r)) refs.add(r);
     }
     return refs;
   };
@@ -222,7 +253,7 @@ export function depthOf(targetHash, heads, trustedSigners, { discountCorrelated 
     let total = 0;
     for (const other of witnesses) {
       if (other === s) continue;
-      const d = viewDivergence(s, other, heads);
+      const d = viewDivergence(s, other, heads, trustedSigners);
       total += d === null ? 1 : d;
     }
     spread.set(s, total);
@@ -234,7 +265,7 @@ export function depthOf(targetHash, heads, trustedSigners, { discountCorrelated 
   for (const signer of witnesses) {
     let factor = 1;
     for (const prior of counted) {
-      const d = viewDivergence(signer, prior, heads);
+      const d = viewDivergence(signer, prior, heads, trustedSigners);
       // Unknown means unknown. Only measured redundancy discounts anything.
       if (d !== null) factor = Math.min(factor, d);
     }

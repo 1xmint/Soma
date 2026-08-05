@@ -161,8 +161,8 @@
     },
     {
       "path": "package.json",
-      "bytes": 1050,
-      "sha256": "8fb0a532224f1dda3760d091a41b813538abf7a9975c22dd852fad36ad6d4287"
+      "bytes": 1070,
+      "sha256": "5acd207e2f87189c559cac2f0076d7507dcbcf26b5788e69762c59a0df420d5a"
     },
     {
       "path": "release/origin-capsule-manifest.json",
@@ -326,8 +326,8 @@
     },
     {
       "path": "src/depth-clock.mjs",
-      "bytes": 12259,
-      "sha256": "4b5db73ab3e99371b141ee78358d3b1fecb079f28aaf07b126da2f3ce99e0e65"
+      "bytes": 14114,
+      "sha256": "757c87ad45df8f131d5ae3b9adb9799f70d94f3fe966456f24e37ddbfcd5f856"
     },
     {
       "path": "src/equivocation.mjs",
@@ -415,6 +415,11 @@
       "sha256": "601b24e5b5a2fe8de022f1464fffb7ff8a1987fa4332a805dd8778be32b5bd84"
     },
     {
+      "path": "src/spawn.mjs",
+      "bytes": 9581,
+      "sha256": "910f210d91f0c543f98562181e9c78777b04c405dcc37491194129b6c3c4ddc4"
+    },
+    {
       "path": "src/state.mjs",
       "bytes": 16066,
       "sha256": "61663ef2912191692b0f42e911a0914c60b51f565e6f68cba6f2c2bd9eca1e9d"
@@ -436,8 +441,8 @@
     },
     {
       "path": "test/depth-clock.test.mjs",
-      "bytes": 7272,
-      "sha256": "086909cfbba644fe6833ba9f27b3e9c08749affdd18c8013499cd58af33eba40"
+      "bytes": 9622,
+      "sha256": "467406d51b5ee38c3607db1a42e7c5efc1516c583361140c8a8bd0bb930abcca"
     },
     {
       "path": "test/e2e-trust-loop.test.mjs",
@@ -508,6 +513,11 @@
       "path": "test/soma-interop.test.mjs",
       "bytes": 2201,
       "sha256": "25b4af82ebb7fea848dce3a7ec9d695fb73454405e5d5d83348e8b24a4a03bba"
+    },
+    {
+      "path": "test/spawn.test.mjs",
+      "bytes": 6916,
+      "sha256": "2132923bc43c3c1ee0e514894d72aa231e50321e5dea16d268142ec49d5f351e"
     }
   ]
 }
