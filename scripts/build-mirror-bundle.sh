@@ -23,11 +23,15 @@ mkdir -p "$OUT"
 
 cp "$ROOT/GENESIS.md" "$OUT/"
 cp "$ROOT/js/test/revival-drill.py" "$OUT/"
+# The licence travels with the bundle. A custodian holding a specification they
+# are not clearly permitted to redistribute is holding a liability, not a
+# backup, and the whole point is that they can pass it on without asking.
+cp "$ROOT/LICENSE" "$OUT/"
 
 cat > "$OUT/README.md" <<'README'
 # Somavera — mirror bundle
 
-Everything needed to rebuild the protocol from nothing. Two files and a
+Everything needed to rebuild the protocol from nothing. Three files and a
 checksum list.
 
 ## What this is
@@ -63,6 +67,11 @@ hosting platform. That is only true if copies exist that none of those control.
 You are not asked to maintain anything, agree to anything, or do anything. Hold
 the file. If everything else disappears, it is enough.
 
+`LICENSE` is Apache-2.0, and it is in the bundle because a custodian holding a
+specification they are not clearly permitted to redistribute is holding a
+liability rather than a backup. You may copy this, publish it, and hand it on
+without asking anyone — including whoever gave it to you.
+
 ## What a revival does not restore
 
 No balances, no history, no reputation, no keys. Those live in state, not in a
@@ -75,9 +84,9 @@ README
 
 cd "$OUT"
 if command -v sha256sum >/dev/null 2>&1; then
-  sha256sum GENESIS.md revival-drill.py README.md > SHA256SUMS
+  sha256sum GENESIS.md revival-drill.py LICENSE README.md > SHA256SUMS
 else
-  shasum -a 256 GENESIS.md revival-drill.py README.md > SHA256SUMS
+  shasum -a 256 GENESIS.md revival-drill.py LICENSE README.md > SHA256SUMS
 fi
 
 echo "bundle: $OUT"

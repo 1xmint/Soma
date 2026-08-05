@@ -25,23 +25,29 @@ exists.
 | A service that must stay running | **none in the protocol** — hosts are plural, and Soma is fully functional with every host absent |
 | Governance requiring approval | **none** — there is no approver |
 | A registry someone administers | **none** — the identifier is the key |
-| **A licence permitting forks** | **MISSING at the repository root.** `Cargo.toml` declares `MIT OR Apache-2.0` but no MIT text exists anywhere; `js/` and `origin/` carry Apache-2.0; the root carries nothing, so the default is all rights reserved |
+| **A licence permitting forks** | **done** — Apache-2.0 at the root. Chosen over MIT for its express patent grant: a contributor who later asserted a patent over what they helped write could make the protocol unimplementable, and MIT does not close that. `Cargo.toml` corrected — it previously declared a dual licence whose MIT half had no text anywhere |
 | **A code-hosting account** | **MISSING** — everything lives in one organisation owned by one person |
 | **Off-platform copies of the specification** | **MISSING** — GENESIS.md exists in exactly one place |
 
-Three unresolved, and they are the only ones that would end the project.
+Two unresolved, and they are the only ones that would end the project.
 
-The licence is the sharpest of them, and it was previously marked done here on
-the strength of a manifest declaration rather than a file. "Ownerless,
-forkable, uncapturable" requires that anyone may lawfully reimplement and
-redistribute. A protocol nobody may legally fork is not ownerless — it belongs
-to its author permanently, whatever the architecture says. It also leaves the
-mirror bundle legally ambiguous for the custodians being asked to hold it.
+The licence was the sharpest of them and is now closed with a file rather than a
+manifest declaration — the earlier "done" was read off `Cargo.toml`, which is
+not a licence and grants nothing. "Ownerless, forkable, uncapturable" requires
+that anyone may lawfully reimplement and redistribute, and a protocol nobody may
+legally fork belongs to its author permanently whatever the architecture says.
+It also left the mirror bundle legally ambiguous for the custodians being asked
+to hold it, which it no longer is.
 
-**What closes it:** the specification and vectors held by custodians who are not
-the author, on infrastructure that is not the author's, in more than one
-jurisdiction. A mirror inside the same organisation protects against nothing the
-organisation is exposed to.
+No root `NOTICE`. Apache-2.0 §4(d) obliges every downstream redistributor to
+carry a NOTICE if one exists, so adding one with no third-party attributions in
+it imposes a permanent duty on everyone who forks in exchange for nothing. The
+project has nothing to attribute; the correct number of NOTICE files is zero.
+
+**What closes the remaining two:** the specification and vectors held by
+custodians who are not the author, on infrastructure that is not the author's,
+in more than one jurisdiction. A mirror inside the same organisation protects
+against nothing the organisation is exposed to.
 
 ---
 

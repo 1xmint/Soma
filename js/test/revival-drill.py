@@ -15,6 +15,15 @@ import json
 import math
 import sys
 
+# The vectors deliberately contain non-ASCII text, because two of the things
+# being checked are UTF-16 code unit ordering and literal emission of non-ASCII.
+# On a console whose default encoding cannot represent them -- Windows cp1252,
+# among others -- printing a vector raises UnicodeEncodeError and the drill dies
+# with a traceback instead of a verdict. A custodian would reasonably read that
+# as the document being broken.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="backslashreplace")
+
 BASE58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 ED25519_MULTICODEC = bytes([0xED, 0x01])
 
