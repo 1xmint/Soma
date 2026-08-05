@@ -326,8 +326,8 @@
     },
     {
       "path": "src/depth-clock.mjs",
-      "bytes": 12551,
-      "sha256": "011a0fb1b2e00c43e6036ca7bbd511be14760fbfc8cc1f298d4116f0c9cad654"
+      "bytes": 12259,
+      "sha256": "4b5db73ab3e99371b141ee78358d3b1fecb079f28aaf07b126da2f3ce99e0e65"
     },
     {
       "path": "src/equivocation.mjs",
