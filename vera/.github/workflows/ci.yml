@@ -1,0 +1,167 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  # Merges performed by the auto-merge workflow use GITHUB_TOKEN, and pushes
+  # made with that token do not trigger workflows. So main itself never gets a
+  # run: its health is only ever inferred from checks that passed before the
+  # merge. This gives main an independent verification of its own.
+  schedule:
+    - cron: "41 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vera-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Both ends are gated. Vera's correctness claim is that the observer and the
+  # host agree on what a signature covers; neither half passing alone is
+  # evidence of that, so neither half is allowed to be the only thing tested.
+  observer:
+    name: Observer
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: observer
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: observer/package-lock.json
+      - run: npm ci --ignore-scripts
+      - name: Build
+        run: npm run build
+      - name: Test
+        run: npm run test:run
+
+  host:
+    name: Host
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: host
+
+    # The host's tests exercise real signature verification against real rows.
+    # Mocking the database would test the mock, not the receiver, so CI runs a
+    # genuine Postgres. pgvector is required by the knowledge schema.
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: vera
+          POSTGRES_PASSWORD: vera
+          POSTGRES_DB: vera_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U vera"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgres://vera:vera@localhost:5432/vera_test
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: host/package-lock.json
+      - run: npm ci --ignore-scripts
+
+      # Extensions must exist before migrations run: the schema references the
+      # vector type. The test helper also enables them, but that happens after
+      # the tables it depends on would already have had to be created.
+      - name: Enable required extensions
+        run: psql "$DATABASE_URL" -c 'CREATE EXTENSION IF NOT EXISTS vector; CREATE EXTENSION IF NOT EXISTS pgcrypto;'
+
+      - name: Run migrations
+        run: npm run db:migrate
+
+      - name: Build and test
+        run: npm run test:build
+
+  # The end-to-end loop, run against a real host with a real database on every
+  # change. A loop that only works when someone remembers to run it by hand is
+  # not a loop anyone can rely on.
+  e2e:
+    name: End-to-end
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: vera
+          POSTGRES_PASSWORD: vera
+          POSTGRES_DB: vera_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U vera"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgres://vera:vera@localhost:5432/vera_e2e
+      PORT: 3100
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
+        with:
+          node-version: 22
+
+      - name: Install and build observer
+        working-directory: observer
+        run: npm ci --ignore-scripts && npm run build
+
+      - name: Install and build host
+        working-directory: host
+        run: npm ci --ignore-scripts && npm run build
+
+      - name: Prepare database
+        working-directory: host
+        run: |
+          psql "$DATABASE_URL" -c 'CREATE EXTENSION IF NOT EXISTS vector; CREATE EXTENSION IF NOT EXISTS pgcrypto;'
+          npm run db:migrate
+
+      - name: Start host
+        working-directory: host
+        run: |
+          nohup npm start > "$GITHUB_WORKSPACE/host.log" 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl -sf "http://localhost:3100/health" >/dev/null; then
+              echo "host is up after ${attempt}s"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "host did not become healthy; log follows"
+          cat "$GITHUB_WORKSPACE/host.log"
+          exit 1
+
+      - name: Run the loop
+        working-directory: observer
+        run: node e2e/loop.mjs http://localhost:3100
+
+      # Without this, a failing loop leaves no way to tell whether the host
+      # rejected something deliberately or simply fell over.
+      - name: Host log
+        if: always()
+        run: cat host.log || echo "no host log"
