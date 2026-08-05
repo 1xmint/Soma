@@ -161,8 +161,8 @@
     },
     {
       "path": "package.json",
-      "bytes": 1050,
-      "sha256": "8fb0a532224f1dda3760d091a41b813538abf7a9975c22dd852fad36ad6d4287"
+      "bytes": 1197,
+      "sha256": "0a3441802f3aaa315b62cd165ae619a63ed8436c2938d57337b7124223351d18"
     },
     {
       "path": "release/origin-capsule-manifest.json",
@@ -340,6 +340,11 @@
       "sha256": "d354a6bdfc843c8997c4ed2153d45350cb022590520ee5de9fa9dbbe72d4ee6f"
     },
     {
+      "path": "src/evaluator-policy.mjs",
+      "bytes": 25471,
+      "sha256": "803f9c69a4120773eed0bcd2d4c9b7b38e5dc3640d8cf909fe84a8e5fc5634b2"
+    },
+    {
       "path": "src/evidence.mjs",
       "bytes": 27116,
       "sha256": "9956e0d0e485779568a073fc5719dd66a62cb3d13c692e057ec48456525b6bdd"
@@ -385,6 +390,11 @@
       "sha256": "2dff7f969aa3db143967ff806d005867406a142e8cd102f0cc078ece7c598a83"
     },
     {
+      "path": "src/key-linkage.mjs",
+      "bytes": 9177,
+      "sha256": "f7dd2ec270d1c8d9ccc96af26f04d67fb9431f8e0213935c48ff1d38f75ccffd"
+    },
+    {
       "path": "src/keystore.mjs",
       "bytes": 3198,
       "sha256": "fd0d1470dc0b125fbaba8df7c3e1dd8be52d011fbba353e69d6cad1be8be034b"
@@ -393,6 +403,11 @@
       "path": "src/membrane.mjs",
       "bytes": 24775,
       "sha256": "6c9421a58edfb127d2c64b5dca504129f1ea72ce35c859acd9d380cfe11e1ba4"
+    },
+    {
+      "path": "src/method-disclosure.mjs",
+      "bytes": 9280,
+      "sha256": "e0c8adc455b3508527d6f7a2a69013a95593bdef9505700437e34ea33c0373b7"
     },
     {
       "path": "src/platform.mjs",
@@ -418,6 +433,11 @@
       "path": "src/state.mjs",
       "bytes": 16066,
       "sha256": "61663ef2912191692b0f42e911a0914c60b51f565e6f68cba6f2c2bd9eca1e9d"
+    },
+    {
+      "path": "src/vouching-proof.mjs",
+      "bytes": 12085,
+      "sha256": "2f603afba9d93126ed4f64b224fe758fa084ca260d92b33d284d083b76a7545d"
     },
     {
       "path": "test/attester-structure.test.mjs",
@@ -448,6 +468,11 @@
       "path": "test/equivocation.test.mjs",
       "bytes": 6479,
       "sha256": "d2f6283b598914020f003005125d299aa63a481817ad449dc5c979592994b4f8"
+    },
+    {
+      "path": "test/evaluator-policy.test.mjs",
+      "bytes": 12861,
+      "sha256": "430620f63fdfd4ac4a451037173432fcec3ad4dbb852089e1609712e11480141"
     },
     {
       "path": "test/evidence-receipts.test.mjs",
@@ -485,9 +510,19 @@
       "sha256": "89df752738c0a1724cae97a686bcd1f89d65318a36d929801065871b75f68a02"
     },
     {
+      "path": "test/key-linkage.test.mjs",
+      "bytes": 5097,
+      "sha256": "f59e50fb865c0e860a26b6879ff0887a2a3fe4531100eca0e4027aef4e166c17"
+    },
+    {
       "path": "test/membrane.test.mjs",
       "bytes": 17658,
       "sha256": "725a81d1b14320b9b9265a5fd996c0262c0d019c9b68b56a5295f35959131754"
+    },
+    {
+      "path": "test/method-disclosure.test.mjs",
+      "bytes": 5609,
+      "sha256": "fbca38c6b18d30ac14c22ce91828e396cd610bf0606f947f65abaf988f89e974"
     },
     {
       "path": "test/no-network-preload.mjs",
@@ -505,9 +540,29 @@
       "sha256": "52539a7d9a1ee8cc5689ada8a7380a6a7c019ed9ddfb3bdf6c70588bc77d62ab"
     },
     {
+      "path": "test/sim/mincut-falsifier.py",
+      "bytes": 3377,
+      "sha256": "436f349ac49abe7f8f863652ba03f519b3074229c8cd05cf9a2da2e13eb111a2"
+    },
+    {
+      "path": "test/sim/trust-flow-sim.mjs",
+      "bytes": 6110,
+      "sha256": "72eca4caee56c99bc9bb29d3f617928407aad44159e5ba0d18193f089bc9f43c"
+    },
+    {
       "path": "test/soma-interop.test.mjs",
       "bytes": 2201,
       "sha256": "25b4af82ebb7fea848dce3a7ec9d695fb73454405e5d5d83348e8b24a4a03bba"
+    },
+    {
+      "path": "test/trust-flow-sim.test.mjs",
+      "bytes": 8838,
+      "sha256": "dd3df3b8a86e532783b99cdfde612d39b182e62b0cb15c482d714cc6f9193f52"
+    },
+    {
+      "path": "test/vouching-proof.test.mjs",
+      "bytes": 10925,
+      "sha256": "6acb6508b442d5ea9458fd8c5d48a1ab6e690ba0a080436b93e93024ef56e72d"
     }
   ]
 }

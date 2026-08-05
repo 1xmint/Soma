@@ -175,15 +175,59 @@ identity whose attestations happen to be verificational, and whose standing is
 at stake like anyone's. Nothing about being a host makes its verdict
 authoritative, and an evaluator that does not trust it gets nothing from it.
 
-### Method disclosure is deliberately not specified yet
+### Method disclosure — on the critical path, and now specified
 
-When a verification method turns out to be defeatable, every attestation that
-used it should be re-weighted at once — not just the ones from whoever was
-caught. That requires the method to be named in the receipt.
+An earlier revision deferred this. That was wrong, and the reason is worth
+stating plainly: **`verified` was an unfalsifiable claim about falsifiability.**
+It asserts that anyone can redo the check while omitting which check was run, so
+nobody can, and it costs exactly as much to write as `party`. The strongest
+basis was the cheapest lie available.
 
-It is left out of v1 because a bad method vocabulary frozen into the record is
-worse than none, and naming methods well needs more thought than this revision
-had. The gap is recorded so it is not mistaken for an oversight.
+It is on the critical path because it gates two things nothing else provides:
+verification substituting for trust — the only on-ramp a participant with no
+trust path has — and the ratio of re-runnable claims to opinions, which is the
+share of the corpus that can act as collateral at all.
+
+**It is a companion record, not a field.** `receipt_core` is a closed field set
+and `receipt_id` is derived from its canonical bytes, so adding a field would
+change the identifier of every existing receipt and make it unverifiable — the
+one irreversible mistake available here. A separate record signed by the same
+attester and bound to `receipt_id` costs existing evidence nothing, and can be
+published later than the receipt, which matters because a method is often only
+worth naming once somebody asks.
+
+```
+signed_bytes = "somavera:soma-method-disclosure-signature:v1\n" || sha256(disclosure_id)
+```
+
+carrying exactly `attester_did`, `inputs_hash`, `method`, `receipt_id`,
+`result_hash`, `schema_version`. The attester's key is derived from
+`attester_did` and is never a parameter, as on a receipt. A disclosure signed by
+anyone other than the receipt's own attester is refused — otherwise anyone could
+attach a flattering or damning method to a receipt they had nothing to do with.
+
+`method` is constrained to a lowercase dash-separated shape rather than an
+enumeration. A frozen vocabulary would have to be right about every future kind
+of checking, and a bad vocabulary baked into the record is worse than none —
+which is what made the earlier revision defer. A shape lets methods accumulate
+as conventions and lets a verifier refuse ones it does not recognise, exactly as
+signature suites already work.
+
+**Disclosure is voluntary, and the incentive does the enforcing.** An attester
+could re-run a check, see it fail, and never disclose. That is not a loophole:
+an undisclosed method is the absence of the thing being claimed. The reference
+evaluator therefore weighs an undisclosed `verified` receipt as `witnessed`, and
+an evaluator that cannot re-run a check has been handed an opinion and should
+price it as one. The pressure lands where it belongs — on making work checkable
+— rather than on a mandate nobody can enforce against sovereign code.
+
+A re-run that disagrees with the committed `result_hash` yields a contradiction
+naming the attester. It is **reproducible, not self-authenticating**, and the
+distinction must not be blurred: an equivocation proof settles offline forever
+from the bytes alone, whereas this holds only for whoever actually re-runs the
+named method on the named inputs.
+
+Mechanism: `js/src/method-disclosure.mjs`.
 
 ## The attester's key is never a parameter
 
