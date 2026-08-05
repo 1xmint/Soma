@@ -1,7 +1,14 @@
 # The human layer
 
-Status: **design note.** Nothing here is implemented, nothing is frozen, and
-the central mechanism is deliberately weaker than it first appears.
+Status: **analysis, partly settled.** Nothing here is frozen, and the central
+mechanism is deliberately weaker than it first appears.
+
+Since the first revision, this document has been attacked and two of its four
+signals have moved. **Irregularity is withdrawn** — it failed the project's own
+shareability test, and the section below says how rather than quietly deleting
+it. **Bounded volume is implemented**, not as a rule but as a consequence of
+conservation in `js/src/evaluator-policy.mjs`. The remaining two are analysis,
+and are marked as such where they appear.
 
 ---
 
@@ -56,13 +63,37 @@ telling their agent it was wrong. It is also the hardest to fake usefully: a
 correction that does not change subsequent behaviour is visible as noise, and
 one that does change behaviour is expensive to fabricate at volume.
 
-**Irregularity.** Attention arrives in a human shape — bursty, interrupted,
-absent for days, concentrated on what matters to that person. Synthetic
-attention is regular, because regularity is what is cheap.
+This survives, and it is stronger once named properly: a correction that changes
+what happens next is **outcome correspondence**, visible in later evidence
+produced by parties other than the one being judged. That is not a special human
+signal at all — it is an ordinary attack edge, and it belongs in the evaluator's
+capacity policy rather than in a separate human-detection mechanism. Which is
+the useful reading of this whole document: the thing a person supplies is not a
+detectable texture, it is being a real counterparty with something at stake.
+
+**~~Irregularity.~~ Withdrawn — it failed this project's own test.** The claim
+was that attention arrives in a human shape, bursty and interrupted, while
+synthetic attention is regular because regularity is cheap. That is wrong, and
+the refutation is one line: **a timing distribution is a template, and copying a
+template across ten thousand identities costs nothing.** One script samples
+human-shaped inter-arrival times for a whole fleet. Any quantity an adversary
+can supply to N identities for the price of supplying it to one is worthless as
+a defence, and this is that quantity. It also cut the wrong way — it would have
+read a genuinely regular person as synthetic.
+
+Nothing replaces it, because nothing needs to. What follows below is the part
+that survives, and it was always the stronger half.
 
 **Bounded volume.** An identity that vouches for ten thousand things a day is
 not spending attention on any of them. Low volume is not a virtue in itself,
 but volume far beyond a person's day is evidence that no person is behind it.
+
+This one survives, and it needs no rule of its own: the reference evaluator
+imposes it structurally. Under conservation an attester cannot pass on more
+trust than it received, so vouching for ten thousand things divides one
+allowance ten thousand ways instead of multiplying it. Volume dilutes itself.
+No threshold, no judgement about the shape of a human day, and nothing for an
+adversary to tune against.
 
 None of these prove anything. Together they are a texture that is cheap to
 have and costly to counterfeit, which is the only kind of defence available
