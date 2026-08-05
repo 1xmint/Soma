@@ -161,8 +161,8 @@
     },
     {
       "path": "package.json",
-      "bytes": 1024,
-      "sha256": "23679ba5537f944ca8dace1432b854dfb9c0b9f4c28a59deac2a5c2284bd4adf"
+      "bytes": 1050,
+      "sha256": "8fb0a532224f1dda3760d091a41b813538abf7a9975c22dd852fad36ad6d4287"
     },
     {
       "path": "release/origin-capsule-manifest.json",
@@ -325,6 +325,11 @@
       "sha256": "7537dd0bb7107d33054fd1e29c951a1b6af445f56114a2d537341a482813d2d6"
     },
     {
+      "path": "src/depth-clock.mjs",
+      "bytes": 8967,
+      "sha256": "7b23e6822d3a300041e6fc25ec522bd4f7016f8cbe059a21077bde2a46d8b05a"
+    },
+    {
       "path": "src/equivocation.mjs",
       "bytes": 6238,
       "sha256": "13676a80c0dd415783cb7c60e39347bd27387120df79b14ddf6fd2b1c6558208"
@@ -428,6 +433,11 @@
       "path": "test/controller-rotation.test.mjs",
       "bytes": 18033,
       "sha256": "547acfb31f1c0ac37cdfb0307cafb5412ee0768ec9c111d598bd93e6827c4a27"
+    },
+    {
+      "path": "test/depth-clock.test.mjs",
+      "bytes": 5124,
+      "sha256": "7a4a37f091ccaee333355c6758e1c70f408e8d42d63ae891d96c3ee1de828330"
     },
     {
       "path": "test/e2e-trust-loop.test.mjs",
