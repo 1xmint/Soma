@@ -1,48 +1,59 @@
 /**
  * Git observer tests — test against a real git repo.
  *
- * Uses the veraAI repo at C:\Users\Josh\Desktop\GitHub\veraAI as the real
- * git fixture. Also tests against vera-observer's own repo once it's
- * initialized.
+ * The general fixture is *this repository*, resolved relative to the test file.
+ * It is guaranteed to exist wherever the tests run, so these assertions execute
+ * on every machine and in CI rather than skipping.
  *
- * Richer-signal tests use the Soma repo at C:\Users\Josh\Desktop\GitHub\Soma
- * and target commits 3835d82 (UpdateCertificate primitives) and 8b3cbba
- * (supply-chain export path). These tests verify that exported_names and
- * signature_excerpts are populated correctly for seam-adjacent commits.
+ * They previously pointed at two absolute paths on one developer's machine
+ * (`veraAI` and `Soma`). Both had since been renamed or archived, so the
+ * `existsSync` guard silently skipped roughly two thirds of this file — a green
+ * suite that was asserting nothing. Absolute developer paths also leak a
+ * username into a repository intended to be public.
+ *
+ * Richer-signal tests need a fixture with known seam-adjacent commits, which no
+ * synthetic repo reproduces. They stay opt-in via SOMA_FIXTURE_REPO and say so
+ * plainly when they skip, so absent coverage is legible instead of invisible.
  */
 
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { observeGitCommits } from '../lib/git-observer.js';
 import { gitCommitObservationSchema } from '../lib/types.js';
 
-// veraAI is the reference repo — it always has commits
-const VERA_AI_REPO = 'C:/Users/Josh/Desktop/GitHub/veraAI';
-// vera-observer itself (will have commits after initial commit)
-const VERA_OBSERVER_REPO = 'C:/Users/Josh/Desktop/GitHub/vera-observer';
-// Soma repo for richer-signal tests (seam-adjacent supply-chain commits)
-const SOMA_REPO = 'C:/Users/Josh/Desktop/GitHub/Soma';
+// This repository, found from the test file rather than from any absolute path:
+// dist/tests/ -> observer/ -> repo root.
+const REPO_ROOT = path.resolve(fileURLToPath(new URL('../../../', import.meta.url)));
 
-describe('observeGitCommits — real repo (veraAI)', () => {
-  const skipIfMissing = !existsSync(VERA_AI_REPO + '/.git');
+// The general fixture is the repo under test. Always present, always has commits.
+const FIXTURE_REPO = REPO_ROOT;
+// The same repo, asserted on separately for its own observation properties.
+const VERA_OBSERVER_REPO = REPO_ROOT;
+// Opt-in fixture for richer-signal tests. Unset means that coverage is off.
+const SOMA_REPO = process.env.SOMA_FIXTURE_REPO ?? '';
 
-  test('returns observations from a real git repo', { skip: skipIfMissing ? 'veraAI repo not found' : false }, () => {
-    const result = observeGitCommits({ repoPath: VERA_AI_REPO, limit: 5 });
+describe('observeGitCommits — real repo (this repository)', () => {
+  const skipIfMissing = !existsSync(FIXTURE_REPO + '/.git');
+
+  test('returns observations from a real git repo', { skip: skipIfMissing ? 'repository fixture not found' : false }, () => {
+    const result = observeGitCommits({ repoPath: FIXTURE_REPO, limit: 5 });
     assert.ok(result.count > 0, 'Should find at least 1 commit');
-    assert.equal(result.repoPath, VERA_AI_REPO);
+    assert.equal(result.repoPath, FIXTURE_REPO);
     assert.equal(result.observations.length, result.count);
   });
 
-  test('all observations have type="git_commit"', { skip: skipIfMissing ? 'veraAI repo not found' : false }, () => {
-    const result = observeGitCommits({ repoPath: VERA_AI_REPO, limit: 5 });
+  test('all observations have type="git_commit"', { skip: skipIfMissing ? 'repository fixture not found' : false }, () => {
+    const result = observeGitCommits({ repoPath: FIXTURE_REPO, limit: 5 });
     for (const obs of result.observations) {
       assert.equal(obs.type, 'git_commit');
     }
   });
 
-  test('observation content validates against GitCommitObservation schema', { skip: skipIfMissing ? 'veraAI repo not found' : false }, () => {
-    const result = observeGitCommits({ repoPath: VERA_AI_REPO, limit: 3 });
+  test('observation content validates against GitCommitObservation schema', { skip: skipIfMissing ? 'repository fixture not found' : false }, () => {
+    const result = observeGitCommits({ repoPath: FIXTURE_REPO, limit: 3 });
     assert.ok(result.count > 0, 'Need at least 1 commit to validate');
     for (const obs of result.observations) {
       const parseResult = gitCommitObservationSchema.safeParse(obs.content);
@@ -53,16 +64,16 @@ describe('observeGitCommits — real repo (veraAI)', () => {
     }
   });
 
-  test('observed_at is a valid ISO 8601 date string', { skip: skipIfMissing ? 'veraAI repo not found' : false }, () => {
-    const result = observeGitCommits({ repoPath: VERA_AI_REPO, limit: 5 });
+  test('observed_at is a valid ISO 8601 date string', { skip: skipIfMissing ? 'repository fixture not found' : false }, () => {
+    const result = observeGitCommits({ repoPath: FIXTURE_REPO, limit: 5 });
     for (const obs of result.observations) {
       const d = new Date(obs.observed_at);
       assert.ok(!isNaN(d.getTime()), `observed_at "${obs.observed_at}" is not a valid date`);
     }
   });
 
-  test('commit hashes are 40-character hex strings', { skip: skipIfMissing ? 'veraAI repo not found' : false }, () => {
-    const result = observeGitCommits({ repoPath: VERA_AI_REPO, limit: 5 });
+  test('commit hashes are 40-character hex strings', { skip: skipIfMissing ? 'repository fixture not found' : false }, () => {
+    const result = observeGitCommits({ repoPath: FIXTURE_REPO, limit: 5 });
     for (const obs of result.observations) {
       const content = obs.content as Record<string, unknown>;
       const hash = content['commit_hash'] as string;
@@ -70,21 +81,21 @@ describe('observeGitCommits — real repo (veraAI)', () => {
     }
   });
 
-  test('limit is respected', { skip: skipIfMissing ? 'veraAI repo not found' : false }, () => {
-    const result = observeGitCommits({ repoPath: VERA_AI_REPO, limit: 2 });
+  test('limit is respected', { skip: skipIfMissing ? 'repository fixture not found' : false }, () => {
+    const result = observeGitCommits({ repoPath: FIXTURE_REPO, limit: 2 });
     assert.ok(result.count <= 2, `Expected <= 2 commits, got ${result.count}`);
   });
 
-  test('files_changed array is present (may be empty for some commits)', { skip: skipIfMissing ? 'veraAI repo not found' : false }, () => {
-    const result = observeGitCommits({ repoPath: VERA_AI_REPO, limit: 5 });
+  test('files_changed array is present (may be empty for some commits)', { skip: skipIfMissing ? 'repository fixture not found' : false }, () => {
+    const result = observeGitCommits({ repoPath: FIXTURE_REPO, limit: 5 });
     for (const obs of result.observations) {
       const content = obs.content as Record<string, unknown>;
       assert.ok(Array.isArray(content['files_changed']), 'files_changed should be an array');
     }
   });
 
-  test('stats fields are non-negative integers', { skip: skipIfMissing ? 'veraAI repo not found' : false }, () => {
-    const result = observeGitCommits({ repoPath: VERA_AI_REPO, limit: 5 });
+  test('stats fields are non-negative integers', { skip: skipIfMissing ? 'repository fixture not found' : false }, () => {
+    const result = observeGitCommits({ repoPath: FIXTURE_REPO, limit: 5 });
     for (const obs of result.observations) {
       const content = obs.content as Record<string, unknown>;
       const stats = content['stats'] as Record<string, unknown>;
@@ -107,7 +118,7 @@ describe('observeGitCommits — error handling', () => {
 describe('observeGitCommits — vera-observer own repo', () => {
   const skipIfMissing = !existsSync(VERA_OBSERVER_REPO + '/.git');
 
-  test('can observe vera-observer initial commit', { skip: skipIfMissing ? 'vera-observer git not initialized yet' : false }, () => {
+  test('can observe vera-observer initial commit', { skip: skipIfMissing ? 'repository fixture not found' : false }, () => {
     const result = observeGitCommits({ repoPath: VERA_OBSERVER_REPO, limit: 10 });
     // After initial commit, should have at least 1
     assert.ok(result.count >= 1, `Expected at least 1 commit, got ${result.count}`);
@@ -117,9 +128,9 @@ describe('observeGitCommits — vera-observer own repo', () => {
 // ---- Richer-signal extraction tests ----
 // These tests require the Soma repo and target specific known commits.
 
-describe('observeGitCommits — richer-signal extraction (Soma repo)', () => {
-  const skipIfMissing = !existsSync(SOMA_REPO + '/.git');
-  const skipMsg = 'Soma repo not found at expected path';
+describe('observeGitCommits — richer-signal extraction (opt-in fixture)', () => {
+  const skipIfMissing = !SOMA_REPO || !existsSync(path.join(SOMA_REPO, '.git'));
+  const skipMsg = 'set SOMA_FIXTURE_REPO to a repo with seam-adjacent commits to run this';
 
   // 3835d82: feat(supply-chain): UpdateCertificate protocol primitives (Track A)
   // This commit introduces UpdateCertificate interface, createUpdateCertificate,
