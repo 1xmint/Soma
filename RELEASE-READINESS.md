@@ -22,7 +22,7 @@ exists.
 | Dependency | State |
 |---|---|
 | A signing key that must stay live | **none** — records are signed by their own authors; no release key gates anything |
-| A service that must stay running | **none in the protocol** — hosts are plural, and Soma is fully functional with every host absent |
+| A service that must stay running | **none in the protocol** — hosts are plural, and Soma *verifies* with every host absent: receipts, equivocation proofs and standing all check offline from the bytes alone. Stated precisely because the looser version is false: what degrades without hosts is **discovery**, and adverse evidence bounds nobody unless it reaches a future evaluator. So host plurality is part of the security budget, not an availability convenience. No single host is required; some are |
 | Governance requiring approval | **none** — there is no approver |
 | A registry someone administers | **none** — the identifier is the key |
 | **A licence permitting forks** | **done** — Apache-2.0 at the root. Chosen over MIT for its express patent grant: a contributor who later asserted a patent over what they helped write could make the protocol unimplementable, and MIT does not close that. `Cargo.toml` corrected — it previously declared a dual licence whose MIT half had no text anywhere |
